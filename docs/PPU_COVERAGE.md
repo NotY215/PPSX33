@@ -1,31 +1,38 @@
-# PPU coverage status (PPSX33)
+# PPSX33 PPU Instruction Coverage
 
-GoW3 snapshot:
+## God of War III lift snapshot
 
-- Instructions: 1,285,560
-- Translated: 1,103,166 (~86%)
-- Unimplemented: 182,394
-- MSVC build: **OK** (`game.exe` + `ps3rt.dll` are emitted)
-- Runtime: **incomplete**; launching starts execution, then the guest PC leaves the recompiled range
+| Metric | Result |
+| --- | ---: |
+| Instruction instances | 1,285,560 |
+| Translated | 1,103,166 (approximately 85.81%) |
+| Unimplemented | 182,394 |
+| Chunks | 157 |
+| MSVC artifact build | Successful: `game.exe` and `ps3rt.dll` |
+| Runtime execution | Incomplete: execution starts, then the guest PC leaves the recompiled range |
 
-## Implemented (major groups)
+## Implemented instruction groups
 
-- Integer ALU, logical, shifts, rotates
-- Loads/stores (common + update + indexed + lmw/stmw)
-- Branches, CR logicals, SPR (LR/CTR/XER)
-- FPU memory + arithmetic subset
-- Atomics stubs, traps as nop (in progress on lifter)
+- Integer arithmetic, logical operations, shifts, and rotates
+- Loads and stores, including common update and indexed forms
+- Branches, condition-register logical operations, and LR/CTR/XER access
+- A subset of floating-point memory and arithmetic operations
+- Partial atomic handling and trap behavior
 
-## Top remaining (GoW3)
+## Highest-count remaining groups in this snapshot
 
-| Key | Count | Notes |
-|-----|------:|-------|
-| op=4 | 76k | VMX / AltiVec |
-| op=31 xo=103 | 19k | |
-| op=9 | 13k | |
-| op=31 xo=231 | 13k | |
-| op=6/1/3/2/5 | ~39k | rare / data-as-code |
+| Instruction group | Approximate count | Family |
+| --- | ---: | --- |
+| Primary opcode 4 | 76,000 | VMX / AltiVec |
+| Primary opcode 31, XO 103 | 19,000 | Integer / system instruction family |
+| Primary opcode 9 | 13,000 | Extended arithmetic family |
+| Primary opcode 31, XO 231 | 13,000 | Integer / system instruction family |
+| Primary opcodes 6, 1, 3, 2, and 5 | 39,000 | Remaining groups, including possible data interpreted as code |
 
-## Runtime
+Counts are from the recorded lift snapshot and should be regenerated after changes to the lifter.
 
-When the guest PC leaves the recompiled range, the runtime prints `pc/lr/ctr/r1/r2`. Treat the reported PC as a diagnostic clue, not proof of one specific cause: investigate branch target calculation, LR/CTR state, indirect branches, missing lifted chunks, and function-pointer/OPD handling. The current MSVC artifact build is successful, but runtime execution is not yet validated.
+## Runtime diagnostics
+
+When the guest PC leaves the recompiled range, the runtime reports `pc`, `lr`, `ctr`, `r1`, and `r2`. These values are diagnostic evidence, not a definitive root-cause diagnosis. Runtime investigation should check branch target calculations, LR/CTR state, indirect branches, missing lifted chunks, and function-descriptor/OPD handling.
+
+MSVC currently emits `game.exe` and `ps3rt.dll`, but correct guest execution and game compatibility are not established. PPU coverage, system-call and PRX support, SPU execution, and RSX graphics are separate requirements.
