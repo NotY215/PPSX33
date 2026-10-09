@@ -1,73 +1,100 @@
 # PPSX33 Roadmap
 
-Legend: [x] implemented or verified, [~] partial, [ ] planned or not yet verified.
+Legend: [x] implemented in the current codebase, [~] partial or heuristic, [ ] not implemented or not verified. A checked implementation item does not imply semantic correctness or game compatibility.
 
-## Phase 1 - UI and project structure
-- [x] WinForms window with Load ELF, Decompile, Build, and Copy to EBOOT folder actions
-- [x] Project folder creation: `<app directory>/<GameName>/{input,codebase,output}`
-- [x] Settings for graphics backend, CPU thread count, and RPCS3 path
-- [x] RPCS3 launcher helper for the external ELF workflow
-- [x] Progress marquee, Cancel, status line during Decompile/Build
-- [x] In-app Lift report tab (loads `lift_report.txt`)
-- [x] Find decrypted ELF (scan near EBOOT + RPCS3 cache paths, verify ELF64-BE magic)
-- [x] Single CMake/VS project Rebuild All path (C++ core + GUI)
-- Acceptance: load a valid ELF and complete the project-generation workflow. **Met.**
+## Phase 1: UI and project workflow
 
-## Phase 2 - ELF decompile (PPU code to C++)
-- [x] ELF64 big-endian loader, PT_LOAD segments, and OPD entry handling
-- [x] Symbol table parse (when present), OPD table scan, PRX/module string heuristic
-- [x] Embedded SPU ELF detection (ELF32 + EM_SPU) and dump as `spu_image_XX.bin`
-- [x] Analysis report (`analysis_report.txt`) written next to lift report
-- [x] PPU lifter: GOW3 snapshot 100% static translation (1,285,560 / 1,285,560)
-- [~] Instruction semantics: many families real, long-tail approximate or nop
-- [x] Atomics baseline: `lwarx/stwcx./ldarx/stdcx.` reservation fields
-- [~] FPU and FPSCR (common ops; full FPSCR model still open)
-- [~] VMX/AltiVec (loads/stores, logic, splat, bulk approx for remainder)
-- [x] Function descriptor discovery via entry OPD + data-segment OPD scan
-- [~] `.sceStub` / PRX: string+NID heuristic only (not full NID resolution table)
-- [x] Detect and extract embedded SPU ELF images
-- Acceptance: homebrew sample with correct runtime output. **Not met** (static coverage only).
+- [x] WinForms GUI with Load ELF, Find decrypted ELF, Decompile, Build, Copy to EBOOT folder, Cancel, status, log, and lift-report tabs
+- [x] Project layout: `<root>/<game>/{input,codebase,output}`
+- [x] Settings for graphics backend and PPU thread count
+- [x] RPCS3 launch helper and scan of nearby EBOOT/RPCS3 cache paths for ELF64 big-endian input
+- [x] CMake/Ninja native build and optional .NET GUI publish
+- [ ] Verify the full GUI workflow on clean Windows installations
+- [ ] Reliable cancellation of long-running native work and structured progress reporting
 
-## Phase 3 - PPU execution on x86-64
-### 3a - CPU correctness
-- [x] Baseline BE memory, CR, branches, LR/CTR, basic syscalls
-- [x] Demand-paged guest memory (`ps3rt_touch`)
-- [x] External PC: return-via-LR stub (cap 64 escapes)
+Acceptance: load a valid ELF and complete project creation, lifting, building, and output inspection.
+
+## Phase 2: ELF analysis and PPU lifting
+
+- [x] ELF64 big-endian loader for loadable segments and entry point handling
+- [x] Symbol parsing when symbol tables are present
+- [x] OPD/function descriptor discovery heuristics
+- [~] PRX import/module detection using strings and NID heuristics; this is not a complete import resolver
+- [x] Embedded SPU ELF detection and extraction to `spu_image_XX.bin`
+- [x] `lift_report.txt` and `analysis_report.txt` generation
+- [x] GOW3 lift snapshot reports 1,285,560 translated instruction instances, zero unimplemented, across 157 chunks
+- [~] Instruction semantics remain uneven; some long-tail operations are approximate or emitted as no-ops
+- [~] Atomic instruction reservation handling exists, but full architectural behavior requires validation
+- [~] Common FPU/FPSCR operations are present; full FPSCR behavior is not complete
+- [~] VMX/AltiVec support includes selected operations and approximations for other decoded forms
+- [ ] Differentially validate instruction behavior against a trusted PowerPC implementation
+- [ ] Complete PRX/NID import and export resolution
+- [ ] Expand regression coverage for every supported instruction family
+
+Acceptance: supported instructions pass differential tests, and a homebrew sample produces the expected output. Static translation counts alone do not satisfy this criterion.
+
+## Phase 3: PPU runtime correctness
+
+### 3A. CPU state and memory
+
+- [x] Big-endian guest memory helpers, GPR/FPR/vector register storage, CR comparisons, branch helpers, and LR/CTR state
+- [x] Demand-commit guest-memory helper on Windows
+- [~] Guest PC escape handling can return through LR with a bounded retry path
 - [ ] Full XER CA/OV/SO and FPSCR modeling
-- [ ] Differential tests against RPCS3 interpreter
+- [ ] Differential tests for branch conditions, exceptions, memory ordering, and register side effects
 
-### 3b - OS and library compatibility
-- [x] Exit and tty-write syscalls
-- [~] Memory-management syscalls (simple heap pool)
-- [ ] PPU threads, synchronization, timers
-- [ ] Filesystem HLE
-- [ ] Common PRX modules (sysutil, pad, audio, gcm, spurs, save, libc)
+### 3B. OS and library compatibility
 
-### 3c - Performance and threading
-- [ ] Host-thread scheduling for PPU threads
-- [ ] Function-level codegen, register caching
-- [ ] Optional PGO/LTO
-- Acceptance: multithreaded tests match expected output. **Not met.**
+- [x] Basic exit and tty-write syscall handling
+- [~] Simple guest heap pool and selected memory-management behavior
+- [ ] PPU thread scheduling, synchronization primitives, and timers
+- [ ] Filesystem and save-data HLE
+- [ ] Common PRX modules including sysutil, pad, audio, GCM, SPURS, save-data, and libc compatibility
 
-## Phase 4 - SPU execution
-- [x] SPU context skeleton (LS store, mailbox, MFC DMA API)
-- [x] LV2 SPU syscalls stubbed to CELL_OK
-- [ ] Full SPU ISA lift from extracted images
-- [ ] SPURS/task HLE and host-thread scheduling
-- Acceptance: homebrew SPU test correct. **Not met.**
+### 3C. Performance
 
-## Phase 5 - RSX graphics
-- [x] Graphics backend selector API and GUI setting
-- [ ] GCM / cellGcmSys HLE, NV47 state, shader translate, backends
-- Acceptance: homebrew render tests. **Not met.**
+- [ ] Host scheduling that honors configured PPU thread count
+- [ ] Function-level code generation, register caching, and profile-guided optimization
 
-## Phase 6 - Native output generation
-- [x] MSVC path emits `game.exe` + `ps3rt.dll` + `guest_image.bin`
-- [x] Post-build cleanup; reports retained at project root / output
-- [~] Runtime validation: starts; external stub mitigates early leave-range
-- [ ] Single-file embed; incremental build UX
-- Acceptance: guest executes correctly without leaving range. **Not met.**
+Acceptance: runtime tests match expected output and do not leave the translated guest-code range unexpectedly.
 
-## Current GOW3 measurement
+## Phase 4: SPU
 
-1,285,560 instruction instances, 1,285,560 translated, 0 unimplemented, 157 chunks (100% static translation for this snapshot). Does not prove semantic correctness or game compatibility.
+- [x] SPU context and local-store structures
+- [x] Stub APIs for SPU create/destroy/load/run/stop, mailboxes, signals, and MFC DMA
+- [ ] Full SPU instruction-set interpreter or lifter
+- [ ] Correct SPU scheduling, DMA semantics, event behavior, and SPURS/task support
+
+The existing SPU run path is a stub, not functional SPU execution.
+
+## Phase 5: RSX graphics
+
+- [x] GUI setting for D3D10, D3D11, and Vulkan backend selection
+- [ ] GCM command-buffer and cellGcmSys handling
+- [ ] NV47 graphics state tracking
+- [ ] RSX vertex/fragment program translation and shader execution
+- [ ] Texture formats, swizzling, depth buffers, and render targets
+- [ ] Working Direct3D/Vulkan backend implementation
+
+A backend selector is not evidence that those graphics backends render PS3 output.
+
+## Phase 6: Native output and integration
+
+- [x] C API shared library and CLI frontend
+- [x] Build driver generates build files and invokes host compiler tools
+- [x] Windows output path can emit `game.exe`, `ps3rt.dll`, and `guest_image.bin`
+- [~] Runtime startup and guest-PC escape handling remain experimental
+- [ ] Stable single-file output and incremental builds
+- [ ] CI validation across supported host platforms
+
+Acceptance: synthetic and homebrew guests execute correctly, then compatibility can be evaluated per title.
+
+## Game coverage
+
+### God of War III
+
+The latest supplied snapshot reports 1,285,560 instruction instances translated, zero unimplemented, and 157 chunks. This is 100% static translation coverage for that specific lift report, not proof that all instruction semantics are correct or that GOW3 runs correctly. See [GOW3 record](docs/games/GOW3/GOW3.md).
+
+### Next coverage targets
+
+Use additional games and small purpose-built ELF tests to discover instructions and runtime dependencies not present in the GOW3 snapshot. Keep PPU instruction coverage, SPU execution, RSX graphics, OS/library support, and full-game compatibility as separate metrics.
