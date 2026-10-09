@@ -1,8 +1,8 @@
-# Code of Conduct
+# PPSX33 Code of Conduct
 
 ## Our commitment
 
-We want participation in PS3 Recompiler to be respectful, constructive, and welcoming to everyone.
+We want participation in PPSX33 to be respectful, constructive, and welcoming to everyone.
 
 ## Expected behavior
 
