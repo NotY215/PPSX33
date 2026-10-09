@@ -1,6 +1,6 @@
-# Compilers-files
+# PPSX33 Compiler Files
 
-Optional support files for the per-game native build step.
+Optional support files used by PPSX33 during the per-game native build step.
 
 ## Recommended setup (you have Visual Studio Community)
 
