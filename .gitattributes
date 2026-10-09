@@ -1,0 +1,56 @@
+# Auto detect text files and normalize line endings to LF in the repo
+* text=auto eol=lf
+
+# Windows scripts must stay CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Visual Studio project files (CRLF on Windows is conventional)
+*.sln text eol=crlf
+*.csproj text eol=crlf
+*.vbproj text eol=crlf
+*.vcxproj text eol=crlf
+*.vcxproj.filters text eol=crlf
+*.props text eol=crlf
+*.targets text eol=crlf
+*.resx text eol=crlf
+
+# Source code – LF
+*.c text eol=lf
+*.h text eol=lf
+*.cpp text eol=lf
+*.hpp text eol=lf
+*.cs text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.exe binary
+*.dll binary
+*.lib binary
+*.pdb binary
+*.obj binary
+*.o binary
+*.a binary
+*.so binary
+*.dylib binary
+*.bin binary
+*.elf binary
+*.zip binary
+*.7z binary
+*.rar binary
+
+# Documents
+*.pdf binary
