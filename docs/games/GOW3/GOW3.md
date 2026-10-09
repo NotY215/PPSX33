@@ -1,19 +1,19 @@
 # PPSX33 Game Record: God of War III (GOW3)
 
-## Latest lift statistics
+## Lift statistics
 
 | Metric | Count |
 | --- | ---: |
-| Instructions | 1,285,560 |
-| Translated / implemented | 1,285,560 |
-| Unimplemented | 0 |
+| Instruction instances | 1,285,560 |
+| Translated / implemented in report | 1,285,560 |
+| Unimplemented in report | 0 |
 | Chunks | 157 |
-| Static translation coverage | 100% |
+| Reported static translation coverage | 100% |
 
-The latest supplied lift report records all 1,285,560 instruction instances as translated, with zero unimplemented instructions across 157 chunks.
+The accompanying [lift report](GOW3_lift_report.txt) contains the raw totals.
 
-## Interpretation and limitations
+## Interpretation
 
-This result indicates complete static translation for this particular GOW3 lift snapshot. It does not, by itself, prove that every translated instruction behaves correctly or that the game boots, renders, or is playable. Runtime correctness, system calls, PRX imports, SPU workloads, RSX graphics, and guest control flow must be validated separately.
+The current snapshot classifies all 1,285,560 instruction instances as translated. This is a static-lifting metric for this input and report only. It does not mean that every emitted instruction has exact PowerPC semantics, nor does it establish successful boot, correct rendering, or playability. The lifter contains approximate handling and no-op fallbacks for some less common operations.
 
-Update this record when a newer lift report changes the measurements.
+Runtime correctness, system calls, PRX imports, SPU workloads, RSX graphics, and guest control flow must be validated independently. Use this record alongside [PPU coverage](../../PPU_COVERAGE.md); do not generalize the result to every game or the complete PowerPC ISA.
