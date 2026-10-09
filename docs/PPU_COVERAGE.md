@@ -1,25 +1,38 @@
 # PPSX33 PPU Instruction Coverage
 
-## God of War III lift snapshot
+## Latest GOW3 lift snapshot
 
 | Metric | Result |
 | --- | ---: |
 | Instruction instances | 1,285,560 |
-| Translated / implemented | 1,285,560 (100%) |
-| Unimplemented | 0 |
+| Translated / implemented in report | 1,285,560 |
+| Unimplemented in report | 0 |
 | Chunks | 157 |
-| Static translation coverage | 100% |
-| MSVC artifact build | Successful: `game.exe` and `ps3rt.dll` |
-| Runtime execution | Incomplete: execution starts, then the guest PC leaves the recompiled range |
+| Reported static translation coverage | 100% |
+| Runtime/game compatibility | Not established |
 
-The current GOW3 lift report records no unimplemented instructions for this snapshot. This is a per-snapshot result, not proof that PPSX33 supports every PowerPC instruction or every instruction used by other games.
+The source report is stored at [`docs/games/GOW3/GOW3_lift_report.txt`](games/GOW3/GOW3_lift_report.txt). The detailed game record is [`docs/games/GOW3/GOW3.md`](games/GOW3/GOW3.md).
 
-## Implemented instruction groups
+## What the count means
 
-The lifter's implementation is tracked in `src/core/ppu_lifter.cpp`. The GOW3 report measures the instructions encountered in this specific lift; use dedicated tests and additional games to discover gaps outside this sample.
+The report records that the lifter classified every instruction instance in this particular snapshot as translated. It does not prove that each emitted operation preserves PowerPC semantics. Some long-tail instructions are approximate or no-op fallbacks, so “zero unimplemented” must not be interpreted as “every instruction is correctly implemented.”
+
+Other games may exercise instructions, instruction encodings, code paths, or runtime dependencies absent from this snapshot. Add focused regression tests and additional game samples rather than generalizing one lift to the whole PowerPC ISA.
+
+## Current implementation areas
+
+The implementation lives primarily in `src/core/ppu_lifter.cpp` and the generated-code helpers in `runtime/ppu_runtime.h`.
+
+- Integer arithmetic, logical operations, shifts/rotates, and common loads/stores
+- Branches, condition-register helpers, and LR/CTR access
+- Selected floating-point operations and FPSCR-related handling
+- Selected VMX/AltiVec loads, stores, logic, splat, and approximate fallback paths
+- Baseline reservation fields for atomic instruction families
+
+These are broad implementation areas, not a claim of complete ISA correctness.
 
 ## Runtime diagnostics
 
-When the guest PC leaves the recompiled range, the runtime reports `pc`, `lr`, `ctr`, `r1`, and `r2`. These values are diagnostic evidence, not a definitive root-cause diagnosis. Runtime investigation should check branch target calculations, LR/CTR state, indirect branches, missing lifted chunks, and function-descriptor/OPD handling.
+The runtime records diagnostic state such as guest PC, LR, CTR, stack pointer, and TOC when execution leaves the translated range. Investigate branch target calculations, indirect branches, missing translated chunks, function descriptors/OPD handling, and return behavior. Diagnostics are clues, not a definitive root-cause report.
 
-MSVC currently emits `game.exe` and `ps3rt.dll`, but correct guest execution and game compatibility are not established. PPU instruction coverage, system-call and PRX support, SPU execution, and RSX graphics are separate requirements.
+PPU translation is only one requirement. System calls, PRX imports, SPU execution, RSX graphics, and runtime control flow must be validated separately.
