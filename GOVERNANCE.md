@@ -1,6 +1,6 @@
-# Governance
+# PPSX33 Governance
 
-PS3 Recompiler is currently maintained as an individual-led open-source project under the NotY215 account.
+PPSX33 is currently maintained as an individual-led open-source project under the NotY215 account.
 
 ## Decisions
 
