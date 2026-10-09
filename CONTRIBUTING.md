@@ -1,6 +1,6 @@
-# Contributing
+# Contributing to PPSX33
 
-Thanks for helping improve PS3 Recompiler.
+Thanks for helping improve PPSX33.
 
 ## Before opening a change
 
