@@ -1,38 +1,43 @@
 # Compilers-files
 
-Optional. Used only if Visual Studio / MSVC is not detected.
+Optional support files for the per-game native build step.
 
-## Preferred: Visual Studio Community (MSVC)
+## Recommended setup (you have Visual Studio Community)
 
-If you have Visual Studio Community with the **Desktop development with C++**
-workload installed, you do **not** need anything in this folder.
-
-The build driver finds `vcvars64.bat` automatically (via vswhere or common
-paths) and compiles the game with `cl.exe` + `link.exe`.
-
-Just press **3. Build exe + dll** in the GUI.
-
-## Optional fallback: MinGW-w64
-
-Only needed if MSVC is not installed. In that case put a **complete**
-MinGW-w64 tree here (not just g++.exe):
+1. Install workload **Desktop development with C++** (so `vcvars64.bat` exists).
+2. Optionally copy the MSVC tools bin folder here:
 
 ```
 Compilers-files/
-  g++.exe
-  gcc.exe
-  ninja.exe
-  libgcc_s_seh-1.dll
-  libstdc++-6.dll
-  libwinpthread-1.dll
-  libexec/gcc/.../cc1plus.exe   <-- required
-  lib/
-  include/
-  x86_64-w64-mingw32/
+  MSCV/          <-- or MSVC/
+    cl.exe
+    link.exe
+    ... (contents of VC/Tools/MSVC/<ver>/bin/Hostx64/x64)
 ```
 
-A lone g++.exe will be ignored (it cannot find cc1plus).
+The build driver:
+- Calls `vcvars64.bat` for INCLUDE / LIB / Windows SDK
+- Prefers `cl.exe` from `Compilers-files/MSCV` or `Compilers-files/MSVC` if present
+- Otherwise uses the `cl` from the Visual Studio install
+
+You do **not** need MinGW.
+
+## What you can delete
+
+From a Hostx64/x64 dump you mainly need:
+
+- `cl.exe`, `c1.dll`, `c1xx.dll`, `c2.dll`
+- `link.exe`, `mspdbcore.dll` / `mspdb*.dll`
+- Related MSVC runtime DLLs that cl/link need
+
+You can remove UI tools, analyzers, and other extras if you want a smaller folder.
+Keep whatever `cl.exe` fails on when missing (it will name the DLL).
+
+## MinGW fallback
+
+Only if MSVC is completely unavailable. Needs a full MinGW-w64 tree
+(including `libexec/.../cc1plus.exe`), not a lone `g++.exe`.
 
 ## .NET
 
-Do not put any .NET files here. The GUI uses a normal system .NET 8 SDK.
+Do not put .NET SDK files here.

@@ -50,7 +50,6 @@ bool lift_project(const std::string& project_dir, std::string& log, std::string&
     return true;
 }
 
-// ---------------- build driver ----------------
 namespace {
 #ifdef _WIN32
 const char* kExe = ".exe"; const char* kDll = ".dll";
@@ -79,10 +78,8 @@ int run(const std::string& cmd, std::string& log) {
 #endif
 }
 
-// Locate vcvars64.bat from a Visual Studio install (Community / Professional / BuildTools).
 std::string find_vcvars64() {
 #ifdef _WIN32
-    // 1) vswhere (most reliable)
     const char* vswhere = "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe";
     if (fs::exists(vswhere)) {
         FILE* p = _popen(
@@ -96,16 +93,11 @@ std::string find_vcvars64() {
                 while (!path.empty() && (path.back() == '\n' || path.back() == '\r' || path.back() == ' '))
                     path.pop_back();
                 fs::path vcvars = fs::path(path) / "VC" / "Auxiliary" / "Build" / "vcvars64.bat";
-                if (fs::exists(vcvars)) {
-                    _pclose(p);
-                    return vcvars.string();
-                }
+                if (fs::exists(vcvars)) { _pclose(p); return vcvars.string(); }
             }
             _pclose(p);
         }
     }
-
-    // 2) Common install paths (VS 2022 / 2026 / BuildTools)
     const char* candidates[] = {
         "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat",
         "C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Auxiliary\\Build\\vcvars64.bat",
@@ -123,16 +115,26 @@ std::string find_vcvars64() {
     return {};
 }
 
+// Look for cl.exe under Compilers-files (MSCV, MSVC, or root).
+std::string find_bundled_cl(const fs::path& compilers_dir) {
+    const char* subdirs[] = { "MSCV", "MSVC", "msvc", "mscv", "" };
+    for (auto sub : subdirs) {
+        fs::path p = sub[0] ? (compilers_dir / sub / "cl.exe") : (compilers_dir / "cl.exe");
+        if (fs::exists(p)) return p.string();
+    }
+    return {};
+}
+
 std::string find_tool(const fs::path& dir, const std::vector<std::string>& names) {
     for (const auto& n : names) {
         fs::path p = dir / (n + (std::string(kExe) == ".exe" ? ".exe" : ""));
         if (!fs::exists(p)) continue;
         if (n == "g++" || n == "c++" || n == "gcc") {
-            if (!fs::exists(dir / "libexec")) continue; // incomplete MinGW
+            if (!fs::exists(dir / "libexec")) continue;
         }
         return p.string();
     }
-    return names.front(); // PATH fallback
+    return names.front();
 }
 
 } // namespace
@@ -167,41 +169,45 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         fs::copy_file(from, src / n, ow, ec);
         if (std::string(n).find(".cpp") != std::string::npos) rtSrc.push_back(n);
     }
-
     fs::create_directories(out / "obj", ec);
 
 #ifdef _WIN32
-    // ---------- Prefer MSVC (Visual Studio Community) ----------
     std::string vcvars = find_vcvars64();
-    bool use_msvc = !vcvars.empty();
+    std::string bundled_cl = find_bundled_cl(compilers_dir);
+    bool use_msvc = !vcvars.empty() || !bundled_cl.empty();
 
     if (use_msvc) {
-        log += "Using MSVC via: " + vcvars + "\n";
+        if (!vcvars.empty())
+            log += "Using MSVC environment: " + vcvars + "\n";
+        if (!bundled_cl.empty())
+            log += "Bundled cl.exe: " + bundled_cl + "\n";
 
-        // Write a single build.bat that sets up the VS environment once, then compiles everything.
-        // This avoids the need for MinGW entirely when VS is installed.
+        // cl from vcvars PATH is preferred (full SDK). Bundled cl is used only if
+        // we prepend its directory after vcvars, or alone when vcvars is missing.
         fs::path bat = out / "build_msvc.bat";
         {
             std::ofstream f(bat);
-            f << "@echo off\n"
-                 "setlocal\n"
-                 "call " << q(vcvars) << " || exit /b 1\n"
-                 "cd /d " << q(out.string()) << "\n"
-                 "if not exist obj mkdir obj\n"
-                 "\n";
+            f << "@echo off\nsetlocal\n";
+            if (!vcvars.empty())
+                f << "call " << q(vcvars) << " || exit /b 1\n";
+            if (!bundled_cl.empty()) {
+                // Put bundled Hostx64\\x64 first so its cl/link are used,
+                // while INCLUDE/LIB still come from vcvars when available.
+                fs::path bin_dir = fs::path(bundled_cl).parent_path();
+                f << "set PATH=" << bin_dir.string() << ";%PATH%\n";
+            }
+            f << "cd /d " << q(out.string()) << "\n"
+                 "if not exist obj mkdir obj\n\n";
 
-            // Runtime -> ps3rt.dll
             std::string rt_objs;
             for (auto& n : rtSrc) {
                 std::string obj = "obj\\rt_" + n + ".obj";
-                // /O2 /std:c++17 /EHsc /MD /DPS3RT_BUILD_DLL /I src
                 f << "cl /nologo /O2 /std:c++17 /EHsc /MD /DPS3RT_BUILD_DLL=1 /I src "
                      "/c src\\" << n << " /Fo" << obj << " || exit /b 1\n";
                 rt_objs += " " + obj;
             }
             f << "link /nologo /DLL /OUT:ps3rt.dll" << rt_objs << " || exit /b 1\n\n";
 
-            // Generated game code -> game.exe
             std::string game_objs;
             for (auto& n : gameSrc) {
                 std::string obj = "obj\\g_" + n + ".obj";
@@ -220,7 +226,9 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         fs::current_path(prev, ec);
 
         if (rc != 0) {
-            err = "MSVC build failed. See log.";
+            err = "MSVC build failed. See log. "
+                  "If headers/libs are missing, install the \"Desktop development with C++\" workload "
+                  "so vcvars64.bat can set INCLUDE and LIB.";
             return false;
         }
         log += "Build OK: output/game.exe + output/ps3rt.dll + output/guest_image.bin (MSVC)\n";
@@ -228,55 +236,44 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     }
 #endif
 
-    // ---------- Fallback: g++ / MinGW ----------
+    // g++ fallback
     fs::path cdir(compilers_dir);
     std::string cxx = find_tool(cdir, {"g++", "c++"});
     std::string ninja = find_tool(cdir, {"ninja"});
-
-    log += "MSVC (vcvars64.bat) not found. Falling back to g++.\n";
-    if (cxx == "g++" || cxx == "c++") {
-        log += "Using system g++ from PATH.\n";
-    }
+    log += "MSVC not found. Falling back to g++.\n";
 
     std::vector<Step> steps;
     std::string cflags = "-O2 -std=c++17 -I src";
     std::vector<std::string> gameObjs, rtObjs;
-
     for (auto& n : rtSrc) {
         std::string o = "obj/rt_" + n + ".o";
-        steps.push_back({{ "src/" + n }, o,
-            q(cxx) + " " + cflags + " -DPS3RT_BUILD_DLL=1 -fPIC -c src/" + n + " -o " + o});
+        steps.push_back({{ "src/" + n }, o, q(cxx) + " " + cflags + " -DPS3RT_BUILD_DLL=1 -fPIC -c src/" + n + " -o " + o});
         rtObjs.push_back(o);
     }
     std::string dll = std::string("ps3rt") + kDll;
     {
-        std::string objs;
-        for (auto& o : rtObjs) objs += " " + o;
+        std::string objs; for (auto& o : rtObjs) objs += " " + o;
         steps.push_back({rtObjs, dll, q(cxx) + " -shared" + objs + " -o " + dll});
     }
     for (auto& n : gameSrc) {
         std::string o = "obj/g_" + n + ".o";
-        steps.push_back({{ "src/" + n }, o,
-            q(cxx) + " " + cflags + " -c src/" + n + " -o " + o});
+        steps.push_back({{ "src/" + n }, o, q(cxx) + " " + cflags + " -c src/" + n + " -o " + o});
         gameObjs.push_back(o);
     }
     {
-        std::string objs;
-        for (auto& o : gameObjs) objs += " " + o;
+        std::string objs; for (auto& o : gameObjs) objs += " " + o;
         std::string rpath;
 #ifndef _WIN32
         rpath = " -Wl,-rpath,'$ORIGIN'";
 #endif
         std::string exe = std::string("game") + kExe;
-        std::vector<std::string> ins = gameObjs;
-        ins.push_back(dll);
+        std::vector<std::string> ins = gameObjs; ins.push_back(dll);
         steps.push_back({ins, exe, q(cxx) + objs + " ./" + dll + rpath + " -o " + exe});
     }
 
     {
         std::ofstream n(out / "build.ninja");
-        n << "# GENERATED by ps3core build driver (g++ fallback)\n"
-             "rule run\n  command = $cmd\n  description = $out\n\n";
+        n << "# GENERATED (g++ fallback)\nrule run\n  command = $cmd\n  description = $out\n\n";
         for (auto& s : steps) {
             std::string c = s.cmd, esc;
             for (char ch : c) { if (ch == '$') esc += "$$"; else esc += ch; }
@@ -289,22 +286,14 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     auto prev = fs::current_path(ec);
     fs::current_path(out, ec);
     int rc = 0;
-    if (fs::exists(ninja)) {
-        rc = run(q(ninja), log);
-    } else {
+    if (fs::exists(ninja)) rc = run(q(ninja), log);
+    else {
         log += "(ninja not found, compiling sequentially)\n";
-        for (auto& s : steps) {
-            rc = run(s.cmd, log);
-            if (rc != 0) break;
-        }
+        for (auto& s : steps) { rc = run(s.cmd, log); if (rc != 0) break; }
     }
     fs::current_path(prev, ec);
-
-    if (rc != 0) {
-        err = "Build failed. See log.";
-        return false;
-    }
-    log += "Build OK: output/game" + std::string(kExe) + " + output/" + dll + " + output/guest_image.bin (g++)\n";
+    if (rc != 0) { err = "Build failed. See log."; return false; }
+    log += "Build OK: output/game" + std::string(kExe) + " + output/" + std::string("ps3rt") + kDll + " (g++)\n";
     return true;
 }
 
