@@ -2,8 +2,8 @@
 
 PPSX33 is an open-source development project. The repository code does not intentionally implement account creation, analytics, telemetry, or a project-operated data collection service.
 
-The GUI and CLI process local paths and files supplied by the user, including ELF inputs, project output, and diagnostic reports. Reports may contain addresses, symbol names, module strings, or other information extracted from the input file. Review logs and reports before sharing them.
+The GUI and CLI process local paths and files supplied for analysis, including ELF inputs, project outputs, and diagnostic reports. Reports may contain addresses, symbol names, module strings, local paths, or information extracted from input files. Review reports before publishing them.
 
-When you use GitHub, open issues or pull requests, or contact maintainers, GitHub and the relevant communication service may process information under their own privacy policies. Do not include passwords, access tokens, private keys, personal information, or other sensitive data in public issues or logs.
+GitHub and other communication services may process information under their own privacy policies when issues, pull requests, or external services are used. Passwords, access tokens, private keys, and personal information must not be included in public issues or logs.
 
-Treat game dumps and generated output as potentially sensitive and share them only when you have the legal right to do so. This document describes the project's intended behavior; it is not legal advice and does not override third-party service privacy terms.
+Game dumps and generated output may contain copyrighted or sensitive data. Share them only when legally authorized. This document describes intended project behavior and does not override third-party privacy terms.
