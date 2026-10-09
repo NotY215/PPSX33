@@ -36,6 +36,12 @@ project.lock.json
 artifacts/
 
 # ------------------------------------------------------------
+# Compilers-files – never commit the toolchain binaries
+# ------------------------------------------------------------
+Compilers-files/*
+!Compilers-files/README.md
+
+# ------------------------------------------------------------
 # CMake generated (outside build/)
 # ------------------------------------------------------------
 CMakeCache.txt
