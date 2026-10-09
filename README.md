@@ -14,7 +14,7 @@ Languages: **C++** (core, lifter, runtime), **C** (low-level helpers), **C#** (W
 | Phase | Goal | Status |
 |------:|------|--------|
 | 1 | UI + project folders | **Done (untested build)**: WinForms GUI written but *not compiled yet* (no .NET SDK was available when written). Native side is tested. |
-| 2 | ELF decompile | **Partial**: ELF64-BE loader + PPU lifter for ~40 common instructions (see `docs/PPU_COVERAGE.md`). Real games need hundreds more (FPU, VMX/AltiVec, atomics, 64-bit ops, ...). |
+| 2 | ELF decompile | **Partial**: ELF64-BE loader + PPU lifter for ~40 common instructions (see `docs/PPU_COVERAGE.md`). Current God of War III analysis: 1,285,560 instruction instances across 157 chunks, with 1,103,166 translated and 182,394 unimplemented. See [game coverage records](docs/games/README.md) and [GOW3 details](docs/games/GOW3.md). |
 | 3 | PPU code -> x86-64 on a normal 4c/4t CPU | **Baseline works**: single-threaded generated C++, correct control flow, big-endian guest memory. Multithreading, fast paths, function splitting: TODO. |
 | 4 | SPU | **TODO** (`runtime/spu_stub.cpp` placeholder). |
 | 5 | RSX -> DirectX 10 / 11 / Vulkan | **TODO** (`runtime/rsx_stub.cpp` placeholder; backend selector exists). |
@@ -43,7 +43,9 @@ Build tools are bundled in `Compilers-files/` (see its README): `cl.exe`, `g++.e
 PS3/
   README.md  ROADMAP.md  CMakeLists.txt  .gitignore
   Compilers-files/        bundled toolchain (not committed; README lists files)
-  docs/PPU_COVERAGE.md    which PowerPC instructions are lifted / TODO list
+  docs/PPU_COVERAGE.md    instruction implementation notes and known gaps
+  docs/games/README.md    index of games used for recompiler coverage work
+  docs/games/GOW3.md      God of War III lift statistics and current coverage
   runtime/                SOURCE shipped next to the app; compiled per game into ps3rt.dll / game.exe
     ppu_runtime.h         PPUContext, big-endian memory helpers, branch helpers, ppu_run()  (header used by generated code)
     ps3rt.cpp             guest memory (4 GB virtual), guest_image.bin loader, HLE syscalls
