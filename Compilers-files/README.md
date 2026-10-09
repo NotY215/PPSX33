@@ -1,43 +1,58 @@
-# PPSX33 Compiler Files
+# PPSX33 Compiler Setup
 
-This directory contains optional third-party toolchain files used by PPSX33 during the per-game native build step. The repository currently includes an MSVC tool subset under `MSCV/`, including `cl.exe`, `link.exe`, and supporting DLLs. These are Microsoft-owned components, not PPSX33 code. Review `../THIRD_PARTY.md` and Microsoft's applicable license terms before redistributing them.
+PPSX33 uses the Microsoft C/C++ compiler and linker to build the generated Windows executable and runtime DLL. The recommended toolchain is the latest stable **Visual Studio 2026 (version 18)** installation with the C++ desktop workload.
 
-## Recommended setup (you have Visual Studio Community)
+## 1. Install the toolchain
 
-1. Install Visual Studio or Build Tools with the **Desktop development with C++** workload and a Windows SDK so the compiler environment and libraries are available.
-2. The repository has a subset of MSVC tools in `MSCV/`; keep a matching licensed Visual Studio installation for the remaining headers, libraries, SDK files, and environment setup. Do not treat this folder alone as a complete redistributable MSVC installation.
-3. If setting up manually, use the matching MSVC tools bin folder layout:
+1. Download Visual Studio 2026 from https://visualstudio.microsoft.com/downloads/.
+2. In Visual Studio Installer, select **Desktop development with C++**.
+3. Include the latest MSVC x64/x86 build tools and a Windows 11 SDK.
+4. Install the **.NET desktop development** workload and the .NET targeting pack required by the project. The GUI project currently targets `net8.0-windows`.
+5. Install the latest CMake and Ninja versions if they are not included in the selected Visual Studio components.
 
+Official references:
+- Visual Studio 2026: https://visualstudio.microsoft.com/downloads/
+- C++ workload: https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-community
+- .NET installation and Visual Studio compatibility: https://learn.microsoft.com/en-us/dotnet/core/install/windows
+
+## 2. Populate this folder for the local build
+
+Open **x64 Native Tools Command Prompt for VS 2026** from the Start menu and run:
+
+```bat
+where cl
+where link
+where cmake
+where ninja
+where dotnet
 ```
-Compilers-files/
-  MSCV/          <-- or MSVC/
-    cl.exe
-    link.exe
-    ... (contents of VC/Tools/MSVC/<ver>/bin/Hostx64/x64)
+
+The MSVC compiler tools are installed in a versioned directory similar to:
+
+```text
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\<toolset-version>\bin\Hostx64\x64\
 ```
 
-The build driver uses the MSVC compiler/linker path when available, relying on the Visual Studio environment for INCLUDE/LIB/Windows SDK settings. It prefers `cl.exe` under `Compilers-files/MSCV` or `Compilers-files/MSVC`, otherwise it can use the installed Visual Studio compiler.
+The edition directory may be `Community`, `Professional`, `Enterprise`, or `BuildTools`, depending on the installation.
 
-**Current validation:** MSVC successfully builds `game.exe` and `ps3rt.dll`. Launching the output currently starts execution but then leaves the recompiled guest-code range, so runtime correctness is still under investigation.
+For a local tool staging setup, create `Compilers-files\MSCV\` and copy the **complete contents** of the matching `Hostx64\x64\` directory into it. Keep the compiler and linker together with their matching support files, including files such as `cl.exe`, `link.exe`, `c1.dll`, `c1xx.dll`, `c2.dll`, and the matching PDB/runtime support DLLs. The exact filenames vary by toolset version, so use the contents installed by Visual Studio rather than mixing files from different versions.
 
-You do **not** need MinGW.
+The compiler directory alone does not provide the Windows SDK headers/libraries or the full Visual Studio build environment. Run the build from a Visual Studio developer environment so the matching INCLUDE, LIB, SDK, and tool paths are configured.
 
-## What you can delete
+## 3. Build PPSX33
 
-From a Hostx64/x64 dump you mainly need:
+From the repository root, run:
 
-- `cl.exe`, `c1.dll`, `c1xx.dll`, `c2.dll`
-- `link.exe`, `mspdbcore.dll` / `mspdb*.dll`
-- Related MSVC runtime DLLs that cl/link need
+```bat
+scripts\build_all.bat
+```
 
-You can remove UI tools, analyzers, and other extras if you want a smaller folder, provided the toolchain still works. Keep Microsoft's license and redistribution terms in mind; do not redistribute files unless permitted.
-Keep whatever `cl.exe` fails on when missing (it will name the DLL).
+The build output is placed in `build\dist\`. The GUI executable is `build\dist\PS3Recomp.exe`.
 
-## MinGW fallback
+For an individual recompiled game, the current MSVC path can emit `game.exe` and `ps3rt.dll`. Successful compilation confirms that the artifacts were produced; it does not confirm that the guest program runs correctly. Current runtime validation shows the program starts and then leaves the recompiled guest-code range.
 
-Only if MSVC is completely unavailable. Needs a full MinGW-w64 tree
-(including `libexec/.../cc1plus.exe`), not a lone `g++.exe`.
+## 4. Licensing
 
-## .NET
+MSVC and Visual Studio files are Microsoft software governed by Microsoft's license terms. Install and use Visual Studio under its applicable license. Before sharing a public repository or release, review Microsoft's redistribution terms and the licenses for every included file. Do not publish proprietary compiler binaries in this repository unless the applicable terms explicitly permit that distribution.
 
-Do not put .NET SDK files here.
+See [THIRD_PARTY.md](../THIRD_PARTY.md) for dependency and licensing information.
