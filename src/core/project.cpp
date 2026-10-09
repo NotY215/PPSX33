@@ -60,12 +60,26 @@ const char* kExe = "";     const char* kDll = ".so";
 
 struct Step { std::vector<std::string> in; std::string out; std::string cmd; };
 
+// Prefer a tool from compilers_dir only if it looks usable.
+// A lone g++.exe without libexec/.../cc1plus.exe is not usable.
 std::string find_tool(const fs::path& dir, const std::vector<std::string>& names) {
     for (const auto& n : names) {
         fs::path p = dir / (n + (std::string(kExe) == ".exe" ? ".exe" : ""));
-        if (fs::exists(p)) return p.string();
+        if (!fs::exists(p)) continue;
+
+        // Heuristic: if this is g++/c++/gcc, require that libexec exists nearby
+        // (otherwise cc1plus will fail with CreateProcess).
+        if (n == "g++" || n == "c++" || n == "gcc") {
+            fs::path libexec = dir / "libexec";
+            if (!fs::exists(libexec)) {
+                // incomplete toolchain in Compilers-files, skip it
+                continue;
+            }
+        }
+        return p.string();
     }
-    return names.front();   // fall back to PATH lookup
+    // Fall back to bare name so the system PATH is used
+    return names.front();
 }
 
 int run(const std::string& cmd, std::string& log) {
@@ -96,13 +110,16 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     fs::create_directories(src, ec);
     if (!fs::exists(code / "ppu_chunks.cpp")) { err = "Run the lift step first (codebase is empty)."; return false; }
 
-    // 1) gather sources into output/src
     const fs::copy_options ow = fs::copy_options::overwrite_existing;
     std::vector<std::string> gameSrc, rtSrc;
     for (auto& e : fs::directory_iterator(code)) {
         std::string n = e.path().filename().string();
-        if (n.rfind("ppu_chunk", 0) == 0 || n == "game_main.cpp") { fs::copy_file(e.path(), src / n, ow, ec); if (e.path().extension() == ".cpp") gameSrc.push_back(n); }
-        else if (n == "image_info.h") fs::copy_file(e.path(), src / n, ow, ec);
+        if (n.rfind("ppu_chunk", 0) == 0 || n == "game_main.cpp") {
+            fs::copy_file(e.path(), src / n, ow, ec);
+            if (e.path().extension() == ".cpp") gameSrc.push_back(n);
+        } else if (n == "image_info.h") {
+            fs::copy_file(e.path(), src / n, ow, ec);
+        }
     }
     fs::copy_file(code / "guest_image.bin", out / "guest_image.bin", ow, ec);
     for (const char* n : {"ppu_runtime.h", "ps3rt.cpp", "spu_stub.cpp", "rsx_stub.cpp"}) {
@@ -112,54 +129,86 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         if (std::string(n).find(".cpp") != std::string::npos) rtSrc.push_back(n);
     }
 
-    // 2) pick compiler / ninja
     fs::path cdir(compilers_dir);
     std::string cxx = find_tool(cdir, {"g++", "c++"});
     std::string ninja = find_tool(cdir, {"ninja"});
 
-    // 3) steps
+    if (cxx == "g++" || cxx == "c++") {
+        log += "Note: using system compiler from PATH (Compilers-files has no complete MinGW tree).\n";
+        log += "To make builds self-contained, copy a full MinGW-w64 tree into Compilers-files\n";
+        log += "(see Compilers-files/README.md). Need libexec/.../cc1plus.exe etc.\n";
+    }
+
     std::vector<Step> steps;
     std::string cflags = "-O2 -std=c++17 -I src";
     std::vector<std::string> gameObjs, rtObjs;
-    for (auto& n : rtSrc)   { std::string o = "obj/rt_" + n + ".o";   steps.push_back({{"src/" + n}, o, q(cxx) + " " + cflags + " -DPS3RT_BUILD_DLL=1 -fPIC -c src/" + n + " -o " + o}); rtObjs.push_back(o); }
+    for (auto& n : rtSrc) {
+        std::string o = "obj/rt_" + n + ".o";
+        steps.push_back({{ "src/" + n }, o, q(cxx) + " " + cflags + " -DPS3RT_BUILD_DLL=1 -fPIC -c src/" + n + " -o " + o});
+        rtObjs.push_back(o);
+    }
     std::string dll = std::string("ps3rt") + kDll;
     {
-        std::string objs; for (auto& o : rtObjs) objs += " " + o;
+        std::string objs;
+        for (auto& o : rtObjs) objs += " " + o;
         steps.push_back({rtObjs, dll, q(cxx) + " -shared" + objs + " -o " + dll});
     }
-    for (auto& n : gameSrc) { std::string o = "obj/g_" + n + ".o";    steps.push_back({{"src/" + n}, o, q(cxx) + " " + cflags + " -c src/" + n + " -o " + o}); gameObjs.push_back(o); }
+    for (auto& n : gameSrc) {
+        std::string o = "obj/g_" + n + ".o";
+        steps.push_back({{ "src/" + n }, o, q(cxx) + " " + cflags + " -c src/" + n + " -o " + o});
+        gameObjs.push_back(o);
+    }
     {
-        std::string objs; for (auto& o : gameObjs) objs += " " + o;
+        std::string objs;
+        for (auto& o : gameObjs) objs += " " + o;
         std::string rpath;
 #ifndef _WIN32
         rpath = " -Wl,-rpath,'$ORIGIN'";
 #endif
         std::string exe = std::string("game") + kExe;
-        std::vector<std::string> ins = gameObjs; ins.push_back(dll);
+        std::vector<std::string> ins = gameObjs;
+        ins.push_back(dll);
         steps.push_back({ins, exe, q(cxx) + objs + " ./" + dll + rpath + " -o " + exe});
     }
     fs::create_directories(out / "obj", ec);
 
-    // 4) always write build.ninja (useful for humans / other AIs), then run
     {
         std::ofstream n(out / "build.ninja");
         n << "# GENERATED by ps3core build driver\nrule run\n  command = $cmd\n  description = $out\n\n";
         for (auto& s : steps) {
-            std::string c = s.cmd; std::string esc; for (char ch : c) { if (ch == '$') esc += "$$"; else esc += ch; }
+            std::string c = s.cmd;
+            std::string esc;
+            for (char ch : c) { if (ch == '$') esc += "$$"; else esc += ch; }
             n << "build " << s.out << ": run";
             for (auto& i : s.in) n << " " << i;
             n << "\n  cmd = " << esc << "\n";
         }
     }
+
     auto prev = fs::current_path(ec);
     fs::current_path(out, ec);
     int rc = 0;
-    std::string ninjaPath = ninja;
     bool haveNinja = fs::exists(ninja);
-    if (haveNinja) rc = run(q(ninja), log);
-    else { log += "(ninja not found in Compilers-files, compiling sequentially)\n"; for (auto& s : steps) { rc = run(s.cmd, log); if (rc != 0) break; } }
+    if (haveNinja) {
+        rc = run(q(ninja), log);
+    } else {
+        log += "(ninja not found, compiling sequentially)\n";
+        for (auto& s : steps) {
+            rc = run(s.cmd, log);
+            if (rc != 0) break;
+        }
+    }
     fs::current_path(prev, ec);
-    if (rc != 0) { err = "Build failed. See log."; return false; }
+
+    if (rc != 0) {
+        err = "Build failed. See log.";
+        if (log.find("cc1plus") != std::string::npos) {
+            err += " Compilers-files/g++.exe is incomplete (missing cc1plus). "
+                   "Either install a full MinGW-w64 into Compilers-files (see its README) "
+                   "or remove g++.exe from Compilers-files so the system g++ is used.";
+        }
+        return false;
+    }
     log += "Build OK: output/game" + std::string(kExe) + " + output/" + dll + " + output/guest_image.bin\n";
     return true;
 }
