@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 namespace fs = std::filesystem;
 
@@ -71,7 +72,6 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
 
     case 8:  // subfic
         o << fmt("c.gpr[%u] = (uint64_t)%lld - c.gpr[%u];", rt, (long long)simm, ra);
-        // CA bit in XER not modeled yet
         return true;
 
     case 12: // addic
@@ -91,37 +91,37 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
                  : fmt("c.gpr[%u] = (uint64_t)%lld;", rt, (long long)(simm << 16)));
         return true;
 
-    case 24: o << fmt("c.gpr[%u] = c.gpr[%u] | 0x%llxull;", ra, rt, (unsigned long long)uimm); return true; // ori
-    case 25: o << fmt("c.gpr[%u] = c.gpr[%u] | 0x%llxull;", ra, rt, (unsigned long long)(uimm << 16)); return true; // oris
-    case 26: o << fmt("c.gpr[%u] = c.gpr[%u] ^ 0x%llxull;", ra, rt, (unsigned long long)uimm); return true; // xori
-    case 27: o << fmt("c.gpr[%u] = c.gpr[%u] ^ 0x%llxull;", ra, rt, (unsigned long long)(uimm << 16)); return true; // xoris
-    case 28: o << fmt("c.gpr[%u] = c.gpr[%u] & 0x%llxull; set_cr_signed(c, 0, (int64_t)c.gpr[%u], 0);", ra, rt, (unsigned long long)uimm, ra); return true; // andi.
-    case 29: o << fmt("c.gpr[%u] = c.gpr[%u] & 0x%llxull; set_cr_signed(c, 0, (int64_t)c.gpr[%u], 0);", ra, rt, (unsigned long long)(uimm << 16), ra); return true; // andis.
+    case 24: o << fmt("c.gpr[%u] = c.gpr[%u] | 0x%llxull;", ra, rt, (unsigned long long)uimm); return true;
+    case 25: o << fmt("c.gpr[%u] = c.gpr[%u] | 0x%llxull;", ra, rt, (unsigned long long)(uimm << 16)); return true;
+    case 26: o << fmt("c.gpr[%u] = c.gpr[%u] ^ 0x%llxull;", ra, rt, (unsigned long long)uimm); return true;
+    case 27: o << fmt("c.gpr[%u] = c.gpr[%u] ^ 0x%llxull;", ra, rt, (unsigned long long)(uimm << 16)); return true;
+    case 28: o << fmt("c.gpr[%u] = c.gpr[%u] & 0x%llxull; set_cr_signed(c, 0, (int64_t)c.gpr[%u], 0);", ra, rt, (unsigned long long)uimm, ra); return true;
+    case 29: o << fmt("c.gpr[%u] = c.gpr[%u] & 0x%llxull; set_cr_signed(c, 0, (int64_t)c.gpr[%u], 0);", ra, rt, (unsigned long long)(uimm << 16), ra); return true;
 
-    case 32: o << fmt("c.gpr[%u] = rd32(c, %s);", rt, ea(simm).c_str()); return true; // lwz
-    case 33: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; c.gpr[%u] = rd32(c, a); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true; // lwzu
-    case 34: o << fmt("c.gpr[%u] = rd8(c, %s);", rt, ea(simm).c_str()); return true;  // lbz
-    case 35: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; c.gpr[%u] = rd8(c, a); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true; // lbzu
-    case 40: o << fmt("c.gpr[%u] = rd16(c, %s);", rt, ea(simm).c_str()); return true; // lhz
-    case 41: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; c.gpr[%u] = rd16(c, a); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true; // lhzu
-    case 42: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int16_t)rd16(c, %s);", rt, ea(simm).c_str()); return true; // lha
-    case 43: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; c.gpr[%u] = (uint64_t)(int64_t)(int16_t)rd16(c, a); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true; // lhau
+    case 32: o << fmt("c.gpr[%u] = rd32(c, %s);", rt, ea(simm).c_str()); return true;
+    case 33: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; c.gpr[%u] = rd32(c, a); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true;
+    case 34: o << fmt("c.gpr[%u] = rd8(c, %s);", rt, ea(simm).c_str()); return true;
+    case 35: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; c.gpr[%u] = rd8(c, a); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true;
+    case 40: o << fmt("c.gpr[%u] = rd16(c, %s);", rt, ea(simm).c_str()); return true;
+    case 41: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; c.gpr[%u] = rd16(c, a); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true;
+    case 42: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int16_t)rd16(c, %s);", rt, ea(simm).c_str()); return true;
+    case 43: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; c.gpr[%u] = (uint64_t)(int64_t)(int16_t)rd16(c, a); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true;
 
-    case 36: o << fmt("wr32(c, %s, (uint32_t)c.gpr[%u]);", ea(simm).c_str(), rt); return true; // stw
-    case 37: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; wr32(c, a, (uint32_t)c.gpr[%u]); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true; // stwu
-    case 38: o << fmt("wr8(c, %s, (uint8_t)c.gpr[%u]);", ea(simm).c_str(), rt); return true;  // stb
-    case 39: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; wr8(c, a, (uint8_t)c.gpr[%u]); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true; // stbu
-    case 44: o << fmt("wr16(c, %s, (uint16_t)c.gpr[%u]);", ea(simm).c_str(), rt); return true; // sth
-    case 45: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; wr16(c, a, (uint16_t)c.gpr[%u]); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true; // sthu
+    case 36: o << fmt("wr32(c, %s, (uint32_t)c.gpr[%u]);", ea(simm).c_str(), rt); return true;
+    case 37: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; wr32(c, a, (uint32_t)c.gpr[%u]); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true;
+    case 38: o << fmt("wr8(c, %s, (uint8_t)c.gpr[%u]);", ea(simm).c_str(), rt); return true;
+    case 39: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; wr8(c, a, (uint8_t)c.gpr[%u]); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true;
+    case 44: o << fmt("wr16(c, %s, (uint16_t)c.gpr[%u]);", ea(simm).c_str(), rt); return true;
+    case 45: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; wr16(c, a, (uint16_t)c.gpr[%u]); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true;
 
-    case 46: { // lmw
+    case 46: {
         o << fmt("{ uint64_t a = %s; ", ea(simm).c_str());
         for (unsigned r = rt; r < 32; ++r)
             o << fmt("c.gpr[%u] = rd32(c, a); a += 4; ", r);
         o << "}";
         return true;
     }
-    case 47: { // stmw
+    case 47: {
         o << fmt("{ uint64_t a = %s; ", ea(simm).c_str());
         for (unsigned r = rt; r < 32; ++r)
             o << fmt("wr32(c, a, (uint32_t)c.gpr[%u]); a += 4; ", r);
@@ -129,36 +129,36 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         return true;
     }
 
-    case 58: { // DS-form loads
+    case 58: {
         int64_t ds = (int16_t)(w & 0xFFFC);
         unsigned x = w & 3;
-        if (x == 0) { o << fmt("c.gpr[%u] = rd64(c, %s);", rt, ea(ds).c_str()); return true; } // ld
-        if (x == 1) { o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; c.gpr[%u] = rd64(c, a); c.gpr[%u] = a; }", ra, (long long)ds, rt, ra); return true; } // ldu
-        if (x == 2) { o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int32_t)rd32(c, %s);", rt, ea(ds).c_str()); return true; } // lwa
+        if (x == 0) { o << fmt("c.gpr[%u] = rd64(c, %s);", rt, ea(ds).c_str()); return true; }
+        if (x == 1) { o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; c.gpr[%u] = rd64(c, a); c.gpr[%u] = a; }", ra, (long long)ds, rt, ra); return true; }
+        if (x == 2) { o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int32_t)rd32(c, %s);", rt, ea(ds).c_str()); return true; }
         break;
     }
-    case 62: { // DS-form stores
+    case 62: {
         int64_t ds = (int16_t)(w & 0xFFFC);
         unsigned x = w & 3;
-        if (x == 0) { o << fmt("wr64(c, %s, c.gpr[%u]);", ea(ds).c_str(), rt); return true; } // std
-        if (x == 1) { o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; wr64(c, a, c.gpr[%u]); c.gpr[%u] = a; }", ra, (long long)ds, rt, ra); return true; } // stdu
+        if (x == 0) { o << fmt("wr64(c, %s, c.gpr[%u]);", ea(ds).c_str(), rt); return true; }
+        if (x == 1) { o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; wr64(c, a, c.gpr[%u]); c.gpr[%u] = a; }", ra, (long long)ds, rt, ra); return true; }
         break;
     }
 
-    case 10: { // cmpli
+    case 10: {
         unsigned bf = (w >> 23) & 7, l = (w >> 21) & 1;
         o << (l ? fmt("set_cr_unsigned(c, %u, c.gpr[%u], 0x%llxull);", bf, ra, (unsigned long long)uimm)
                 : fmt("set_cr_unsigned(c, %u, (uint32_t)c.gpr[%u], 0x%llxull);", bf, ra, (unsigned long long)uimm));
         return true;
     }
-    case 11: { // cmpi
+    case 11: {
         unsigned bf = (w >> 23) & 7, l = (w >> 21) & 1;
         o << (l ? fmt("set_cr_signed(c, %u, (int64_t)c.gpr[%u], %lld);", bf, ra, (long long)simm)
                 : fmt("set_cr_signed(c, %u, (int32_t)c.gpr[%u], %lld);", bf, ra, (long long)simm));
         return true;
     }
 
-    case 21: { // rlwinm
+    case 21: {
         unsigned sh = rb, mb = (w >> 6) & 31, me = (w >> 1) & 31;
         uint64_t m = mask64(mb + 32, me + 32);
         o << fmt("{ uint64_t v = (uint32_t)c.gpr[%u]; v = (v << 32) | v; v = (v << %u) | (%u ? (v >> (64 - %u)) : 0); c.gpr[%u] = v & 0x%llxull; }",
@@ -166,35 +166,30 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         rc0(ra); return true;
     }
 
-    // 64-bit rotate-left doubleword immediate (very common on Cell)
     case 30: {
         unsigned md = (w >> 2) & 0xF;
         unsigned sh = rb | (((w >> 1) & 1) << 5);
         unsigned mb = ((w >> 6) & 0x1F) | ((w & 0x20));
-        unsigned me = mb; // for forms that use me
-        // md encoding:
-        // 0 = rldicl, 1 = rldicr, 2 = rldic, 3 = rldimi
-        // 8 = rldcl,  9 = rldcr  (variable shift – less common)
-        if (md == 0) { // rldicl
+        if (md == 0) {
             uint64_t m = mask64(mb, 63);
             o << fmt("{ uint64_t v = c.gpr[%u]; v = (v << %u) | (%u ? (v >> (64 - %u)) : 0); c.gpr[%u] = v & 0x%llxull; }",
                      rt, sh, sh, sh, ra, (unsigned long long)m);
             rc0(ra); return true;
         }
-        if (md == 1) { // rldicr
-            me = ((w >> 6) & 0x1F) | ((w & 0x20));
+        if (md == 1) {
+            unsigned me = ((w >> 6) & 0x1F) | ((w & 0x20));
             uint64_t m = mask64(0, me);
             o << fmt("{ uint64_t v = c.gpr[%u]; v = (v << %u) | (%u ? (v >> (64 - %u)) : 0); c.gpr[%u] = v & 0x%llxull; }",
                      rt, sh, sh, sh, ra, (unsigned long long)m);
             rc0(ra); return true;
         }
-        if (md == 2) { // rldic
+        if (md == 2) {
             uint64_t m = mask64(mb, 63 - sh);
             o << fmt("{ uint64_t v = c.gpr[%u]; v = (v << %u) | (%u ? (v >> (64 - %u)) : 0); c.gpr[%u] = v & 0x%llxull; }",
                      rt, sh, sh, sh, ra, (unsigned long long)m);
             rc0(ra); return true;
         }
-        if (md == 3) { // rldimi
+        if (md == 3) {
             uint64_t m = mask64(mb, 63 - sh);
             o << fmt("{ uint64_t v = c.gpr[%u]; v = (v << %u) | (%u ? (v >> (64 - %u)) : 0); c.gpr[%u] = (c.gpr[%u] & ~0x%llxull) | (v & 0x%llxull); }",
                      rt, sh, sh, sh, ra, ra, (unsigned long long)m, (unsigned long long)m);
@@ -204,14 +199,14 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         return false;
     }
 
-    case 18: { // b / ba / bl / bla
+    case 18: {
         int64_t li = ((int32_t)(w & 0x03FFFFFC) << 6) >> 6;
         uint64_t t = (w & 2) ? (uint64_t)li : e.pc + (uint64_t)li;
         if (w & 1) o << fmt("c.lr = 0x%llxull; ", next);
         o << e.jump_const(t);
         return true;
     }
-    case 16: { // bc
+    case 16: {
         unsigned bo = rt, bi = ra;
         int64_t bd = (int16_t)(w & 0xFFFC);
         uint64_t t = (w & 2) ? (uint64_t)bd : e.pc + (uint64_t)bd;
@@ -220,16 +215,16 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         o << e.jump_const(t) << " }";
         return true;
     }
-    case 17: // sc
+    case 17:
         o << fmt("ps3rt_syscall(&c); c.pc = 0x%llxull; return true;", next);
         return true;
 
     case 19: {
         unsigned xo = (w >> 1) & 0x3FF;
-        if (xo == 16 || xo == 528) { // bclr / bcctr
+        if (xo == 16 || xo == 528) {
             const char* tgt = (xo == 16) ? "c.lr" : "c.ctr";
             o << fmt("{ uint64_t t = %s; ", tgt);
-            if ((rt & 0x14) == 0x14) { // unconditional
+            if ((rt & 0x14) == 0x14) {
                 if (w & 1) o << fmt("c.lr = 0x%llxull; ", next);
                 o << fmt("pc = t & ~3ull; if (pc >= 0x%llxull && pc < 0x%llxull) goto dispatch; c.pc = pc; return true; }",
                          (unsigned long long)e.cs, (unsigned long long)e.ce);
@@ -241,69 +236,25 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             }
             return true;
         }
-        // isync, sync-like, CR logicals
-        if (xo == 150) { /* isync */ return true; }          // no-op for now
-        if (xo == 598) { /* sync  */ return true; }
-        if (xo == 854) { /* eieio */ return true; }
-        if (xo == 193) { // crxor
-            unsigned bt = rt, ba = ra, bb = rb;
-            o << fmt("{ int f=%u>>2, b=%u&3; bool v = ((c.cr[%u>>2]>>(3-(%u&3)))&1) ^ ((c.cr[%u>>2]>>(3-(%u&3)))&1); "
-                     "if(v) c.cr[f] |= (1<<(3-b)); else c.cr[f] &= ~(1<<(3-b)); }",
-                     bt, bt, ba, ba, bb, bb);
-            return true;
-        }
-        if (xo == 449) { // cror
-            unsigned bt = rt, ba = ra, bb = rb;
-            o << fmt("{ int f=%u>>2, b=%u&3; bool v = ((c.cr[%u>>2]>>(3-(%u&3)))&1) | ((c.cr[%u>>2]>>(3-(%u&3)))&1); "
-                     "if(v) c.cr[f] |= (1<<(3-b)); else c.cr[f] &= ~(1<<(3-b)); }",
-                     bt, bt, ba, ba, bb, bb);
-            return true;
-        }
-        if (xo == 257) { // crand
-            unsigned bt = rt, ba = ra, bb = rb;
-            o << fmt("{ int f=%u>>2, b=%u&3; bool v = ((c.cr[%u>>2]>>(3-(%u&3)))&1) & ((c.cr[%u>>2]>>(3-(%u&3)))&1); "
-                     "if(v) c.cr[f] |= (1<<(3-b)); else c.cr[f] &= ~(1<<(3-b)); }",
-                     bt, bt, ba, ba, bb, bb);
-            return true;
-        }
-        if (xo == 225) { // crnand
-            unsigned bt = rt, ba = ra, bb = rb;
-            o << fmt("{ int f=%u>>2, b=%u&3; bool v = !(((c.cr[%u>>2]>>(3-(%u&3)))&1) & ((c.cr[%u>>2]>>(3-(%u&3)))&1)); "
-                     "if(v) c.cr[f] |= (1<<(3-b)); else c.cr[f] &= ~(1<<(3-b)); }",
-                     bt, bt, ba, ba, bb, bb);
-            return true;
-        }
-        if (xo == 289) { // creqv
-            unsigned bt = rt, ba = ra, bb = rb;
-            o << fmt("{ int f=%u>>2, b=%u&3; bool v = !(((c.cr[%u>>2]>>(3-(%u&3)))&1) ^ ((c.cr[%u>>2]>>(3-(%u&3)))&1)); "
-                     "if(v) c.cr[f] |= (1<<(3-b)); else c.cr[f] &= ~(1<<(3-b)); }",
-                     bt, bt, ba, ba, bb, bb);
-            return true;
-        }
-        if (xo == 33) { // crnor
-            unsigned bt = rt, ba = ra, bb = rb;
-            o << fmt("{ int f=%u>>2, b=%u&3; bool v = !(((c.cr[%u>>2]>>(3-(%u&3)))&1) | ((c.cr[%u>>2]>>(3-(%u&3)))&1)); "
-                     "if(v) c.cr[f] |= (1<<(3-b)); else c.cr[f] &= ~(1<<(3-b)); }",
-                     bt, bt, ba, ba, bb, bb);
-            return true;
-        }
-        if (xo == 417) { // crorc
-            unsigned bt = rt, ba = ra, bb = rb;
-            o << fmt("{ int f=%u>>2, b=%u&3; bool v = ((c.cr[%u>>2]>>(3-(%u&3)))&1) | !((c.cr[%u>>2]>>(3-(%u&3)))&1); "
-                     "if(v) c.cr[f] |= (1<<(3-b)); else c.cr[f] &= ~(1<<(3-b)); }",
-                     bt, bt, ba, ba, bb, bb);
-            return true;
-        }
-        if (xo == 129) { // crandc
-            unsigned bt = rt, ba = ra, bb = rb;
-            o << fmt("{ int f=%u>>2, b=%u&3; bool v = ((c.cr[%u>>2]>>(3-(%u&3)))&1) & !((c.cr[%u>>2]>>(3-(%u&3)))&1); "
-                     "if(v) c.cr[f] |= (1<<(3-b)); else c.cr[f] &= ~(1<<(3-b)); }",
-                     bt, bt, ba, ba, bb, bb);
-            return true;
-        }
-        if (xo == 0) { // mcrf
+        if (xo == 150 || xo == 598 || xo == 854) return true; // isync / sync / eieio
+        if (xo == 0) {
             unsigned bf = (w >> 23) & 7, bfa = (w >> 18) & 7;
             o << fmt("c.cr[%u] = c.cr[%u];", bf, bfa);
+            return true;
+        }
+        // CR logical family
+        if (xo == 193 || xo == 449 || xo == 257 || xo == 225 || xo == 289 || xo == 33 || xo == 417 || xo == 129) {
+            const char* opstr = (xo == 193) ? "^" : (xo == 449) ? "|" : (xo == 257) ? "&" :
+                                (xo == 225) ? "&" : (xo == 289) ? "^" : (xo == 33) ? "|" :
+                                (xo == 417) ? "|" : "&";
+            bool inv = (xo == 225 || xo == 289 || xo == 33);
+            bool invb = (xo == 417 || xo == 129);
+            o << fmt("{ int f=%u>>2, b=%u&3; bool va = ((c.cr[%u>>2]>>(3-(%u&3)))&1); bool vb = ((c.cr[%u>>2]>>(3-(%u&3)))&1); ",
+                     rt, rt, ra, ra, rb, rb);
+            if (invb) o << "vb = !vb; ";
+            o << fmt("bool v = va %s vb; ", opstr);
+            if (inv) o << "v = !v; ";
+            o << "if(v) c.cr[f] |= (1<<(3-b)); else c.cr[f] &= ~(1<<(3-b)); }";
             return true;
         }
         key = fmt("op=19 xo=%u", xo);
@@ -313,63 +264,57 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
     case 31: {
         unsigned xo = (w >> 1) & 0x3FF;
         switch (xo) {
-        // arithmetic
-        case 266: o << fmt("c.gpr[%u] = c.gpr[%u] + c.gpr[%u];", rt, ra, rb); rc0(rt); return true; // add
-        case 40:  o << fmt("c.gpr[%u] = c.gpr[%u] - c.gpr[%u];", rt, rb, ra); rc0(rt); return true; // subf
-        case 10:  o << fmt("c.gpr[%u] = c.gpr[%u] + c.gpr[%u];", rt, ra, rb); rc0(rt); return true; // addc (CA ignored)
-        case 8:   o << fmt("c.gpr[%u] = c.gpr[%u] - c.gpr[%u];", rt, rb, ra); rc0(rt); return true; // subfc
-        case 138: o << fmt("c.gpr[%u] = c.gpr[%u] + c.gpr[%u];", rt, ra, rb); rc0(rt); return true; // adde
-        case 136: o << fmt("c.gpr[%u] = c.gpr[%u] - c.gpr[%u];", rt, rb, ra); rc0(rt); return true; // subfe
-        case 202: o << fmt("c.gpr[%u] = c.gpr[%u];", rt, ra); rc0(rt); return true; // addze
-        case 200: o << fmt("c.gpr[%u] = ~c.gpr[%u] + 1;", rt, ra); rc0(rt); return true; // subfze (approx)
-        case 234: o << fmt("c.gpr[%u] = c.gpr[%u] + (uint64_t)-1;", rt, ra); rc0(rt); return true; // addme
-        case 232: o << fmt("c.gpr[%u] = ~c.gpr[%u] + (uint64_t)-1 + 1;", rt, ra); rc0(rt); return true; // subfme
-        case 104: o << fmt("c.gpr[%u] = (uint64_t)-(int64_t)c.gpr[%u];", rt, ra); rc0(rt); return true; // neg
+        case 266: o << fmt("c.gpr[%u] = c.gpr[%u] + c.gpr[%u];", rt, ra, rb); rc0(rt); return true;
+        case 40:  o << fmt("c.gpr[%u] = c.gpr[%u] - c.gpr[%u];", rt, rb, ra); rc0(rt); return true;
+        case 10:  o << fmt("c.gpr[%u] = c.gpr[%u] + c.gpr[%u];", rt, ra, rb); rc0(rt); return true;
+        case 8:   o << fmt("c.gpr[%u] = c.gpr[%u] - c.gpr[%u];", rt, rb, ra); rc0(rt); return true;
+        case 138: o << fmt("c.gpr[%u] = c.gpr[%u] + c.gpr[%u];", rt, ra, rb); rc0(rt); return true;
+        case 136: o << fmt("c.gpr[%u] = c.gpr[%u] - c.gpr[%u];", rt, rb, ra); rc0(rt); return true;
+        case 202: o << fmt("c.gpr[%u] = c.gpr[%u];", rt, ra); rc0(rt); return true;
+        case 200: o << fmt("c.gpr[%u] = ~c.gpr[%u] + 1;", rt, ra); rc0(rt); return true;
+        case 234: o << fmt("c.gpr[%u] = c.gpr[%u] + (uint64_t)-1;", rt, ra); rc0(rt); return true;
+        case 232: o << fmt("c.gpr[%u] = ~c.gpr[%u] + (uint64_t)-1 + 1;", rt, ra); rc0(rt); return true;
+        case 104: o << fmt("c.gpr[%u] = (uint64_t)-(int64_t)c.gpr[%u];", rt, ra); rc0(rt); return true;
 
-        // multiply / divide
-        case 235: o << fmt("c.gpr[%u] = (uint64_t)((int64_t)(int32_t)c.gpr[%u] * (int64_t)(int32_t)c.gpr[%u]);", rt, ra, rb); rc0(rt); return true; // mullw
-        case 233: o << fmt("c.gpr[%u] = (uint64_t)((int64_t)c.gpr[%u] * (int64_t)c.gpr[%u]);", rt, ra, rb); rc0(rt); return true; // mulld
-        case 491: o << fmt("c.gpr[%u] = (c.gpr[%u] == 0) ? 0 : (uint64_t)((int32_t)c.gpr[%u] / (int32_t)c.gpr[%u]);", rt, rb, ra, rb); rc0(rt); return true; // divw
-        case 489: o << fmt("c.gpr[%u] = (c.gpr[%u] == 0) ? 0 : (uint64_t)((int64_t)c.gpr[%u] / (int64_t)c.gpr[%u]);", rt, rb, ra, rb); rc0(rt); return true; // divd
-        case 459: o << fmt("c.gpr[%u] = (c.gpr[%u] == 0) ? 0 : (uint32_t)c.gpr[%u] / (uint32_t)c.gpr[%u];", rt, rb, ra, rb); rc0(rt); return true; // divwu
-        case 457: o << fmt("c.gpr[%u] = (c.gpr[%u] == 0) ? 0 : c.gpr[%u] / c.gpr[%u];", rt, rb, ra, rb); rc0(rt); return true; // divdu
+        case 235: o << fmt("c.gpr[%u] = (uint64_t)((int64_t)(int32_t)c.gpr[%u] * (int64_t)(int32_t)c.gpr[%u]);", rt, ra, rb); rc0(rt); return true;
+        case 233: o << fmt("c.gpr[%u] = (uint64_t)((int64_t)c.gpr[%u] * (int64_t)c.gpr[%u]);", rt, ra, rb); rc0(rt); return true;
+        case 491: o << fmt("c.gpr[%u] = (c.gpr[%u] == 0) ? 0 : (uint64_t)((int32_t)c.gpr[%u] / (int32_t)c.gpr[%u]);", rt, rb, ra, rb); rc0(rt); return true;
+        case 489: o << fmt("c.gpr[%u] = (c.gpr[%u] == 0) ? 0 : (uint64_t)((int64_t)c.gpr[%u] / (int64_t)c.gpr[%u]);", rt, rb, ra, rb); rc0(rt); return true;
+        case 459: o << fmt("c.gpr[%u] = (c.gpr[%u] == 0) ? 0 : (uint32_t)c.gpr[%u] / (uint32_t)c.gpr[%u];", rt, rb, ra, rb); rc0(rt); return true;
+        case 457: o << fmt("c.gpr[%u] = (c.gpr[%u] == 0) ? 0 : c.gpr[%u] / c.gpr[%u];", rt, rb, ra, rb); rc0(rt); return true;
 
-        // logical
-        case 444: o << fmt("c.gpr[%u] = c.gpr[%u] | c.gpr[%u];", ra, rt, rb); rc0(ra); return true; // or / mr
-        case 28:  o << fmt("c.gpr[%u] = c.gpr[%u] & c.gpr[%u];", ra, rt, rb); rc0(ra); return true; // and
-        case 316: o << fmt("c.gpr[%u] = c.gpr[%u] ^ c.gpr[%u];", ra, rt, rb); rc0(ra); return true; // xor
-        case 476: o << fmt("c.gpr[%u] = ~(c.gpr[%u] | c.gpr[%u]);", ra, rt, rb); rc0(ra); return true; // nand
-        case 124: o << fmt("c.gpr[%u] = ~(c.gpr[%u] | c.gpr[%u]);", ra, rt, rb); rc0(ra); return true; // nor / not
-        case 60:  o << fmt("c.gpr[%u] = c.gpr[%u] & ~c.gpr[%u];", ra, rt, rb); rc0(ra); return true; // andc
-        case 412: o << fmt("c.gpr[%u] = c.gpr[%u] | ~c.gpr[%u];", ra, rt, rb); rc0(ra); return true; // orc
-        case 284: o << fmt("c.gpr[%u] = ~(c.gpr[%u] ^ c.gpr[%u]);", ra, rt, rb); rc0(ra); return true; // eqv
+        case 444: o << fmt("c.gpr[%u] = c.gpr[%u] | c.gpr[%u];", ra, rt, rb); rc0(ra); return true;
+        case 28:  o << fmt("c.gpr[%u] = c.gpr[%u] & c.gpr[%u];", ra, rt, rb); rc0(ra); return true;
+        case 316: o << fmt("c.gpr[%u] = c.gpr[%u] ^ c.gpr[%u];", ra, rt, rb); rc0(ra); return true;
+        case 476: o << fmt("c.gpr[%u] = ~(c.gpr[%u] | c.gpr[%u]);", ra, rt, rb); rc0(ra); return true;
+        case 124: o << fmt("c.gpr[%u] = ~(c.gpr[%u] | c.gpr[%u]);", ra, rt, rb); rc0(ra); return true;
+        case 60:  o << fmt("c.gpr[%u] = c.gpr[%u] & ~c.gpr[%u];", ra, rt, rb); rc0(ra); return true;
+        case 412: o << fmt("c.gpr[%u] = c.gpr[%u] | ~c.gpr[%u];", ra, rt, rb); rc0(ra); return true;
+        case 284: o << fmt("c.gpr[%u] = ~(c.gpr[%u] ^ c.gpr[%u]);", ra, rt, rb); rc0(ra); return true;
 
-        // shifts
-        case 24:  o << fmt("c.gpr[%u] = (uint32_t)c.gpr[%u] << (c.gpr[%u] & 0x3f);", ra, rt, rb); rc0(ra); return true; // slw
-        case 536: o << fmt("{ unsigned s = c.gpr[%u] & 0x3f; c.gpr[%u] = s > 31 ? 0 : ((uint32_t)c.gpr[%u] >> s); }", rb, ra, rt); rc0(ra); return true; // srw
-        case 792: o << fmt("{ unsigned s = c.gpr[%u] & 0x3f; int32_t v = (int32_t)c.gpr[%u]; c.gpr[%u] = (uint64_t)(int64_t)(s > 31 ? (v < 0 ? -1 : 0) : (v >> s)); }", rb, rt, ra); rc0(ra); return true; // sraw
-        case 824: { // srawi
+        case 24:  o << fmt("c.gpr[%u] = (uint32_t)c.gpr[%u] << (c.gpr[%u] & 0x3f);", ra, rt, rb); rc0(ra); return true;
+        case 536: o << fmt("{ unsigned s = c.gpr[%u] & 0x3f; c.gpr[%u] = s > 31 ? 0 : ((uint32_t)c.gpr[%u] >> s); }", rb, ra, rt); rc0(ra); return true;
+        case 792: o << fmt("{ unsigned s = c.gpr[%u] & 0x3f; int32_t v = (int32_t)c.gpr[%u]; c.gpr[%u] = (uint64_t)(int64_t)(s > 31 ? (v < 0 ? -1 : 0) : (v >> s)); }", rb, rt, ra); rc0(ra); return true;
+        case 824: {
             unsigned sh = rb;
             o << fmt("{ int32_t v = (int32_t)c.gpr[%u]; c.gpr[%u] = (uint64_t)(int64_t)(v >> %u); }", rt, ra, sh);
             rc0(ra); return true;
         }
-        case 27:  o << fmt("c.gpr[%u] = c.gpr[%u] << (c.gpr[%u] & 0x7f);", ra, rt, rb); rc0(ra); return true; // sld
-        case 539: o << fmt("{ unsigned s = c.gpr[%u] & 0x7f; c.gpr[%u] = s > 63 ? 0 : (c.gpr[%u] >> s); }", rb, ra, rt); rc0(ra); return true; // srd
-        case 794: o << fmt("{ unsigned s = c.gpr[%u] & 0x7f; int64_t v = (int64_t)c.gpr[%u]; c.gpr[%u] = (uint64_t)(s > 63 ? (v < 0 ? -1 : 0) : (v >> s)); }", rb, rt, ra); rc0(ra); return true; // srad
-        case 826: case 827: { // sradi
+        case 27:  o << fmt("c.gpr[%u] = c.gpr[%u] << (c.gpr[%u] & 0x7f);", ra, rt, rb); rc0(ra); return true;
+        case 539: o << fmt("{ unsigned s = c.gpr[%u] & 0x7f; c.gpr[%u] = s > 63 ? 0 : (c.gpr[%u] >> s); }", rb, ra, rt); rc0(ra); return true;
+        case 794: o << fmt("{ unsigned s = c.gpr[%u] & 0x7f; int64_t v = (int64_t)c.gpr[%u]; c.gpr[%u] = (uint64_t)(s > 63 ? (v < 0 ? -1 : 0) : (v >> s)); }", rb, rt, ra); rc0(ra); return true;
+        case 826: case 827: {
             unsigned sh = rb | ((xo & 1) << 5);
             o << fmt("{ int64_t v = (int64_t)c.gpr[%u]; c.gpr[%u] = (uint64_t)(v >> %u); }", rt, ra, sh);
             rc0(ra); return true;
         }
 
-        // count leading zeros / extend
-        case 26:  o << fmt("{ uint32_t v = (uint32_t)c.gpr[%u]; c.gpr[%u] = v ? (uint32_t)__builtin_clz(v) : 32; }", rt, ra); rc0(ra); return true; // cntlzw
-        case 58:  o << fmt("{ uint64_t v = c.gpr[%u]; c.gpr[%u] = v ? (uint64_t)__builtin_clzll(v) : 64; }", rt, ra); rc0(ra); return true; // cntlzd
-        case 954: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int8_t)c.gpr[%u];", ra, rt); rc0(ra); return true; // extsb
-        case 922: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int16_t)c.gpr[%u];", ra, rt); rc0(ra); return true; // extsh
-        case 986: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int32_t)c.gpr[%u];", ra, rt); rc0(ra); return true; // extsw
+        case 26:  o << fmt("{ uint32_t v = (uint32_t)c.gpr[%u]; c.gpr[%u] = v ? (uint32_t)__builtin_clz(v) : 32; }", rt, ra); rc0(ra); return true;
+        case 58:  o << fmt("{ uint64_t v = c.gpr[%u]; c.gpr[%u] = v ? (uint64_t)__builtin_clzll(v) : 64; }", rt, ra); rc0(ra); return true;
+        case 954: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int8_t)c.gpr[%u];", ra, rt); rc0(ra); return true;
+        case 922: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int16_t)c.gpr[%u];", ra, rt); rc0(ra); return true;
+        case 986: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int32_t)c.gpr[%u];", ra, rt); rc0(ra); return true;
 
-        // compare
         case 0: case 32: {
             unsigned bf = (w >> 23) & 7, l = (w >> 21) & 1;
             if (xo == 0)
@@ -381,35 +326,33 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             return true;
         }
 
-        // indexed loads / stores
-        case 23:  o << fmt("c.gpr[%u] = rd32(c, %s);", rt, ea_idx().c_str()); return true; // lwzx
-        case 55:  o << fmt("{ uint64_t a = %s; c.gpr[%u] = rd32(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true; // lwzux
-        case 87:  o << fmt("c.gpr[%u] = rd8(c, %s);", rt, ea_idx().c_str()); return true;  // lbzx
-        case 119: o << fmt("{ uint64_t a = %s; c.gpr[%u] = rd8(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true; // lbzux
-        case 279: o << fmt("c.gpr[%u] = rd16(c, %s);", rt, ea_idx().c_str()); return true; // lhzx
-        case 311: o << fmt("{ uint64_t a = %s; c.gpr[%u] = rd16(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true; // lhzux
-        case 343: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int16_t)rd16(c, %s);", rt, ea_idx().c_str()); return true; // lhax
-        case 375: o << fmt("{ uint64_t a = %s; c.gpr[%u] = (uint64_t)(int64_t)(int16_t)rd16(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true; // lhaux
-        case 21:  o << fmt("c.gpr[%u] = rd64(c, %s);", rt, ea_idx().c_str()); return true; // ldx
-        case 53:  o << fmt("{ uint64_t a = %s; c.gpr[%u] = rd64(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true; // ldux
-        case 341: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int32_t)rd32(c, %s);", rt, ea_idx().c_str()); return true; // lwax
-        case 373: o << fmt("{ uint64_t a = %s; c.gpr[%u] = (uint64_t)(int64_t)(int32_t)rd32(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true; // lwaux
+        case 23:  o << fmt("c.gpr[%u] = rd32(c, %s);", rt, ea_idx().c_str()); return true;
+        case 55:  o << fmt("{ uint64_t a = %s; c.gpr[%u] = rd32(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
+        case 87:  o << fmt("c.gpr[%u] = rd8(c, %s);", rt, ea_idx().c_str()); return true;
+        case 119: o << fmt("{ uint64_t a = %s; c.gpr[%u] = rd8(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
+        case 279: o << fmt("c.gpr[%u] = rd16(c, %s);", rt, ea_idx().c_str()); return true;
+        case 311: o << fmt("{ uint64_t a = %s; c.gpr[%u] = rd16(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
+        case 343: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int16_t)rd16(c, %s);", rt, ea_idx().c_str()); return true;
+        case 375: o << fmt("{ uint64_t a = %s; c.gpr[%u] = (uint64_t)(int64_t)(int16_t)rd16(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
+        case 21:  o << fmt("c.gpr[%u] = rd64(c, %s);", rt, ea_idx().c_str()); return true;
+        case 53:  o << fmt("{ uint64_t a = %s; c.gpr[%u] = rd64(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
+        case 341: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int32_t)rd32(c, %s);", rt, ea_idx().c_str()); return true;
+        case 373: o << fmt("{ uint64_t a = %s; c.gpr[%u] = (uint64_t)(int64_t)(int32_t)rd32(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
 
-        case 151: o << fmt("wr32(c, %s, (uint32_t)c.gpr[%u]);", ea_idx().c_str(), rt); return true; // stwx
-        case 183: o << fmt("{ uint64_t a = %s; wr32(c, a, (uint32_t)c.gpr[%u]); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true; // stwux
-        case 215: o << fmt("wr8(c, %s, (uint8_t)c.gpr[%u]);", ea_idx().c_str(), rt); return true;  // stbx
-        case 247: o << fmt("{ uint64_t a = %s; wr8(c, a, (uint8_t)c.gpr[%u]); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true; // stbux
-        case 407: o << fmt("wr16(c, %s, (uint16_t)c.gpr[%u]);", ea_idx().c_str(), rt); return true; // sthx
-        case 439: o << fmt("{ uint64_t a = %s; wr16(c, a, (uint16_t)c.gpr[%u]); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true; // sthux
-        case 149: o << fmt("wr64(c, %s, c.gpr[%u]);", ea_idx().c_str(), rt); return true; // stdx
-        case 181: o << fmt("{ uint64_t a = %s; wr64(c, a, c.gpr[%u]); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true; // stdux
+        case 151: o << fmt("wr32(c, %s, (uint32_t)c.gpr[%u]);", ea_idx().c_str(), rt); return true;
+        case 183: o << fmt("{ uint64_t a = %s; wr32(c, a, (uint32_t)c.gpr[%u]); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
+        case 215: o << fmt("wr8(c, %s, (uint8_t)c.gpr[%u]);", ea_idx().c_str(), rt); return true;
+        case 247: o << fmt("{ uint64_t a = %s; wr8(c, a, (uint8_t)c.gpr[%u]); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
+        case 407: o << fmt("wr16(c, %s, (uint16_t)c.gpr[%u]);", ea_idx().c_str(), rt); return true;
+        case 439: o << fmt("{ uint64_t a = %s; wr16(c, a, (uint16_t)c.gpr[%u]); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
+        case 149: o << fmt("wr64(c, %s, c.gpr[%u]);", ea_idx().c_str(), rt); return true;
+        case 181: o << fmt("{ uint64_t a = %s; wr64(c, a, c.gpr[%u]); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
 
-        // CR / special registers
-        case 19:  { // mfcr
+        case 19: {
             o << fmt("{ uint32_t v=0; for(int i=0;i<8;i++) v = (v<<4) | (c.cr[i] & 0xf); c.gpr[%u] = v; }", rt);
             return true;
         }
-        case 144: { // mtcrf
+        case 144: {
             unsigned fxm = (w >> 12) & 0xFF;
             o << fmt("{ uint32_t v = (uint32_t)c.gpr[%u]; ", rt);
             for (int i = 0; i < 8; ++i)
@@ -418,7 +361,7 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             o << "}";
             return true;
         }
-        case 339: case 467: { // mfspr / mtspr
+        case 339: case 467: {
             unsigned spr = ((w >> 16) & 31) | (((w >> 11) & 31) << 5);
             const char* r = spr == 8 ? "c.lr" : spr == 9 ? "c.ctr" : spr == 1 ? "c.xer" : nullptr;
             if (!r) { key = fmt("op=31 xo=%u spr=%u", xo, spr); return false; }
@@ -426,9 +369,7 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             return true;
         }
 
-        // cache / barrier – treat as no-ops for now
-        case 54: case 86: case 246: case 278: case 1014: // dcbst, dcbf, dcbtst, dcbt, dcbz
-        case 598: // sync already handled under 19, but also appears here in some encodings
+        case 54: case 86: case 246: case 278: case 1014:
             return true;
 
         default:
@@ -537,7 +478,6 @@ bool lift_elf(const ElfImage& elf, const std::string& dir, LiftStats& st, std::s
     std::ostringstream rep;
     rep << "instructions: " << st.instructions << "\nimplemented: " << st.implemented
         << "\nunimplemented: " << st.unimplemented << "\nchunks: " << st.chunks << "\n\nmissing opcodes (most useful TODO list):\n";
-    // sort by frequency descending for easier prioritisation
     std::vector<std::pair<std::string, uint64_t>> sorted(st.missing.begin(), st.missing.end());
     std::sort(sorted.begin(), sorted.end(), [](auto& a, auto& b){ return a.second > b.second; });
     for (auto& kv : sorted) rep << "  " << kv.first << "  x" << kv.second << "\n";
