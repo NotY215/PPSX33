@@ -1,11 +1,23 @@
 # PPSX33 Third-Party Software and Assets
 
-PPSX33 is maintained separately from the third-party tools and libraries it may use.
+PPSX33 uses or references third-party software and technologies. Their respective authors and rights holders retain ownership of their components.
 
-- **Microsoft C/C++ toolchain:** `Compilers-files/MSCV/` contains MSVC compiler/linker files including `cl.exe` and `link.exe`. MSVC is proprietary Microsoft software, not owned by PPSX33 or NotY215. Official source: https://visualstudio.microsoft.com/visual-cpp-build-tools/ . License terms: https://visualstudio.microsoft.com/license-terms/ and the applicable Microsoft Visual Studio license. Check redistribution rights for each bundled file and version before publishing or redistributing binaries.
-- **Build prerequisites:** CMake: https://cmake.org/ (source: https://github.com/Kitware/CMake; license: https://cmake.org/licensing/). .NET: https://dotnet.microsoft.com/ (source: https://github.com/dotnet; license: https://github.com/dotnet/runtime/blob/main/LICENSE.TXT). These are external prerequisites; do not assume their full installations are included in this repository.
-- **RPCS3:** Referenced as an external tool for workflows involving a decrypted ELF. RPCS3 is a separate project with its own license and terms: https://rpcs3.net/ and https://github.com/RPCS3/rpcs3.
-- **Sony and PlayStation materials:** PlayStation, PS3, Cell, RSX, and related marks or technologies belong to their respective owners. This repository is not affiliated with or endorsed by Sony Interactive Entertainment.
-- **Game files:** This project does not grant rights to commercial games, firmware, keys, decrypted executables, or other copyrighted materials. Do not commit or redistribute those materials. Use only files you own and are authorized to use.
+| Component | Purpose | Official source | License / terms |
+| --- | --- | --- | --- |
+| Microsoft Visual Studio 2026 / MSVC | C/C++ compiler, linker, Windows build tools | https://visualstudio.microsoft.com/downloads/ | https://visualstudio.microsoft.com/license-terms/ |
+| CMake | Native build configuration | https://cmake.org/ | https://cmake.org/licensing/ |
+| Ninja | Build execution tool | https://github.com/ninja-build/ninja | https://github.com/ninja-build/ninja/blob/master/COPYING |
+| .NET | WinForms application framework and SDK | https://dotnet.microsoft.com/ | https://github.com/dotnet/runtime/blob/main/LICENSE.TXT |
+| RPCS3 | External reference tool for obtaining/decrypting a user-provided ELF | https://rpcs3.net/ | https://github.com/RPCS3/rpcs3/blob/master/LICENSE |
 
-PPSX33 and NotY215 do not claim ownership or copyright over Microsoft, RPCS3, CMake, .NET, PlayStation technology, or any other third-party component. Each component remains subject to its own terms. This file is an attribution and dependency notice, not a grant of redistribution rights. Review the applicable license for the exact version before redistributing bundled files.
+## Platform and game content
+
+PlayStation, PS3, Cell, RSX, and related marks and technologies belong to their respective rights holders. PPSX33 is an independent project and is not affiliated with or endorsed by Sony Interactive Entertainment.
+
+PPSX33 does not grant rights to commercial games, firmware, encryption keys, decrypted executables, or other copyrighted game materials. Users are responsible for ensuring they have the legal right to access and use the files they process.
+
+## Microsoft compiler files
+
+The `Compilers-files/MSCV/` directory is intended as a local tool staging location for the MSVC tools installed with Visual Studio 2026. Microsoft compiler binaries and related files remain Microsoft-owned software and are subject to Microsoft's terms. A successful local build does not imply that those files may be redistributed. Consult the current license for the exact Visual Studio edition and toolset before including any Microsoft files in a public source archive or release.
+
+PPSX33 and NotY215 do not claim ownership of any third-party software, trademarks, or copyrighted assets referenced here.
