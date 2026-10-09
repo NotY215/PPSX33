@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: "If you use PS3 Recompiler in research or other work, please cite the repository."
+title: "PS3 Recompiler"
+type: software
+authors:
+  - name: "NotY215"
+repository-code: "https://github.com/NotY215/PS3"
+license: Apache-2.0
