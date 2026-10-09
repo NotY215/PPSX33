@@ -21,7 +21,7 @@ The translated and unimplemented counts sum to the total instruction count. Tran
 - **Unimplemented** is the number of instruction instances still unsupported by the lifter.
 - **Chunks** is the number of emitted instruction chunks.
 
-These are static translation metrics only. They do not establish that the generated output builds successfully, runs correctly, or makes the full game playable. Runtime support for PS3 system calls, PRX imports, SPU workloads, and RSX graphics remains separate work.
+These are static translation metrics only. They do not establish that the game is playable. The current MSVC build produces `game.exe` and `ps3rt.dll`, but launching the output starts execution and then leaves the recompiled guest-code range. This runtime failure is separate from the 85.81% static translation figure. PS3 system calls, PRX imports, SPU workloads, RSX graphics, and guest control-flow correctness remain incomplete.
 
 ## Follow-up
 
