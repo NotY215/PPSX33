@@ -1,59 +1,38 @@
 # Compilers-files
 
-This folder is copied next to the released PS3Recomp.exe.
+Optional. Used only if Visual Studio / MSVC is not detected.
 
-When a user clicks "3. Build exe + dll" the recompiler looks here for the
-tools that turn generated C++ into native game.exe + ps3rt.dll. That way the
-end-user does not need a system-wide C++ toolchain.
+## Preferred: Visual Studio Community (MSVC)
 
-## CRITICAL: do not put only g++.exe here
+If you have Visual Studio Community with the **Desktop development with C++**
+workload installed, you do **not** need anything in this folder.
 
-`g++.exe` is just a driver. It needs the rest of the MinGW-w64 toolchain:
+The build driver finds `vcvars64.bat` automatically (via vswhere or common
+paths) and compiles the game with `cl.exe` + `link.exe`.
+
+Just press **3. Build exe + dll** in the GUI.
+
+## Optional fallback: MinGW-w64
+
+Only needed if MSVC is not installed. In that case put a **complete**
+MinGW-w64 tree here (not just g++.exe):
 
 ```
 Compilers-files/
   g++.exe
   gcc.exe
-  c++.exe          (optional)
   ninja.exe
   libgcc_s_seh-1.dll
   libstdc++-6.dll
   libwinpthread-1.dll
-  ... other MinGW bin DLLs ...
-
-  libexec/
-    gcc/
-      x86_64-w64-mingw32/
-        <version>/
-          cc1plus.exe      <-- this is what was missing
-          cc1.exe
-          collect2.exe
-          ...
-
+  libexec/gcc/.../cc1plus.exe   <-- required
   lib/
   include/
   x86_64-w64-mingw32/
 ```
 
-Easiest correct setup:
-
-1. Install MinGW-w64 (WinLibs, MSYS2, or official).
-2. Copy the entire `bin` folder contents into Compilers-files/.
-3. Also copy `libexec`, `lib`, `include`, and `x86_64-w64-mingw32` folders
-   next to them (same relative layout as a normal MinGW install).
-4. Put `ninja.exe` in Compilers-files/ as well.
-
-If the layout is wrong you will see:
-```
-g++.exe: fatal error: cannot execute 'cc1plus': CreateProcess: No such file or directory
-```
-
-## Fallback
-
-If Compilers-files is empty or broken, the build driver falls back to whatever
-`g++` / `ninja` is on the system PATH.
+A lone g++.exe will be ignored (it cannot find cc1plus).
 
 ## .NET
 
-Do not put any .NET SDK files here. The GUI is built with a normal system
-.NET 8 SDK. Only the per-game C++ compile uses this folder.
+Do not put any .NET files here. The GUI uses a normal system .NET 8 SDK.
