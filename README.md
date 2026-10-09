@@ -10,14 +10,14 @@ Use only game data and software that you own or are legally authorized to proces
 | --- | --- |
 | WinForms application and project folders | Implemented; GUI build and full workflow validation remain in progress |
 | ELF64 big-endian loading | Implemented |
-| PPU instruction translation | Partial; see [PPU coverage](docs/PPU_COVERAGE.md) |
+| PPU instruction translation | Partial across the full ISA; see [PPU coverage](docs/PPU_COVERAGE.md) |
 | Native MSVC build | Produces `game.exe` and `ps3rt.dll` |
 | Runtime execution | Incomplete; current test starts and then leaves the recompiled guest-code range |
 | SPU execution | Not implemented |
 | RSX graphics rendering | Not implemented; backend selection exists |
 | Full commercial-game compatibility | Not established |
 
-A smoke test is available at `scripts/run_smoke_test.sh`. It exercises a small synthetic PPC64 ELF and is not a commercial-game compatibility test. The latest GoW3 lift report records 1,285,560 instruction instances: 1,173,389 translated and 112,171 unimplemented. This is approximately 91.28% static translation coverage. The report contains 157 chunks. These statistics do not establish successful game execution or compatibility.
+A smoke test is available at `scripts/run_smoke_test.sh`. It exercises a small synthetic PPC64 ELF and is not a commercial-game compatibility test. The latest GOW3 lift report records 1,285,560 instruction instances, all 1,285,560 translated, zero unimplemented, across 157 chunks (100% static translation coverage for that snapshot). This result applies only to instructions encountered in that lift and does not prove runtime correctness or full game compatibility. See [GOW3 lift record](docs/games/GOW3/GOW3.md).
 
 ## Requirements
 
@@ -56,7 +56,7 @@ The native smoke test can be run on supported Linux/macOS development environmen
 5. Inspect the generated files in the game's `output/` directory. The current Windows build path can produce `game.exe`, `ps3rt.dll`, and `guest_image.bin`.
 6. Test the output and retain the runtime log when execution fails.
 
-The generated executable currently does not establish game compatibility: the reported runtime test starts execution and then leaves the recompiled guest-code range. Unsupported instructions, system calls, PRX imports, SPU workloads, RSX graphics, and control-flow correctness remain areas of work.
+The generated executable currently does not establish game compatibility: the reported runtime test starts execution and then leaves the recompiled guest-code range. System calls, PRX imports, SPU workloads, RSX graphics, and control-flow correctness remain areas of work, and other games may use PPU instructions absent from the GOW3 snapshot.
 
 ## Repository layout
 
