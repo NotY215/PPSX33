@@ -94,7 +94,7 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
     case 22: {
         unsigned mb = (w >> 6) & 31, me = (w >> 1) & 31;
         uint64_t m = mask64(mb + 32, me + 32);
-        o << fmt("{ uint64_t v = (uint32_t)c.gpr[%u]; unsigned sh = c.gpr[%u] & 31; v = (v << 32) | v; v = (v << sh) | (sh ? (v >> (64 - sh)) : 0); c.gpr[%u] = v & 0x%llxull; }", rt, rb, ra, (unsigned long long)m);
+        o << fmt("c.gpr[%u] = ps3_rotl32dup((uint32_t)c.gpr[%u], (unsigned)c.gpr[%u]) & 0x%llxull;", ra, rt, rb, (unsigned long long)m);
         rc0(ra); return true;
     }
     case 0: return true;
@@ -124,19 +124,19 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
     case 21: {
         unsigned sh = rb, mb = (w >> 6) & 31, me = (w >> 1) & 31;
         uint64_t m = mask64(mb + 32, me + 32);
-        o << fmt("{ uint64_t v = (uint32_t)c.gpr[%u]; v = (v << 32) | v; v = (v << %u) | (%u ? (v >> (64 - %u)) : 0); c.gpr[%u] = v & 0x%llxull; }", rt, sh, sh, sh, ra, (unsigned long long)m);
+        o << fmt("c.gpr[%u] = ps3_rotl32dup((uint32_t)c.gpr[%u], %u) & 0x%llxull;", ra, rt, sh, (unsigned long long)m);
         rc0(ra); return true;
     }
     case 30: {
         unsigned md = (w >> 2) & 0xF;
         unsigned sh = rb | (((w >> 1) & 1) << 5);
         unsigned mb = ((w >> 6) & 0x1F) | ((w & 0x20));
-        if (md == 0) { uint64_t m = mask64(mb, 63); o << fmt("{ uint64_t v = c.gpr[%u]; v = (v << %u) | (%u ? (v >> (64 - %u)) : 0); c.gpr[%u] = v & 0x%llxull; }", rt, sh, sh, sh, ra, (unsigned long long)m); rc0(ra); return true; }
-        if (md == 1) { unsigned me = ((w >> 6) & 0x1F) | ((w & 0x20)); uint64_t m = mask64(0, me); o << fmt("{ uint64_t v = c.gpr[%u]; v = (v << %u) | (%u ? (v >> (64 - %u)) : 0); c.gpr[%u] = v & 0x%llxull; }", rt, sh, sh, sh, ra, (unsigned long long)m); rc0(ra); return true; }
-        if (md == 2) { uint64_t m = mask64(mb, 63 - sh); o << fmt("{ uint64_t v = c.gpr[%u]; v = (v << %u) | (%u ? (v >> (64 - %u)) : 0); c.gpr[%u] = v & 0x%llxull; }", rt, sh, sh, sh, ra, (unsigned long long)m); rc0(ra); return true; }
-        if (md == 3) { uint64_t m = mask64(mb, 63 - sh); o << fmt("{ uint64_t v = c.gpr[%u]; v = (v << %u) | (%u ? (v >> (64 - %u)) : 0); c.gpr[%u] = (c.gpr[%u] & ~0x%llxull) | (v & 0x%llxull); }", rt, sh, sh, sh, ra, ra, (unsigned long long)m, (unsigned long long)m); rc0(ra); return true; }
-        if (md == 8) { unsigned mbb = ((w >> 6) & 0x1F) | ((w & 0x20)); uint64_t m = mask64(mbb, 63); o << fmt("{ unsigned sh = c.gpr[%u] & 63; uint64_t v = c.gpr[%u]; v = (v << sh) | (sh ? (v >> (64 - sh)) : 0); c.gpr[%u] = v & 0x%llxull; }", rb, rt, ra, (unsigned long long)m); rc0(ra); return true; }
-        if (md == 9) { unsigned me = ((w >> 6) & 0x1F) | ((w & 0x20)); uint64_t m = mask64(0, me); o << fmt("{ unsigned sh = c.gpr[%u] & 63; uint64_t v = c.gpr[%u]; v = (v << sh) | (sh ? (v >> (64 - sh)) : 0); c.gpr[%u] = v & 0x%llxull; }", rb, rt, ra, (unsigned long long)m); rc0(ra); return true; }
+        if (md == 0) { uint64_t m = mask64(mb, 63); o << fmt("c.gpr[%u] = ps3_rotl64(c.gpr[%u], %u) & 0x%llxull;", ra, rt, sh, (unsigned long long)m); rc0(ra); return true; }
+        if (md == 1) { unsigned me = ((w >> 6) & 0x1F) | ((w & 0x20)); uint64_t m = mask64(0, me); o << fmt("c.gpr[%u] = ps3_rotl64(c.gpr[%u], %u) & 0x%llxull;", ra, rt, sh, (unsigned long long)m); rc0(ra); return true; }
+        if (md == 2) { uint64_t m = mask64(mb, 63 - sh); o << fmt("c.gpr[%u] = ps3_rotl64(c.gpr[%u], %u) & 0x%llxull;", ra, rt, sh, (unsigned long long)m); rc0(ra); return true; }
+        if (md == 3) { uint64_t m = mask64(mb, 63 - sh); o << fmt("{ uint64_t v = ps3_rotl64(c.gpr[%u], %u); c.gpr[%u] = (c.gpr[%u] & ~0x%llxull) | (v & 0x%llxull); }", rt, sh, ra, ra, (unsigned long long)m, (unsigned long long)m); rc0(ra); return true; }
+        if (md == 8) { unsigned mbb = ((w >> 6) & 0x1F) | ((w & 0x20)); uint64_t m = mask64(mbb, 63); o << fmt("c.gpr[%u] = ps3_rotl64(c.gpr[%u], (unsigned)c.gpr[%u]) & 0x%llxull;", ra, rt, rb, (unsigned long long)m); rc0(ra); return true; }
+        if (md == 9) { unsigned me = ((w >> 6) & 0x1F) | ((w & 0x20)); uint64_t m = mask64(0, me); o << fmt("c.gpr[%u] = ps3_rotl64(c.gpr[%u], (unsigned)c.gpr[%u]) & 0x%llxull;", ra, rt, rb, (unsigned long long)m); rc0(ra); return true; }
         key = fmt("op=30 md=%u", md); return false;
     }
     case 18: {
@@ -275,6 +275,35 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         case 54: case 86: case 246: case 278: case 1014: return true;
         default: key = fmt("op=31 xo=%u", xo); return false;
         }
+    }
+    case 59: case 63: {
+        unsigned xo = (w >> 1) & 0x3FF;
+        unsigned frt = rt, fra = ra, frb = rb, frc = (w >> 6) & 31;
+        bool single = (op == 59);
+        auto store = [&](const std::string& expr) {
+            if (single) o << fmt("c.fpr[%u] = (double)(float)(%s);", frt, expr.c_str());
+            else o << fmt("c.fpr[%u] = %s;", frt, expr.c_str());
+        };
+        unsigned xo5 = xo & 0x1F, xo10 = xo;
+        if (xo10 == 0) { unsigned bf = (w >> 23) & 7; o << fmt("set_cr_fp(c, %u, c.fpr[%u], c.fpr[%u]);", bf, fra, frb); return true; }
+        if (xo10 == 12) { o << fmt("c.fpr[%u] = (double)(float)c.fpr[%u];", frt, frb); return true; }
+        if (xo10 == 14 || xo10 == 15) {
+            o << fmt("{ int32_t i = (int32_t)c.fpr[%u]; uint64_t bits = 0; std::memcpy(&bits, &i, 4); std::memcpy(&c.fpr[%u], &bits, 8); }", frb, frt);
+            return true;
+        }
+        if (xo5 == 18) { store(fmt("c.fpr[%u] / c.fpr[%u]", fra, frb)); return true; }
+        if (xo5 == 20) { store(fmt("c.fpr[%u] - c.fpr[%u]", fra, frb)); return true; }
+        if (xo5 == 21) { store(fmt("c.fpr[%u] + c.fpr[%u]", fra, frb)); return true; }
+        if (xo5 == 25) { store(fmt("c.fpr[%u] * c.fpr[%u]", fra, frc)); return true; }
+        if (xo5 == 29) { store(fmt("c.fpr[%u] * c.fpr[%u] + c.fpr[%u]", fra, frc, frb)); return true; }
+        if (xo5 == 28) { store(fmt("c.fpr[%u] * c.fpr[%u] - c.fpr[%u]", fra, frc, frb)); return true; }
+        if (xo5 == 31) { store(fmt("-(c.fpr[%u] * c.fpr[%u] + c.fpr[%u])", fra, frc, frb)); return true; }
+        if (xo5 == 30) { store(fmt("-(c.fpr[%u] * c.fpr[%u] - c.fpr[%u])", fra, frc, frb)); return true; }
+        if (xo10 == 40) { o << fmt("c.fpr[%u] = -c.fpr[%u];", frt, frb); return true; }
+        if (xo10 == 72) { o << fmt("c.fpr[%u] = c.fpr[%u];", frt, frb); return true; }
+        if (xo10 == 136) { o << fmt("c.fpr[%u] = -std::fabs(c.fpr[%u]);", frt, frb); return true; }
+        if (xo10 == 264) { o << fmt("c.fpr[%u] = std::fabs(c.fpr[%u]);", frt, frb); return true; }
+        key = fmt("op=%u xo=%u", op, xo10); return false;
     }
     default: break;
     }
