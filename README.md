@@ -18,11 +18,11 @@ Languages: **C++** (core, lifter, runtime), **C** (low-level helpers), **C#** (W
 | 3 | PPU code -> x86-64 on a normal 4c/4t CPU | **Baseline works**: single-threaded generated C++, correct control flow, big-endian guest memory. Multithreading, fast paths, function splitting: TODO. |
 | 4 | SPU | **TODO** (`runtime/spu_stub.cpp` placeholder). |
 | 5 | RSX -> DirectX 10 / 11 / Vulkan | **TODO** (`runtime/rsx_stub.cpp` placeholder; backend selector exists). |
-| 6 | Auto-compile to one exe + dll | **Works** with g++ (+ ninja if present). MSVC `cl.exe` backend: TODO. |
+| 6 | Auto-compile to one exe + dll | **MSVC build succeeds** and produces `game.exe` + `ps3rt.dll`; runtime execution is still incomplete. |
 
 Verified: `scripts/run_smoke_test.sh` builds a tiny hand-made PPC64 ELF (loop, `bl`/`blr`, `mtctr`/`bdnz`, compare,
-`sc` syscall) -> lifts -> compiles `game` + `ps3rt` -> runs and prints `OK`. **That is the only program tested.**
-No commercial game will run yet; expect `ps3rt: unimplemented PPU instruction ...` first, then missing PRX/syscall HLE,
+`sc` syscall) -> lifts -> compiles `game` + `ps3rt` -> runs and prints `OK`. A separate MSVC build now succeeds and emits `game.exe` + `ps3rt.dll`; launching that output starts execution, then leaves the recompiled guest-code range. This is a runtime/control-flow failure, not a successful game run. No commercial game is confirmed playable.
+Expect `ps3rt: unimplemented PPU instruction ...` first, then missing PRX/syscall HLE,
 then SPU and RSX. Those are multi-year-scale problems (see RPCS3 for scale); the roadmap breaks them down.
 
 ## 2. User workflow (target)
@@ -35,14 +35,14 @@ then SPU and RSX. Those are multi-year-scale problems (see RPCS3 for scale); the
    - `output/`   build tree + results: `src/`, `obj/`, `build.ninja`, **`game.exe`, `ps3rt.dll`, `guest_image.bin`**
 4. **Decompile** -> **Build** -> **Copy to EBOOT folder** (copies `game.exe`, `ps3rt.dll`, `guest_image.bin`) -> run `game.exe`.
 
-Build tools are bundled in `Compilers-files/` (see its README): `cl.exe`, `g++.exe`, `c++.exe`, `ninja.exe`, .NET files.
+The optional MSVC tool subset is under `Compilers-files/MSCV/` (`cl.exe`, `link.exe`, and supporting files); see its README and `THIRD_PARTY.md` for setup and licensing notes. CMake, the Windows SDK, .NET 8, and fallback compiler tools are separate prerequisites.
 
 ## 3. Repository layout
 
 ```
-PS3/
+PPSX33/
   README.md  ROADMAP.md  CMakeLists.txt  .gitignore
-  Compilers-files/        bundled toolchain (not committed; README lists files)
+  Compilers-files/        optional MSVC compiler/linker support files (see README and THIRD_PARTY.md)
   docs/PPU_COVERAGE.md    instruction implementation notes and known gaps
   docs/games/README.md    index of games used for recompiler coverage work
   docs/games/GOW3.md      God of War III lift statistics and current coverage
@@ -88,10 +88,7 @@ The GUI finds `ps3core.dll`, `runtime/` and `Compilers-files/` next to its exe (
 * **`guest_image.bin`** (little-endian): `"PS3IMG1\0"`, `u32 nseg`, `nseg * {u64 vaddr, u64 filesz, u64 memsz, u64 file_offset}`, then data.
   It is loaded by `ps3rt_init()` at startup and must sit next to `game.exe`.
 * **Syscalls** (`sc`): `r11` = number, args `r3..r10`, result `r3`. Implemented: `22/41` exit, `403` tty_write. Others log and return 0.
-* **Build driver** (`project.cpp: build_project`): copies `codebase` + `runtime` into `output/src`, writes `output/build.ninja`
-  (one `run` rule + explicit commands), runs `Compilers-files/ninja.exe`, or compiles sequentially if ninja is absent.
-  Outputs `ps3rt.dll` (runtime, `-DPS3RT_BUILD_DLL`) and `game.exe` (generated code, links the dll).
-  Compiler = `Compilers-files/g++.exe`, else `c++.exe`, else `PATH`.
+* **Build driver** (`project.cpp: build_project`): copies `codebase` + `runtime` into `output/src` and emits the per-game build files. The MSVC path uses `cl.exe` and `link.exe` with the Visual Studio/Windows SDK environment when available; the fallback path can use a GCC-compatible compiler. Outputs `ps3rt.dll` (runtime) and `game.exe` (generated code linked against the DLL). A successful build does not guarantee correct guest execution.
 * **C API** (`ps3core.h`): `ps3_create_project`, `ps3_lift_project`, `ps3_build_project`, `ps3_core_version`.
 
 ## 6. Known assumptions / limitations (verify!)
