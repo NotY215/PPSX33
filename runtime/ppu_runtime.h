@@ -2,6 +2,8 @@
 #pragma once
 #include <cstdint>
 #include <cstddef>
+#include <cstring>
+#include <cmath>
 
 #if defined(_WIN32)
   #ifdef PS3RT_BUILD_DLL
@@ -18,6 +20,7 @@ struct PPUContext {
     double   fpr[32];
     uint64_t lr, ctr, xer, pc;
     uint8_t  cr[8];        // each CR field: bit3=LT bit2=GT bit1=EQ bit0=SO
+    uint32_t fpscr;        // floating point status and control (stub)
     uint8_t* mem;          // host pointer to guest address 0
     bool     halted;
     int      thread_id;
@@ -37,12 +40,40 @@ static inline void wr16(PPUContext& c, uint64_t a, uint16_t v){ v=bs16(v); __bui
 static inline void wr32(PPUContext& c, uint64_t a, uint32_t v){ v=bs32(v); __builtin_memcpy(c.mem+a,&v,4); }
 static inline void wr64(PPUContext& c, uint64_t a, uint64_t v){ v=bs64(v); __builtin_memcpy(c.mem+a,&v,8); }
 
+// Floating point memory helpers (big-endian bit patterns).
+static inline float rd_f32(PPUContext& c, uint64_t a) {
+    uint32_t bits = rd32(c, a);
+    float f; std::memcpy(&f, &bits, 4);
+    return f;
+}
+static inline double rd_f64(PPUContext& c, uint64_t a) {
+    uint64_t bits = rd64(c, a);
+    double d; std::memcpy(&d, &bits, 8);
+    return d;
+}
+static inline void wr_f32(PPUContext& c, uint64_t a, float f) {
+    uint32_t bits; std::memcpy(&bits, &f, 4);
+    wr32(c, a, bits);
+}
+static inline void wr_f64(PPUContext& c, uint64_t a, double d) {
+    uint64_t bits; std::memcpy(&bits, &d, 8);
+    wr64(c, a, bits);
+}
+
 static inline void set_cr_signed(PPUContext& c, int f, int64_t a, int64_t b){
     c.cr[f] = (uint8_t)((a<b?8:0) | (a>b?4:0) | (a==b?2:0));
 }
 static inline void set_cr_unsigned(PPUContext& c, int f, uint64_t a, uint64_t b){
     c.cr[f] = (uint8_t)((a<b?8:0) | (a>b?4:0) | (a==b?2:0));
 }
+static inline void set_cr_fp(PPUContext& c, int f, double a, double b){
+    // FL FG FE FU  (we ignore unordered for now and treat NaN as equal path)
+    if (std::isnan(a) || std::isnan(b))
+        c.cr[f] = 1; // FU
+    else
+        c.cr[f] = (uint8_t)((a<b?8:0) | (a>b?4:0) | (a==b?2:0));
+}
+
 // Decide whether a conditional branch (bc) is taken; may decrement CTR.
 static inline bool bc_taken(PPUContext& c, unsigned bo, unsigned bi){
     bool ctr_ok = true, cond_ok = true;
@@ -68,7 +99,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
         const PPUChunk* hit = nullptr;
         for (size_t i = 0; i < n; ++i)
             if (c.pc >= chunks[i].start && c.pc < chunks[i].end) { hit = &chunks[i]; break; }
-        if (!hit) { c.halted = true; break; }   // jumped outside recompiled code
+        if (!hit) { c.halted = true; break; }
         hit->fn(c);
     }
 }
