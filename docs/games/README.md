@@ -6,5 +6,4 @@ These records report static instruction-lifting measurements collected while eva
 
 | Game | Record | Instructions | Translated | Unimplemented | Chunks |
 | --- | --- | ---: | ---: | ---: | ---: |
-| God of War III (GOW3) | [GOW3.md](GOW3.md) | 1,285,560 | 1,103,166 | 182,394 | 157 |
-
+| God of War III (GOW3) | [GOW3.md](GOW3/GOW3.md) | 1,285,560 | 1,285,560 | 0 | 157 |
