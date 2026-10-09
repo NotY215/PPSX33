@@ -5,16 +5,17 @@
     {
       "type": "default",
       "project": "CMakeLists.txt",
-      "projectTarget": "PS3Recomp.exe (build\\dist\\PS3Recomp.exe)",
-      "name": "PS3Recomp (UI)",
-      "currentDir": "${workspaceRoot}\\build\\dist"
+      "projectTarget": "PS3Recomp (build\\dist\\PS3Recomp.exe)",
+      "name": "PS3Recomp UI",
+      "currentDir": "${workspaceRoot}\\build\\dist",
+      "env": {}
     },
     {
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "ps3_cli.exe (build\\dist\\ps3_cli.exe)",
-      "name": "ps3_cli (command line)",
-      "args": []
+      "name": "ps3_cli",
+      "currentDir": "${workspaceRoot}\\build\\dist"
     }
   ]
 }
