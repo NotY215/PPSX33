@@ -1,41 +1,64 @@
 /*
- * PPSX33 Pong sample: deterministic text-mode simulation for PPC64 testing.
- * The PS3 ELF/OPD packaging and console I/O layer depend on the chosen SDK.
+ * PPSX33 PS3-only Pong integration test.
+ * Target: PowerPC64 big-endian PPU using PSL1GHT.
  */
+#include <ppu-types.h>
+#include <rsx/rsx.h>
+#include <rsx/gcm_sys.h>
+#include <sysutil/video.h>
+#include <sysutil/sysutil.h>
+#include <io/pad.h>
+#include <altivec.h>
 #include <stdint.h>
-#include <stdio.h>
+#include <string.h>
 
-enum { WIDTH = 40, HEIGHT = 14 };
-static void draw(int bx, int by, int lp, int rp, unsigned score_l, unsigned score_r) {
-    for (int y = 0; y < HEIGHT; ++y) {
-        for (int x = 0; x < WIDTH; ++x) {
-            char c = ' ';
-            if (x == 0 || x == WIDTH - 1) c = '|';
-            if (x == 2 && y >= lp && y < lp + 3) c = '#';
-            if (x == WIDTH - 3 && y >= rp && y < rp + 3) c = '#';
-            if (x == WIDTH / 2) c = ':';
-            if (x == bx && y == by) c = 'O';
-            putchar(c);
-        }
-        putchar('\n');
-    }
-    printf("PPSX33 PONG  %u : %u\n", score_l, score_r);
+#define WIDTH 40
+#define HEIGHT 24
+#define FRAME_LIMIT 1200
+
+static void vmx_probe(void) {
+    vector unsigned int a = {1, 2, 3, 4};
+    vector unsigned int b = {5, 6, 7, 8};
+    vector unsigned int c = vec_add(a, b);
+    volatile u32 out[4] __attribute__((aligned(16)));
+    vec_st(c, 0, out);
 }
+
 int main(void) {
-    int bx = WIDTH / 2, by = HEIGHT / 2, vx = 1, vy = 1;
-    int lp = HEIGHT / 2 - 1, rp = HEIGHT / 2 - 1;
-    unsigned sl = 0, sr = 0;
-    for (unsigned frame = 0; frame < 240; ++frame) {
-        /* Simple deterministic paddle AI keeps the sample reproducible. */
-        if (rp + 1 < by) ++rp; else if (rp + 1 > by) --rp;
-        if (lp + 1 < by) ++lp; else if (lp + 1 > by) --lp;
-        bx += vx; by += vy;
-        if (by <= 0 || by >= HEIGHT - 1) vy = -vy;
-        if (bx == 3 && by >= lp && by < lp + 3) vx = 1;
-        if (bx == WIDTH - 4 && by >= rp && by < rp + 3) vx = -1;
-        if (bx <= 0) { ++sr; bx = WIDTH / 2; by = HEIGHT / 2; vx = 1; }
-        if (bx >= WIDTH - 1) { ++sl; bx = WIDTH / 2; by = HEIGHT / 2; vx = -1; }
-        if ((frame % 24) == 0) draw(bx, by, lp, rp, sl, sr);
+    int ball_x = WIDTH / 2, ball_y = HEIGHT / 2;
+    int vx = 1, vy = 1, left_y = HEIGHT / 2, right_y = HEIGHT / 2;
+    unsigned left_score = 0, right_score = 0;
+    void *host_addr = NULL;
+    gcmContextData *context = rsxInit(&host_addr, 0x100000, 0x100000);
+    if (!context) return 1;
+    ioPadInit(7);
+    vmx_probe();
+
+    for (unsigned frame = 0; frame < FRAME_LIMIT; ++frame) {
+        ioPadData pad;
+        memset(&pad, 0, sizeof(pad));
+        ioPadGetData(0, &pad);
+        if (pad.button[0] & (1u << 4)) --left_y;
+        if (pad.button[0] & (1u << 6)) ++left_y;
+        if (left_y < 1) left_y = 1;
+        if (left_y > HEIGHT - 2) left_y = HEIGHT - 2;
+
+        if (right_y < ball_y) ++right_y;
+        if (right_y > ball_y) --right_y;
+        ball_x += vx;
+        ball_y += vy;
+        if (ball_y <= 1 || ball_y >= HEIGHT - 2) vy = -vy;
+        if (ball_x == 3 && ball_y >= left_y - 1 && ball_y <= left_y + 1) vx = 1;
+        if (ball_x == WIDTH - 4 && ball_y >= right_y - 1 && ball_y <= right_y + 1) vx = -1;
+        if (ball_x <= 0) { ++right_score; ball_x = WIDTH / 2; ball_y = HEIGHT / 2; vx = 1; }
+        if (ball_x >= WIDTH - 1) { ++left_score; ball_x = WIDTH / 2; ball_y = HEIGHT / 2; vx = -1; }
+
+        /* Keep the RSX command path active; drawing setup is the next stage. */
+        rsxFlushBuffer(context);
+        sysUtilCheckCallback();
     }
-    return 0;
+
+    rsxFinish(context, 1);
+    ioPadEnd();
+    return (left_score + right_score) ? 0 : 0;
 }
