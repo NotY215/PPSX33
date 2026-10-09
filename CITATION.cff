@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use PPSX33, the PlayStation 3 static recompiler, in research or other work, please cite the repository."
+message: "If you use PPSX33, an experimental PlayStation 3 PowerPC ELF static recompiler, in research or other work, please cite this repository."
 title: "PPSX33"
 type: software
 authors:
