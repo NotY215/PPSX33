@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 
-# Everything lands in build/dist so the GUI and the native tools share one folder.
+# Everything lands in build/dist so native tools and the GUI share one folder.
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist)
@@ -38,15 +38,12 @@ target_link_libraries(ps3_cli PRIVATE ps3core)
 
 # ------------------------------------------------------------------
 # Copy runtime sources + optional Compilers-files into dist/
-# The released app uses Compilers-files/g++.exe + ninja.exe so the
-# end-user does NOT need any C++ toolchain installed when they click
-# "Build exe + dll" inside the GUI.
 # ------------------------------------------------------------------
 add_custom_target(copy_runtime ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_SOURCE_DIR}/runtime
             ${CMAKE_BINARY_DIR}/dist/runtime
-    COMMENT "Copying runtime/ sources next to the tools"
+    COMMENT "Copying runtime/ sources"
 )
 
 if(EXISTS "${CMAKE_SOURCE_DIR}/Compilers-files")
@@ -54,9 +51,35 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/Compilers-files")
         COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${CMAKE_SOURCE_DIR}/Compilers-files
                 ${CMAKE_BINARY_DIR}/dist/Compilers-files
-        COMMENT "Copying Compilers-files (self-contained toolchain for game builds)"
+        COMMENT "Copying Compilers-files"
     )
 endif()
 
-# The C# GUI is built with Visual Studio / dotnet:
-#   Open PS3Recomp.sln  →  Rebuild  →  output goes to build/dist/PS3Recomp.exe
+# ------------------------------------------------------------------
+# GUI (C# WinForms) – built as part of the same "Rebuild All"
+# Requires a system-wide .NET 8 SDK (dotnet on PATH).
+# ------------------------------------------------------------------
+find_program(DOTNET_EXE dotnet)
+
+if(DOTNET_EXE)
+    add_custom_target(PS3Recomp ALL
+        COMMAND ${DOTNET_EXE} publish
+                ${CMAKE_SOURCE_DIR}/src/gui/PS3Recomp.Gui.csproj
+                -c Release
+                -o ${CMAKE_BINARY_DIR}/dist
+                --self-contained false
+                /p:AppendTargetFrameworkToOutputPath=false
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        DEPENDS ps3core copy_runtime
+        COMMENT "Building GUI → build/dist/PS3Recomp.exe"
+        VERBATIM
+    )
+
+    # Make the common "all" target also guarantee the GUI is up to date
+    add_dependencies(PS3Recomp ps3core copy_runtime)
+else()
+    message(WARNING "dotnet not found on PATH – GUI target (PS3Recomp) will be skipped. Install .NET 8 SDK.")
+endif()
+
+message(STATUS "Output directory: ${CMAKE_BINARY_DIR}/dist")
+message(STATUS "After build, run:  ${CMAKE_BINARY_DIR}/dist/PS3Recomp.exe")

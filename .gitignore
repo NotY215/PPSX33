@@ -21,7 +21,7 @@ dist/
 ipch/
 
 # ------------------------------------------------------------
-# VS Code (we do not use it – ignore completely)
+# VS Code (not used)
 # ------------------------------------------------------------
 .vscode/
 
@@ -36,10 +36,7 @@ project.lock.json
 artifacts/
 
 # ------------------------------------------------------------
-# Compilers-files – never commit the actual toolchain binaries.
-# Only the README stays in git. Users (and the release package)
-# put g++.exe, ninja.exe, required MinGW DLLs etc. here so the
-# final game.exe can be built without a system-wide C++ install.
+# Compilers-files – never commit the toolchain binaries
 # ------------------------------------------------------------
 Compilers-files/*
 !Compilers-files/README.md
