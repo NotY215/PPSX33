@@ -1,6 +1,6 @@
-# Third-Party Software and Assets
+# PPSX33 Third-Party Software and Assets
 
-PS3 Recompiler is maintained separately from the third-party tools and libraries it may use.
+PPSX33 is maintained separately from the third-party tools and libraries it may use.
 
 - **Build tools and compilers:** The project can use tools such as CMake, Ninja, GCC-compatible C++ compilers, and the .NET SDK. Obtain them from their official sources and follow their respective license terms. See the repository and `Compilers-files/` documentation for the intended toolchain layout.
 - **RPCS3:** Referenced as an external tool for workflows involving a decrypted ELF. RPCS3 is a separate project with its own license and terms: https://rpcs3.net/ and https://github.com/RPCS3/rpcs3.
