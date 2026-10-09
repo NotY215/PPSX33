@@ -1,6 +1,6 @@
 # PPSX33 Support
 
-For usage questions and reproducible bugs, open an issue in the [PS3 repository](https://github.com/NotY215/PPSX33) and include:
+For usage questions and reproducible bugs, open an issue in the [PPSX33 repository](https://github.com/NotY215/PPSX33) and include:
 
 - Operating system and compiler/toolchain versions.
 - The command or steps used and the expected versus actual result.
