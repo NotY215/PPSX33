@@ -70,6 +70,6 @@ Legend: [x] implemented or verified, [~] partial, [ ] planned or not yet verifie
 - [ ] Startup validation of required compiler tools
 - Acceptance: a test guest executes correctly without leaving the recompiled range and required runtime dependencies are resolved.
 
-## Current GoW3 measurement
+## Current GOW3 measurement
 
-The latest reported lift contains 1,285,560 instruction instances: 1,173,389 translated and 112,171 unimplemented across 157 chunks. Static translation coverage is approximately 91.28%. These figures describe static translation only and do not indicate game compatibility; see [GOW3 coverage record](docs/games/GOW3.md).
+The latest reported lift contains 1,285,560 instruction instances: 1,285,560 translated and zero unimplemented across 157 chunks, giving 100% static translation coverage for this snapshot. This does not establish correct instruction semantics or game compatibility. See [GOW3 coverage record](docs/games/GOW3/GOW3.md).
