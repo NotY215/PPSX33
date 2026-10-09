@@ -1,4 +1,4 @@
-# God of War III (GOW3)
+# PPSX33 Game Record: God of War III (GOW3)
 
 ## Lift statistics
 
