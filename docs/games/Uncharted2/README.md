@@ -1,24 +1,27 @@
 # Uncharted 2: Among Thieves
 
-**Status:** Planned / ready to start as **opcode-expansion** target  
-**Build/run:** Deferred (GOW3 first)
+**Status:** Planned static-lifting and PPU opcode-analysis target  
+**Measurements:** Not yet recorded  
+**Current scope:** Analyze reports and improve PPU opcode coverage; runtime compatibility is not claimed.
 
-Use Uncharted 2 only to widen PPU static coverage: decompile, inspect `lift_report.txt`, implement missing opcodes, re-measure. Do not treat coverage percentage as playability.
+## Purpose
 
-## Goals
+The title is an additional input for discovering PPU instructions and instruction forms that are missing, approximate, or not exercised by the GOW3 snapshot. Work from actual lift reports and isolate behavior in regression tests where practical.
 
-- Analyze a legally obtained decrypted PS3 ELF.
-- Record instructions encountered during static lifting.
-- Implement and test missing or approximate PPU opcodes.
-- Avoid native Build/Run for this title until GOW3 runtime is the active focus completion path.
+## Workflow
 
-## Reporting rules
+1. Use an authorized decrypted PS3 ELF.
+2. Run static lifting and preserve the generated text reports.
+3. Review missing, approximate, or fallback instruction handling.
+4. Prioritize opcode changes using report evidence and semantic risk.
+5. Add focused tests and re-run existing synthetic tests.
+6. Record real before-and-after counts in the [analysis plan](UNCHARTED2.md).
 
-No instruction counts or coverage claims until a real lift report is archived here.
+Do not publish instruction counts before generating a real report. Do not commit the game ELF, EBOOT, keys, assets, or generated commercial-game binaries.
 
-## Related
+## Related documentation
 
-- [Detailed plan](UNCHARTED2.md)
+- [Detailed PPU analysis plan](UNCHARTED2.md)
 - [Game coverage index](../README.md)
-- [PPU coverage](../../PPU_COVERAGE.md)
+- [PPU coverage methodology](../../PPU_COVERAGE.md)
 - [Roadmap](../../../ROADMAP.md)
