@@ -1,4 +1,4 @@
-// ppu_runtime.h - portable MSVC + GCC/Clang. Used by GENERATED code.
+// ppu_runtime.h - portable MSVC + GCC/Clang
 #pragma once
 #include <cstdint>
 #include <cstddef>
@@ -21,15 +21,16 @@
 struct PPUContext {
     uint64_t gpr[32];
     double   fpr[32];
+    uint8_t  vpr[32][16]; // VMX / AltiVec 128-bit registers
     uint64_t lr, ctr, xer, pc;
     uint8_t  cr[8];
     uint32_t fpscr;
+    uint32_t vscr;       // VMX status/control (stub)
     uint8_t* mem;
     bool     halted;
     int      thread_id;
-    // reservation for lwarx/ldarx (very simplified)
     uint64_t res_addr;
-    int      res_size; // 0 = none, 4 or 8
+    int      res_size;
 };
 
 static inline uint16_t bs16(uint16_t v) { return (uint16_t)((v >> 8) | (v << 8)); }
@@ -66,9 +67,7 @@ static inline uint64_t ps3_clz64(uint64_t v) {
 }
 
 static inline uint64_t ps3_rotl64(uint64_t v, unsigned s) {
-    s &= 63u;
-    if (s == 0) return v;
-    return (v << s) | (v >> (64u - s));
+    s &= 63u; if (s == 0) return v; return (v << s) | (v >> (64u - s));
 }
 static inline uint64_t ps3_rotl32dup(uint32_t v, unsigned s) {
     uint64_t x = ((uint64_t)v << 32) | (uint64_t)v;
@@ -83,6 +82,34 @@ static inline void wr8 (PPUContext& c, uint64_t a, uint8_t  v){ c.mem[a] = v; }
 static inline void wr16(PPUContext& c, uint64_t a, uint16_t v){ v = bs16(v); std::memcpy(c.mem + a, &v, 2); }
 static inline void wr32(PPUContext& c, uint64_t a, uint32_t v){ v = bs32(v); std::memcpy(c.mem + a, &v, 4); }
 static inline void wr64(PPUContext& c, uint64_t a, uint64_t v){ v = bs64(v); std::memcpy(c.mem + a, &v, 8); }
+
+// VMX memory: 16-byte aligned loads/stores (lvx/stvx ignore low 4 bits of addr)
+static inline void vpr_load(PPUContext& c, unsigned v, uint64_t addr) {
+    addr &= ~0xFull;
+    std::memcpy(c.vpr[v], c.mem + addr, 16);
+}
+static inline void vpr_store(PPUContext& c, unsigned v, uint64_t addr) {
+    addr &= ~0xFull;
+    std::memcpy(c.mem + addr, c.vpr[v], 16);
+}
+static inline void vpr_and(PPUContext& c, unsigned vd, unsigned va, unsigned vb) {
+    for (int i = 0; i < 16; ++i) c.vpr[vd][i] = c.vpr[va][i] & c.vpr[vb][i];
+}
+static inline void vpr_or(PPUContext& c, unsigned vd, unsigned va, unsigned vb) {
+    for (int i = 0; i < 16; ++i) c.vpr[vd][i] = c.vpr[va][i] | c.vpr[vb][i];
+}
+static inline void vpr_xor(PPUContext& c, unsigned vd, unsigned va, unsigned vb) {
+    for (int i = 0; i < 16; ++i) c.vpr[vd][i] = c.vpr[va][i] ^ c.vpr[vb][i];
+}
+static inline void vpr_splat_u8(PPUContext& c, unsigned vd, uint8_t x) {
+    for (int i = 0; i < 16; ++i) c.vpr[vd][i] = x;
+}
+static inline void vpr_splat_u32(PPUContext& c, unsigned vd, uint32_t x) {
+    for (int i = 0; i < 4; ++i) {
+        uint32_t be = bs32(x);
+        std::memcpy(&c.vpr[vd][i * 4], &be, 4);
+    }
+}
 
 static inline float rd_f32(PPUContext& c, uint64_t a) {
     uint32_t bits = rd32(c, a); float f; std::memcpy(&f, &bits, 4); return f;
@@ -136,10 +163,8 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             std::fprintf(stderr,
                 "[ps3] PC left recompiled range\n"
                 "  pc = 0x%llx\n  lr = 0x%llx\n  ctr = 0x%llx\n  r1 = 0x%llx\n  r2 = 0x%llx\n",
-                (unsigned long long)c.pc,
-                (unsigned long long)c.lr,
-                (unsigned long long)c.ctr,
-                (unsigned long long)c.gpr[1],
+                (unsigned long long)c.pc, (unsigned long long)c.lr,
+                (unsigned long long)c.ctr, (unsigned long long)c.gpr[1],
                 (unsigned long long)c.gpr[2]);
             c.halted = true;
             break;
