@@ -26,6 +26,8 @@ public sealed class MainForm : Form
     private readonly NumericUpDown _threads = new() { Minimum = 1, Maximum = 64, Width = 50 };
     private string? _projectDir;
     private CancellationTokenSource? _cts;
+    private bool _canBuild;
+    private bool _canCopy;
 
     private static string RuntimeDir => Path.Combine(AppContext.BaseDirectory, "runtime");
     private static string CompilersDir => Path.Combine(AppContext.BaseDirectory, "Compilers-files");
@@ -119,7 +121,11 @@ public sealed class MainForm : Form
         _projectDir = dir;
         _project.Text = "Project: " + dir;
         Append($"Created project folders in {dir}\n  input/ (ELF copied)  codebase/  output/");
-        _btnLift.Enabled = true; _btnBuild.Enabled = false; _btnCopy.Enabled = false;
+        _canBuild = false;
+        _canCopy = false;
+        _btnLift.Enabled = true;
+        _btnBuild.Enabled = false;
+        _btnCopy.Enabled = false;
         _report.Text = "(Run Decompile to generate lift_report.txt)";
     }
 
@@ -172,8 +178,8 @@ public sealed class MainForm : Form
             var (ok, log) = await Task.Run(() => work(token), token);
             Append(log);
             Append(ok ? "DONE" : "FAILED");
-            if (ok && enableBuild) _btnBuild.Enabled = true;
-            if (ok && enableCopy) _btnCopy.Enabled = true;
+            if (ok && enableBuild) _canBuild = true;
+            if (ok && enableCopy) _canCopy = true;
             if (refreshReport) LoadLiftReport();
             SetStatus(ok ? "Ready" : "Failed");
         }
@@ -197,12 +203,14 @@ public sealed class MainForm : Form
     private void LoadLiftReport()
     {
         if (_projectDir == null) return;
-        // Prefer codebase (pre-clean) then output/src leftovers
         string[] candidates =
         {
             Path.Combine(_projectDir, "codebase", "lift_report.txt"),
-            Path.Combine(_projectDir, "output", "src", "lift_report.txt"),
+            Path.Combine(_projectDir, "output", "lift_report.txt"),
             Path.Combine(_projectDir, "lift_report.txt"),
+            Path.Combine(_projectDir, "codebase", "analysis_report.txt"),
+            Path.Combine(_projectDir, "output", "analysis_report.txt"),
+            Path.Combine(_projectDir, "analysis_report.txt"),
         };
         foreach (var p in candidates)
         {
@@ -210,12 +218,12 @@ public sealed class MainForm : Form
             try
             {
                 _report.Text = File.ReadAllText(p);
-                Append("Lift report loaded: " + p);
+                Append("Report loaded: " + p);
                 return;
             }
             catch (Exception ex) { Append("Could not read report: " + ex.Message); }
         }
-        _report.Text = "(lift_report.txt not found — decompile may have cleaned codebase/)";
+        _report.Text = "(lift_report.txt not found yet)";
     }
 
     private void SetBusy(bool busy)
@@ -223,8 +231,8 @@ public sealed class MainForm : Form
         _btnLoad.Enabled = !busy;
         _btnFindElf.Enabled = !busy;
         _btnLift.Enabled = !busy && _projectDir != null;
-        _btnBuild.Enabled = !busy && _projectDir != null && _btnBuild.Enabled;
-        _btnCopy.Enabled = !busy && _projectDir != null && _btnCopy.Enabled;
+        _btnBuild.Enabled = !busy && _canBuild;
+        _btnCopy.Enabled = !busy && _canCopy;
         _btnCancel.Enabled = busy;
         _btnRpcs3.Enabled = !busy;
         UseWaitCursor = busy;
