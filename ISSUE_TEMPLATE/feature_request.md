@@ -1,6 +1,6 @@
 ---
-name: Feature request
-about: Suggest an improvement
+name: PPSX33 feature request
+about: Suggest an improvement to PPSX33
 title: "[Feature]: "
 labels: enhancement
 assignees: ""
