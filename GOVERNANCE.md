@@ -1,17 +1,17 @@
 # PPSX33 Governance
 
-PPSX33 is an individual-led open-source project maintained under the NotY215 account.
+PPSX33 is maintained under the NotY215 account.
 
 ## Project decisions
 
-The maintainer coordinates releases, reviews contributions, manages the roadmap, and makes final decisions when consensus cannot be reached. Technical discussion and well-supported alternatives are welcome in issues and pull requests.
+The maintainer coordinates releases, reviews contributions, manages the roadmap, and makes final project decisions when consensus cannot be reached. Technical discussion and evidence-based alternatives are handled through issues and pull requests.
 
-Roadmap status is based on code present in the repository and verification evidence. Static PPU translation counts, generated artifacts, runtime correctness, and full-game compatibility are treated as distinct measures.
+Roadmap status is based on code present in the repository and verification evidence. Static PPU translation counts, semantic correctness, generated artifacts, runtime behavior, and full-game compatibility are distinct measures.
 
-## Contributions
+## Contribution review
 
-Changes are reviewed for correctness, maintainability, test coverage, project scope, and licensing. Contributions may be revised or declined when they conflict with project goals, introduce unsafe behavior, or make unsupported claims.
+Changes are evaluated for correctness, maintainability, regression coverage, scope, documentation, security, and licensing. Changes may be revised or declined when they conflict with project goals or make unsupported claims.
 
-## Changes to governance
+## Governance updates
 
-This document may be updated as the project and contributor community grow.
+This policy may be revised as project structure and contributor participation evolve.
