@@ -22,14 +22,27 @@ if(WIN32)
     set_target_properties(ps3core PROPERTIES PREFIX "")
 endif()
 
-# ps3_cli: command line front end (no GUI), used by tests/run_smoke_test.*
+# ps3_cli: command line front end (no GUI), used by tests / smoke scripts
 add_executable(ps3_cli src/cli/ps3_cli.cpp)
 target_link_libraries(ps3_cli PRIVATE ps3core)
 
-# Runtime sources are NOT compiled here: they are copied next to the app and compiled per game
-# by the build driver (Phase 6), so they must ship as source in <app>/runtime.
+# Runtime sources are NOT compiled here: they are copied next to the app and compiled
+# per game by the build driver (Phase 6), so they must ship as source in <app>/runtime.
+# Compilers-files is optional – only copy if the folder exists (binaries are never committed).
 add_custom_target(copy_runtime ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/runtime ${CMAKE_BINARY_DIR}/dist/runtime
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Compilers-files ${CMAKE_BINARY_DIR}/dist/Compilers-files)
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/runtime
+            ${CMAKE_BINARY_DIR}/dist/runtime
+)
 
-# The C# GUI is built with:  dotnet publish src/gui -c Release -o build/dist
+if(EXISTS "${CMAKE_SOURCE_DIR}/Compilers-files")
+    add_custom_command(TARGET copy_runtime POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_SOURCE_DIR}/Compilers-files
+                ${CMAKE_BINARY_DIR}/dist/Compilers-files
+        COMMENT "Copying Compilers-files (optional toolchain)"
+    )
+endif()
+
+# The C# GUI is built separately with:
+#   dotnet publish src/gui -c Release -o build/dist

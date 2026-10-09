@@ -1,0 +1,31 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "ps3_cli (smoke test)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/dist/ps3_cli.exe",
+      "args": [
+        "${workspaceFolder}/build/smoke_root",
+        "SmokeTest",
+        "${workspaceFolder}/build/test.elf",
+        "${workspaceFolder}/runtime",
+        "${workspaceFolder}/Compilers-files"
+      ],
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "prepare-smoke-elf"
+    },
+    {
+      "name": "ps3_cli (no args – shows usage)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/dist/ps3_cli.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ]
+}
