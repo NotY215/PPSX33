@@ -115,7 +115,6 @@ std::string find_vcvars64() {
     return {};
 }
 
-// Look for cl.exe under Compilers-files (MSCV, MSVC, or root).
 std::string find_bundled_cl(const fs::path& compilers_dir) {
     const char* subdirs[] = { "MSCV", "MSVC", "msvc", "mscv", "" };
     for (auto sub : subdirs) {
@@ -135,6 +134,31 @@ std::string find_tool(const fs::path& dir, const std::vector<std::string>& names
         return p.string();
     }
     return names.front();
+}
+
+// After a successful build, drop intermediate folders. Keep output/src and output root artifacts.
+void cleanup_after_build(const fs::path& project_dir, const fs::path& out, std::string& log) {
+    std::error_code ec;
+    fs::path codebase = project_dir / "codebase";
+    fs::path input = project_dir / "input";
+    fs::path obj = out / "obj";
+    if (fs::exists(codebase)) {
+        fs::remove_all(codebase, ec);
+        log += "Cleaned codebase/\n";
+    }
+    if (fs::exists(input)) {
+        fs::remove_all(input, ec);
+        log += "Cleaned input/\n";
+    }
+    if (fs::exists(obj)) {
+        fs::remove_all(obj, ec);
+        log += "Cleaned output/obj/\n";
+    }
+    // Remove MSVC helper bat if present
+    fs::path bat = out / "build_msvc.bat";
+    if (fs::exists(bat)) fs::remove(bat, ec);
+    fs::path ninja = out / "build.ninja";
+    if (fs::exists(ninja)) fs::remove(ninja, ec);
 }
 
 } // namespace
@@ -162,6 +186,9 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             fs::copy_file(e.path(), src / n, ow, ec);
         }
     }
+    // Keep lift_report in output root for reference
+    if (fs::exists(code / "lift_report.txt"))
+        fs::copy_file(code / "lift_report.txt", out / "lift_report.txt", ow, ec);
     fs::copy_file(code / "guest_image.bin", out / "guest_image.bin", ow, ec);
     for (const char* n : {"ppu_runtime.h", "ps3rt.cpp", "spu_stub.cpp", "rsx_stub.cpp"}) {
         fs::path from = fs::path(runtime_dir) / n;
@@ -182,8 +209,6 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         if (!bundled_cl.empty())
             log += "Bundled cl.exe: " + bundled_cl + "\n";
 
-        // cl from vcvars PATH is preferred (full SDK). Bundled cl is used only if
-        // we prepend its directory after vcvars, or alone when vcvars is missing.
         fs::path bat = out / "build_msvc.bat";
         {
             std::ofstream f(bat);
@@ -191,8 +216,6 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             if (!vcvars.empty())
                 f << "call " << q(vcvars) << " || exit /b 1\n";
             if (!bundled_cl.empty()) {
-                // Put bundled Hostx64\\x64 first so its cl/link are used,
-                // while INCLUDE/LIB still come from vcvars when available.
                 fs::path bin_dir = fs::path(bundled_cl).parent_path();
                 f << "set PATH=" << bin_dir.string() << ";%PATH%\n";
             }
@@ -232,11 +255,11 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             return false;
         }
         log += "Build OK: output/game.exe + output/ps3rt.dll + output/guest_image.bin (MSVC)\n";
+        cleanup_after_build(project_dir, out, log);
         return true;
     }
 #endif
 
-    // g++ fallback
     fs::path cdir(compilers_dir);
     std::string cxx = find_tool(cdir, {"g++", "c++"});
     std::string ninja = find_tool(cdir, {"ninja"});
@@ -294,6 +317,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     fs::current_path(prev, ec);
     if (rc != 0) { err = "Build failed. See log."; return false; }
     log += "Build OK: output/game" + std::string(kExe) + " + output/" + std::string("ps3rt") + kDll + " (g++)\n";
+    cleanup_after_build(project_dir, out, log);
     return true;
 }
 
