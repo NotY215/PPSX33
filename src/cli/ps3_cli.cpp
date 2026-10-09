@@ -1,16 +1,13 @@
 // ps3_cli - command line front end for the same C API the GUI uses.
-// Handy for CI, debugging and for other AIs: no GUI needed.
+// Handy for CI and debugging. Normal users should run PS3Recomp.exe (the GUI).
 //
 // Usage:
 //   ps3_cli <root_dir> <game_name> <elf_path> <runtime_dir> <compilers_dir>
 //
-// Example (smoke test):
-//   ps3_cli C:\temp\ps3_root SmokeTest test.elf runtime Compilers-files
-//
 // Exit codes:
 //   0 = success
 //   1 = create / lift / build failed
-//   2 = bad arguments (missing or --help)
+//   2 = bad arguments (missing args or --help)
 
 #include "../core/ps3core.h"
 #include <cstdio>
@@ -28,15 +25,11 @@ static void print_usage(const char* argv0) {
         "  root_dir       Folder where <game_name>/ will be created\n"
         "  game_name      Project name (sanitized to a folder name)\n"
         "  elf_path       Path to a decrypted ELF64-BE PPC64 file\n"
-        "  runtime_dir    Path to the runtime/ sources (ppu_runtime.h, ps3rt.cpp, ...)\n"
-        "  compilers_dir  Path to Compilers-files/ (g++.exe / ninja.exe) or empty string\n"
+        "  runtime_dir    Path to the runtime/ sources\n"
+        "  compilers_dir  Path to Compilers-files/ (g++.exe / ninja.exe) or \"\"\n"
         "\n"
-        "Example:\n"
-        "  %s C:\\temp\\ps3_root SmokeTest tests\\test.elf runtime Compilers-files\n"
-        "\n"
-        "If you hit F5 in Visual Studio / VS Code without arguments you will always\n"
-        "get exit code 2. Use the provided launch configuration or pass the five args.\n",
-        ps3_core_version(), argv0, argv0);
+        "Normal users should run the GUI instead:  PS3Recomp.exe\n",
+        ps3_core_version(), argv0);
 }
 
 int main(int argc, char** argv) {

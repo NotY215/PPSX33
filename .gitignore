@@ -1,12 +1,12 @@
 # ------------------------------------------------------------
-# Build / output (we use build/ only; out/ is legacy)
+# Build / output
 # ------------------------------------------------------------
 build/
 out/
 dist/
 
 # ------------------------------------------------------------
-# Visual Studio (Community / Professional)
+# Visual Studio Community
 # ------------------------------------------------------------
 .vs/
 *.user
@@ -21,17 +21,12 @@ dist/
 ipch/
 
 # ------------------------------------------------------------
-# Visual Studio Code
+# VS Code (we do not use it – ignore completely)
 # ------------------------------------------------------------
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
-!.vscode/c_cpp_properties.json
-!.vscode/launch.json
-!.vscode/tasks.json
+.vscode/
 
 # ------------------------------------------------------------
-# C# / .NET (GUI)
+# C# / .NET
 # ------------------------------------------------------------
 **/bin/
 **/obj/
@@ -41,14 +36,16 @@ project.lock.json
 artifacts/
 
 # ------------------------------------------------------------
-# Compilers-files (never commit the actual toolchain binaries)
-# Keep only the README so people know what to put here
+# Compilers-files – never commit the actual toolchain binaries.
+# Only the README stays in git. Users (and the release package)
+# put g++.exe, ninja.exe, required MinGW DLLs etc. here so the
+# final game.exe can be built without a system-wide C++ install.
 # ------------------------------------------------------------
 Compilers-files/*
 !Compilers-files/README.md
 
 # ------------------------------------------------------------
-# CMake (generated files that may appear outside build/)
+# CMake generated (outside build/)
 # ------------------------------------------------------------
 CMakeCache.txt
 CMakeFiles/
@@ -58,7 +55,7 @@ CTestTestfile.cmake
 _deps/
 
 # ------------------------------------------------------------
-# Compiled objects / intermediates (safety net)
+# Compiled objects / intermediates
 # ------------------------------------------------------------
 *.obj
 *.o
@@ -76,7 +73,7 @@ _deps/
 *.iobj
 *.map
 
-# Keep scripts that are source
+# Keep source scripts
 !scripts/*.bat
 !scripts/*.sh
 !scripts/*.py
@@ -94,10 +91,8 @@ desktop.ini
 *.log
 
 # ------------------------------------------------------------
-# Game project folders created by the app (never commit these)
+# Game project folders created by the app
 # ------------------------------------------------------------
-# They appear next to the exe as <GameName>/{input,codebase,output}
-# Ignore common patterns if someone runs from source tree
 **/input/EBOOT.elf
 **/codebase/
 **/output/

@@ -1,5 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Phase 1 UI. Requires the .NET 8 SDK (put the runtime pieces into Compilers-files if shipping them). -->
+  <!--
+    Phase 1 UI – WinForms front-end for the recompiler.
+    Requires .NET 8 SDK (install from Microsoft – do NOT put it in Compilers-files).
+
+    Output goes directly into build/dist so it sits next to:
+      ps3core.dll   (from CMake)
+      runtime/      (from CMake)
+      Compilers-files/  (optional, for self-contained game builds)
+  -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -8,5 +16,20 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>PS3Recomp</AssemblyName>
     <RootNamespace>PS3Recomp.Gui</RootNamespace>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Put the GUI exe straight into the same folder as the native build -->
+    <OutputPath>$(MSBuildThisFileDirectory)..\..\build\dist\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
+
+  <!--
+    After build, warn the user if ps3core.dll is missing.
+    The native library must be built first with CMake (Rebuild All on the CMake targets).
+  -->
+  <Target Name="CheckNativeDependency" AfterTargets="Build">
+    <Warning Condition="!Exists('$(OutputPath)ps3core.dll')"
+             Text="ps3core.dll not found in $(OutputPath). Build the CMake targets first (ps3core) so the GUI can load the native library." />
+  </Target>
 </Project>
