@@ -1,23 +1,19 @@
 # PPSX33 Game Record: God of War III (GOW3)
 
-## Lift statistics
+## Latest lift statistics
 
 | Metric | Count |
 | --- | ---: |
 | Instructions | 1,285,560 |
-| Translated | 1,173,389 |
-| Unimplemented | 112,171 |
+| Translated / implemented | 1,285,560 |
+| Unimplemented | 0 |
 | Chunks | 157 |
-| Translation coverage | 91.28% |
+| Static translation coverage | 100% |
 
-Translation coverage is calculated as:
+The latest supplied lift report records all 1,285,560 instruction instances as translated, with zero unimplemented instructions across 157 chunks.
 
-`1,173,389 / 1,285,560 × 100 ≈ 91.28%`
+## Interpretation and limitations
 
-The latest generated `lift_report.txt` records these totals. Regenerate this record when a newer lift report changes the measurements.
+This result indicates complete static translation for this particular GOW3 lift snapshot. It does not, by itself, prove that every translated instruction behaves correctly or that the game boots, renders, or is playable. Runtime correctness, system calls, PRX imports, SPU workloads, RSX graphics, and guest control flow must be validated separately.
 
-## Interpretation
-
-These figures measure static instruction translation only. They do not demonstrate successful boot, correct rendering, or full-game compatibility.
-
-The current MSVC build produces `game.exe` and `ps3rt.dll`. Launching the output starts execution, but the guest PC then leaves the recompiled range. This runtime failure is separate from the static translation percentage. System calls, PRX imports, SPU workloads, RSX graphics, and guest control-flow correctness remain incomplete.
+Update this record when a newer lift report changes the measurements.
