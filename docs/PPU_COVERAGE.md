@@ -5,34 +5,21 @@
 | Metric | Result |
 | --- | ---: |
 | Instruction instances | 1,285,560 |
-| Translated | 1,173,389 (approximately 91.28%) |
-| Unimplemented | 112,171 |
+| Translated / implemented | 1,285,560 (100%) |
+| Unimplemented | 0 |
 | Chunks | 157 |
+| Static translation coverage | 100% |
 | MSVC artifact build | Successful: `game.exe` and `ps3rt.dll` |
 | Runtime execution | Incomplete: execution starts, then the guest PC leaves the recompiled range |
 
+The current GOW3 lift report records no unimplemented instructions for this snapshot. This is a per-snapshot result, not proof that PPSX33 supports every PowerPC instruction or every instruction used by other games.
+
 ## Implemented instruction groups
 
-- Integer arithmetic, logical operations, shifts, and rotates
-- Loads and stores, including common update and indexed forms
-- Branches, condition-register logical operations, and LR/CTR/XER access
-- A subset of floating-point memory and arithmetic operations
-- Partial atomic handling and trap behavior
-
-## Highest-count remaining groups in this snapshot
-
-| Instruction group | Approximate count | Family |
-| --- | ---: | --- |
-| Primary opcode 4 | 76,000 | VMX / AltiVec |
-| Primary opcode 31, XO 103 | 19,000 | Integer / system instruction family |
-| Primary opcode 9 | 13,000 | Extended arithmetic family |
-| Primary opcode 31, XO 231 | 13,000 | Integer / system instruction family |
-| Primary opcodes 6, 1, 3, 2, and 5 | 39,000 | Remaining groups, including possible data interpreted as code |
-
-Counts are from the recorded lift snapshot and should be regenerated after changes to the lifter.
+The lifter's implementation is tracked in `src/core/ppu_lifter.cpp`. The GOW3 report measures the instructions encountered in this specific lift; use dedicated tests and additional games to discover gaps outside this sample.
 
 ## Runtime diagnostics
 
 When the guest PC leaves the recompiled range, the runtime reports `pc`, `lr`, `ctr`, `r1`, and `r2`. These values are diagnostic evidence, not a definitive root-cause diagnosis. Runtime investigation should check branch target calculations, LR/CTR state, indirect branches, missing lifted chunks, and function-descriptor/OPD handling.
 
-MSVC currently emits `game.exe` and `ps3rt.dll`, but correct guest execution and game compatibility are not established. PPU coverage, system-call and PRX support, SPU execution, and RSX graphics are separate requirements.
+MSVC currently emits `game.exe` and `ps3rt.dll`, but correct guest execution and game compatibility are not established. PPU instruction coverage, system-call and PRX support, SPU execution, and RSX graphics are separate requirements.
