@@ -98,6 +98,7 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         rc0(ra); return true;
     }
     case 0: return true;
+    case 2: case 3: return true; // tdi / twi nop
     case 58: {
         int64_t ds = (int16_t)(w & 0xFFFC); unsigned x = w & 3;
         if (x == 0) { o << fmt("c.gpr[%u] = rd64(c, %s);", rt, ea(ds).c_str()); return true; }
@@ -215,11 +216,9 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         case 24: o << fmt("c.gpr[%u] = (uint32_t)c.gpr[%u] << (c.gpr[%u] & 0x3f);", ra, rt, rb); rc0(ra); return true;
         case 536: o << fmt("{ unsigned s = c.gpr[%u] & 0x3f; c.gpr[%u] = s > 31 ? 0 : ((uint32_t)c.gpr[%u] >> s); }", rb, ra, rt); rc0(ra); return true;
         case 792: o << fmt("{ unsigned s = c.gpr[%u] & 0x3f; int32_t v = (int32_t)c.gpr[%u]; c.gpr[%u] = (uint64_t)(int64_t)(s > 31 ? (v < 0 ? -1 : 0) : (v >> s)); }", rb, rt, ra); rc0(ra); return true;
-        case 824: { unsigned sh = rb; o << fmt("{ int32_t v = (int32_t)c.gpr[%u]; c.gpr[%u] = (uint64_t)(int64_t)(v >> %u); }", rt, ra, sh); rc0(ra); return true; }
         case 27: o << fmt("c.gpr[%u] = c.gpr[%u] << (c.gpr[%u] & 0x7f);", ra, rt, rb); rc0(ra); return true;
         case 539: o << fmt("{ unsigned s = c.gpr[%u] & 0x7f; c.gpr[%u] = s > 63 ? 0 : (c.gpr[%u] >> s); }", rb, ra, rt); rc0(ra); return true;
         case 794: o << fmt("{ unsigned s = c.gpr[%u] & 0x7f; int64_t v = (int64_t)c.gpr[%u]; c.gpr[%u] = (uint64_t)(s > 63 ? (v < 0 ? -1 : 0) : (v >> s)); }", rb, rt, ra); rc0(ra); return true;
-        case 826: case 827: { unsigned sh = rb | ((xo & 1) << 5); o << fmt("{ int64_t v = (int64_t)c.gpr[%u]; c.gpr[%u] = (uint64_t)(v >> %u); }", rt, ra, sh); rc0(ra); return true; }
         case 26: o << fmt("{ uint32_t v = (uint32_t)c.gpr[%u]; c.gpr[%u] = ps3_clz32(v); }", rt, ra); rc0(ra); return true;
         case 58: o << fmt("{ uint64_t v = c.gpr[%u]; c.gpr[%u] = ps3_clz64(v); }", rt, ra); rc0(ra); return true;
         case 954: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int8_t)c.gpr[%u];", ra, rt); rc0(ra); return true;
@@ -241,8 +240,6 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         case 375: o << fmt("{ uint64_t a = %s; c.gpr[%u] = (uint64_t)(int64_t)(int16_t)rd16(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
         case 21: o << fmt("c.gpr[%u] = rd64(c, %s);", rt, ea_idx().c_str()); return true;
         case 53: o << fmt("{ uint64_t a = %s; c.gpr[%u] = rd64(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
-        case 341: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int32_t)rd32(c, %s);", rt, ea_idx().c_str()); return true;
-        case 373: o << fmt("{ uint64_t a = %s; c.gpr[%u] = (uint64_t)(int64_t)(int32_t)rd32(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
         case 151: o << fmt("wr32(c, %s, (uint32_t)c.gpr[%u]);", ea_idx().c_str(), rt); return true;
         case 183: o << fmt("{ uint64_t a = %s; wr32(c, a, (uint32_t)c.gpr[%u]); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
         case 215: o << fmt("wr8(c, %s, (uint8_t)c.gpr[%u]);", ea_idx().c_str(), rt); return true;
@@ -252,13 +249,19 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         case 149: o << fmt("wr64(c, %s, c.gpr[%u]);", ea_idx().c_str(), rt); return true;
         case 181: o << fmt("{ uint64_t a = %s; wr64(c, a, c.gpr[%u]); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
         case 535: o << fmt("c.fpr[%u] = (double)rd_f32(c, %s);", rt, ea_idx().c_str()); return true;
-        case 567: o << fmt("{ uint64_t a = %s; c.fpr[%u] = (double)rd_f32(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
         case 599: o << fmt("c.fpr[%u] = rd_f64(c, %s);", rt, ea_idx().c_str()); return true;
-        case 631: o << fmt("{ uint64_t a = %s; c.fpr[%u] = rd_f64(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
         case 663: o << fmt("wr_f32(c, %s, (float)c.fpr[%u]);", ea_idx().c_str(), rt); return true;
-        case 695: o << fmt("{ uint64_t a = %s; wr_f32(c, a, (float)c.fpr[%u]); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
         case 727: o << fmt("wr_f64(c, %s, c.fpr[%u]);", ea_idx().c_str(), rt); return true;
-        case 759: o << fmt("{ uint64_t a = %s; wr_f64(c, a, c.fpr[%u]); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
+        // VMX memory (primary 31)
+        case 103: o << fmt("vpr_load(c, %u, %s);", rt, ea_idx().c_str()); return true; // lvx
+        case 359: o << fmt("vpr_store(c, %u, %s);", rt, ea_idx().c_str()); return true; // stvx
+        case 231: o << fmt("vpr_load(c, %u, %s);", rt, ea_idx().c_str()); return true; // lvxl
+        case 487: o << fmt("vpr_store(c, %u, %s);", rt, ea_idx().c_str()); return true; // stvxl
+        case 20: o << fmt("{ uint64_t a = %s; c.gpr[%u] = rd32(c, a); c.res_addr = a; c.res_size = 4; }", ea_idx().c_str(), rt); return true;
+        case 84: o << fmt("{ uint64_t a = %s; c.gpr[%u] = rd64(c, a); c.res_addr = a; c.res_size = 8; }", ea_idx().c_str(), rt); return true;
+        case 150: o << fmt("{ uint64_t a = %s; wr32(c, a, (uint32_t)c.gpr[%u]); c.cr[0] = 2; c.res_size = 0; }", ea_idx().c_str(), rt); return true;
+        case 214: o << fmt("{ uint64_t a = %s; wr64(c, a, c.gpr[%u]); c.cr[0] = 2; c.res_size = 0; }", ea_idx().c_str(), rt); return true;
+        case 4: case 68: return true; // traps nop
         case 19: o << fmt("{ uint32_t v=0; for(int i=0;i<8;i++) v = (v<<4) | (c.cr[i] & 0xf); c.gpr[%u] = v; }", rt); return true;
         case 144: {
             unsigned fxm = (w >> 12) & 0xFF;
@@ -275,6 +278,19 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         case 54: case 86: case 246: case 278: case 1014: return true;
         default: key = fmt("op=31 xo=%u", xo); return false;
         }
+    }
+    case 4: {
+        unsigned vd = rt, va = ra, vb = rb;
+        unsigned xo = (w >> 1) & 0x3FF;
+        auto ea_v = [&]() { return ra ? fmt("(c.gpr[%u] + c.gpr[%u])", ra, rb) : fmt("c.gpr[%u]", rb); };
+        if (xo == 103 || xo == 71) { o << fmt("vpr_load(c, %u, %s);", vd, ea_v().c_str()); return true; }
+        if (xo == 359 || xo == 487) { o << fmt("vpr_store(c, %u, %s);", vd, ea_v().c_str()); return true; }
+        if (xo == 1156 || xo == 524) { o << fmt("vpr_and(c, %u, %u, %u);", vd, va, vb); return true; }
+        if (xo == 1158 || xo == 646) { o << fmt("vpr_or(c, %u, %u, %u);", vd, va, vb); return true; }
+        if (xo == 1220 || xo == 708) { o << fmt("vpr_xor(c, %u, %u, %u);", vd, va, vb); return true; }
+        if (xo == 908) { int sim = (int)((int32_t)(ra << 27) >> 27); o << fmt("vpr_splat_u32(c, %u, (uint32_t)%d);", vd, sim); return true; }
+        if (xo == 780) { int sim = (int)((int32_t)(ra << 27) >> 27); o << fmt("vpr_splat_u8(c, %u, (uint8_t)%d);", vd, sim); return true; }
+        key = fmt("op=4 xo=%u", xo); return false;
     }
     case 59: case 63: {
         unsigned xo = (w >> 1) & 0x3FF;
@@ -303,6 +319,8 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         if (xo10 == 72) { o << fmt("c.fpr[%u] = c.fpr[%u];", frt, frb); return true; }
         if (xo10 == 136) { o << fmt("c.fpr[%u] = -std::fabs(c.fpr[%u]);", frt, frb); return true; }
         if (xo10 == 264) { o << fmt("c.fpr[%u] = std::fabs(c.fpr[%u]);", frt, frb); return true; }
+        if (xo10 == 846) { o << fmt("{ int64_t i; std::memcpy(&i, &c.fpr[%u], 8); c.fpr[%u] = (double)i; }", frb, frt); return true; }
+        if (xo10 == 814 || xo10 == 815) { o << fmt("{ int64_t i = (int64_t)c.fpr[%u]; std::memcpy(&c.fpr[%u], &i, 8); }", frb, frt); return true; }
         key = fmt("op=%u xo=%u", op, xo10); return false;
     }
     default: break;
@@ -359,12 +377,31 @@ bool lift_elf(const ElfImage& elf, const std::string& dir, LiftStats& st, std::s
       << "extern const PPUChunk g_ppu_chunks[] = {\n" << table.str() << "};\n"
       << "extern const size_t g_ppu_chunk_count = " << st.chunks << ";\n";
     if (!write_file(fs::path(dir) / "ppu_chunks.cpp", t.str())) { err = "Cannot write ppu_chunks.cpp"; return false; }
-    uint64_t pc = 0, toc = 0;
-    if (!elf.read64(elf.entry, pc) || !elf.read64(elf.entry + 8, toc)) { pc = elf.entry; toc = 0; }
+
+    auto in_exec = [&](uint64_t a) {
+        for (const auto& s : elf.segments)
+            if (s.executable() && a >= s.vaddr && a < s.vaddr + s.filesz) return true;
+        return false;
+    };
+    uint64_t pc = 0, toc = 0, raw0 = 0, raw1 = 0;
+    bool got = elf.read64(elf.entry, raw0) && elf.read64(elf.entry + 8, raw1);
+    if (got) {
+        pc = raw0; toc = raw1;
+        if (!in_exec(pc) && in_exec(pc & 0xFFFFFFFFull)) pc &= 0xFFFFFFFFull;
+        if (!in_exec(pc) && in_exec(raw0 >> 32)) pc = raw0 >> 32;
+        if (toc > 0xFFFFFFFFFull) toc &= 0xFFFFFFFFull;
+    }
+    if (!got || !in_exec(pc)) {
+        if (in_exec(elf.entry)) { pc = elf.entry; toc = 0; }
+        else { pc = raw0 ? (raw0 & 0xFFFFFFFFull) : elf.entry; toc = raw1 & 0xFFFFFFFFull; }
+    }
+
     std::ostringstream info;
     info << "// GENERATED\n#pragma once\n#include <cstdint>\n"
+         << fmt("// OPD at 0x%llx raw entry=0x%llx toc=0x%llx\n", (unsigned long long)elf.entry, (unsigned long long)raw0, (unsigned long long)raw1)
          << fmt("static const uint64_t kEntryPc  = 0x%llxull;\nstatic const uint64_t kEntryToc = 0x%llxull;\n", (unsigned long long)pc, (unsigned long long)toc);
     if (!write_file(fs::path(dir) / "image_info.h", info.str())) { err = "Cannot write image_info.h"; return false; }
+
     static const char* mainSrc =
         "// GENERATED\n#include \"ppu_runtime.h\"\n#include \"image_info.h\"\n#include <cstdio>\n#include <cstring>\n#include <string>\n"
         "extern const PPUChunk g_ppu_chunks[]; extern const size_t g_ppu_chunk_count;\n"
@@ -373,10 +410,12 @@ bool lift_elf(const ElfImage& elf, const std::string& dir, LiftStats& st, std::s
         "    if (ps3rt_init((dir + \"guest_image.bin\").c_str()) != 0) { std::fprintf(stderr, \"guest_image.bin not found\\n\"); return 1; }\n"
         "    PPUContext c; std::memset(&c, 0, sizeof c);\n"
         "    c.mem = ps3rt_memory(); c.pc = kEntryPc; c.gpr[2] = kEntryToc; c.gpr[1] = ps3rt_stack_top();\n"
+        "    std::fprintf(stderr, \"[ps3] entry pc=0x%llx toc=0x%llx\\n\", (unsigned long long)c.pc, (unsigned long long)c.gpr[2]);\n"
         "    ppu_run(c, g_ppu_chunks, g_ppu_chunk_count);\n"
         "    std::fprintf(stderr, \"[ps3] PPU halted at pc=0x%llx\\n\", (unsigned long long)c.pc);\n"
         "    ps3rt_shutdown(); return 0;\n}\n";
     if (!write_file(fs::path(dir) / "game_main.cpp", mainSrc)) { err = "Cannot write game_main.cpp"; return false; }
+
     {
         std::string img("PS3IMG1\0", 8);
         auto p32 = [&](uint32_t v) { img.append((const char*)&v, 4); };
