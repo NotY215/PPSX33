@@ -1,41 +1,42 @@
-# Uncharted 2: Among Thieves — PPU opcode expansion plan
+# Uncharted 2: Among Thieves PPU Analysis
 
-**Role:** Secondary target for **static PPU opcode coverage** only.
+## Scope
 
-**Do not** build or launch a native `game.exe` for Uncharted 2 until God of War III runtime work is further along. Primary playability target remains GOW3.
+Use this title for static PPU opcode discovery and coverage expansion. No runtime compatibility or playability result is claimed. SPU execution, RSX/GCM, operating-system services, and complete game support are separate workstreams.
 
-## Goals
+## Analysis procedure
 
-- Discover instruction families and encodings not exercised (or only approximated) in the GOW3 lift.
-- Implement or harden those opcodes in `src/core/ppu_lifter.cpp` and runtime helpers.
-- Keep before/after lift statistics under this folder.
-- Feed regression tests where a small synthetic ELF can isolate the behavior.
+1. Identify the game build and use a legally obtained decrypted PS3 ELF.
+2. Create a PPSX33 project and run the lift/decompile step.
+3. Archive `lift_report.txt` and `analysis_report.txt` in this directory after checking for sensitive paths or unintended extracted content.
+4. Record the PPSX33 commit, input identification, date, and exact workflow used.
+5. Compare the report with current decoder and lifter behavior. Classify gaps as unrecognized encodings, missing translation, approximate semantics, or runtime dependencies.
+6. Prioritize high-frequency gaps while accounting for correctness risk.
+7. Implement the opcode in `src/core/ppu_lifter.cpp` and relevant helpers in `runtime/ppu_runtime.h`.
+8. Add a focused synthetic regression test when practical. Include record-bit, condition-register, carry/overflow, memory, and endianness effects when relevant.
+9. Run the synthetic smoke test and relevant tests. Re-run the lift after changes and update measurements only from actual output.
+10. Re-run GOW3 or other existing baselines when input and tool access are available to detect regressions.
 
-## Workflow
-
-1. Use a legally obtained, decrypted PS3 ELF for Uncharted 2.
-2. Create a project and run **Decompile only** (GUI or CLI). Skip Build.
-3. Copy `lift_report.txt` and `analysis_report.txt` into `docs/games/Uncharted2/` (versioned snapshots).
-4. Sort missing / weak opcodes by frequency; implement the top items.
-5. Re-lift Uncharted 2 and GOW3; update tables below only from real tool output.
-6. Do not claim game compatibility from static coverage alone.
-
-## Results (fill only from real lifts)
+## Results
 
 | Metric | Status |
 | --- | --- |
-| Analysis started | No |
+| Analysis | Not recorded |
 | Instructions | Not measured |
-| Translated | Not measured |
-| Unimplemented | Not measured |
+| Translated instances | Not measured |
+| Unimplemented instances | Not measured |
 | Chunks | Not measured |
-| Opcode fixes driven by this title | None recorded yet |
+| Opcode changes based on this target | None recorded |
 
-## Out of scope for this track
+Update this table only after running the tool and preserving the corresponding report.
 
-- SPU full execution (Phase 4)
-- RSX / GCM (Phase 5)
-- Full PRX HLE and playability
-- Shipping or running a recompiled Uncharted 2 binary
+## Artifact policy
 
-See [README](README.md), [game index](../README.md), and [ROADMAP](../../../ROADMAP.md).
+Do not commit commercial-game ELFs, EBOOT files, keys, copyrighted assets, or generated game executables. Store only text reports that are appropriate for public release. Static translation counts must not be presented as semantic correctness or game compatibility.
+
+## Related documentation
+
+- [Directory overview](README.md)
+- [Game coverage index](../README.md)
+- [PPU coverage methodology](../../PPU_COVERAGE.md)
+- [Developer guide](../../DEVELOPER_GUIDE.md)
