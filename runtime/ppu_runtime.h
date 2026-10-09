@@ -21,16 +21,36 @@
 struct PPUContext {
     uint64_t gpr[32];
     double   fpr[32];
-    uint8_t  vpr[32][16]; // VMX / AltiVec 128-bit registers
+    uint8_t  vpr[32][16];
     uint64_t lr, ctr, xer, pc;
     uint8_t  cr[8];
     uint32_t fpscr;
-    uint32_t vscr;       // VMX status/control (stub)
+    uint32_t vscr;
     uint8_t* mem;
     bool     halted;
     int      thread_id;
     uint64_t res_addr;
     int      res_size;
+};
+
+// Lightweight SPU context (one per logical SPU thread)
+struct SPUContext {
+    uint32_t gpr[128];       // 128 x 128-bit would be heavy; use 32-bit slots for stubs
+    uint8_t  ls[256 * 1024]; // 256 KB local store
+    uint32_t pc;
+    uint32_t npc;
+    bool     running;
+    bool     isolated;
+    uint32_t mailbox_in[4];
+    int      mailbox_in_count;
+    uint32_t mailbox_out[4];
+    int      mailbox_out_count;
+    uint32_t signal1, signal2;
+    uint64_t mfc_ea;
+    uint32_t mfc_lsa;
+    uint32_t mfc_size;
+    uint32_t mfc_tag;
+    uint32_t mfc_cmd;
 };
 
 static inline uint16_t bs16(uint16_t v) { return (uint16_t)((v >> 8) | (v << 8)); }
@@ -74,22 +94,31 @@ static inline uint64_t ps3_rotl32dup(uint32_t v, unsigned s) {
     return ps3_rotl64(x, s & 31u);
 }
 
-static inline uint8_t  rd8 (PPUContext& c, uint64_t a){ return c.mem[a]; }
-static inline uint16_t rd16(PPUContext& c, uint64_t a){ uint16_t v; std::memcpy(&v, c.mem + a, 2); return bs16(v); }
-static inline uint32_t rd32(PPUContext& c, uint64_t a){ uint32_t v; std::memcpy(&v, c.mem + a, 4); return bs32(v); }
-static inline uint64_t rd64(PPUContext& c, uint64_t a){ uint64_t v; std::memcpy(&v, c.mem + a, 8); return bs64(v); }
-static inline void wr8 (PPUContext& c, uint64_t a, uint8_t  v){ c.mem[a] = v; }
-static inline void wr16(PPUContext& c, uint64_t a, uint16_t v){ v = bs16(v); std::memcpy(c.mem + a, &v, 2); }
-static inline void wr32(PPUContext& c, uint64_t a, uint32_t v){ v = bs32(v); std::memcpy(c.mem + a, &v, 4); }
-static inline void wr64(PPUContext& c, uint64_t a, uint64_t v){ v = bs64(v); std::memcpy(c.mem + a, &v, 8); }
+// Demand-commit helper (implemented in ps3rt.cpp)
+PS3RT_API void ps3rt_touch(uint64_t addr, size_t len);
 
-// VMX memory: 16-byte aligned loads/stores (lvx/stvx ignore low 4 bits of addr)
+static inline void touch_rw(PPUContext& c, uint64_t a, size_t n) {
+    (void)c;
+    ps3rt_touch(a, n);
+}
+
+static inline uint8_t  rd8 (PPUContext& c, uint64_t a){ touch_rw(c, a, 1); return c.mem[a]; }
+static inline uint16_t rd16(PPUContext& c, uint64_t a){ touch_rw(c, a, 2); uint16_t v; std::memcpy(&v, c.mem + a, 2); return bs16(v); }
+static inline uint32_t rd32(PPUContext& c, uint64_t a){ touch_rw(c, a, 4); uint32_t v; std::memcpy(&v, c.mem + a, 4); return bs32(v); }
+static inline uint64_t rd64(PPUContext& c, uint64_t a){ touch_rw(c, a, 8); uint64_t v; std::memcpy(&v, c.mem + a, 8); return bs64(v); }
+static inline void wr8 (PPUContext& c, uint64_t a, uint8_t  v){ touch_rw(c, a, 1); c.mem[a] = v; }
+static inline void wr16(PPUContext& c, uint64_t a, uint16_t v){ touch_rw(c, a, 2); v = bs16(v); std::memcpy(c.mem + a, &v, 2); }
+static inline void wr32(PPUContext& c, uint64_t a, uint32_t v){ touch_rw(c, a, 4); v = bs32(v); std::memcpy(c.mem + a, &v, 4); }
+static inline void wr64(PPUContext& c, uint64_t a, uint64_t v){ touch_rw(c, a, 8); v = bs64(v); std::memcpy(c.mem + a, &v, 8); }
+
 static inline void vpr_load(PPUContext& c, unsigned v, uint64_t addr) {
     addr &= ~0xFull;
+    touch_rw(c, addr, 16);
     std::memcpy(c.vpr[v], c.mem + addr, 16);
 }
 static inline void vpr_store(PPUContext& c, unsigned v, uint64_t addr) {
     addr &= ~0xFull;
+    touch_rw(c, addr, 16);
     std::memcpy(c.mem + addr, c.vpr[v], 16);
 }
 static inline void vpr_and(PPUContext& c, unsigned vd, unsigned va, unsigned vb) {
@@ -152,9 +181,23 @@ PS3RT_API uint8_t* ps3rt_memory(void);
 PS3RT_API uint64_t ps3rt_stack_top(void);
 PS3RT_API void     ps3rt_shutdown(void);
 
+// SPU API
+PS3RT_API int  ps3rt_spu_supported(void);
+PS3RT_API int  ps3rt_spu_create(int* out_id);
+PS3RT_API int  ps3rt_spu_destroy(int id);
+PS3RT_API int  ps3rt_spu_load(int id, const void* img, size_t len);
+PS3RT_API int  ps3rt_spu_run(int id, uint32_t entry);
+PS3RT_API int  ps3rt_spu_stop(int id);
+PS3RT_API int  ps3rt_spu_mbox_write(int id, uint32_t val);
+PS3RT_API int  ps3rt_spu_mbox_read(int id, uint32_t* out);
+PS3RT_API int  ps3rt_spu_mfc_dma(int id, uint32_t lsa, uint64_t ea, uint32_t size, uint32_t cmd);
+
 struct PPUChunk { uint64_t start, end; bool (*fn)(PPUContext&); };
 
+// When PC leaves recompiled code, try return-via-lr (treat as external stub).
+// Caps repeated escapes so we still halt on infinite external bounce.
 static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
+    int external_escapes = 0;
     while (!c.halted) {
         const PPUChunk* hit = nullptr;
         for (size_t i = 0; i < n; ++i)
@@ -166,9 +209,24 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 (unsigned long long)c.pc, (unsigned long long)c.lr,
                 (unsigned long long)c.ctr, (unsigned long long)c.gpr[1],
                 (unsigned long long)c.gpr[2]);
+            // External / unresolved target: return via LR if it lands back in code
+            if (c.lr && c.lr != c.pc) {
+                bool lr_ok = false;
+                for (size_t i = 0; i < n; ++i)
+                    if (c.lr >= chunks[i].start && c.lr < chunks[i].end) { lr_ok = true; break; }
+                if (lr_ok && external_escapes < 64) {
+                    std::fprintf(stderr, "[ps3] external stub: return via lr=0x%llx (escape %d)\n",
+                        (unsigned long long)c.lr, external_escapes + 1);
+                    c.gpr[3] = 0; // CELL_OK / success for most lib stubs
+                    c.pc = c.lr;
+                    ++external_escapes;
+                    continue;
+                }
+            }
             c.halted = true;
             break;
         }
+        external_escapes = 0;
         hit->fn(c);
     }
 }
