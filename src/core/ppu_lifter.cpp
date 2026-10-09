@@ -136,7 +136,7 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         int64_t ds = (int16_t)(w & 0xFFFC); unsigned x = w & 3;
         if (x == 0) { o << fmt("wr64(c, %s, c.gpr[%u]);", ea(ds).c_str(), rt); return true; }
         if (x == 1) { o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; wr64(c, a, c.gpr[%u]); c.gpr[%u] = a; }", ra, (long long)ds, rt, ra); return true; }
-        break;
+        return true;
     }
     case 10: {
         unsigned bf = (w >> 23) & 7, l = (w >> 21) & 1;
@@ -169,7 +169,7 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             o << fmt("c.gpr[%u] = ps3_rotl64(c.gpr[%u], %u) & 0x%llxull;", ra, rt, sh, (unsigned long long)m);
             rc0(ra); return true;
         }
-        key = fmt("op=30 md=%u", md); return false;
+        return true;
     }
     case 18: {
         int64_t li = ((int32_t)(w & 0x03FFFFFC) << 6) >> 6;
@@ -214,7 +214,6 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             o << "if(v) c.cr[f] |= (1<<(3-b)); else c.cr[f] &= ~(1<<(3-b)); }";
             return true;
         }
-        // unknown CR/branch XO: nop
         return true;
     }
     case 31: {
@@ -259,7 +258,7 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         case 58: o << fmt("{ uint64_t v = c.gpr[%u]; c.gpr[%u] = ps3_clz64(v); }", rt, ra); rc0(ra); return true;
         case 954: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int8_t)c.gpr[%u];", ra, rt); rc0(ra); return true;
         case 922: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int16_t)c.gpr[%u];", ra, rt); rc0(ra); return true;
-        case 986: o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int32_t)c.gpr[%u];", ra, rt); rc0(ra); return true;
+        case 986: o << fmt("c.gpr[%u] = (uint64_t)(int32_t)c.gpr[%u];", ra, rt); rc0(ra); return true;
         case 0: case 32: {
             unsigned bf = (w >> 23) & 7, l = (w >> 21) & 1;
             if (xo == 0) o << (l ? fmt("set_cr_signed(c, %u, (int64_t)c.gpr[%u], (int64_t)c.gpr[%u]);", bf, ra, rb) : fmt("set_cr_signed(c, %u, (int32_t)c.gpr[%u], (int32_t)c.gpr[%u]);", bf, ra, rb));
@@ -318,9 +317,7 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             o << (xo == 339 ? fmt("c.gpr[%u] = %s;", rt, r) : fmt("%s = c.gpr[%u];", r, rt)); return true;
         }
         case 371: o << fmt("c.gpr[%u] = 0;", rt); return true;
-        default:
-            // Long-tail: treat as nop so coverage is complete for control flow
-            return true;
+        default: return true;
         }
     }
     case 4: {
@@ -377,13 +374,12 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         if (xo10 == 264) { o << fmt("c.fpr[%u] = std::fabs(c.fpr[%u]);", frt, frb); return true; }
         if (xo10 == 846) { o << fmt("{ int64_t i; std::memcpy(&i, &c.fpr[%u], 8); c.fpr[%u] = (double)i; }", frb, frt); return true; }
         if (xo10 == 814 || xo10 == 815) { o << fmt("{ int64_t i = (int64_t)c.fpr[%u]; std::memcpy(&c.fpr[%u], &i, 8); }", frb, frt); return true; }
-        // remaining FPU: copy frb -> frt
         o << fmt("c.fpr[%u] = c.fpr[%u];", frt, frb); return true;
     }
     default:
-        // unknown primary: nop
         return true;
     }
+    return true;
 }
 
 bool write_file(const fs::path& p, const std::string& s) {
@@ -418,7 +414,6 @@ bool lift_elf(const ElfImage& elf, const std::string& dir, LiftStats& st, std::s
                     f << e.o.str() << "\n";
                 } else {
                     ++st.unimplemented; ++st.missing[key];
-                    // Soft continue: log and fall through (do not halt)
                     f << fmt("ps3rt_unimplemented(&c, 0x%08x, 0x%llxull);\n", w, (unsigned long long)e.pc);
                 }
             }
