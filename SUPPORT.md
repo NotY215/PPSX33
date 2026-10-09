@@ -1,15 +1,19 @@
 # PPSX33 Support
 
-For usage questions and reproducible problems, open an issue in the [PPSX33 repository](https://github.com/NotY215/PPSX33).
+Usage questions and reproducible defects belong in the [PPSX33 GitHub repository](https://github.com/NotY215/PPSX33).
+
+## Information for a useful report
 
 Include:
+
 - Operating system and version.
 - PPSX33 commit or release.
-- Compiler/toolchain and build configuration.
-- Exact commands or steps, plus expected and actual results.
-- Relevant logs and, where applicable, `lift_report.txt` and `analysis_report.txt`.
+- Compiler, toolchain, and build configuration.
+- Exact commands or reproduction steps.
+- Expected behavior and observed behavior.
+- Relevant logs, including `lift_report.txt` or `analysis_report.txt` where applicable.
 - Whether the synthetic smoke test passes.
 
-Do not upload game dumps, decrypted ELFs, EBOOT files, encryption keys, or copyrighted assets. Use only games and files you own and are authorized to use.
+Remove tokens, private data, and sensitive paths before sharing logs. Do not upload game dumps, decrypted ELFs, EBOOT files, encryption keys, or copyrighted assets.
 
-PPSX33 is experimental. A 100% static translation report for one GOW3 snapshot does not establish semantic correctness or full game compatibility. SPU instruction execution, RSX rendering, system-library support, and runtime correctness remain separate areas of work. See [README.md](README.md), [ROADMAP.md](ROADMAP.md), and [PPU coverage](docs/PPU_COVERAGE.md).
+PPSX33 is experimental. Static translation coverage for one GOW3 snapshot does not establish semantic correctness or full game compatibility. SPU execution, RSX rendering, system-library support, and runtime correctness are separate areas of work. See [README](README.md), [roadmap](ROADMAP.md), and [PPU coverage](docs/PPU_COVERAGE.md).
