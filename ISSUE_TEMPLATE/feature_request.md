@@ -1,19 +1,21 @@
 ---
 name: PPSX33 feature request
-about: Suggest an improvement to PPSX33
+about: Propose a concrete PPSX33 improvement
 title: "[Feature]: "
 labels: enhancement
 assignees: ""
 ---
 
-## Problem or use case
+## Problem or engineering requirement
 
-## Proposed solution
+## Proposed design
 
-## Expected acceptance criteria
+## Affected components
 
-## Alternatives considered
+## Acceptance criteria
 
-## Testing or compatibility impact
+## Compatibility and regression impact
+
+## Validation plan
 
 ## Additional context
