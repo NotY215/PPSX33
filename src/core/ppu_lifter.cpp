@@ -13,7 +13,7 @@ namespace fs = std::filesystem;
 namespace ps3 {
 namespace {
 
-constexpr uint32_t kChunkInsns = 8192;   // instructions per generated function
+constexpr uint32_t kChunkInsns = 8192;
 
 std::string fmt(const char* f, ...) {
     char buf[768];
@@ -23,27 +23,21 @@ std::string fmt(const char* f, ...) {
     return buf;
 }
 
-// PowerPC mask: bits MB..ME inclusive, bit 0 = MSB (64-bit numbering).
 uint64_t mask64(unsigned mb, unsigned me) {
     uint64_t a = ~0ULL >> mb, b = ~0ULL << (63 - me);
     return mb <= me ? (a & b) : ~(( ~0ULL >> (me + 1)) & (~0ULL << (63 - (mb - 1))));
 }
 
 struct Emit {
-    uint64_t pc, cs, ce;   // current pc, chunk start/end
+    uint64_t pc, cs, ce;
     std::ostringstream o;
 
     std::string jump_const(uint64_t t) const {
         if (t >= cs && t < ce) return fmt("pc = 0x%llxull; goto dispatch;", (unsigned long long)t);
         return fmt("c.pc = 0x%llxull; return true;", (unsigned long long)t);
     }
-    std::string jump_dyn(const char* reg) const {
-        return fmt("pc = %s & ~3ull; if (pc >= 0x%llxull && pc < 0x%llxull) goto dispatch; c.pc = pc; return true;",
-                   reg, (unsigned long long)cs, (unsigned long long)ce);
-    }
 };
 
-// Returns true if instruction was translated.
 bool lift_one(uint32_t w, Emit& e, std::string& key) {
     const unsigned op = w >> 26, rt = (w >> 21) & 31, ra = (w >> 16) & 31, rb = (w >> 11) & 31;
     const int64_t simm = (int16_t)w;
@@ -52,11 +46,11 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
     auto& o = e.o;
     const unsigned long long next = e.pc + 4;
 
-    auto ea = [&](int64_t d) {   // (RA|0) + d
+    auto ea = [&](int64_t d) {
         return ra ? fmt("(c.gpr[%u] + (int64_t)%lld)", ra, (long long)d)
                   : fmt("(uint64_t)%lld", (long long)d);
     };
-    auto ea_idx = [&]() {        // (RA|0) + RB
+    auto ea_idx = [&]() {
         return ra ? fmt("(c.gpr[%u] + c.gpr[%u])", ra, rb) : fmt("c.gpr[%u]", rb);
     };
     auto rc0 = [&](unsigned r) {
@@ -65,28 +59,24 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
 
     switch (op) {
 
-    // ---------- primary opcodes ----------
-    case 7:  // mulli
+    case 7:
         o << fmt("c.gpr[%u] = (uint64_t)((int64_t)c.gpr[%u] * (int64_t)%lld);", rt, ra, (long long)simm);
         return true;
-
-    case 8:  // subfic
+    case 8:
         o << fmt("c.gpr[%u] = (uint64_t)%lld - c.gpr[%u];", rt, (long long)simm, ra);
         return true;
-
-    case 12: // addic
+    case 12:
         o << fmt("c.gpr[%u] = c.gpr[%u] + (int64_t)%lld;", rt, ra, (long long)simm);
         return true;
-    case 13: // addic.
+    case 13:
         o << fmt("c.gpr[%u] = c.gpr[%u] + (int64_t)%lld; set_cr_signed(c, 0, (int64_t)c.gpr[%u], 0);",
                  rt, ra, (long long)simm, rt);
         return true;
-
-    case 14: // addi / li
+    case 14:
         o << (ra ? fmt("c.gpr[%u] = c.gpr[%u] + (int64_t)%lld;", rt, ra, (long long)simm)
                  : fmt("c.gpr[%u] = (uint64_t)%lld;", rt, (long long)simm));
         return true;
-    case 15: // addis / lis
+    case 15:
         o << (ra ? fmt("c.gpr[%u] = c.gpr[%u] + (int64_t)%lld;", rt, ra, (long long)(simm << 16))
                  : fmt("c.gpr[%u] = (uint64_t)%lld;", rt, (long long)(simm << 16)));
         return true;
@@ -116,18 +106,34 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
 
     case 46: {
         o << fmt("{ uint64_t a = %s; ", ea(simm).c_str());
-        for (unsigned r = rt; r < 32; ++r)
-            o << fmt("c.gpr[%u] = rd32(c, a); a += 4; ", r);
-        o << "}";
-        return true;
+        for (unsigned r = rt; r < 32; ++r) o << fmt("c.gpr[%u] = rd32(c, a); a += 4; ", r);
+        o << "}"; return true;
     }
     case 47: {
         o << fmt("{ uint64_t a = %s; ", ea(simm).c_str());
-        for (unsigned r = rt; r < 32; ++r)
-            o << fmt("wr32(c, a, (uint32_t)c.gpr[%u]); a += 4; ", r);
-        o << "}";
-        return true;
+        for (unsigned r = rt; r < 32; ++r) o << fmt("wr32(c, a, (uint32_t)c.gpr[%u]); a += 4; ", r);
+        o << "}"; return true;
     }
+
+    case 48: o << fmt("c.fpr[%u] = (double)rd_f32(c, %s);", rt, ea(simm).c_str()); return true;
+    case 49: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; c.fpr[%u] = (double)rd_f32(c, a); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true;
+    case 50: o << fmt("c.fpr[%u] = rd_f64(c, %s);", rt, ea(simm).c_str()); return true;
+    case 51: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; c.fpr[%u] = rd_f64(c, a); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true;
+    case 52: o << fmt("wr_f32(c, %s, (float)c.fpr[%u]);", ea(simm).c_str(), rt); return true;
+    case 53: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; wr_f32(c, a, (float)c.fpr[%u]); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true;
+    case 54: o << fmt("wr_f64(c, %s, c.fpr[%u]);", ea(simm).c_str(), rt); return true;
+    case 55: o << fmt("{ uint64_t a = c.gpr[%u] + (int64_t)%lld; wr_f64(c, a, c.fpr[%u]); c.gpr[%u] = a; }", ra, (long long)simm, rt, ra); return true;
+
+    case 22: {
+        unsigned mb = (w >> 6) & 31, me = (w >> 1) & 31;
+        uint64_t m = mask64(mb + 32, me + 32);
+        o << fmt("{ uint64_t v = (uint32_t)c.gpr[%u]; unsigned sh = c.gpr[%u] & 31; v = (v << 32) | v; v = (v << sh) | (sh ? (v >> (64 - sh)) : 0); c.gpr[%u] = v & 0x%llxull; }",
+                 rt, rb, ra, (unsigned long long)m);
+        rc0(ra); return true;
+    }
+
+    case 0:
+        return true;
 
     case 58: {
         int64_t ds = (int16_t)(w & 0xFFFC);
@@ -195,6 +201,20 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
                      rt, sh, sh, sh, ra, ra, (unsigned long long)m, (unsigned long long)m);
             rc0(ra); return true;
         }
+        if (md == 8) {
+            unsigned mbb = ((w >> 6) & 0x1F) | ((w & 0x20));
+            uint64_t m = mask64(mbb, 63);
+            o << fmt("{ unsigned sh = c.gpr[%u] & 63; uint64_t v = c.gpr[%u]; v = (v << sh) | (sh ? (v >> (64 - sh)) : 0); c.gpr[%u] = v & 0x%llxull; }",
+                     rb, rt, ra, (unsigned long long)m);
+            rc0(ra); return true;
+        }
+        if (md == 9) {
+            unsigned me = ((w >> 6) & 0x1F) | ((w & 0x20));
+            uint64_t m = mask64(0, me);
+            o << fmt("{ unsigned sh = c.gpr[%u] & 63; uint64_t v = c.gpr[%u]; v = (v << sh) | (sh ? (v >> (64 - sh)) : 0); c.gpr[%u] = v & 0x%llxull; }",
+                     rb, rt, ra, (unsigned long long)m);
+            rc0(ra); return true;
+        }
         key = fmt("op=30 md=%u", md);
         return false;
     }
@@ -236,13 +256,12 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             }
             return true;
         }
-        if (xo == 150 || xo == 598 || xo == 854) return true; // isync / sync / eieio
+        if (xo == 150 || xo == 598 || xo == 854) return true;
         if (xo == 0) {
             unsigned bf = (w >> 23) & 7, bfa = (w >> 18) & 7;
             o << fmt("c.cr[%u] = c.cr[%u];", bf, bfa);
             return true;
         }
-        // CR logical family
         if (xo == 193 || xo == 449 || xo == 257 || xo == 225 || xo == 289 || xo == 33 || xo == 417 || xo == 129) {
             const char* opstr = (xo == 193) ? "^" : (xo == 449) ? "|" : (xo == 257) ? "&" :
                                 (xo == 225) ? "&" : (xo == 289) ? "^" : (xo == 33) ? "|" :
@@ -348,6 +367,16 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         case 149: o << fmt("wr64(c, %s, c.gpr[%u]);", ea_idx().c_str(), rt); return true;
         case 181: o << fmt("{ uint64_t a = %s; wr64(c, a, c.gpr[%u]); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
 
+        // FPU indexed memory
+        case 535: o << fmt("c.fpr[%u] = (double)rd_f32(c, %s);", rt, ea_idx().c_str()); return true; // lfsx
+        case 567: o << fmt("{ uint64_t a = %s; c.fpr[%u] = (double)rd_f32(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true; // lfsux
+        case 599: o << fmt("c.fpr[%u] = rd_f64(c, %s);", rt, ea_idx().c_str()); return true; // lfdx
+        case 631: o << fmt("{ uint64_t a = %s; c.fpr[%u] = rd_f64(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true; // lfdux
+        case 663: o << fmt("wr_f32(c, %s, (float)c.fpr[%u]);", ea_idx().c_str(), rt); return true; // stfsx
+        case 695: o << fmt("{ uint64_t a = %s; wr_f32(c, a, (float)c.fpr[%u]); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true; // stfsux
+        case 727: o << fmt("wr_f64(c, %s, c.fpr[%u]);", ea_idx().c_str(), rt); return true; // stfdx
+        case 759: o << fmt("{ uint64_t a = %s; wr_f64(c, a, c.fpr[%u]); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true; // stfdux
+
         case 19: {
             o << fmt("{ uint32_t v=0; for(int i=0;i<8;i++) v = (v<<4) | (c.cr[i] & 0xf); c.gpr[%u] = v; }", rt);
             return true;
@@ -409,7 +438,7 @@ bool lift_elf(const ElfImage& elf, const std::string& dir, LiftStats& st, std::s
             e.cs = seg.vaddr + base * 4;
             e.ce = e.cs + cnt * 4;
             std::ostringstream f;
-            f << "// GENERATED by ps3core (Phase 2/3). Do not edit.\n#include \"ppu_runtime.h\"\n";
+            f << "// GENERATED by ps3core. Do not edit.\n#include \"ppu_runtime.h\"\n";
             f << "bool ppu_chunk_" << st.chunks << "(PPUContext& c) {\n    uint64_t pc = c.pc;\ndispatch:\n    switch (pc) {\n";
             for (uint64_t i = 0; i < cnt; ++i) {
                 e.pc = e.cs + i * 4;
