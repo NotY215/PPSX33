@@ -1,4 +1,4 @@
-# Security Policy
+# PPSX33 Security Policy
 
 ## Scope
 
