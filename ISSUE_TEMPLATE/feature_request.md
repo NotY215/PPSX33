@@ -10,6 +10,10 @@ assignees: ""
 
 ## Proposed solution
 
+## Expected acceptance criteria
+
 ## Alternatives considered
+
+## Testing or compatibility impact
 
 ## Additional context
