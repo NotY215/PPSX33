@@ -1,6 +1,6 @@
-# Game coverage records
+# PPSX33 Game Coverage Records
 
-This folder contains per-game instruction-lifting statistics for titles used to evaluate the PS3 recompiler. Only games for which work or a lift report has been recorded should be listed here.
+This folder contains per-game instruction-lifting statistics for titles used to evaluate PPSX33, the PlayStation 3 recompiler. Only games for which work or a lift report has been recorded should be listed here.
 
 ## Recorded games
 
