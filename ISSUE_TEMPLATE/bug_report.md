@@ -1,6 +1,6 @@
 ---
-name: Bug report
-about: Report a reproducible problem
+name: PPSX33 bug report
+about: Report a reproducible PPSX33 problem
 title: "[Bug]: "
 labels: bug
 assignees: ""
