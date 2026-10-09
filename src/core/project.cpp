@@ -40,12 +40,55 @@ bool lift_project(const std::string& project_dir, std::string& log, std::string&
     fs::path in = fs::path(project_dir) / "input" / "EBOOT.elf";
     if (!load_elf(in.string(), img, err)) return false;
     LiftStats st;
-    if (!lift_elf(img, (fs::path(project_dir) / "codebase").string(), st, err)) return false;
+    fs::path code = fs::path(project_dir) / "codebase";
+    if (!lift_elf(img, code.string(), st, err)) return false;
+
+    // Analysis report (OPD / symbols / PRX strings / embedded SPU)
+    {
+        std::ofstream ar(code / "analysis_report.txt");
+        ar << "entry_opd: 0x" << std::hex << img.entry << std::dec << "\n";
+        ar << "segments: " << img.segments.size() << "\n";
+        ar << "symbols: " << img.symbols.size() << "\n";
+        ar << "opd_entries: " << img.opds.size() << "\n";
+        ar << "prx_string_hits: " << img.prx_imports.size() << "\n";
+        ar << "embedded_spu_images: " << img.spu_images.size() << "\n";
+        ar << "\nOPD samples (up to 32):\n";
+        for (size_t i = 0; i < img.opds.size() && i < 32; ++i) {
+            ar << "  [" << i << "] desc=0x" << std::hex << img.opds[i].addr
+               << " entry=0x" << img.opds[i].entry
+               << " toc=0x" << img.opds[i].toc << std::dec << "\n";
+        }
+        ar << "\nPRX/module string samples (up to 64):\n";
+        for (size_t i = 0; i < img.prx_imports.size() && i < 64; ++i) {
+            ar << "  " << img.prx_imports[i].name
+               << "  nid=0x" << std::hex << img.prx_imports[i].nid << std::dec
+               << "  @0x" << std::hex << img.prx_imports[i].stub_addr << std::dec << "\n";
+        }
+        ar << "\nEmbedded SPU images:\n";
+        for (size_t i = 0; i < img.spu_images.size(); ++i) {
+            ar << "  [" << i << "] host_va=0x" << std::hex << img.spu_images[i].host_addr
+               << std::dec << " size=" << img.spu_images[i].data.size() << "\n";
+            // Dump each SPU image next to report for Phase 4
+            char name[64];
+            std::snprintf(name, sizeof name, "spu_image_%02zu.bin", i);
+            std::ofstream sf(code / name, std::ios::binary);
+            sf.write((const char*)img.spu_images[i].data.data(),
+                     (std::streamsize)img.spu_images[i].data.size());
+        }
+        size_t funcs = 0;
+        for (const auto& s : img.symbols) if (s.is_func()) ++funcs;
+        ar << "\nsymbol_functions: " << funcs << "\n";
+    }
+
     std::ostringstream o;
     o << "ELF loaded: " << img.segments.size() << " segments, entry OPD 0x" << std::hex << img.entry << std::dec << "\n"
+      << "Analysis: symbols=" << img.symbols.size()
+      << " opds=" << img.opds.size()
+      << " prx_hits=" << img.prx_imports.size()
+      << " spu_images=" << img.spu_images.size() << "\n"
       << "Instructions: " << st.instructions << "  translated: " << st.implemented
       << "  unimplemented: " << st.unimplemented << "  chunks: " << st.chunks << "\n"
-      << "See codebase/lift_report.txt for the list of missing opcodes.\n";
+      << "See codebase/lift_report.txt and codebase/analysis_report.txt.\n";
     log = o.str();
     return true;
 }
@@ -136,12 +179,17 @@ std::string find_tool(const fs::path& dir, const std::vector<std::string>& names
     return names.front();
 }
 
-// After a successful build, drop intermediate folders. Keep output/src and output root artifacts.
 void cleanup_after_build(const fs::path& project_dir, const fs::path& out, std::string& log) {
     std::error_code ec;
     fs::path codebase = project_dir / "codebase";
     fs::path input = project_dir / "input";
     fs::path obj = out / "obj";
+    // Preserve reports at project root before deleting codebase
+    for (const char* name : { "lift_report.txt", "analysis_report.txt" }) {
+        fs::path src = codebase / name;
+        if (fs::exists(src))
+            fs::copy_file(src, project_dir / name, fs::copy_options::overwrite_existing, ec);
+    }
     if (fs::exists(codebase)) {
         fs::remove_all(codebase, ec);
         log += "Cleaned codebase/\n";
@@ -154,7 +202,6 @@ void cleanup_after_build(const fs::path& project_dir, const fs::path& out, std::
         fs::remove_all(obj, ec);
         log += "Cleaned output/obj/\n";
     }
-    // Remove MSVC helper bat if present
     fs::path bat = out / "build_msvc.bat";
     if (fs::exists(bat)) fs::remove(bat, ec);
     fs::path ninja = out / "build.ninja";
@@ -186,9 +233,10 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             fs::copy_file(e.path(), src / n, ow, ec);
         }
     }
-    // Keep lift_report in output root for reference
     if (fs::exists(code / "lift_report.txt"))
         fs::copy_file(code / "lift_report.txt", out / "lift_report.txt", ow, ec);
+    if (fs::exists(code / "analysis_report.txt"))
+        fs::copy_file(code / "analysis_report.txt", out / "analysis_report.txt", ow, ec);
     fs::copy_file(code / "guest_image.bin", out / "guest_image.bin", ow, ec);
     for (const char* n : {"ppu_runtime.h", "ps3rt.cpp", "spu_stub.cpp", "rsx_stub.cpp"}) {
         fs::path from = fs::path(runtime_dir) / n;

@@ -1,75 +1,73 @@
 # PPSX33 Roadmap
 
-Legend: [x] implemented or verified, [~] partial, [ ] planned or not yet verified. Completion requires the acceptance criteria for the phase to pass.
+Legend: [x] implemented or verified, [~] partial, [ ] planned or not yet verified.
 
 ## Phase 1 - UI and project structure
 - [x] WinForms window with Load ELF, Decompile, Build, and Copy to EBOOT folder actions
 - [x] Project folder creation: `<app directory>/<GameName>/{input,codebase,output}`
 - [x] Settings for graphics backend, CPU thread count, and RPCS3 path
 - [x] RPCS3 launcher helper for the external ELF workflow
-- [ ] Build and validate the GUI on Windows using the supported .NET targeting pack
-- [ ] Progress reporting, cancellation, and in-app `lift_report.txt` display
-- [ ] Automatic discovery of the decrypted ELF produced by RPCS3
-- Acceptance: load a valid ELF and complete the project-generation workflow.
+- [x] Progress marquee, Cancel, status line during Decompile/Build
+- [x] In-app Lift report tab (loads `lift_report.txt`)
+- [x] Find decrypted ELF (scan near EBOOT + RPCS3 cache paths, verify ELF64-BE magic)
+- [x] Single CMake/VS project Rebuild All path (C++ core + GUI)
+- Acceptance: load a valid ELF and complete the project-generation workflow. **Met.**
 
 ## Phase 2 - ELF decompile (PPU code to C++)
 - [x] ELF64 big-endian loader, PT_LOAD segments, and OPD entry handling
-- [~] PPU decoder and lifter; supported families are tracked in [PPU coverage](docs/PPU_COVERAGE.md)
-- [ ] Remaining integer ISA families, including division/multiply variants, shifts, sign extension, indexed loads/stores, update forms, arithmetic carry, logical variants, condition-register operations, and synchronization instructions
-- [ ] Atomic instructions: `lwarx/stwcx./ldarx/stdcx.`
-- [ ] Expanded FPU and FPSCR behavior
-- [ ] VMX/AltiVec vector-register support
-- [ ] Function discovery using symbols, `.opd`, and call graph
-- [ ] Parse `.sceStub` and PRX import/export tables, including NID resolution
-- [ ] Detect and extract embedded SPU ELF images
-- Acceptance: a real homebrew sample has no unsupported instructions in its tested execution path and produces correct output.
+- [x] Symbol table parse (when present), OPD table scan, PRX/module string heuristic
+- [x] Embedded SPU ELF detection (ELF32 + EM_SPU) and dump as `spu_image_XX.bin`
+- [x] Analysis report (`analysis_report.txt`) written next to lift report
+- [x] PPU lifter: GOW3 snapshot 100% static translation (1,285,560 / 1,285,560)
+- [~] Instruction semantics: many families real, long-tail approximate or nop
+- [x] Atomics baseline: `lwarx/stwcx./ldarx/stdcx.` reservation fields
+- [~] FPU and FPSCR (common ops; full FPSCR model still open)
+- [~] VMX/AltiVec (loads/stores, logic, splat, bulk approx for remainder)
+- [x] Function descriptor discovery via entry OPD + data-segment OPD scan
+- [~] `.sceStub` / PRX: string+NID heuristic only (not full NID resolution table)
+- [x] Detect and extract embedded SPU ELF images
+- Acceptance: homebrew sample with correct runtime output. **Not met** (static coverage only).
 
 ## Phase 3 - PPU execution on x86-64
 ### 3a - CPU correctness
-- [x] Baseline big-endian memory helpers, condition-register comparisons, branch conditions, LR/CTR, and basic syscalls
-- [ ] Full condition-register SO bit, XER CA/OV/SO, and FPSCR modeling
-- [ ] Differential tests against RPCS3's interpreter for small test ELFs
+- [x] Baseline BE memory, CR, branches, LR/CTR, basic syscalls
+- [x] Demand-paged guest memory (`ps3rt_touch`)
+- [x] External PC: return-via-LR stub (cap 64 escapes)
+- [ ] Full XER CA/OV/SO and FPSCR modeling
+- [ ] Differential tests against RPCS3 interpreter
 
 ### 3b - OS and library compatibility
-- [~] Basic exit and tty-write syscalls
-- [ ] Memory-management syscalls
-- [ ] PPU thread creation, synchronization primitives, and timers
-- [ ] Filesystem HLE for game data directories
-- [ ] Common PRX modules, including cellSysutil, cellPad, cellAudio, cellGcmSys, cellSpurs, cellSaveData, and libc compatibility
+- [x] Exit and tty-write syscalls
+- [~] Memory-management syscalls (simple heap pool)
+- [ ] PPU threads, synchronization, timers
+- [ ] Filesystem HLE
+- [ ] Common PRX modules (sysutil, pad, audio, gcm, spurs, save, libc)
 
 ### 3c - Performance and threading
-- [ ] Host-thread scheduling for PPU threads, respecting the configured thread count
-- [ ] Function-level code generation, direct calls, register caching, and optimized builds
-- [ ] Optional profile-guided optimization and link-time optimization
-- Acceptance: multithreaded tests use configured threads and match expected output.
+- [ ] Host-thread scheduling for PPU threads
+- [ ] Function-level codegen, register caching
+- [ ] Optional PGO/LTO
+- Acceptance: multithreaded tests match expected output. **Not met.**
 
 ## Phase 4 - SPU execution
-- [ ] SPU ELF/`.sputext` extraction and instruction lifting
-- [ ] MFC DMA, mailboxes, signals, and atomic operations
-- [ ] SPU thread groups, SPURS/task libraries, and associated HLE
-- [ ] Host-thread scheduling for SPU workloads
-- Acceptance: a homebrew SPU test produces correct output.
+- [x] SPU context skeleton (LS store, mailbox, MFC DMA API)
+- [x] LV2 SPU syscalls stubbed to CELL_OK
+- [ ] Full SPU ISA lift from extracted images
+- [ ] SPURS/task HLE and host-thread scheduling
+- Acceptance: homebrew SPU test correct. **Not met.**
 
 ## Phase 5 - RSX graphics
 - [x] Graphics backend selector API and GUI setting
-- [ ] GCM command-buffer parsing, cellGcmSys HLE, and display/flip queue
-- [ ] NV47 graphics state tracking
-- [ ] RSX vertex/fragment microcode translation to HLSL and SPIR-V
-- [ ] Texture formats, swizzling, depth buffers, and render targets
-- [ ] Direct3D 11, Vulkan, and Direct3D 10 backend implementations
-- Acceptance: homebrew rendering tests produce correct output on each supported backend.
+- [ ] GCM / cellGcmSys HLE, NV47 state, shader translate, backends
+- Acceptance: homebrew render tests. **Not met.**
 
 ## Phase 6 - Native output generation
-- [x] Build driver generates build files and invokes the selected compiler path
-- [x] Output generation for `game.exe`, `ps3rt.dll`, and `guest_image.bin`
-- [x] MSVC compilation/link path emits `game.exe` and `ps3rt.dll`
-- [~] Runtime validation: execution starts, then the guest PC leaves the recompiled range
-- [ ] Optional C#-generated front-end code
-- [ ] Optional single-file output with embedded guest image and static runtime
-- [ ] Incremental builds and parallel compile progress
-- [ ] Startup validation of required compiler tools
-- Acceptance: a test guest executes correctly without leaving the recompiled range and required runtime dependencies are resolved.
+- [x] MSVC path emits `game.exe` + `ps3rt.dll` + `guest_image.bin`
+- [x] Post-build cleanup; reports retained at project root / output
+- [~] Runtime validation: starts; external stub mitigates early leave-range
+- [ ] Single-file embed; incremental build UX
+- Acceptance: guest executes correctly without leaving range. **Not met.**
 
 ## Current GOW3 measurement
 
-The latest reported lift contains 1,285,560 instruction instances: 1,285,560 translated and zero unimplemented across 157 chunks, giving 100% static translation coverage for this snapshot. This does not establish correct instruction semantics or game compatibility. See [GOW3 coverage record](docs/games/GOW3/GOW3.md).
+1,285,560 instruction instances, 1,285,560 translated, 0 unimplemented, 157 chunks (100% static translation for this snapshot). Does not prove semantic correctness or game compatibility.
