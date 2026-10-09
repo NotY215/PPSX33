@@ -17,7 +17,7 @@ Use only game data and software that you own or are legally authorized to proces
 | RSX graphics rendering | Not implemented; backend selection exists |
 | Full commercial-game compatibility | Not established |
 
-A smoke test is available at `scripts/run_smoke_test.sh`. It exercises a small synthetic PPC64 ELF and is not a commercial-game compatibility test. The GoW3 lift record reports 1,285,560 instruction instances, of which 1,103,166 were translated and 182,394 remain unimplemented across 157 chunks. Static translation coverage is approximately 85.81%.
+A smoke test is available at `scripts/run_smoke_test.sh`. It exercises a small synthetic PPC64 ELF and is not a commercial-game compatibility test. The latest GoW3 lift report records 1,285,560 instruction instances: 1,173,389 translated and 112,171 unimplemented. This is approximately 91.28% static translation coverage. The report contains 157 chunks. These statistics do not establish successful game execution or compatibility.
 
 ## Requirements
 
@@ -36,13 +36,13 @@ See [Compiler Setup](Compilers-files/README.md) for the exact local tool staging
 From a Visual Studio 2026 developer command prompt, at the repository root run:
 
 ```bat
-scripts\build_all.bat
+scripts\\build_all.bat
 ```
 
-The build output is written to `build\dist\`. Launch the GUI with:
+The build output is written to `build\\dist\\`. Launch the GUI with:
 
 ```bat
-build\dist\PS3Recomp.exe
+build\\dist\\PS3Recomp.exe
 ```
 
 The native smoke test can be run on supported Linux/macOS development environments with `scripts/run_smoke_test.sh`, `g++`, and Python 3 installed.
