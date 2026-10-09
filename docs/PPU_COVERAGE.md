@@ -1,6 +1,6 @@
-# PPU instruction coverage
+# PPSX33 PPU instruction coverage
 
-This document tracks implemented PowerPC PPU instruction families and remaining work. Per-game translation counts are recorded separately under [games](games/README.md). Counts represent instruction instances in a specific game's lift report, not the number of distinct PowerPC opcodes.
+This document tracks PowerPC PPU instruction families implemented by PPSX33 and the remaining work. Per-game translation counts are recorded separately under [games](games/README.md). Counts represent instruction instances in a specific game's lift report, not the number of distinct PowerPC opcodes.
 
 ## Implemented instruction families
 
