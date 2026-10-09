@@ -1,26 +1,24 @@
 # Uncharted 2: Among Thieves
 
-**Status:** Planned future PPU coverage target  
-**Current implementation status:** Not started
+**Status:** Planned / ready to start as **opcode-expansion** target  
+**Build/run:** Deferred (GOW3 first)
 
-PPSX33 plans to use the standard edition of *Uncharted 2: Among Thieves* as a future analysis target. Its PPU instruction usage will help identify opcode families and instruction forms that need implementation or better semantic coverage.
+Use Uncharted 2 only to widen PPU static coverage: decompile, inspect `lift_report.txt`, implement missing opcodes, re-measure. Do not treat coverage percentage as playability.
 
 ## Goals
 
-- Analyze a legally obtained, decrypted PS3 ELF when work on this target begins.
-- Record the PPU instructions encountered during static lifting.
-- Identify unsupported, approximate, or no-op instruction translations.
-- Implement and test missing PPU opcode semantics where needed.
-- Add focused regression tests so coverage improvements remain verifiable.
+- Analyze a legally obtained decrypted PS3 ELF.
+- Record instructions encountered during static lifting.
+- Implement and test missing or approximate PPU opcodes.
+- Avoid native Build/Run for this title until GOW3 runtime is the active focus completion path.
 
 ## Reporting rules
 
-No instruction counts, coverage percentage, or compatibility result is claimed for Uncharted 2 at this stage. Add measured results only after a real lift report has been generated and reviewed.
+No instruction counts or coverage claims until a real lift report is archived here.
 
-Static translation coverage is not the same as correct instruction semantics, successful runtime execution, rendering, or full-game compatibility. Track those outcomes separately.
+## Related
 
-## Related records
-
+- [Detailed plan](UNCHARTED2.md)
 - [Game coverage index](../README.md)
-- [PPU coverage notes](../../PPU_COVERAGE.md)
-- [PPSX33 roadmap](../../../ROADMAP.md)
+- [PPU coverage](../../PPU_COVERAGE.md)
+- [Roadmap](../../../ROADMAP.md)
