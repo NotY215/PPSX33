@@ -9,8 +9,8 @@ assignees: ""
 ## Environment
 - OS and version:
 - PPSX33 commit/version:
-- Build type and compiler/toolchain:
-- Input type (synthetic ELF, homebrew sample, or other authorized test):
+- Build configuration and compiler/toolchain:
+- Input category (synthetic ELF, homebrew sample, or other authorized test):
 
 ## Steps to reproduce
 1.
@@ -22,7 +22,8 @@ assignees: ""
 ## Actual behavior
 
 ## Logs and reports
-- Relevant command output:
-- `lift_report.txt` / `analysis_report.txt` if applicable:
+- Exact command and output:
+- `lift_report.txt` / `analysis_report.txt`, if applicable:
+- Smoke-test result:
 
-Remove access tokens, private data, and copyrighted material before posting. Do not attach game dumps, decrypted ELFs, keys, or EBOOT files. State whether the issue was reproduced with the synthetic smoke test.
+Remove access tokens, private information, and sensitive paths before posting. Do not attach game dumps, decrypted ELFs, encryption keys, EBOOT files, or copyrighted assets.
