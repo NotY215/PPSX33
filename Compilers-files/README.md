@@ -1,14 +1,14 @@
 # PPSX33 Compiler Setup
 
-PPSX33 uses CMake/Ninja for the host build, the MSVC toolchain for its Windows output path, and the .NET 8 SDK to publish the C# WinForms GUI. The project also supports a C++17 compiler for its native core and CLI.
+PPSX33 uses CMake and Ninja for native builds, MSVC for the primary Windows output path, and the .NET 8 SDK for the C# WinForms GUI. The native core and CLI require a C++17-capable compiler.
 
-## 1. Install development tools
+## 1. Install tools
 
-For Windows, install Visual Studio 2022 or a newer compatible Visual Studio version with:
+For Windows, install Visual Studio 2022 or a compatible newer version with:
 
 - **Desktop development with C++**
 - MSVC x64/x86 build tools
-- A Windows SDK
+- Windows SDK
 - CMake and Ninja
 - .NET 8 SDK
 
@@ -20,7 +20,7 @@ Official sources:
 - [Ninja](https://github.com/ninja-build/ninja)
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 
-## 2. Verify the environment
+## 2. Verify tool discovery
 
 Open a Visual Studio developer command prompt and run:
 
@@ -32,23 +32,23 @@ where ninja
 where dotnet
 ```
 
-The project currently targets `net8.0-windows`. CMake warns and skips the GUI target when it cannot find `dotnet`.
+The GUI targets `net8.0-windows`. CMake may skip the GUI target when the .NET SDK is unavailable.
 
-## 3. Optional local tool staging
+## 3. Local compiler staging
 
-The project build copies `Compilers-files/` into `build/dist/Compilers-files/` when the directory exists. The native build driver accepts this folder as the compiler-tool path. It may use local compiler tools such as `cl.exe`, `link.exe`, `ninja.exe`, and associated support files, depending on the configured build path.
+When present, `Compilers-files/` is copied into `build/dist/Compilers-files/`. The build driver accepts this directory as the compiler-tool path. Depending on the build path, tools may include `cl.exe`, `link.exe`, `ninja.exe`, and matching support files.
 
-To stage tools locally, copy only files you are permitted to use and keep each compiler toolset together with its matching support files. Do not mix binaries from different MSVC versions. The local staging folder is not a substitute for a correctly configured Visual Studio environment or Windows SDK.
+Keep each toolset and its support files together. Do not mix binaries from different MSVC versions. Local staging does not replace a correctly configured Visual Studio environment or Windows SDK.
 
-Example installed MSVC location:
+Example MSVC path:
 
 ```text
 C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\<toolset-version>\bin\Hostx64\x64\
 ```
 
-The edition may be Community, Professional, Enterprise, or BuildTools. Newer releases may use a different versioned directory.
+The edition may be Community, Professional, Enterprise, or BuildTools. Versioned directories can differ in newer releases.
 
-## 4. Build
+## 4. Build and output
 
 From the repository root:
 
@@ -56,12 +56,10 @@ From the repository root:
 scripts\build_all.bat
 ```
 
-The build artifacts are placed in `build\dist\`. The GUI is `build\dist\PS3Recomp.exe`, when the .NET GUI target is available. The CLI is `build\dist\ps3_cli.exe`.
+Output is placed in `build\dist\`. Expected frontends include `PS3Recomp.exe` when the GUI target is available and `ps3_cli.exe` for the CLI.
 
-For an individual project, the current Windows build path can produce `game.exe`, `ps3rt.dll`, and `guest_image.bin`. Artifact generation is not proof of correct guest execution.
+A project build may emit `game.exe`, `ps3rt.dll`, and `guest_image.bin`. Artifact generation does not prove correct guest execution.
 
-## 5. Licensing and redistribution
+## 5. Licensing
 
-Visual Studio/MSVC are Microsoft software governed by their applicable terms. Do not commit proprietary compiler binaries or publish them in releases unless redistribution is explicitly permitted. Users should install the toolchain from Microsoft and check current license terms before sharing any staged files.
-
-See [THIRD_PARTY.md](../THIRD_PARTY.md) for dependency notes.
+MSVC and Visual Studio are governed by Microsoft's applicable terms. Do not commit or redistribute proprietary compiler binaries unless redistribution is explicitly permitted. See [THIRD_PARTY.md](../THIRD_PARTY.md).
