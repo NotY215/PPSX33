@@ -5,8 +5,8 @@
 | Metric | Result |
 | --- | ---: |
 | Instruction instances | 1,285,560 |
-| Translated | 1,103,166 (approximately 85.81%) |
-| Unimplemented | 182,394 |
+| Translated | 1,173,389 (approximately 91.28%) |
+| Unimplemented | 112,171 |
 | Chunks | 157 |
 | MSVC artifact build | Successful: `game.exe` and `ps3rt.dll` |
 | Runtime execution | Incomplete: execution starts, then the guest PC leaves the recompiled range |
