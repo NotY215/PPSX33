@@ -1,0 +1,5 @@
+.vs
+build
+out
+src/gui/obj
+src/gui/bin
