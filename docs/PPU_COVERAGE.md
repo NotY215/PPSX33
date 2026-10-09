@@ -5,7 +5,8 @@ GoW3 snapshot:
 - Instructions: 1,285,560
 - Translated: 1,103,166 (~86%)
 - Unimplemented: 182,394
-- MSVC build: OK (game.exe + ps3rt.dll)
+- MSVC build: **OK** (`game.exe` + `ps3rt.dll` are emitted)
+- Runtime: **incomplete**; launching starts execution, then the guest PC leaves the recompiled range
 
 ## Implemented (major groups)
 
@@ -27,5 +28,4 @@ GoW3 snapshot:
 
 ## Runtime
 
-When PC leaves recompiled range the runtime prints pc/lr/ctr/r1/r2.
-Odd PCs (like 0x102300052d6c8) mean a bad function pointer or LR/CTR.
+When the guest PC leaves the recompiled range, the runtime prints `pc/lr/ctr/r1/r2`. Treat the reported PC as a diagnostic clue, not proof of one specific cause: investigate branch target calculation, LR/CTR state, indirect branches, missing lifted chunks, and function-pointer/OPD handling. The current MSVC artifact build is successful, but runtime execution is not yet validated.
