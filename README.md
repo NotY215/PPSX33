@@ -1,4 +1,4 @@
-# PS3 Recompiler (NotY215/PS3)
+# PPSX33 (PlayStation 3 Recompiler)
 
 Static recompiler that turns a **decrypted PlayStation 3 `EBOOT.ELF`** (PowerPC 64 / Cell / RSX) into a native
 **x86-64 Windows `game.exe` + `ps3rt.dll`** that you drop next to the original `EBOOT.BIN` and run.
