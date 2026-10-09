@@ -1,19 +1,28 @@
 # PPSX33 Game Coverage Records
 
-Static lifting snapshots only. Counts are instruction instances in a given report. They do not prove semantic correctness, boot, rendering, or playability.
+This directory stores reproducible static-lifting snapshots and title-specific analysis records. Instruction counts describe the exact input and report version recorded. They do not establish semantic correctness, boot, rendering, or playability.
 
-**Priority:** God of War III is the primary runtime target. Uncharted 2 is used for opcode expansion (lift only; no build/run yet).
-
-## Recorded games
+## Recorded coverage
 
 | Game | Record | Instructions | Translated | Unimplemented | Chunks | Static coverage |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| God of War III (GOW3) | [GOW3.md](GOW3/GOW3.md) | 1,285,560 | 1,285,560 | 0 | 157 | 100% |
+| God of War III (GOW3) | [GOW3.md](GOW3/GOW3.md) | 1,285,560 | 1,285,560 | 0 | 157 | 100% for this snapshot |
 
-## Secondary / planned
+The GOW3 result is a static translation metric only. Approximate operations and no-op fallbacks may still be counted as translated.
+
+## Opcode-expansion target
 
 | Game | Record | Status | Purpose |
 | --- | --- | --- | --- |
-| Uncharted 2: Among Thieves | [Uncharted2/](Uncharted2/) | Opcode expansion; lift only | Missing/weak PPU opcodes; no native exe yet |
+| Uncharted 2: Among Thieves | [Uncharted2/README.md](Uncharted2/README.md) | Planned analysis target; counts not measured | Find missing or approximate PPU opcode behavior and add regression tests |
 
-See [PPU coverage](../PPU_COVERAGE.md) and [ROADMAP](../../ROADMAP.md).
+## Adding or updating a game record
+
+1. Use input files legally obtained and authorized for analysis.
+2. Preserve the tool version or commit, input identification, command/workflow, and date for each report snapshot. Do not publish copyrighted game data.
+3. Copy only the generated text reports needed to reproduce the analysis. Inspect them for sensitive paths or extracted proprietary content before committing.
+4. Record instruction instances, translated instances, unimplemented instances, and chunk counts exactly as emitted by the tool.
+5. Separate decode and translation counts from semantic validation, runtime results, and game compatibility.
+6. Update the game record and this index together. Do not invent missing metrics.
+
+See [PPU coverage methodology](../PPU_COVERAGE.md) and the [developer guide](../DEVELOPER_GUIDE.md).
