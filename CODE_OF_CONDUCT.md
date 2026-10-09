@@ -1,21 +1,22 @@
 # PPSX33 Code of Conduct
 
-## Our commitment
+## Commitment
 
-PPSX33 welcomes constructive participation in an experimental open-source project involving PowerPC ELF analysis, static recompilation, runtime development, and testing. All contributors should be treated respectfully regardless of experience level.
+PPSX33 supports constructive participation in an open-source project focused on PowerPC ELF analysis, static recompilation, runtime development, and testing. Every participant is expected to help maintain a respectful technical environment.
 
 ## Expected behavior
 
-- Be respectful and considerate.
-- Discuss technical disagreements calmly and focus on evidence, reproducible examples, and test results.
-- Accept constructive feedback and respect differing experience levels.
-- Keep issues and pull requests relevant to the project.
-- Clearly distinguish confirmed behavior from assumptions and unverified compatibility claims.
+- Treat participants respectfully regardless of background or experience.
+- Discuss technical disagreements using evidence, reproducible examples, and test results.
+- Give and receive constructive feedback professionally.
+- Keep issues and pull requests relevant, specific, and technically useful.
+- Distinguish verified behavior from assumptions and untested compatibility claims.
+- Respect privacy and licensing requirements.
 
 ## Unacceptable behavior
 
-Harassment, insults, discrimination, threats, deliberate disruption, and sharing another person's private information without permission are not acceptable.
+Harassment, insults, discrimination, threats, deliberate disruption, and sharing private information without permission are prohibited.
 
 ## Enforcement
 
-Project maintainers may edit or remove content, close discussions, or restrict participation for behavior that violates this policy. Report concerns privately using the reporting options listed in [SUPPORT.md](SUPPORT.md). Do not post sensitive details in public issues.
+Project maintainers may edit or remove content, close discussions, or restrict participation when this policy is violated. Conduct concerns should be reported privately through the channels described in [SUPPORT.md](SUPPORT.md). Do not post sensitive information in public issues.
