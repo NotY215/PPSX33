@@ -95,6 +95,8 @@ Acceptance: synthetic and homebrew guests execute correctly, then compatibility 
 
 The latest supplied snapshot reports 1,285,560 instruction instances translated, zero unimplemented, and 157 chunks. This is 100% static translation coverage for that specific lift report, not proof that all instruction semantics are correct or that GOW3 runs correctly. See [GOW3 record](docs/games/GOW3/GOW3.md).
 
-### Next coverage targets
+### Uncharted 2: Among Thieves
 
-Use additional games and small purpose-built ELF tests to discover instructions and runtime dependencies not present in the GOW3 snapshot. Keep PPU instruction coverage, SPU execution, RSX graphics, OS/library support, and full-game compatibility as separate metrics.
+Planned as a future PPU coverage target. Once analysis begins, its lift report will help identify missing or incomplete opcode implementations and guide regression tests. No counts or coverage percentage are available yet. See the [Uncharted 2 analysis plan](docs/games/Uncharted2/UNCHARTED2.md).
+
+Use additional games and small purpose-built ELF tests to discover instructions and runtime dependencies not present in existing snapshots. Keep PPU instruction coverage, SPU execution, RSX graphics, OS/library support, and full-game compatibility as separate metrics.
