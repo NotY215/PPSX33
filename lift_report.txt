@@ -1,1230 +1,1757 @@
 instructions: 1285560
-implemented: 1103166
-unimplemented: 182394
+implemented: 1150530
+unimplemented: 135030
 chunks: 157
 
 missing opcodes (most useful TODO list):
-  op=4  x76018
-  op=31 xo=103  x19266
   op=9  x13352
-  op=31 xo=231  x13133
+  op=4 xo=326  x12287
   op=6  x10626
   op=1  x9252
-  op=3  x8959
-  op=2  x5804
+  op=4 xo=5  x5672
   op=5  x4571
+  op=4 xo=610  x3542
+  op=4 xo=150  x3176
+  op=4 xo=23  x2803
+  op=4 xo=514  x2668
+  op=4 xo=278  x2651
+  op=4 xo=55  x2356
+  op=4 xo=37  x2155
   op=20  x2107
+  op=4 xo=22  x2033
+  op=4 xo=439  x1893
   op=23  x1872
   op=31 xo=71  x1831
+  op=4 xo=407  x1657
+  op=31 xo=824  x1556
+  op=4 xo=454  x1418
   op=56  x1362
   op=57  x1317
-  op=63 xo=846  x1148
+  op=4 xo=375  x1309
+  op=4 xo=406  x1302
+  op=4 xo=70  x1156
+  op=4 xo=355  x1145
+  op=4 xo=165  x1104
+  op=4 xo=343  x1079
+  op=4 xo=265  x1004
+  op=4 xo=421  x955
+  op=4 xo=311  x951
+  op=4 xo=437  x816
+  op=4 xo=21  x788
+  op=4 xo=279  x771
+  op=4 xo=53  x705
+  op=4 xo=247  x676
+  op=4 xo=405  x608
+  op=4 xo=341  x561
+  op=4 xo=373  x556
   op=31 xo=6  x540
+  op=4 xo=215  x520
+  op=4 xo=87  x511
+  op=4 xo=183  x498
+  op=4 xo=151  x482
+  op=4 xo=422  x475
   op=31 xo=38  x465
+  op=4 xo=119  x457
+  op=4 xo=198  x448
+  op=4 xo=309  x433
+  op=4 xo=277  x427
   op=30 md=11  x359
+  op=4 xo=245  x337
+  op=4 xo=133  x329
   op=31 xo=983  x324
-  op=63 xo=815  x203
+  op=4 xo=130  x304
+  op=4 xo=38  x282
+  op=4 xo=867  x271
+  op=4 xo=213  x265
+  op=4 xo=631  x262
+  op=4 xo=67  x260
+  op=4 xo=1015  x244
+  op=4 xo=546  x202
+  op=4 xo=983  x200
+  op=4 xo=578  x198
   op=30 md=4  x197
   op=30 md=5  x194
+  op=4 xo=194  x192
   op=58  x187
+  op=4 xo=951  x186
+  op=4 xo=919  x186
   op=30 md=10  x186
   op=30 md=15  x182
+  op=4 xo=517  x182
+  op=4 xo=181  x179
   op=30 md=13  x172
+  op=4 xo=599  x172
+  op=4 xo=149  x168
   op=31 xo=598  x161
+  op=4 xo=887  x149
+  op=4 xo=965  x136
   op=30 md=12  x135
+  op=4 xo=85  x134
+  op=4 xo=855  x131
   op=30 md=7  x130
   op=30 md=14  x129
   op=31 xo=11  x126
-  op=30 md=6  x126
   op=31 xo=75  x126
-  op=31 xo=20  x119
-  op=31 xo=150  x114
-  op=31 xo=4  x93
+  op=30 md=6  x126
+  op=4 xo=549  x124
+  op=4 xo=567  x123
+  op=4 xo=823  x117
+  op=4 xo=981  x114
+  op=4 xo=535  x112
+  op=4 xo=1013  x104
+  op=4 xo=453  x103
+  op=4 xo=117  x101
+  op=4 xo=197  x97
+  op=4 xo=739  x95
+  op=4 xo=581  x95
+  op=4 xo=629  x93
+  op=4 xo=325  x90
   op=31 xo=193  x90
+  op=4 xo=69  x89
+  op=4 xo=837  x88
+  op=31 xo=827  x87
+  op=4 xo=917  x81
+  op=4 xo=585  x81
   op=59 xo=22  x80
+  op=4 xo=885  x79
+  op=4 xo=821  x78
+  op=4 xo=597  x78
+  op=4 xo=759  x77
+  op=4 xo=503  x77
+  op=4 xo=64  x72
+  op=4 xo=709  x70
+  op=4 xo=357  x69
+  op=4 xo=485  x68
+  op=4 xo=949  x68
   op=31 xo=129  x67
+  op=4 xo=471  x66
+  op=4 xo=522  x66
   op=31 xo=194  x65
+  op=4 xo=725  x64
+  op=4 xo=791  x62
+  op=4 xo=853  x59
   op=31 xo=128  x58
+  op=4 xo=533  x55
+  op=4 xo=836  x54
+  op=4 xo=469  x54
   op=31 xo=257  x53
+  op=4 xo=789  x53
   op=19 xo=669  x52
+  op=4 xo=580  x52
+  op=4 xo=727  x50
   op=63 xo=964  x50
+  op=4 xo=452  x49
   op=19 xo=413  x48
+  op=4 xo=714  x48
+  op=4 xo=394  x47
+  op=4 xo=661  x47
+  op=4 xo=328  x46
+  op=4 xo=651  x46
   op=63 xo=952  x46
-  op=63 xo=984  x43
+  op=4 xo=68  x46
   op=63 xo=184  x43
-  op=31 xo=214  x41
+  op=4 xo=4  x43
+  op=63 xo=984  x43
+  op=4 xo=501  x43
+  op=4 xo=964  x42
+  op=4 xo=840  x42
+  op=4 xo=663  x42
+  op=4 xo=199  x41
   op=31 xo=832  x41
+  op=4 xo=324  x40
+  op=4 xo=196  x40
   op=31 xo=394  x40
-  op=31 xo=644  x37
+  op=4 xo=969  x39
+  op=4 xo=713  x38
+  op=4 xo=695  x38
+  op=4 xo=966  x38
+  op=4 xo=565  x38
+  op=4 xo=839  x38
   op=19 xo=562  x37
+  op=4 xo=582  x37
+  op=4 xo=757  x37
+  op=31 xo=644  x37
+  op=4 xo=329  x35
   op=31 xo=704  x35
-  op=31 xo=84  x35
-  op=31 xo=531  x34
-  op=31 xo=523  x34
-  op=31 xo=371  x34
   op=19 xo=548  x34
+  op=4 xo=8  x34
+  op=31 xo=523  x34
+  op=31 xo=531  x34
+  op=31 xo=371  x34
   op=31 xo=768  x33
+  op=4 xo=712  x33
+  op=4 xo=693  x32
   op=63 xo=439  x32
-  op=31 xo=195  x32
   op=31 xo=576  x32
+  op=31 xo=195  x32
   op=31 xo=265  x31
-  op=60  x30
+  op=4 xo=201  x31
+  op=4 xo=327  x31
+  op=4 xo=6  x31
   op=19 xo=948  x30
-  op=31 xo=512  x29
+  op=60  x30
+  op=4 xo=611  x29
   op=31 xo=652  x29
+  op=4 xo=779  x29
+  op=31 xo=512  x29
   op=31 xo=418  x29
   op=31 xo=805  x29
-  op=31 xo=7  x28
-  op=19 xo=144  x28
+  op=4 xo=457  x28
   op=61  x28
+  op=19 xo=144  x28
+  op=4 xo=970  x28
+  op=4 xo=586  x28
+  op=31 xo=7  x28
+  op=4 xo=838  x27
+  op=4 xo=73  x27
+  op=4 xo=968  x27
+  op=4 xo=455  x27
+  op=4 xo=711  x27
+  op=4 xo=967  x26
+  op=4 xo=902  x26
   op=19 xo=550  x26
-  op=31 xo=323  x26
-  op=31 xo=386  x26
-  op=31 xo=384  x26
+  op=4 xo=716  x26
   op=31 xo=320  x26
+  op=31 xo=323  x26
+  op=4 xo=584  x26
+  op=31 xo=386  x26
   op=19 xo=931  x26
-  op=31 xo=216  x25
-  op=31 xo=585  x25
-  op=31 xo=513  x25
-  op=31 xo=256  x25
+  op=31 xo=384  x26
   op=31 xo=960  x25
-  op=31 xo=640  x25
+  op=31 xo=585  x25
+  op=4 xo=842  x25
   op=31 xo=448  x25
-  op=31 xo=843  x24
-  op=31 xo=1023  x24
-  op=63 xo=983  x24
-  op=31 xo=273  x24
+  op=4 xo=7  x25
+  op=31 xo=513  x25
+  op=4 xo=841  x25
+  op=31 xo=256  x25
+  op=31 xo=216  x25
+  op=31 xo=640  x25
+  op=4 xo=518  x24
   op=31 xo=269  x24
   op=31 xo=201  x24
-  op=31 xo=668  x23
+  op=4 xo=773  x24
+  op=63 xo=983  x24
+  op=31 xo=843  x24
+  op=31 xo=273  x24
+  op=31 xo=1023  x24
+  op=4 xo=208  x24
+  op=4 xo=456  x24
   op=31 xo=896  x23
-  op=31 xo=588  x22
-  op=31 xo=410  x22
+  op=31 xo=668  x23
+  op=4 xo=710  x23
+  op=4 xo=774  x23
+  op=4 xo=844  x22
   op=31 xo=402  x22
-  op=63 xo=406  x21
+  op=4 xo=388  x22
+  op=31 xo=410  x22
+  op=31 xo=588  x22
   op=31 xo=31  x21
-  op=31 xo=902  x21
-  op=31 xo=725  x21
-  op=31 xo=781  x21
-  op=19 xo=400  x21
+  op=4 xo=717  x21
   op=31 xo=547  x21
+  op=4 xo=913  x21
+  op=4 xo=901  x21
+  op=19 xo=400  x21
+  op=4 xo=330  x21
+  op=4 xo=972  x21
+  op=31 xo=725  x21
+  op=31 xo=902  x21
+  op=31 xo=781  x21
+  op=4 xo=583  x21
+  op=63 xo=406  x21
+  op=4 xo=971  x21
+  op=4 xo=846  x20
   op=19 xo=442  x20
-  op=31 xo=322  x20
   op=31 xo=838  x20
+  op=4 xo=200  x20
+  op=4 xo=202  x20
+  op=4 xo=72  x20
+  op=31 xo=322  x20
   op=31 xo=773  x20
-  op=31 xo=934  x19
-  op=31 xo=96  x19
-  op=31 xo=346  x19
-  op=31 xo=780  x19
   op=31 xo=330  x19
-  op=31 xo=64  x18
-  op=63 xo=1015  x18
-  op=31 xo=991  x18
-  op=31 xo=449  x18
+  op=31 xo=96  x19
+  op=4 xo=99  x19
+  op=4 xo=206  x19
+  op=31 xo=934  x19
+  op=31 xo=346  x19
+  op=4 xo=261  x19
+  op=31 xo=780  x19
+  op=4 xo=399  x19
+  op=4 xo=458  x18
+  op=4 xo=390  x18
   op=31 xo=660  x18
-  op=31 xo=160  x18
-  op=31 xo=225  x18
-  op=31 xo=385  x18
+  op=31 xo=449  x18
   op=31 xo=717  x18
-  op=31 xo=80  x17
-  op=31 xo=192  x17
+  op=31 xo=64  x18
+  op=31 xo=385  x18
+  op=4 xo=516  x18
+  op=31 xo=991  x18
+  op=4 xo=460  x18
+  op=31 xo=225  x18
+  op=31 xo=160  x18
+  op=63 xo=1015  x18
+  op=4 xo=132  x18
   op=31 xo=515  x17
+  op=31 xo=192  x17
+  op=4 xo=591  x17
+  op=31 xo=826  x17
   op=31 xo=835  x17
-  op=31 xo=289  x16
-  op=31 xo=209  x16
-  op=31 xo=73  x16
-  op=31 xo=281  x16
-  op=31 xo=526  x16
+  op=4 xo=461  x17
+  op=4 xo=644  x17
+  op=4 xo=389  x17
+  op=31 xo=80  x17
   op=31 xo=898  x16
+  op=31 xo=289  x16
+  op=4 xo=459  x16
+  op=4 xo=205  x16
+  op=4 xo=903  x16
   op=31 xo=595  x16
-  op=31 xo=709  x15
-  op=31 xo=483  x15
-  op=19 xo=823  x15
-  op=19 xo=272  x15
-  op=31 xo=74  x15
-  op=31 xo=15  x15
-  op=19 xo=896  x15
+  op=31 xo=281  x16
+  op=31 xo=209  x16
+  op=31 xo=526  x16
+  op=4 xo=724  x16
+  op=4 xo=137  x16
+  op=4 xo=847  x16
+  op=4 xo=843  x16
+  op=31 xo=73  x16
   op=31 xo=845  x15
+  op=19 xo=823  x15
   op=31 xo=9  x15
-  op=31 xo=288  x15
+  op=4 xo=905  x15
+  op=4 xo=203  x15
+  op=31 xo=15  x15
+  op=4 xo=262  x15
+  op=31 xo=483  x15
+  op=19 xo=896  x15
+  op=4 xo=845  x15
+  op=4 xo=715  x15
+  op=19 xo=272  x15
+  op=31 xo=709  x15
+  op=31 xo=74  x15
   op=31 xo=272  x15
-  op=62  x14
-  op=31 xo=466  x14
-  op=31 xo=910  x14
+  op=31 xo=288  x15
+  op=4 xo=588  x15
   op=31 xo=862  x14
-  op=31 xo=261  x14
-  op=31 xo=716  x14
-  op=31 xo=520  x14
+  op=4 xo=463  x14
+  op=31 xo=910  x14
+  op=31 xo=466  x14
   op=31 xo=611  x14
+  op=31 xo=716  x14
+  op=31 xo=261  x14
+  op=4 xo=209  x14
+  op=31 xo=520  x14
   op=31 xo=521  x14
+  op=62  x14
   op=31 xo=596  x14
   op=31 xo=199  x14
-  op=31 xo=577  x14
+  op=4 xo=332  x14
+  op=4 xo=227  x14
+  op=4 xo=331  x14
   op=31 xo=450  x14
-  op=31 xo=197  x13
-  op=31 xo=909  x13
-  op=19 xo=19  x13
-  op=31 xo=797  x13
-  op=31 xo=135  x13
-  op=31 xo=789  x13
-  op=31 xo=901  x13
-  op=63 xo=1006  x13
-  op=31 xo=854  x13
-  op=31 xo=39  x13
-  op=31 xo=933  x13
-  op=31 xo=603  x13
-  op=31 xo=975  x13
+  op=31 xo=577  x14
   op=19 xo=818  x13
+  op=4 xo=974  x13
+  op=31 xo=797  x13
+  op=31 xo=854  x13
+  op=4 xo=647  x13
+  op=31 xo=603  x13
+  op=31 xo=39  x13
+  op=4 xo=900  x13
+  op=4 xo=648  x13
+  op=4 xo=645  x13
+  op=31 xo=933  x13
+  op=4 xo=135  x13
+  op=31 xo=909  x13
   op=31 xo=641  x13
+  op=31 xo=789  x13
+  op=4 xo=592  x13
+  op=31 xo=135  x13
+  op=31 xo=975  x13
+  op=31 xo=901  x13
+  op=19 xo=19  x13
+  op=31 xo=197  x13
   op=31 xo=475  x13
+  op=4 xo=260  x13
   op=31 xo=579  x13
-  op=31 xo=152  x12
-  op=31 xo=196  x12
-  op=31 xo=659  x12
-  op=19 xo=416  x12
-  op=31 xo=33  x12
+  op=63 xo=1006  x13
+  op=4 xo=83  x13
+  op=4 xo=204  x13
+  op=4 xo=772  x13
+  op=4 xo=337  x13
   op=31 xo=559  x12
-  op=19 xo=678  x12
-  op=31 xo=482  x12
-  op=63 xo=982  x12
+  op=31 xo=196  x12
+  op=31 xo=33  x12
+  op=4 xo=589  x12
   op=31 xo=733  x12
-  op=31 xo=72  x11
+  op=4 xo=976  x12
+  op=31 xo=482  x12
+  op=31 xo=152  x12
+  op=4 xo=333  x12
+  op=4 xo=74  x12
+  op=19 xo=416  x12
+  op=19 xo=678  x12
+  op=4 xo=77  x12
+  op=31 xo=659  x12
+  op=63 xo=982  x12
+  op=31 xo=327  x11
+  op=31 xo=37  x11
+  op=4 xo=777  x11
+  op=31 xo=651  x11
   op=31 xo=546  x11
-  op=31 xo=963  x11
+  op=31 xo=88  x11
+  op=31 xo=130  x11
+  op=19 xo=35  x11
+  op=31 xo=1006  x11
+  op=4 xo=207  x11
+  op=31 xo=79  x11
   op=63 xo=1  x11
   op=31 xo=474  x11
-  op=31 xo=79  x11
-  op=31 xo=651  x11
-  op=31 xo=1006  x11
-  op=31 xo=37  x11
-  op=31 xo=262  x11
   op=31 xo=581  x11
-  op=31 xo=327  x11
-  op=19 xo=35  x11
+  op=4 xo=975  x11
+  op=31 xo=963  x11
   op=19 xo=820  x11
-  op=31 xo=130  x11
-  op=31 xo=88  x11
-  op=31 xo=456  x10
-  op=31 xo=804  x10
-  op=31 xo=493  x10
-  op=31 xo=587  x10
-  op=31 xo=926  x10
-  op=31 xo=212  x10
-  op=19 xo=42  x10
-  op=31 xo=458  x10
-  op=19 xo=568  x10
-  op=31 xo=22  x10
-  op=31 xo=329  x10
-  op=31 xo=990  x10
+  op=31 xo=262  x11
+  op=4 xo=80  x11
+  op=31 xo=72  x11
+  op=4 xo=776  x10
+  op=4 xo=79  x10
+  op=4 xo=904  x10
+  op=4 xo=977  x10
   op=31 xo=686  x10
+  op=31 xo=587  x10
   op=19 xo=674  x10
-  op=31 xo=217  x10
-  op=31 xo=998  x10
-  op=31 xo=324  x10
-  op=31 xo=365  x10
+  op=19 xo=568  x10
   op=19 xo=679  x10
-  op=19 xo=323  x10
-  op=19 xo=436  x10
-  op=31 xo=29  x10
-  op=31 xo=918  x10
-  op=31 xo=14  x10
-  op=31 xo=263  x10
-  op=31 xo=68  x10
+  op=4 xo=587  x10
+  op=31 xo=456  x10
+  op=4 xo=219  x10
+  op=4 xo=217  x10
+  op=31 xo=458  x10
+  op=4 xo=141  x10
+  op=4 xo=11  x10
   op=31 xo=741  x10
-  op=19 xo=20  x9
-  op=31 xo=779  x9
-  op=31 xo=110  x9
-  op=31 xo=77  x9
-  op=31 xo=708  x9
-  op=31 xo=391  x9
-  op=31 xo=604  x9
-  op=31 xo=706  x9
-  op=63 xo=1018  x9
-  op=19 xo=321  x9
-  op=31 xo=524  x9
-  op=19 xo=41  x9
-  op=31 xo=648  x9
-  op=31 xo=514  x9
-  op=31 xo=676  x9
-  op=31 xo=353  x9
-  op=63 xo=906  x9
-  op=19 xo=570  x9
-  op=63 xo=930  x9
+  op=31 xo=998  x10
+  op=19 xo=323  x10
+  op=31 xo=990  x10
+  op=4 xo=2  x10
+  op=31 xo=14  x10
+  op=31 xo=804  x10
+  op=19 xo=42  x10
+  op=31 xo=212  x10
+  op=31 xo=493  x10
+  op=31 xo=217  x10
+  op=31 xo=22  x10
+  op=31 xo=263  x10
+  op=31 xo=29  x10
+  op=31 xo=324  x10
+  op=31 xo=329  x10
+  op=31 xo=365  x10
+  op=31 xo=926  x10
+  op=31 xo=918  x10
+  op=4 xo=642  x10
+  op=4 xo=718  x10
+  op=19 xo=436  x10
+  op=4 xo=76  x10
+  op=4 xo=392  x10
   op=31 xo=656  x9
-  op=31 xo=65  x9
   op=31 xo=338  x9
-  op=31 xo=967  x9
-  op=31 xo=95  x9
-  op=31 xo=846  x9
-  op=31 xo=208  x9
+  op=4 xo=78  x9
   op=31 xo=134  x9
-  op=31 xo=833  x9
-  op=31 xo=664  x9
-  op=31 xo=867  x9
-  op=31 xo=527  x9
+  op=31 xo=110  x9
+  op=31 xo=779  x9
   op=19 xo=936  x9
+  op=31 xo=208  x9
+  op=4 xo=519  x9
+  op=4 xo=468  x9
   op=19 xo=937  x9
-  op=31 xo=771  x8
+  op=31 xo=95  x9
+  op=31 xo=353  x9
+  op=31 xo=867  x9
+  op=4 xo=3  x9
+  op=31 xo=664  x9
+  op=31 xo=391  x9
+  op=4 xo=650  x9
+  op=19 xo=570  x9
+  op=31 xo=527  x9
+  op=31 xo=514  x9
+  op=4 xo=257  x9
+  op=31 xo=648  x9
+  op=63 xo=930  x9
+  op=31 xo=65  x9
+  op=63 xo=906  x9
+  op=63 xo=1018  x9
+  op=31 xo=708  x9
+  op=4 xo=719  x9
+  op=31 xo=676  x9
+  op=31 xo=77  x9
+  op=4 xo=134  x9
+  op=31 xo=967  x9
+  op=19 xo=20  x9
+  op=31 xo=706  x9
+  op=19 xo=41  x9
+  op=31 xo=524  x9
+  op=4 xo=226  x9
+  op=31 xo=846  x9
+  op=31 xo=604  x9
+  op=31 xo=833  x9
+  op=19 xo=321  x9
+  op=4 xo=82  x9
+  op=31 xo=516  x8
+  op=4 xo=75  x8
+  op=4 xo=593  x8
+  op=31 xo=221  x8
+  op=31 xo=740  x8
+  op=31 xo=610  x8
+  op=31 xo=839  x8
+  op=31 xo=974  x8
+  op=4 xo=849  x8
+  op=4 xo=9  x8
+  op=4 xo=218  x8
+  op=31 xo=538  x8
+  op=59 xo=418  x8
+  op=63 xo=942  x8
   op=31 xo=580  x8
   op=31 xo=578  x8
-  op=19 xo=201  x8
-  op=31 xo=610  x8
-  op=19 xo=72  x8
-  op=31 xo=516  x8
-  op=31 xo=336  x8
-  op=31 xo=337  x8
-  op=59 xo=418  x8
-  op=31 xo=538  x8
-  op=31 xo=401  x8
-  op=31 xo=839  x8
-  op=19 xo=38  x8
-  op=31 xo=965  x8
-  op=31 xo=974  x8
-  op=31 xo=387  x8
-  op=31 xo=94  x8
-  op=31 xo=143  x8
-  op=31 xo=853  x8
-  op=31 xo=165  x8
-  op=63 xo=942  x8
-  op=31 xo=137  x8
-  op=31 xo=260  x8
-  op=31 xo=451  x8
-  op=31 xo=221  x8
-  op=31 xo=869  x8
-  op=31 xo=868  x8
-  op=19 xo=564  x8
-  op=31 xo=740  x8
   op=19 xo=559  x8
-  op=31 xo=354  x8
+  op=19 xo=38  x8
+  op=19 xo=201  x8
+  op=4 xo=466  x8
+  op=31 xo=165  x8
+  op=4 xo=0  x8
+  op=31 xo=451  x8
+  op=4 xo=649  x8
+  op=31 xo=337  x8
+  op=31 xo=401  x8
+  op=4 xo=393  x8
+  op=31 xo=260  x8
+  op=31 xo=336  x8
+  op=31 xo=853  x8
+  op=19 xo=564  x8
+  op=4 xo=595  x8
+  op=31 xo=771  x8
+  op=31 xo=387  x8
+  op=31 xo=965  x8
+  op=31 xo=143  x8
+  op=31 xo=869  x8
   op=31 xo=982  x8
-  op=31 xo=333  x7
-  op=19 xo=408  x7
-  op=31 xo=67  x7
-  op=31 xo=537  x7
-  op=31 xo=529  x7
-  op=19 xo=656  x7
-  op=31 xo=519  x7
-  op=31 xo=861  x7
-  op=31 xo=360  x7
-  op=31 xo=473  x7
-  op=31 xo=467 spr=64  x7
-  op=63 xo=992  x7
-  op=63 xo=9  x7
-  op=31 xo=675  x7
-  op=63 xo=42  x7
-  op=63 xo=17  x7
-  op=63 xo=1019  x7
-  op=31 xo=678  x7
-  op=31 xo=69  x7
-  op=31 xo=705  x7
-  op=19 xo=815  x7
-  op=31 xo=713  x7
-  op=31 xo=997  x7
-  op=31 xo=714  x7
-  op=19 xo=271  x7
-  op=31 xo=849  x7
-  op=31 xo=844  x7
-  op=31 xo=390  x7
-  op=31 xo=962  x7
-  op=31 xo=837  x7
-  op=31 xo=836  x7
-  op=31 xo=834  x7
-  op=31 xo=82  x7
-  op=31 xo=796  x7
-  op=19 xo=178  x7
-  op=31 xo=788  x7
-  op=31 xo=786  x7
+  op=31 xo=94  x8
+  op=31 xo=354  x8
+  op=31 xo=868  x8
+  op=19 xo=72  x8
+  op=31 xo=137  x8
+  op=4 xo=17  x8
+  op=4 xo=594  x7
   op=31 xo=732  x7
-  op=31 xo=132  x7
-  op=31 xo=131  x7
   op=31 xo=897  x7
-  op=31 xo=388  x7
-  op=31 xo=102  x7
-  op=31 xo=282  x7
-  op=19 xo=929  x7
-  op=31 xo=605  x7
-  op=31 xo=400  x7
-  op=19 xo=429  x7
-  op=19 xo=475  x7
-  op=31 xo=649  x7
-  op=31 xo=326  x7
+  op=4 xo=590  x7
   op=31 xo=328  x7
-  op=31 xo=5  x6
-  op=31 xo=302  x6
-  op=63 xo=1016  x6
-  op=31 xo=224  x6
-  op=19 xo=432  x6
-  op=31 xo=592  x6
-  op=31 xo=3  x6
-  op=31 xo=682  x6
-  op=31 xo=392  x6
-  op=31 xo=613  x6
-  op=19 xo=804  x6
-  op=31 xo=345  x6
-  op=31 xo=296  x6
-  op=31 xo=600  x6
-  op=31 xo=666  x6
-  op=31 xo=601  x6
-  op=31 xo=264  x6
-  op=31 xo=267  x6
-  op=31 xo=226  x6
-  op=31 xo=159  x6
-  op=31 xo=157  x6
-  op=19 xo=47  x6
-  op=19 xo=644  x6
-  op=31 xo=999  x6
-  op=31 xo=609  x6
-  op=31 xo=207  x6
-  op=31 xo=996  x6
-  op=31 xo=544  x6
-  op=31 xo=770  x6
-  op=31 xo=988  x6
-  op=31 xo=518  x6
-  op=31 xo=808  x6
-  op=31 xo=977  x6
-  op=19 xo=130  x6
-  op=31 xo=847  x6
-  op=31 xo=650  x6
+  op=31 xo=834  x7
+  op=31 xo=796  x7
+  op=4 xo=467  x7
+  op=19 xo=815  x7
+  op=31 xo=836  x7
+  op=4 xo=464  x7
+  op=19 xo=408  x7
+  op=31 xo=786  x7
+  op=31 xo=705  x7
+  op=31 xo=132  x7
+  op=31 xo=962  x7
+  op=19 xo=429  x7
+  op=31 xo=473  x7
+  op=31 xo=997  x7
+  op=31 xo=102  x7
+  op=31 xo=519  x7
+  op=31 xo=678  x7
+  op=31 xo=131  x7
+  op=31 xo=69  x7
+  op=31 xo=390  x7
+  op=31 xo=67  x7
+  op=19 xo=271  x7
+  op=4 xo=263  x7
+  op=31 xo=529  x7
+  op=19 xo=929  x7
+  op=31 xo=82  x7
+  op=4 xo=81  x7
+  op=63 xo=992  x7
+  op=19 xo=656  x7
+  op=31 xo=326  x7
+  op=31 xo=714  x7
+  op=31 xo=388  x7
+  op=4 xo=851  x7
+  op=31 xo=605  x7
+  op=19 xo=475  x7
+  op=31 xo=713  x7
+  op=31 xo=282  x7
+  op=31 xo=675  x7
+  op=4 xo=907  x7
+  op=31 xo=844  x7
+  op=31 xo=849  x7
+  op=31 xo=837  x7
+  op=19 xo=178  x7
+  op=31 xo=333  x7
+  op=31 xo=537  x7
+  op=31 xo=400  x7
+  op=63 xo=1019  x7
+  op=63 xo=17  x7
+  op=63 xo=42  x7
+  op=63 xo=9  x7
+  op=31 xo=467 spr=64  x7
+  op=31 xo=649  x7
+  op=31 xo=861  x7
+  op=31 xo=788  x7
+  op=4 xo=721  x7
+  op=31 xo=360  x7
   op=31 xo=966  x6
-  op=31 xo=206  x6
-  op=31 xo=219  x6
-  op=31 xo=205  x6
   op=31 xo=146  x6
-  op=31 xo=274  x6
-  op=31 xo=667  x6
-  op=19 xo=394  x6
-  op=31 xo=332  x6
-  op=31 xo=141  x6
-  op=31 xo=230  x6
-  op=31 xo=280  x6
-  op=31 xo=465  x6
-  op=31 xo=139  x6
-  op=63 xo=960  x6
-  op=31 xo=908  x6
-  op=31 xo=422  x6
-  op=31 xo=670  x6
-  op=19 xo=58  x6
   op=31 xo=321  x6
-  op=19 xo=566  x6
-  op=31 xo=525  x6
-  op=19 xo=695  x6
-  op=31 xo=455  x6
-  op=31 xo=870  x6
-  op=31 xo=395  x6
-  op=19 xo=660  x6
-  op=31 xo=13  x6
-  op=31 xo=240  x6
-  op=63 xo=33  x6
-  op=63 xo=3  x6
-  op=63 xo=23  x6
+  op=19 xo=432  x6
+  op=31 xo=847  x6
+  op=31 xo=667  x6
+  op=31 xo=808  x6
   op=31 xo=642  x6
+  op=31 xo=977  x6
+  op=31 xo=240  x6
+  op=31 xo=996  x6
+  op=31 xo=682  x6
+  op=19 xo=47  x6
+  op=31 xo=296  x6
+  op=31 xo=3  x6
+  op=31 xo=205  x6
+  op=31 xo=206  x6
+  op=31 xo=207  x6
+  op=4 xo=462  x6
+  op=31 xo=5  x6
+  op=31 xo=395  x6
+  op=31 xo=280  x6
+  op=31 xo=392  x6
+  op=31 xo=141  x6
+  op=31 xo=999  x6
+  op=31 xo=670  x6
+  op=31 xo=908  x6
+  op=31 xo=870  x6
+  op=31 xo=274  x6
+  op=31 xo=422  x6
+  op=31 xo=600  x6
+  op=19 xo=394  x6
+  op=31 xo=13  x6
+  op=19 xo=804  x6
+  op=31 xo=139  x6
+  op=31 xo=226  x6
+  op=31 xo=302  x6
+  op=19 xo=566  x6
+  op=31 xo=613  x6
+  op=31 xo=770  x6
+  op=31 xo=609  x6
+  op=19 xo=130  x6
+  op=19 xo=58  x6
+  op=4 xo=210  x6
+  op=4 xo=211  x6
+  op=4 xo=212  x6
+  op=4 xo=848  x6
+  op=31 xo=455  x6
+  op=31 xo=264  x6
+  op=31 xo=518  x6
+  op=31 xo=525  x6
+  op=31 xo=465  x6
+  op=31 xo=601  x6
+  op=4 xo=722  x6
+  op=31 xo=224  x6
+  op=31 xo=544  x6
+  op=31 xo=219  x6
+  op=31 xo=650  x6
   op=31 xo=653  x6
+  op=31 xo=592  x6
+  op=31 xo=332  x6
+  op=19 xo=695  x6
+  op=4 xo=13  x6
   op=31 xo=145  x6
-  op=31 xo=778  x5
-  op=31 xo=806  x5
-  op=31 xo=840  x5
-  op=19 xo=675  x5
-  op=31 xo=864  x5
-  op=31 xo=866  x5
-  op=19 xo=681  x5
-  op=31 xo=874  x5
-  op=19 xo=128  x5
-  op=31 xo=89  x5
-  op=31 xo=900  x5
-  op=19 xo=290  x5
-  op=31 xo=904  x5
-  op=31 xo=905  x5
-  op=31 xo=925  x5
-  op=31 xo=970  x5
-  op=31 xo=971  x5
-  op=31 xo=973  x5
-  op=31 xo=981  x5
-  op=31 xo=989  x5
-  op=63 xo=10  x5
-  op=63 xo=119  x5
-  op=63 xo=128  x5
-  op=63 xo=24  x5
-  op=63 xo=51  x5
-  op=63 xo=900  x5
-  op=63 xo=928  x5
-  op=63 xo=96  x5
-  op=19 xo=768  x5
-  op=19 xo=800  x5
-  op=19 xo=92  x5
-  op=19 xo=539  x5
-  op=19 xo=935  x5
-  op=19 xo=34  x5
-  op=19 xo=974  x5
-  op=19 xo=975  x5
-  op=31 xo=162  x5
-  op=31 xo=17  x5
-  op=31 xo=171  x5
-  op=31 xo=174  x5
-  op=31 xo=175  x5
-  op=19 xo=554  x5
-  op=31 xo=198  x5
+  op=31 xo=988  x6
+  op=31 xo=345  x6
+  op=31 xo=230  x6
+  op=4 xo=707  x6
+  op=63 xo=1016  x6
+  op=19 xo=644  x6
+  op=31 xo=267  x6
+  op=4 xo=15  x6
+  op=63 xo=23  x6
+  op=63 xo=3  x6
+  op=63 xo=33  x6
+  op=4 xo=335  x6
+  op=31 xo=157  x6
+  op=4 xo=1  x6
+  op=31 xo=159  x6
+  op=4 xo=395  x6
+  op=4 xo=652  x6
+  op=63 xo=960  x6
+  op=19 xo=660  x6
+  op=4 xo=144  x6
+  op=31 xo=666  x6
+  op=4 xo=224  x6
+  op=31 xo=776  x5
   op=31 xo=203  x5
-  op=31 xo=236  x5
-  op=31 xo=238  x5
-  op=31 xo=258  x5
-  op=31 xo=259  x5
-  op=31 xo=270  x5
-  op=31 xo=276  x5
-  op=31 xo=285  x5
-  op=19 xo=203  x5
-  op=31 xo=287  x5
-  op=31 xo=297  x5
-  op=31 xo=335  x5
-  op=31 xo=344  x5
-  op=31 xo=359  x5
-  op=19 xo=39  x5
+  op=4 xo=348  x5
+  op=31 xo=840  x5
   op=31 xo=393  x5
-  op=31 xo=409  x5
-  op=19 xo=426  x5
-  op=31 xo=426  x5
+  op=31 xo=276  x5
+  op=4 xo=334  x5
+  op=19 xo=539  x5
+  op=31 xo=335  x5
+  op=31 xo=236  x5
+  op=19 xo=128  x5
+  op=31 xo=522  x5
+  op=4 xo=732  x5
   op=31 xo=461  x5
+  op=31 xo=904  x5
+  op=31 xo=747  x5
+  op=19 xo=203  x5
+  op=31 xo=285  x5
+  op=31 xo=900  x5
+  op=31 xo=66  x5
+  op=4 xo=521  x5
+  op=31 xo=722  x5
+  op=4 xo=771  x5
+  op=4 xo=520  x5
+  op=31 xo=287  x5
+  op=19 xo=800  x5
   op=31 xo=470  x5
   op=31 xo=472  x5
-  op=31 xo=477  x5
-  op=31 xo=480  x5
-  op=31 xo=522  x5
-  op=31 xo=530  x5
-  op=31 xo=533  x5
-  op=31 xo=534  x5
-  op=31 xo=545  x5
-  op=31 xo=558  x5
-  op=31 xo=586  x5
-  op=31 xo=591  x5
-  op=31 xo=593  x5
-  op=19 xo=43  x5
-  op=31 xo=597  x5
+  op=31 xo=344  x5
   op=31 xo=629  x5
+  op=4 xo=269  x5
+  op=4 xo=660  x5
+  op=4 xo=140  x5
+  op=19 xo=935  x5
+  op=19 xo=768  x5
+  op=31 xo=238  x5
+  op=31 xo=558  x5
+  op=4 xo=138  x5
+  op=31 xo=477  x5
+  op=31 xo=806  x5
+  op=19 xo=974  x5
+  op=4 xo=136  x5
+  op=4 xo=854  x5
+  op=31 xo=925  x5
+  op=4 xo=86  x5
+  op=19 xo=290  x5
+  op=31 xo=530  x5
+  op=31 xo=480  x5
+  op=31 xo=545  x5
+  op=31 xo=973  x5
+  op=31 xo=971  x5
+  op=31 xo=874  x5
   op=31 xo=643  x5
-  op=19 xo=437  x5
+  op=4 xo=909  x5
+  op=4 xo=91  x5
+  op=4 xo=910  x5
+  op=31 xo=597  x5
   op=31 xo=645  x5
-  op=31 xo=66  x5
-  op=31 xo=722  x5
+  op=31 xo=593  x5
+  op=4 xo=596  x5
+  op=31 xo=591  x5
+  op=31 xo=866  x5
+  op=31 xo=162  x5
+  op=31 xo=970  x5
+  op=31 xo=989  x5
+  op=4 xo=979  x5
+  op=19 xo=34  x5
+  op=19 xo=554  x5
+  op=31 xo=864  x5
+  op=31 xo=586  x5
+  op=31 xo=258  x5
+  op=31 xo=259  x5
+  op=19 xo=681  x5
+  op=31 xo=981  x5
+  op=31 xo=534  x5
+  op=19 xo=675  x5
+  op=63 xo=10  x5
+  op=31 xo=17  x5
+  op=31 xo=905  x5
+  op=31 xo=171  x5
+  op=63 xo=119  x5
+  op=63 xo=128  x5
+  op=31 xo=426  x5
+  op=31 xo=533  x5
+  op=19 xo=975  x5
+  op=63 xo=24  x5
+  op=31 xo=174  x5
+  op=31 xo=175  x5
   op=31 xo=735  x5
-  op=31 xo=747  x5
-  op=31 xo=776  x5
-  op=19 xo=166  x4
-  op=31 xo=70  x4
-  op=31 xo=173  x4
-  op=31 xo=485  x4
-  op=63 xo=48  x4
-  op=19 xo=330  x4
-  op=19 xo=331  x4
-  op=31 xo=211  x4
-  op=31 xo=490  x4
-  op=63 xo=56  x4
-  op=63 xo=59  x4
-  op=31 xo=606  x4
-  op=19 xo=515  x4
-  op=31 xo=228  x4
-  op=31 xo=429  x4
-  op=19 xo=344  x4
-  op=19 xo=386  x4
-  op=31 xo=551  x4
-  op=19 xo=147  x4
-  op=19 xo=387  x4
-  op=63 xo=67  x4
-  op=63 xo=678  x4
-  op=19 xo=153  x4
-  op=31 xo=553  x4
-  op=19 xo=532  x4
-  op=31 xo=560  x4
-  op=19 xo=690  x4
-  op=19 xo=353  x4
-  op=19 xo=672  x4
-  op=19 xo=354  x4
-  op=63 xo=8  x4
-  op=31 xo=619  x4
-  op=63 xo=994  x4
-  op=19 xo=167  x4
-  op=63 xo=87  x4
-  op=31 xo=16  x4
-  op=31 xo=158  x4
-  op=31 xo=153  x4
-  op=31 xo=167  x4
-  op=19 xo=626  x4
-  op=31 xo=724  x4
-  op=19 xo=418  x4
-  op=31 xo=730  x4
+  op=31 xo=89  x5
+  op=63 xo=51  x5
+  op=31 xo=778  x5
+  op=63 xo=900  x5
+  op=19 xo=39  x5
+  op=63 xo=928  x5
+  op=19 xo=92  x5
+  op=31 xo=409  x5
+  op=31 xo=270  x5
+  op=63 xo=96  x5
+  op=19 xo=426  x5
+  op=19 xo=43  x5
+  op=31 xo=198  x5
+  op=19 xo=437  x5
+  op=31 xo=297  x5
+  op=31 xo=852  x4
   op=31 xo=45  x4
-  op=19 xo=547  x4
-  op=31 xo=12  x4
-  op=31 xo=76  x4
-  op=19 xo=198  x4
-  op=19 xo=55  x4
-  op=19 xo=425  x4
-  op=31 xo=769  x4
-  op=31 xo=52  x4
-  op=31 xo=108  x4
-  op=31 xo=30  x4
-  op=19 xo=211  x4
-  op=31 xo=772  x4
-  op=31 xo=220  x4
-  op=19 xo=215  x4
-  op=31 xo=352  x4
-  op=19 xo=553  x4
-  op=31 xo=106  x4
-  op=31 xo=612  x4
-  op=31 xo=774  x4
   op=31 xo=452  x4
-  op=31 xo=78  x4
-  op=31 xo=782  x4
-  op=31 xo=582  x4
-  op=31 xo=1011  x4
-  op=31 xo=1005  x4
-  op=31 xo=100  x4
-  op=19 xo=237  x4
-  op=31 xo=453  x4
-  op=31 xo=813  x4
-  op=31 xo=347  x4
-  op=31 xo=658  x4
-  op=31 xo=454  x4
-  op=19 xo=962  x4
-  op=19 xo=952  x4
-  op=31 xo=857  x4
-  op=19 xo=934  x4
-  op=19 xo=261  x4
+  op=4 xo=600  x4
+  op=31 xo=560  x4
   op=31 xo=876  x4
-  op=19 xo=925  x4
-  op=31 xo=417  x4
-  op=31 xo=340  x4
+  op=4 xo=16  x4
   op=31 xo=620  x4
-  op=31 xo=916  x4
-  op=31 xo=540  x4
-  op=31 xo=681  x4
-  op=63 xo=102  x4
-  op=31 xo=947  x4
-  op=31 xo=97  x4
-  op=19 xo=580  x4
+  op=31 xo=724  x4
+  op=19 xo=825  x4
+  op=4 xo=720  x4
+  op=4 xo=723  x4
+  op=19 xo=819  x4
+  op=31 xo=619  x4
+  op=4 xo=738  x4
+  op=31 xo=453  x4
+  op=31 xo=454  x4
+  op=19 xo=147  x4
+  op=19 xo=153  x4
+  op=19 xo=166  x4
+  op=19 xo=167  x4
+  op=31 xo=469  x4
+  op=31 xo=12  x4
+  op=31 xo=553  x4
+  op=19 xo=198  x4
+  op=4 xo=781  x4
+  op=31 xo=153  x4
+  op=4 xo=542  x4
+  op=31 xo=658  x4
+  op=19 xo=211  x4
+  op=19 xo=215  x4
+  op=19 xo=237  x4
+  op=31 xo=612  x4
+  op=31 xo=551  x4
+  op=19 xo=261  x4
   op=19 xo=285  x4
   op=19 xo=288  x4
   op=19 xo=292  x4
-  op=19 xo=646  x4
-  op=31 xo=213  x4
-  op=19 xo=825  x4
-  op=19 xo=819  x4
-  op=59 xo=166  x4
   op=19 xo=306  x4
-  op=19 xo=673  x4
   op=19 xo=309  x4
-  op=31 xo=852  x4
+  op=19 xo=330  x4
+  op=19 xo=331  x4
+  op=19 xo=344  x4
+  op=31 xo=485  x4
+  op=31 xo=606  x4
+  op=19 xo=353  x4
+  op=19 xo=354  x4
+  op=19 xo=386  x4
+  op=19 xo=387  x4
+  op=4 xo=404  x4
+  op=31 xo=490  x4
+  op=19 xo=418  x4
+  op=63 xo=994  x4
+  op=4 xo=398  x4
+  op=4 xo=396  x4
+  op=19 xo=425  x4
+  op=31 xo=681  x4
+  op=4 xo=345  x4
+  op=19 xo=515  x4
+  op=4 xo=339  x4
+  op=4 xo=338  x4
+  op=19 xo=532  x4
+  op=31 xo=52  x4
+  op=4 xo=223  x4
+  op=19 xo=547  x4
+  op=19 xo=55  x4
+  op=19 xo=553  x4
+  op=19 xo=580  x4
+  op=4 xo=322  x4
+  op=31 xo=813  x4
+  op=31 xo=540  x4
+  op=4 xo=973  x4
+  op=31 xo=70  x4
+  op=4 xo=229  x4
+  op=4 xo=29  x4
+  op=4 xo=271  x4
+  op=4 xo=978  x4
+  op=19 xo=626  x4
+  op=4 xo=980  x4
+  op=19 xo=690  x4
+  op=4 xo=264  x4
+  op=4 xo=986  x4
+  op=19 xo=646  x4
+  op=31 xo=158  x4
+  op=31 xo=16  x4
+  op=31 xo=167  x4
+  op=59 xo=166  x4
+  op=31 xo=173  x4
+  op=31 xo=582  x4
+  op=31 xo=108  x4
+  op=31 xo=76  x4
+  op=31 xo=106  x4
+  op=31 xo=857  x4
+  op=31 xo=211  x4
+  op=19 xo=673  x4
+  op=19 xo=672  x4
+  op=31 xo=213  x4
+  op=31 xo=220  x4
+  op=31 xo=769  x4
+  op=63 xo=102  x4
+  op=31 xo=228  x4
+  op=31 xo=1011  x4
+  op=31 xo=1005  x4
+  op=31 xo=100  x4
   op=63 xo=2  x4
-  op=31 xo=469  x4
+  op=31 xo=772  x4
+  op=31 xo=774  x4
+  op=31 xo=97  x4
   op=63 xo=32  x4
+  op=31 xo=30  x4
   op=63 xo=34  x4
   op=63 xo=41  x4
+  op=4 xo=10  x4
   op=63 xo=43  x4
-  op=31 xo=617  x3
-  op=31 xo=488  x3
-  op=31 xo=237  x3
-  op=31 xo=707  x3
-  op=31 xo=492  x3
-  op=31 xo=229  x3
-  op=31 xo=494  x3
-  op=19 xo=385  x3
-  op=19 xo=145  x3
-  op=31 xo=665  x3
-  op=19 xo=389  x3
-  op=31 xo=172  x3
-  op=31 xo=283  x3
-  op=19 xo=40  x3
-  op=31 xo=594  x3
-  op=19 xo=163  x3
-  op=19 xo=407  x3
-  op=19 xo=169  x3
-  op=31 xo=271  x3
-  op=31 xo=366  x3
-  op=31 xo=364  x3
-  op=31 xo=363  x3
-  op=19 xo=182  x3
-  op=19 xo=420  x3
+  op=31 xo=916  x4
+  op=63 xo=48  x4
+  op=31 xo=78  x4
+  op=63 xo=56  x4
+  op=63 xo=59  x4
+  op=63 xo=67  x4
+  op=63 xo=678  x4
+  op=63 xo=8  x4
+  op=63 xo=87  x4
+  op=19 xo=962  x4
+  op=31 xo=340  x4
+  op=19 xo=952  x4
+  op=31 xo=947  x4
+  op=31 xo=347  x4
+  op=31 xo=782  x4
+  op=31 xo=352  x4
+  op=31 xo=730  x4
+  op=19 xo=934  x4
+  op=4 xo=25  x4
+  op=4 xo=12  x4
+  op=19 xo=925  x4
+  op=31 xo=417  x4
+  op=31 xo=429  x4
   op=31 xo=223  x3
-  op=31 xo=715  x3
-  op=31 xo=164  x3
-  op=31 xo=334  x3
-  op=31 xo=673  x3
-  op=31 xo=674  x3
-  op=31 xo=163  x3
-  op=19 xo=222  x3
-  op=19 xo=36  x3
-  op=31 xo=35  x3
-  op=31 xo=430  x3
-  op=31 xo=528  x3
+  op=31 xo=83  x3
   op=31 xo=348  x3
-  op=31 xo=421  x3
-  op=19 xo=24  x3
-  op=19 xo=247  x3
-  op=31 xo=218  x3
-  op=19 xo=256  x3
-  op=31 xo=423  x3
-  op=19 xo=260  x3
-  op=19 xo=640  x3
-  op=31 xo=25  x3
-  op=19 xo=265  x3
-  op=31 xo=860  x3
-  op=31 xo=541  x3
-  op=31 xo=176  x3
-  op=19 xo=281  x3
-  op=19 xo=482  x3
-  op=31 xo=661  x3
-  op=31 xo=662  x3
-  op=19 xo=310  x3
-  op=31 xo=684  x3
-  op=19 xo=588  x3
-  op=31 xo=602  x3
-  op=19 xo=512  x3
-  op=19 xo=326  x3
-  op=19 xo=328  x3
-  op=19 xo=513  x3
-  op=19 xo=339  x3
-  op=31 xo=303  x3
-  op=19 xo=52  x3
-  op=19 xo=347  x3
-  op=31 xo=554  x3
-  op=31 xo=291  x3
-  op=31 xo=859  x3
-  op=19 xo=938  x3
-  op=31 xo=736  x3
-  op=31 xo=399  x3
-  op=31 xo=865  x3
-  op=19 xo=932  x3
-  op=19 xo=928  x3
-  op=31 xo=872  x3
-  op=31 xo=397  x3
-  op=31 xo=739  x3
-  op=19 xo=926  x3
-  op=31 xo=147  x3
-  op=31 xo=742  x3
-  op=31 xo=899  x3
-  op=31 xo=416  x3
-  op=19 xo=910  x3
-  op=31 xo=906  x3
-  op=19 xo=902  x3
-  op=31 xo=914  x3
-  op=31 xo=915  x3
-  op=31 xo=783  x3
-  op=31 xo=917  x3
-  op=31 xo=743  x3
-  op=31 xo=92  x3
-  op=31 xo=920  x3
   op=31 xo=464  x3
-  op=31 xo=93  x3
-  op=19 xo=872  x3
-  op=31 xo=935  x3
-  op=31 xo=749  x3
-  op=31 xo=1004  x3
-  op=31 xo=979  x3
-  op=19 xo=838  x3
-  op=31 xo=994  x3
+  op=19 xo=145  x3
+  op=31 xo=218  x3
+  op=31 xo=617  x3
+  op=31 xo=35  x3
+  op=31 xo=291  x3
+  op=31 xo=783  x3
+  op=19 xo=968  x3
+  op=4 xo=762  x3
+  op=31 xo=109  x3
   op=31 xo=995  x3
-  op=19 xo=835  x3
-  op=19 xo=826  x3
-  op=31 xo=790  x3
-  op=31 xo=791  x3
-  op=31 xo=751  x3
+  op=31 xo=554  x3
   op=19 xo=807  x3
-  op=59 xo=586  x3
+  op=31 xo=856  x3
+  op=4 xo=775  x3
+  op=31 xo=859  x3
+  op=31 xo=715  x3
+  op=31 xo=979  x3
+  op=31 xo=176  x3
+  op=31 xo=172  x3
+  op=31 xo=935  x3
+  op=31 xo=860  x3
+  op=31 xo=363  x3
+  op=31 xo=364  x3
+  op=31 xo=736  x3
+  op=31 xo=366  x3
+  op=31 xo=164  x3
+  op=31 xo=749  x3
+  op=19 xo=787  x3
+  op=19 xo=938  x3
+  op=19 xo=784  x3
+  op=31 xo=163  x3
+  op=19 xo=782  x3
+  op=31 xo=751  x3
+  op=31 xo=93  x3
+  op=31 xo=994  x3
+  op=31 xo=528  x3
+  op=31 xo=920  x3
+  op=31 xo=92  x3
+  op=19 xo=640  x3
+  op=4 xo=267  x3
+  op=31 xo=1  x3
+  op=4 xo=850  x3
+  op=31 xo=334  x3
+  op=4 xo=268  x3
+  op=19 xo=588  x3
+  op=19 xo=932  x3
+  op=31 xo=739  x3
+  op=4 xo=220  x3
+  op=31 xo=602  x3
+  op=4 xo=877  x3
+  op=19 xo=52  x3
+  op=4 xo=340  x3
+  op=19 xo=513  x3
+  op=19 xo=512  x3
+  op=19 xo=482  x3
+  op=31 xo=397  x3
+  op=31 xo=710  x3
   op=31 xo=154  x3
-  op=63 xo=1007  x3
+  op=31 xo=790  x3
+  op=4 xo=906  x3
+  op=31 xo=399  x3
+  op=31 xo=684  x3
+  op=31 xo=494  x3
+  op=19 xo=420  x3
+  op=19 xo=717  x3
+  op=4 xo=914  x3
+  op=4 xo=915  x3
+  op=31 xo=917  x3
+  op=31 xo=791  x3
+  op=4 xo=400  x3
+  op=31 xo=594  x3
+  op=31 xo=140  x3
+  op=19 xo=407  x3
+  op=31 xo=915  x3
+  op=19 xo=928  x3
+  op=19 xo=926  x3
+  op=31 xo=541  x3
+  op=4 xo=225  x3
+  op=31 xo=492  x3
+  op=31 xo=283  x3
+  op=31 xo=416  x3
+  op=31 xo=743  x3
+  op=31 xo=899  x3
+  op=19 xo=40  x3
+  op=31 xo=488  x3
   op=19 xo=918  x3
+  op=31 xo=421  x3
+  op=4 xo=982  x3
+  op=19 xo=389  x3
+  op=31 xo=423  x3
+  op=19 xo=385  x3
+  op=4 xo=988  x3
+  op=4 xo=989  x3
+  op=31 xo=674  x3
+  op=4 xo=994  x3
+  op=31 xo=673  x3
+  op=31 xo=271  x3
+  op=19 xo=910  x3
+  op=31 xo=430  x3
+  op=31 xo=865  x3
+  op=59 xo=586  x3
+  op=31 xo=906  x3
+  op=19 xo=36  x3
+  op=31 xo=872  x3
+  op=19 xo=902  x3
+  op=31 xo=1004  x3
+  op=19 xo=347  x3
+  op=19 xo=339  x3
+  op=63 xo=1007  x3
+  op=63 xo=101  x3
   op=63 xo=1014  x3
+  op=4 xo=112  x3
+  op=19 xo=328  x3
+  op=19 xo=326  x3
+  op=4 xo=598  x3
+  op=31 xo=850  x3
   op=63 xo=106  x3
   op=63 xo=115  x3
   op=63 xo=118  x3
-  op=31 xo=1  x3
-  op=19 xo=787  x3
-  op=31 xo=726  x3
-  op=63 xo=27  x3
-  op=19 xo=784  x3
-  op=31 xo=83  x3
-  op=19 xo=782  x3
+  op=19 xo=310  x3
   op=19 xo=990  x3
-  op=19 xo=976  x3
-  op=31 xo=109  x3
+  op=19 xo=281  x3
+  op=31 xo=742  x3
+  op=4 xo=619  x3
+  op=4 xo=627  x3
+  op=19 xo=872  x3
+  op=63 xo=27  x3
+  op=4 xo=472  x3
+  op=4 xo=477  x3
+  op=19 xo=265  x3
+  op=31 xo=25  x3
+  op=31 xo=707  x3
+  op=4 xo=482  x3
+  op=19 xo=260  x3
+  op=19 xo=256  x3
+  op=31 xo=665  x3
   op=63 xo=44  x3
-  op=31 xo=841  x3
+  op=19 xo=247  x3
   op=63 xo=49  x3
   op=63 xo=5  x3
-  op=19 xo=968  x3
+  op=31 xo=662  x3
+  op=4 xo=656  x3
   op=63 xo=58  x3
-  op=31 xo=140  x3
+  op=4 xo=658  x3
   op=63 xo=65  x3
-  op=19 xo=717  x3
-  op=31 xo=850  x3
+  op=19 xo=24  x3
+  op=31 xo=661  x3
   op=63 xo=71  x3
   op=63 xo=726  x3
-  op=31 xo=856  x3
-  op=63 xo=814  x3
-  op=31 xo=710  x3
+  op=19 xo=222  x3
+  op=31 xo=726  x3
   op=63 xo=88  x3
+  op=4 xo=523  x3
   op=63 xo=90  x3
-  op=63 xo=101  x3
+  op=4 xo=529  x3
+  op=19 xo=838  x3
+  op=19 xo=976  x3
+  op=31 xo=303  x3
+  op=19 xo=835  x3
+  op=31 xo=841  x3
+  op=19 xo=826  x3
+  op=31 xo=147  x3
+  op=19 xo=182  x3
+  op=31 xo=237  x3
+  op=31 xo=229  x3
+  op=19 xo=169  x3
+  op=19 xo=163  x3
+  op=31 xo=914  x3
+  op=31 xo=718  x2
+  op=31 xo=396  x2
+  op=4 xo=221  x2
+  op=4 xo=222  x2
+  op=4 xo=266  x2
+  op=4 xo=275  x2
+  op=4 xo=276  x2
+  op=4 xo=282  x2
+  op=4 xo=288  x2
+  op=4 xo=323  x2
+  op=31 xo=693  x2
+  op=4 xo=347  x2
+  op=4 xo=350  x2
+  op=4 xo=351  x2
   op=31 xo=685  x2
-  op=19 xo=651  x2
-  op=19 xo=711  x2
-  op=31 xo=161  x2
-  op=19 xo=715  x2
+  op=4 xo=391  x2
+  op=4 xo=397  x2
+  op=31 xo=679  x2
+  op=4 xo=401  x2
+  op=31 xo=677  x2
+  op=4 xo=410  x2
+  op=4 xo=416  x2
+  op=31 xo=669  x2
+  op=4 xo=465  x2
+  op=4 xo=484  x2
+  op=4 xo=494  x2
+  op=4 xo=505  x2
+  op=4 xo=526  x2
+  op=4 xo=534  x2
+  op=31 xo=654  x2
+  op=4 xo=547  x2
+  op=4 xo=576  x2
   op=19 xo=109  x2
-  op=31 xo=486  x2
-  op=31 xo=414  x2
-  op=19 xo=725  x2
   op=19 xo=12  x2
   op=19 xo=134  x2
-  op=31 xo=168  x2
   op=19 xo=137  x2
-  op=31 xo=419  x2
-  op=31 xo=478  x2
-  op=31 xo=479  x2
-  op=31 xo=48  x2
-  op=31 xo=693  x2
-  op=31 xo=481  x2
-  op=31 xo=496  x2
-  op=31 xo=227  x2
   op=19 xo=148  x2
-  op=31 xo=405  x2
   op=19 xo=151  x2
-  op=31 xo=142  x2
+  op=4 xo=601  x2
+  op=4 xo=603  x2
+  op=4 xo=605  x2
+  op=4 xo=606  x2
   op=19 xo=152  x2
-  op=31 xo=729  x2
   op=19 xo=155  x2
   op=19 xo=156  x2
-  op=31 xo=731  x2
-  op=31 xo=133  x2
   op=19 xo=157  x2
-  op=31 xo=499  x2
-  op=31 xo=738  x2
   op=19 xo=160  x2
   op=19 xo=161  x2
+  op=4 xo=985  x2
   op=19 xo=162  x2
   op=19 xo=164  x2
-  op=31 xo=404  x2
   op=19 xo=168  x2
-  op=31 xo=367  x2
   op=19 xo=175  x2
-  op=31 xo=113  x2
   op=19 xo=18  x2
   op=19 xo=183  x2
-  op=31 xo=362  x2
   op=19 xo=195  x2
-  op=31 xo=222  x2
-  op=31 xo=358  x2
-  op=31 xo=775  x2
-  op=31 xo=777  x2
-  op=31 xo=357  x2
-  op=31 xo=654  x2
-  op=31 xo=1015  x2
-  op=31 xo=355  x2
   op=19 xo=213  x2
-  op=31 xo=351  x2
-  op=31 xo=787  x2
-  op=31 xo=101  x2
-  op=31 xo=350  x2
   op=19 xo=22  x2
+  op=4 xo=654  x2
   op=19 xo=221  x2
-  op=31 xo=349  x2
-  op=31 xo=793  x2
-  op=31 xo=1003  x2
-  op=31 xo=1002  x2
-  op=31 xo=801  x2
-  op=31 xo=802  x2
-  op=31 xo=803  x2
-  op=31 xo=1000  x2
+  op=4 xo=657  x2
+  op=19 xo=224  x2
   op=19 xo=229  x2
-  op=31 xo=718  x2
-  op=31 xo=807  x2
+  op=4 xo=666  x2
   op=19 xo=263  x2
-  op=31 xo=812  x2
+  op=31 xo=626  x2
   op=19 xo=267  x2
-  op=31 xo=819  x2
   op=19 xo=273  x2
-  op=19 xo=991  x2
   op=19 xo=276  x2
-  op=19 xo=985  x2
+  op=31 xo=622  x2
   op=19 xo=279  x2
-  op=19 xo=969  x2
-  op=31 xo=542  x2
-  op=31 xo=543  x2
   op=19 xo=298  x2
-  op=19 xo=963  x2
-  op=31 xo=339 spr=64  x2
-  op=31 xo=548  x2
-  op=19 xo=951  x2
   op=19 xo=32  x2
-  op=31 xo=851  x2
-  op=19 xo=947  x2
-  op=19 xo=943  x2
-  op=31 xo=855  x2
-  op=31 xo=549  x2
   op=19 xo=325  x2
   op=19 xo=329  x2
-  op=31 xo=719  x2
   op=19 xo=341  x2
-  op=31 xo=584  x2
-  op=31 xo=552  x2
   op=19 xo=350  x2
-  op=31 xo=398  x2
-  op=31 xo=555  x2
-  op=19 xo=224  x2
-  op=31 xo=556  x2
-  op=31 xo=873  x2
-  op=31 xo=557  x2
-  op=31 xo=415  x2
   op=19 xo=384  x2
-  op=31 xo=46  x2
   op=19 xo=390  x2
-  op=31 xo=210  x2
-  op=31 xo=204  x2
-  op=19 xo=912  x2
   op=19 xo=402  x2
   op=19 xo=403  x2
-  op=31 xo=463  x2
   op=19 xo=404  x2
-  op=31 xo=907  x2
-  op=19 xo=903  x2
-  op=31 xo=2  x2
-  op=31 xo=91  x2
-  op=31 xo=913  x2
-  op=31 xo=669  x2
   op=19 xo=422  x2
-  op=31 xo=18  x2
   op=19 xo=431  x2
-  op=31 xo=325  x2
-  op=31 xo=919  x2
   op=19 xo=451  x2
   op=19 xo=456  x2
+  op=4 xo=726  x2
+  op=31 xo=618  x2
+  op=4 xo=729  x2
   op=19 xo=457  x2
-  op=19 xo=88  x2
   op=19 xo=466  x2
-  op=31 xo=930  x2
-  op=31 xo=583  x2
-  op=31 xo=310  x2
-  op=31 xo=936  x2
-  op=31 xo=940  x2
-  op=31 xo=942  x2
+  op=4 xo=733  x2
+  op=4 xo=737  x2
   op=19 xo=476  x2
-  op=19 xo=867  x2
-  op=19 xo=864  x2
-  op=19 xo=861  x2
-  op=31 xo=964  x2
-  op=19 xo=852  x2
-  op=31 xo=968  x2
   op=19 xo=48  x2
-  op=31 xo=396  x2
-  op=31 xo=389  x2
-  op=31 xo=972  x2
-  op=31 xo=467 spr=0  x2
-  op=19 xo=844  x2
-  op=31 xo=978  x2
   op=19 xo=487  x2
-  op=31 xo=980  x2
-  op=31 xo=467 spr=32  x2
-  op=19 xo=842  x2
-  op=31 xo=677  x2
-  op=31 xo=467 spr=576  x2
-  op=31 xo=99  x2
-  op=31 xo=992  x2
-  op=31 xo=993  x2
+  op=4 xo=742  x2
+  op=4 xo=748  x2
   op=19 xo=50  x2
   op=19 xo=51  x2
-  op=31 xo=589  x2
+  op=4 xo=758  x2
+  op=31 xo=616  x2
   op=19 xo=521  x2
+  op=4 xo=761  x2
   op=19 xo=524  x2
+  op=4 xo=767  x2
   op=19 xo=525  x2
-  op=63 xo=122  x2
-  op=19 xo=810  x2
-  op=59 xo=134  x2
   op=19 xo=527  x2
-  op=59 xo=322  x2
-  op=59 xo=333  x2
-  op=31 xo=301  x2
-  op=59 xo=47  x2
-  op=19 xo=536  x2
-  op=59 xo=648  x2
-  op=31 xo=43  x2
-  op=59 xo=676  x2
-  op=59 xo=691  x2
-  op=59 xo=909  x2
-  op=19 xo=802  x2
-  op=63 xo=1001  x2
   op=19 xo=544  x2
-  op=63 xo=1008  x2
-  op=63 xo=1009  x2
   op=19 xo=545  x2
   op=19 xo=546  x2
-  op=19 xo=794  x2
-  op=19 xo=71  x2
-  op=63 xo=104  x2
-  op=63 xo=105  x2
-  op=31 xo=298  x2
-  op=63 xo=107  x2
-  op=63 xo=113  x2
-  op=31 xo=295  x2
   op=19 xo=561  x2
-  op=63 xo=120  x2
-  op=63 xo=13  x2
-  op=63 xo=16  x2
-  op=19 xo=789  x2
-  op=63 xo=19  x2
-  op=31 xo=679  x2
-  op=31 xo=293  x2
-  op=31 xo=292  x2
-  op=63 xo=257  x2
   op=19 xo=585  x2
   op=19 xo=586  x2
   op=19 xo=591  x2
-  op=31 xo=290  x2
-  op=31 xo=286  x2
-  op=63 xo=36  x2
-  op=63 xo=4  x2
-  op=19 xo=780  x2
   op=19 xo=614  x2
-  op=31 xo=275  x2
-  op=19 xo=779  x2
-  op=31 xo=614  x2
-  op=63 xo=46  x2
   op=19 xo=643  x2
+  op=4 xo=785  x2
   op=31 xo=615  x2
   op=19 xo=648  x2
-  op=63 xo=54  x2
-  op=31 xo=616  x2
+  op=31 xo=614  x2
+  op=19 xo=651  x2
   op=19 xo=652  x2
-  op=31 xo=618  x2
   op=19 xo=664  x2
-  op=63 xo=66  x2
   op=19 xo=666  x2
-  op=31 xo=622  x2
-  op=63 xo=68  x2
-  op=63 xo=7  x2
   op=19 xo=670  x2
   op=19 xo=676  x2
+  op=19 xo=680  x2
+  op=19 xo=684  x2
+  op=19 xo=707  x2
+  op=19 xo=71  x2
+  op=19 xo=711  x2
+  op=4 xo=84  x2
+  op=19 xo=715  x2
+  op=19 xo=725  x2
+  op=19 xo=739  x2
+  op=19 xo=773  x2
+  op=19 xo=775  x2
+  op=19 xo=777  x2
+  op=19 xo=779  x2
+  op=19 xo=780  x2
+  op=19 xo=789  x2
+  op=19 xo=794  x2
+  op=19 xo=802  x2
+  op=19 xo=810  x2
+  op=4 xo=852  x2
+  op=19 xo=842  x2
+  op=19 xo=844  x2
+  op=19 xo=852  x2
+  op=4 xo=858  x2
+  op=19 xo=861  x2
+  op=4 xo=860  x2
+  op=4 xo=864  x2
+  op=4 xo=866  x2
+  op=19 xo=864  x2
+  op=4 xo=868  x2
+  op=4 xo=869  x2
+  op=19 xo=867  x2
+  op=19 xo=88  x2
+  op=4 xo=88  x2
+  op=4 xo=882  x2
+  op=19 xo=883  x2
+  op=19 xo=903  x2
+  op=4 xo=894  x2
+  op=19 xo=912  x2
+  op=19 xo=943  x2
+  op=19 xo=947  x2
+  op=19 xo=951  x2
+  op=19 xo=963  x2
+  op=19 xo=969  x2
+  op=19 xo=985  x2
+  op=19 xo=991  x2
+  op=31 xo=1000  x2
+  op=31 xo=1002  x2
+  op=31 xo=1003  x2
+  op=31 xo=101  x2
+  op=4 xo=911  x2
+  op=4 xo=912  x2
+  op=31 xo=1015  x2
+  op=31 xo=113  x2
+  op=31 xo=133  x2
+  op=4 xo=916  x2
+  op=31 xo=142  x2
+  op=31 xo=161  x2
+  op=31 xo=168  x2
+  op=31 xo=170  x2
+  op=4 xo=96  x2
+  op=31 xo=18  x2
+  op=31 xo=2  x2
+  op=31 xo=204  x2
+  op=31 xo=210  x2
+  op=31 xo=222  x2
+  op=31 xo=227  x2
+  op=31 xo=275  x2
+  op=31 xo=286  x2
+  op=31 xo=290  x2
+  op=31 xo=292  x2
+  op=31 xo=293  x2
+  op=31 xo=295  x2
+  op=31 xo=298  x2
+  op=31 xo=301  x2
+  op=31 xo=310  x2
+  op=31 xo=325  x2
+  op=31 xo=589  x2
+  op=31 xo=339 spr=64  x2
+  op=31 xo=341  x2
+  op=31 xo=349  x2
+  op=31 xo=350  x2
+  op=4 xo=987  x2
+  op=31 xo=351  x2
+  op=31 xo=355  x2
+  op=31 xo=357  x2
+  op=4 xo=990  x2
+  op=31 xo=358  x2
+  op=4 xo=997  x2
+  op=4 xo=999  x2
+  op=31 xo=362  x2
+  op=31 xo=367  x2
+  op=31 xo=389  x2
+  op=31 xo=584  x2
+  op=59 xo=134  x2
+  op=31 xo=398  x2
+  op=31 xo=583  x2
+  op=59 xo=322  x2
+  op=59 xo=333  x2
+  op=31 xo=404  x2
+  op=59 xo=47  x2
+  op=31 xo=405  x2
+  op=59 xo=648  x2
+  op=59 xo=676  x2
+  op=59 xo=691  x2
+  op=59 xo=909  x2
+  op=31 xo=413  x2
+  op=31 xo=414  x2
+  op=31 xo=415  x2
+  op=31 xo=419  x2
+  op=31 xo=43  x2
+  op=31 xo=431  x2
+  op=63 xo=1001  x2
+  op=31 xo=46  x2
+  op=31 xo=463  x2
+  op=63 xo=1008  x2
+  op=63 xo=1009  x2
+  op=31 xo=467 spr=0  x2
+  op=31 xo=467 spr=32  x2
+  op=31 xo=467 spr=576  x2
+  op=31 xo=478  x2
+  op=31 xo=479  x2
+  op=31 xo=48  x2
+  op=31 xo=481  x2
+  op=63 xo=104  x2
+  op=63 xo=105  x2
+  op=31 xo=486  x2
+  op=63 xo=107  x2
+  op=63 xo=113  x2
+  op=31 xo=496  x2
+  op=31 xo=499  x2
+  op=31 xo=542  x2
+  op=63 xo=120  x2
+  op=63 xo=122  x2
+  op=31 xo=543  x2
+  op=63 xo=13  x2
+  op=63 xo=16  x2
+  op=31 xo=548  x2
+  op=31 xo=549  x2
+  op=63 xo=19  x2
+  op=31 xo=552  x2
+  op=31 xo=555  x2
+  op=31 xo=556  x2
+  op=63 xo=257  x2
+  op=31 xo=557  x2
+  op=31 xo=738  x2
+  op=31 xo=775  x2
+  op=31 xo=777  x2
+  op=31 xo=787  x2
+  op=63 xo=36  x2
+  op=63 xo=4  x2
+  op=31 xo=793  x2
+  op=31 xo=801  x2
+  op=31 xo=802  x2
+  op=31 xo=803  x2
+  op=31 xo=807  x2
+  op=31 xo=812  x2
+  op=63 xo=46  x2
+  op=31 xo=819  x2
+  op=19 xo=536  x2
+  op=31 xo=851  x2
+  op=31 xo=855  x2
+  op=63 xo=54  x2
+  op=31 xo=873  x2
+  op=31 xo=907  x2
+  op=31 xo=91  x2
+  op=31 xo=913  x2
+  op=63 xo=66  x2
+  op=31 xo=919  x2
+  op=31 xo=930  x2
+  op=63 xo=68  x2
+  op=63 xo=7  x2
+  op=31 xo=936  x2
+  op=31 xo=940  x2
   op=63 xo=75  x2
   op=63 xo=772  x2
   op=63 xo=78  x2
-  op=19 xo=680  x2
-  op=31 xo=170  x2
+  op=31 xo=942  x2
   op=63 xo=83  x2
-  op=19 xo=777  x2
   op=63 xo=86  x2
-  op=19 xo=684  x2
-  op=31 xo=626  x2
-  op=19 xo=775  x2
-  op=31 xo=431  x2
-  op=19 xo=707  x2
+  op=31 xo=964  x2
+  op=31 xo=968  x2
+  op=31 xo=972  x2
+  op=31 xo=978  x2
+  op=31 xo=980  x2
+  op=31 xo=99  x2
   op=63 xo=922  x2
-  op=31 xo=413  x2
-  op=19 xo=773  x2
+  op=31 xo=992  x2
+  op=31 xo=993  x2
+  op=4 xo=1011  x2
+  op=4 xo=106  x2
+  op=31 xo=731  x2
+  op=4 xo=127  x2
+  op=4 xo=129  x2
   op=63 xo=97  x2
+  op=31 xo=729  x2
+  op=4 xo=147  x2
+  op=4 xo=148  x2
   op=63 xo=99  x2
-  op=19 xo=739  x2
-  op=19 xo=883  x2
-  op=31 xo=403  x1
-  op=19 xo=226  x1
-  op=19 xo=227  x1
-  op=31 xo=105  x1
-  op=19 xo=232  x1
-  op=31 xo=1016  x1
-  op=19 xo=235  x1
-  op=19 xo=239  x1
-  op=19 xo=242  x1
-  op=31 xo=784  x1
-  op=19 xo=243  x1
-  op=19 xo=25  x1
-  op=19 xo=259  x1
-  op=19 xo=262  x1
-  op=19 xo=266  x1
-  op=19 xo=275  x1
-  op=19 xo=278  x1
-  op=19 xo=282  x1
-  op=31 xo=795  x1
-  op=19 xo=294  x1
-  op=19 xo=295  x1
-  op=31 xo=799  x1
-  op=31 xo=1001  x1
-  op=31 xo=800  x1
-  op=19 xo=299  x1
-  op=19 xo=303  x1
+  op=31 xo=719  x2
+  op=4 xo=195  x2
   op=19 xo=307  x1
-  op=19 xo=313  x1
-  op=19 xo=324  x1
-  op=19 xo=337  x1
-  op=19 xo=345  x1
-  op=19 xo=346  x1
-  op=31 xo=809  x1
-  op=31 xo=81  x1
-  op=31 xo=810  x1
-  op=19 xo=349  x1
-  op=19 xo=356  x1
-  op=31 xo=814  x1
-  op=31 xo=815  x1
-  op=19 xo=357  x1
-  op=19 xo=999  x1
-  op=31 xo=820  x1
-  op=19 xo=365  x1
-  op=31 xo=830  x1
-  op=19 xo=998  x1
-  op=19 xo=368  x1
-  op=19 xo=376  x1
-  op=19 xo=989  x1
-  op=19 xo=986  x1
-  op=19 xo=388  x1
-  op=19 xo=392  x1
-  op=19 xo=97  x1
-  op=19 xo=397  x1
-  op=19 xo=4  x1
-  op=19 xo=411  x1
-  op=19 xo=412  x1
-  op=19 xo=964  x1
-  op=19 xo=423  x1
-  op=19 xo=424  x1
-  op=19 xo=427  x1
-  op=19 xo=430  x1
-  op=31 xo=85  x1
-  op=19 xo=433  x1
-  op=19 xo=438  x1
-  op=19 xo=440  x1
-  op=19 xo=452  x1
-  op=19 xo=941  x1
-  op=19 xo=455  x1
-  op=19 xo=467  x1
-  op=19 xo=468  x1
-  op=31 xo=858  x1
-  op=19 xo=469  x1
-  op=19 xo=473  x1
-  op=19 xo=488  x1
-  op=19 xo=514  x1
-  op=31 xo=863  x1
-  op=19 xo=520  x1
-  op=19 xo=523  x1
-  op=19 xo=529  x1
-  op=19 xo=933  x1
-  op=19 xo=531  x1
-  op=19 xo=930  x1
-  op=19 xo=537  x1
-  op=31 xo=871  x1
-  op=19 xo=54  x1
-  op=19 xo=551  x1
-  op=19 xo=555  x1
-  op=31 xo=875  x1
-  op=19 xo=556  x1
-  op=31 xo=877  x1
-  op=31 xo=878  x1
-  op=19 xo=56  x1
-  op=31 xo=880  x1
-  op=31 xo=882  x1
-  op=31 xo=886  x1
-  op=31 xo=887  x1
-  op=19 xo=572  x1
-  op=31 xo=891  x1
-  op=31 xo=892  x1
-  op=31 xo=895  x1
-  op=19 xo=579  x1
-  op=19 xo=582  x1
-  op=19 xo=916  x1
-  op=19 xo=59  x1
-  op=19 xo=592  x1
-  op=31 xo=90  x1
-  op=19 xo=594  x1
-  op=19 xo=601  x1
-  op=19 xo=909  x1
+  op=19 xo=303  x1
+  op=31 xo=47  x1
+  op=19 xo=299  x1
+  op=19 xo=295  x1
+  op=19 xo=294  x1
+  op=19 xo=282  x1
+  op=19 xo=278  x1
+  op=19 xo=275  x1
+  op=19 xo=266  x1
+  op=19 xo=262  x1
+  op=31 xo=468  x1
+  op=19 xo=259  x1
+  op=4 xo=486  x1
+  op=4 xo=490  x1
+  op=31 xo=467 spr=835  x1
+  op=4 xo=499  x1
+  op=19 xo=25  x1
+  op=4 xo=50  x1
+  op=19 xo=243  x1
+  op=19 xo=242  x1
   op=31 xo=462  x1
-  op=19 xo=604  x1
-  op=19 xo=605  x1
-  op=19 xo=609  x1
-  op=19 xo=616  x1
-  op=19 xo=625  x1
-  op=19 xo=627  x1
-  op=19 xo=897  x1
+  op=4 xo=506  x1
+  op=4 xo=507  x1
+  op=19 xo=239  x1
+  op=19 xo=235  x1
+  op=19 xo=232  x1
+  op=19 xo=227  x1
+  op=19 xo=226  x1
+  op=19 xo=219  x1
+  op=19 xo=218  x1
+  op=19 xo=217  x1
+  op=19 xo=214  x1
+  op=4 xo=525  x1
+  op=31 xo=44  x1
+  op=4 xo=527  x1
+  op=4 xo=528  x1
+  op=19 xo=210  x1
+  op=19 xo=208  x1
+  op=4 xo=530  x1
+  op=4 xo=531  x1
+  op=4 xo=532  x1
+  op=19 xo=206  x1
+  op=31 xo=433  x1
+  op=19 xo=205  x1
+  op=4 xo=537  x1
+  op=19 xo=2  x1
+  op=31 xo=815  x1
+  op=31 xo=428  x1
+  op=19 xo=199  x1
+  op=19 xo=194  x1
+  op=4 xo=553  x1
+  op=19 xo=185  x1
+  op=19 xo=176  x1
+  op=31 xo=424  x1
+  op=4 xo=577  x1
+  op=19 xo=172  x1
+  op=4 xo=579  x1
+  op=19 xo=171  x1
+  op=19 xo=170  x1
+  op=19 xo=159  x1
+  op=19 xo=143  x1
+  op=19 xo=142  x1
+  op=31 xo=646  x1
+  op=19 xo=136  x1
+  op=19 xo=135  x1
+  op=19 xo=133  x1
+  op=19 xo=132  x1
+  op=19 xo=131  x1
+  op=19 xo=118  x1
+  op=19 xo=113  x1
+  op=19 xo=112  x1
+  op=19 xo=11  x1
+  op=19 xo=1001  x1
+  op=31 xo=814  x1
+  op=31 xo=420  x1
   op=31 xo=911  x1
-  op=19 xo=641  x1
-  op=19 xo=642  x1
-  op=19 xo=647  x1
-  op=19 xo=65  x1
-  op=19 xo=342  x1
-  op=19 xo=653  x1
-  op=19 xo=654  x1
-  op=19 xo=66  x1
-  op=19 xo=663  x1
+  op=31 xo=810  x1
+  op=31 xo=42  x1
+  op=31 xo=41  x1
+  op=31 xo=406  x1
+  op=31 xo=403  x1
+  op=31 xo=383  x1
+  op=31 xo=81  x1
+  op=4 xo=607  x1
+  op=4 xo=608  x1
+  op=4 xo=609  x1
+  op=31 xo=379  x1
+  op=31 xo=377  x1
+  op=4 xo=616  x1
   op=31 xo=921  x1
   op=31 xo=923  x1
-  op=19 xo=668  x1
-  op=19 xo=682  x1
+  op=31 xo=376  x1
+  op=31 xo=374  x1
   op=31 xo=927  x1
   op=31 xo=928  x1
   op=31 xo=929  x1
-  op=19 xo=692  x1
-  op=19 xo=697  x1
+  op=31 xo=373  x1
+  op=31 xo=85  x1
   op=31 xo=931  x1
-  op=19 xo=7  x1
-  op=19 xo=871  x1
-  op=19 xo=705  x1
-  op=19 xo=709  x1
-  op=19 xo=870  x1
-  op=19 xo=713  x1
-  op=19 xo=716  x1
-  op=19 xo=724  x1
-  op=19 xo=869  x1
+  op=31 xo=372  x1
+  op=31 xo=368  x1
+  op=31 xo=361  x1
+  op=31 xo=638  x1
+  op=31 xo=809  x1
+  op=4 xo=653  x1
+  op=31 xo=356  x1
+  op=31 xo=830  x1
+  op=31 xo=800  x1
+  op=31 xo=342  x1
+  op=4 xo=659  x1
+  op=31 xo=34  x1
+  op=31 xo=634  x1
+  op=4 xo=662  x1
+  op=31 xo=630  x1
   op=31 xo=950  x1
   op=31 xo=953  x1
-  op=19 xo=868  x1
-  op=19 xo=729  x1
+  op=4 xo=671  x1
+  op=4 xo=679  x1
+  op=31 xo=627  x1
+  op=31 xo=339 spr=96  x1
+  op=31 xo=339 spr=416  x1
+  op=31 xo=625  x1
   op=31 xo=961  x1
-  op=19 xo=734  x1
-  op=31 xo=377  x1
-  op=31 xo=376  x1
+  op=31 xo=624  x1
+  op=31 xo=339 spr=32  x1
+  op=31 xo=331  x1
+  op=31 xo=799  x1
+  op=31 xo=313  x1
+  op=31 xo=312  x1
+  op=31 xo=621  x1
+  op=31 xo=304  x1
+  op=31 xo=795  x1
+  op=31 xo=294  x1
+  op=31 xo=248  x1
+  op=31 xo=245  x1
+  op=31 xo=737  x1
+  op=31 xo=244  x1
+  op=31 xo=242  x1
+  op=31 xo=241  x1
+  op=31 xo=976  x1
+  op=31 xo=184  x1
+  op=31 xo=784  x1
+  op=31 xo=177  x1
+  op=31 xo=98  x1
+  op=31 xo=761  x1
+  op=4 xo=728  x1
+  op=31 xo=169  x1
+  op=31 xo=166  x1
+  op=4 xo=730  x1
+  op=4 xo=731  x1
+  op=31 xo=734  x1
+  op=31 xo=984  x1
+  op=4 xo=734  x1
+  op=31 xo=156  x1
+  op=31 xo=155  x1
+  op=31 xo=858  x1
+  op=31 xo=122  x1
+  op=31 xo=120  x1
+  op=4 xo=743  x1
+  op=31 xo=759  x1
+  op=31 xo=757  x1
+  op=4 xo=750  x1
+  op=4 xo=755  x1
+  op=31 xo=117  x1
+  op=31 xo=114  x1
+  op=31 xo=112  x1
+  op=31 xo=105  x1
+  op=19 xo=1  x1
+  op=31 xo=1016  x1
+  op=4 xo=763  x1
+  op=31 xo=1001  x1
+  op=19 xo=999  x1
+  op=19 xo=998  x1
+  op=4 xo=1000  x1
+  op=4 xo=1001  x1
+  op=4 xo=1006  x1
+  op=4 xo=1010  x1
+  op=31 xo=754  x1
+  op=4 xo=1012  x1
+  op=4 xo=778  x1
+  op=19 xo=989  x1
+  op=19 xo=986  x1
+  op=4 xo=1017  x1
+  op=4 xo=782  x1
+  op=4 xo=102  x1
+  op=4 xo=104  x1
+  op=31 xo=748  x1
+  op=4 xo=790  x1
+  op=19 xo=97  x1
+  op=4 xo=793  x1
+  op=4 xo=796  x1
+  op=4 xo=110  x1
+  op=4 xo=111  x1
+  op=19 xo=964  x1
+  op=4 xo=114  x1
+  op=31 xo=863  x1
+  op=19 xo=941  x1
+  op=19 xo=933  x1
+  op=4 xo=125  x1
+  op=31 xo=746  x1
+  op=4 xo=128  x1
+  op=31 xo=745  x1
+  op=19 xo=930  x1
+  op=31 xo=608  x1
+  op=19 xo=916  x1
+  op=19 xo=909  x1
+  op=31 xo=744  x1
+  op=19 xo=897  x1
+  op=19 xo=871  x1
+  op=19 xo=870  x1
+  op=19 xo=869  x1
+  op=19 xo=868  x1
+  op=4 xo=139  x1
+  op=4 xo=14  x1
   op=19 xo=860  x1
   op=19 xo=859  x1
-  op=31 xo=42  x1
-  op=31 xo=374  x1
-  op=31 xo=372  x1
-  op=31 xo=484  x1
-  op=31 xo=49  x1
-  op=31 xo=368  x1
-  op=31 xo=495  x1
+  op=4 xo=142  x1
   op=19 xo=846  x1
-  op=19 xo=845  x1
-  op=31 xo=976  x1
-  op=31 xo=497  x1
-  op=31 xo=361  x1
-  op=31 xo=517  x1
-  op=31 xo=98  x1
-  op=31 xo=356  x1
-  op=31 xo=420  x1
-  op=19 xo=843  x1
-  op=31 xo=532  x1
-  op=31 xo=984  x1
-  op=31 xo=41  x1
-  op=31 xo=342  x1
-  op=31 xo=34  x1
-  op=19 xo=837  x1
-  op=19 xo=836  x1
-  op=31 xo=424  x1
-  op=31 xo=339 spr=96  x1
-  op=31 xo=550  x1
-  op=31 xo=339 spr=416  x1
-  op=31 xo=56  x1
-  op=19 xo=833  x1
-  op=31 xo=562  x1
-  op=31 xo=565  x1
-  op=31 xo=566  x1
-  op=19 xo=813  x1
-  op=31 xo=568  x1
-  op=19 xo=811  x1
+  op=4 xo=146  x1
   op=31 xo=57  x1
+  op=31 xo=568  x1
+  op=4 xo=859  x1
+  op=31 xo=728  x1
+  op=19 xo=845  x1
+  op=4 xo=863  x1
+  op=19 xo=843  x1
+  op=19 xo=837  x1
+  op=4 xo=155  x1
+  op=4 xo=157  x1
+  op=4 xo=158  x1
+  op=19 xo=836  x1
+  op=4 xo=870  x1
+  op=4 xo=875  x1
+  op=4 xo=876  x1
+  op=4 xo=162  x1
+  op=4 xo=879  x1
+  op=4 xo=164  x1
+  op=19 xo=833  x1
+  op=4 xo=884  x1
+  op=19 xo=813  x1
+  op=19 xo=812  x1
+  op=4 xo=182  x1
+  op=4 xo=898  x1
+  op=19 xo=811  x1
+  op=4 xo=90  x1
+  op=4 xo=19  x1
+  op=4 xo=193  x1
+  op=31 xo=567  x1
+  op=31 xo=566  x1
+  op=31 xo=871  x1
+  op=19 xo=808  x1
+  op=19 xo=805  x1
+  op=19 xo=803  x1
+  op=19 xo=801  x1
+  op=19 xo=80  x1
+  op=19 xo=799  x1
+  op=19 xo=798  x1
+  op=19 xo=797  x1
+  op=19 xo=793  x1
+  op=19 xo=791  x1
+  op=19 xo=78  x1
+  op=19 xo=778  x1
+  op=19 xo=774  x1
+  op=19 xo=772  x1
+  op=4 xo=920  x1
+  op=4 xo=921  x1
+  op=4 xo=923  x1
+  op=4 xo=933  x1
+  op=4 xo=934  x1
+  op=4 xo=94  x1
+  op=19 xo=769  x1
+  op=4 xo=95  x1
+  op=19 xo=759  x1
+  op=19 xo=75  x1
+  op=4 xo=962  x1
+  op=19 xo=746  x1
+  op=19 xo=742  x1
+  op=31 xo=712  x1
+  op=19 xo=741  x1
+  op=19 xo=734  x1
+  op=31 xo=590  x1
+  op=4 xo=97  x1
+  op=19 xo=729  x1
+  op=19 xo=724  x1
+  op=31 xo=565  x1
+  op=31 xo=820  x1
+  op=31 xo=562  x1
+  op=19 xo=716  x1
+  op=19 xo=713  x1
+  op=19 xo=709  x1
+  op=19 xo=705  x1
+  op=19 xo=7  x1
+  op=19 xo=697  x1
+  op=19 xo=692  x1
+  op=4 xo=230  x1
+  op=4 xo=231  x1
+  op=4 xo=232  x1
+  op=4 xo=238  x1
+  op=4 xo=240  x1
+  op=4 xo=244  x1
+  op=19 xo=682  x1
+  op=19 xo=668  x1
+  op=19 xo=663  x1
+  op=4 xo=991  x1
+  op=4 xo=992  x1
+  op=4 xo=256  x1
+  op=4 xo=996  x1
+  op=19 xo=66  x1
+  op=19 xo=654  x1
+  op=19 xo=653  x1
+  op=19 xo=65  x1
+  op=19 xo=647  x1
+  op=19 xo=642  x1
   op=59 xo=1016  x1
   op=59 xo=113  x1
   op=59 xo=129  x1
-  op=31 xo=339 spr=32  x1
-  op=59 xo=135  x1
+  op=19 xo=641  x1
+  op=4 xo=632  x1
   op=59 xo=162  x1
-  op=31 xo=331  x1
+  op=31 xo=875  x1
   op=59 xo=174  x1
   op=59 xo=175  x1
   op=59 xo=203  x1
-  op=19 xo=808  x1
+  op=19 xo=627  x1
   op=59 xo=238  x1
   op=59 xo=247  x1
   op=59 xo=257  x1
@@ -1237,8 +1764,8 @@ missing opcodes (most useful TODO list):
   op=59 xo=303  x1
   op=59 xo=314  x1
   op=59 xo=321  x1
-  op=31 xo=313  x1
-  op=31 xo=312  x1
+  op=19 xo=625  x1
+  op=19 xo=616  x1
   op=59 xo=339  x1
   op=59 xo=342  x1
   op=59 xo=361  x1
@@ -1248,11 +1775,11 @@ missing opcodes (most useful TODO list):
   op=59 xo=396  x1
   op=59 xo=397  x1
   op=59 xo=41  x1
-  op=31 xo=428  x1
+  op=4 xo=27  x1
   op=59 xo=443  x1
   op=59 xo=452  x1
   op=59 xo=454  x1
-  op=31 xo=304  x1
+  op=4 xo=270  x1
   op=59 xo=522  x1
   op=59 xo=523  x1
   op=59 xo=536  x1
@@ -1260,14 +1787,14 @@ missing opcodes (most useful TODO list):
   op=59 xo=546  x1
   op=59 xo=553  x1
   op=59 xo=582  x1
-  op=31 xo=590  x1
+  op=19 xo=609  x1
   op=59 xo=645  x1
-  op=31 xo=294  x1
+  op=4 xo=272  x1
   op=59 xo=659  x1
   op=59 xo=66  x1
-  op=31 xo=608  x1
-  op=31 xo=621  x1
-  op=31 xo=624  x1
+  op=59 xo=667  x1
+  op=4 xo=273  x1
+  op=31 xo=56  x1
   op=59 xo=694  x1
   op=59 xo=706  x1
   op=59 xo=710  x1
@@ -1286,163 +1813,160 @@ missing opcodes (most useful TODO list):
   op=59 xo=888  x1
   op=59 xo=890  x1
   op=59 xo=896  x1
-  op=31 xo=625  x1
+  op=31 xo=877  x1
   op=59 xo=966  x1
   op=59 xo=968  x1
   op=59 xo=971  x1
   op=59 xo=974  x1
-  op=19 xo=805  x1
-  op=19 xo=803  x1
-  op=31 xo=627  x1
-  op=19 xo=801  x1
-  op=19 xo=80  x1
-  op=31 xo=383  x1
+  op=19 xo=605  x1
+  op=19 xo=604  x1
+  op=31 xo=700  x1
+  op=31 xo=878  x1
+  op=4 xo=286  x1
+  op=31 xo=550  x1
   op=63 xo=100  x1
-  op=31 xo=630  x1
+  op=19 xo=601  x1
   op=63 xo=1002  x1
   op=63 xo=1004  x1
   op=63 xo=1005  x1
-  op=19 xo=799  x1
-  op=31 xo=634  x1
-  op=31 xo=638  x1
-  op=31 xo=248  x1
-  op=31 xo=245  x1
+  op=19 xo=594  x1
+  op=19 xo=592  x1
+  op=19 xo=59  x1
+  op=19 xo=582  x1
+  op=31 xo=880  x1
   op=63 xo=1011  x1
-  op=31 xo=244  x1
-  op=19 xo=798  x1
-  op=19 xo=797  x1
-  op=31 xo=433  x1
-  op=19 xo=793  x1
-  op=31 xo=242  x1
+  op=31 xo=697  x1
+  op=31 xo=882  x1
+  op=31 xo=691  x1
+  op=19 xo=579  x1
+  op=19 xo=572  x1
+  op=19 xo=56  x1
   op=63 xo=103  x1
-  op=31 xo=44  x1
-  op=31 xo=646  x1
-  op=31 xo=241  x1
-  op=31 xo=406  x1
+  op=19 xo=556  x1
+  op=19 xo=555  x1
+  op=19 xo=551  x1
+  op=19 xo=54  x1
   op=63 xo=108  x1
   op=63 xo=11  x1
   op=63 xo=110  x1
   op=63 xo=112  x1
-  op=31 xo=184  x1
-  op=31 xo=672  x1
-  op=31 xo=177  x1
-  op=31 xo=467 spr=835  x1
-  op=31 xo=683  x1
-  op=19 xo=812  x1
-  op=31 xo=468  x1
-  op=31 xo=169  x1
-  op=31 xo=687  x1
-  op=19 xo=791  x1
-  op=31 xo=688  x1
+  op=19 xo=537  x1
+  op=19 xo=531  x1
+  op=4 xo=336  x1
+  op=19 xo=529  x1
+  op=19 xo=523  x1
+  op=19 xo=520  x1
+  op=19 xo=514  x1
   op=31 xo=689  x1
-  op=31 xo=691  x1
+  op=4 xo=342  x1
+  op=31 xo=688  x1
+  op=4 xo=344  x1
+  op=19 xo=488  x1
+  op=4 xo=346  x1
   op=63 xo=22  x1
-  op=31 xo=697  x1
-  op=31 xo=700  x1
+  op=31 xo=886  x1
+  op=19 xo=473  x1
   op=63 xo=256  x1
-  op=31 xo=166  x1
+  op=31 xo=887  x1
   op=63 xo=26  x1
-  op=31 xo=712  x1
-  op=31 xo=156  x1
-  op=31 xo=155  x1
-  op=19 xo=1  x1
-  op=19 xo=1001  x1
+  op=31 xo=532  x1
+  op=4 xo=353  x1
+  op=4 xo=354  x1
+  op=31 xo=687  x1
+  op=19 xo=469  x1
   op=63 xo=35  x1
-  op=19 xo=11  x1
+  op=4 xo=360  x1
   op=63 xo=38  x1
   op=63 xo=385  x1
   op=63 xo=39  x1
   op=63 xo=390  x1
-  op=19 xo=112  x1
-  op=19 xo=113  x1
-  op=19 xo=118  x1
-  op=19 xo=78  x1
-  op=31 xo=728  x1
-  op=19 xo=131  x1
-  op=19 xo=132  x1
-  op=19 xo=133  x1
+  op=31 xo=891  x1
+  op=4 xo=370  x1
+  op=19 xo=468  x1
+  op=31 xo=683  x1
+  op=19 xo=467  x1
+  op=4 xo=382  x1
+  op=19 xo=455  x1
+  op=19 xo=452  x1
   op=63 xo=47  x1
-  op=19 xo=135  x1
-  op=19 xo=136  x1
-  op=31 xo=122  x1
-  op=31 xo=47  x1
-  op=31 xo=734  x1
+  op=4 xo=39  x1
+  op=19 xo=440  x1
+  op=31 xo=892  x1
+  op=19 xo=438  x1
+  op=19 xo=433  x1
   op=63 xo=55  x1
-  op=19 xo=142  x1
-  op=19 xo=143  x1
+  op=19 xo=430  x1
+  op=19 xo=427  x1
   op=63 xo=582  x1
   op=63 xo=583  x1
-  op=31 xo=737  x1
+  op=19 xo=424  x1
   op=63 xo=6  x1
   op=63 xo=608  x1
   op=63 xo=609  x1
   op=63 xo=64  x1
   op=63 xo=642  x1
-  op=19 xo=159  x1
-  op=19 xo=170  x1
-  op=31 xo=120  x1
+  op=31 xo=895  x1
+  op=19 xo=423  x1
+  op=19 xo=412  x1
   op=63 xo=672  x1
-  op=19 xo=171  x1
-  op=31 xo=117  x1
+  op=31 xo=517  x1
+  op=4 xo=40  x1
   op=63 xo=69  x1
-  op=19 xo=172  x1
-  op=19 xo=176  x1
+  op=19 xo=411  x1
+  op=31 xo=497  x1
   op=63 xo=711  x1
   op=63 xo=714  x1
-  op=31 xo=744  x1
+  op=4 xo=403  x1
   op=63 xo=74  x1
-  op=31 xo=745  x1
+  op=19 xo=4  x1
   op=63 xo=76  x1
   op=63 xo=77  x1
-  op=31 xo=746  x1
+  op=19 xo=397  x1
   op=63 xo=778  x1
-  op=19 xo=185  x1
-  op=31 xo=748  x1
+  op=31 xo=495  x1
+  op=19 xo=392  x1
   op=63 xo=80  x1
-  op=19 xo=194  x1
-  op=19 xo=778  x1
   op=63 xo=824  x1
-  op=31 xo=114  x1
-  op=19 xo=199  x1
-  op=31 xo=754  x1
-  op=31 xo=757  x1
+  op=4 xo=408  x1
+  op=4 xo=409  x1
+  op=31 xo=49  x1
   op=63 xo=874  x1
-  op=19 xo=2  x1
+  op=4 xo=413  x1
   op=63 xo=887  x1
   op=63 xo=890  x1
   op=63 xo=891  x1
   op=63 xo=897  x1
-  op=31 xo=761  x1
-  op=19 xo=205  x1
-  op=19 xo=206  x1
-  op=19 xo=774  x1
+  op=31 xo=484  x1
+  op=4 xo=42  x1
+  op=19 xo=388  x1
+  op=19 xo=376  x1
   op=63 xo=91  x1
   op=63 xo=919  x1
-  op=31 xo=112  x1
-  op=19 xo=208  x1
-  op=19 xo=210  x1
+  op=19 xo=368  x1
+  op=31 xo=672  x1
+  op=4 xo=450  x1
   op=63 xo=932  x1
-  op=19 xo=772  x1
+  op=4 xo=451  x1
   op=63 xo=944  x1
   op=63 xo=947  x1
-  op=19 xo=769  x1
-  op=31 xo=379  x1
-  op=19 xo=759  x1
-  op=19 xo=75  x1
+  op=19 xo=365  x1
+  op=19 xo=357  x1
+  op=31 xo=90  x1
+  op=19 xo=356  x1
   op=63 xo=966  x1
   op=63 xo=967  x1
   op=63 xo=968  x1
-  op=19 xo=214  x1
+  op=19 xo=349  x1
   op=63 xo=976  x1
   op=63 xo=98  x1
-  op=19 xo=746  x1
-  op=19 xo=742  x1
-  op=19 xo=741  x1
+  op=19 xo=346  x1
+  op=19 xo=345  x1
+  op=19 xo=342  x1
   op=63 xo=986  x1
   op=63 xo=987  x1
-  op=19 xo=217  x1
-  op=19 xo=218  x1
-  op=19 xo=219  x1
+  op=19 xo=337  x1
+  op=19 xo=324  x1
+  op=19 xo=313  x1
   op=63 xo=996  x1
   op=63 xo=997  x1
-  op=59 xo=667  x1
+  op=59 xo=135  x1
