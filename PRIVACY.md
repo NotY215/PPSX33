@@ -1,6 +1,6 @@
-# Privacy
+# PPSX33 Privacy
 
-PS3 Recompiler is an open-source development project. The source code in this repository does not intentionally implement account creation, analytics, telemetry, or a project-operated data collection service.
+PPSX33 is an open-source development project. The source code in this repository does not intentionally implement account creation, analytics, telemetry, or a project-operated data collection service.
 
 When you use GitHub, open issues or pull requests, or contact maintainers, GitHub and the relevant communication service may process information under their own privacy policies. Do not include passwords, access tokens, private keys, personal information, or other sensitive data in public issues or logs.
 
