@@ -14,7 +14,7 @@ Legend: [x] done, [~] partial, [ ] todo. Each phase lists **acceptance criteria*
 
 ## Phase 2 - ELF decompile (PPU code -> C++)
 - [x] ELF64 big-endian loader, PT_LOAD segments, OPD entry (`elf_loader.cpp`)
-- [~] PPU decoder/lifter, ~40 instructions (`docs/PPU_COVERAGE.md`)
+- [~] PPU decoder/lifter; instruction-family support is tracked in [`docs/PPU_COVERAGE.md`](docs/PPU_COVERAGE.md). The current GoW3 sample reports 1,103,166 translated instruction instances and 182,394 unimplemented instances across 157 chunks; translation is not a runtime/playability guarantee.
 - [ ] Remaining integer ISA: `mulld/mulli/divw/divd`, shifts (`slw/srw/sraw/srawi/sld/srd/rldic*`), `cntlzw`, `extsb/extsh/extsw`, `lbzx/lhzx/ldx/stbx/sthx/stdx`, update forms, `lmw/stmw`, `addic/subfic/adde/addze`, `nand/nor/andc/orc/eqv`, `crxor/cror/crand`, `mfcr/mtcrf`, `isync/sync/eieio`
 - [ ] Atomics: `lwarx/stwcx./ldarx/stdcx.`
 - [ ] FPU (`lfs/lfd/stfs/stfd/fadd/fmul/fmadd/fcmpu/frsp/fctiwz/...`) and FPSCR
