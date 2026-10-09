@@ -1,6 +1,7 @@
 instructions: 1285560
+translated: 1285560
 implemented: 1285560
 unimplemented: 0
 chunks: 157
 
-missing opcodes (most useful TODO list):
+missing opcodes (most useful TODO list): none reported
