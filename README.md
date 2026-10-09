@@ -121,3 +121,17 @@ The GUI finds `ps3core.dll`, `runtime/` and `Compilers-files/` next to its exe (
 3. Parse PS3 import tables (NID resolution) and add HLE module stubs (ROADMAP Phase 3b).
 4. Add multithreading: PPU thread creation syscalls -> host threads, limited to the configured thread count.
 5. Only then SPU (Phase 4), then RSX (Phase 5).
+
+## 10. Project policies and contribution
+
+- [Contributing](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security Policy](SECURITY.md)
+- [Support](SUPPORT.md)
+- [Privacy](PRIVACY.md)
+- [Governance](GOVERNANCE.md)
+- [Third-Party Software and Assets](THIRD_PARTY.md)
+- [License](LICENSE) (Apache License 2.0)
+- [Citation metadata](CITATION.cff)
+
+Bug reports and feature suggestions can be submitted using the repository's issue templates.
