@@ -60,9 +60,10 @@ Legend: [x] done, [~] partial, [ ] todo. Each phase lists **acceptance criteria*
 ## Phase 6 - Auto recompile into one exe + dll
 - [x] Build driver: copies sources, writes `build.ninja`, runs ninja or sequential g++ (`project.cpp`)
 - [x] Outputs `game.exe` + `ps3rt.dll` + `guest_image.bin`; GUI "Copy to EBOOT folder"
-- [ ] MSVC backend using `Compilers-files/cl.exe` (+ `link.exe`, env setup)
+- [x] MSVC compilation/link path: builds `game.exe` + `ps3rt.dll` with `cl.exe`/`link.exe`
+- [~] Runtime validation: launch starts, then the guest PC leaves the recompiled range; diagnose dispatch, branch targets, LR/CTR, and generated chunk coverage
 - [ ] Optional C#-generated front-end code (currently only C/C++ is generated)
 - [ ] Merge into a single self-contained exe option (static runtime, embedded `guest_image.bin` for small games)
 - [ ] Incremental builds (only recompile changed chunks), parallel compile display in GUI
 - [ ] Bundle verification: check `Compilers-files` contents on startup and report missing tools
-- Acceptance: pasting the output next to `EBOOT.BIN` and starting `game.exe` runs without extra installs.
+- Acceptance: MSVC artifact generation is confirmed, but Phase 6 is **not complete** until a test guest executes correctly without leaving the recompiled range and runtime dependencies are resolved.
