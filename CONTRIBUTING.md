@@ -1,32 +1,36 @@
 # Contributing to PPSX33
 
-Thank you for contributing to PPSX33, an experimental PS3 ELF static-recompilation project. Contributions to the ELF loader, PPU lifter, generated-code runtime, CLI, WinForms GUI, tests, and documentation are welcome.
+PPSX33 accepts focused contributions to the ELF loader, PPU lifter, generated-code runtime, CLI, WinForms GUI, regression tests, build scripts, and documentation.
 
 ## Development environment
 
-For Windows development, use Visual Studio 2022 or a newer compatible version with the **Desktop development with C++** workload, a Windows SDK, CMake, Ninja, and the .NET 8 SDK. The GUI targets `net8.0-windows`. See [Compiler Setup](Compilers-files/README.md) for the build and local tool-staging notes.
+Windows development uses Visual Studio 2022 or a compatible newer version with the **Desktop development with C++** workload, a Windows SDK, CMake, Ninja, and the .NET 8 SDK. The GUI targets `net8.0-windows`. See [Compiler Setup](Compilers-files/README.md) and the [Developer Guide](docs/DEVELOPER_GUIDE.md).
 
-## Code and documentation standards
+## Local setup and validation
 
-- Keep generated code deterministic and readable.
-- Do not hand-edit generated files inside a game's `codebase/` directory.
-- Keep `src/core/ps3core.h` synchronized with all consumers, including C# P/Invoke declarations.
-- When PPU instruction translation changes, update [PPU coverage](docs/PPU_COVERAGE.md) and add focused regression tests.
-- When a game lift changes, update the relevant record under `docs/games/` and the game coverage index.
-- Keep static translation counts separate from instruction semantic correctness, runtime execution, and game compatibility.
-- Clearly identify approximate instruction handling, no-op fallbacks, stubs, and heuristics.
-- Do not claim that a build, test, or game was validated unless the relevant command was actually run and its result recorded.
-- Do not commit game dumps, decrypted ELFs, EBOOT files, encryption keys, copyrighted game assets, generated commercial-game executables, or proprietary compiler binaries.
-- Keep public setup instructions suitable for contributors who have not seen internal development conversations.
+1. Clone the repository and create a feature branch.
+2. Configure a supported compiler environment.
+3. Run `scripts\build_all.bat` on Windows.
+4. Run `scripts\run_smoke_test.bat` on Windows, or `bash scripts/run_smoke_test.sh` on a compatible POSIX/MSYS environment.
+5. Record the exact commands and results. If a command cannot be run, state that explicitly in the change description.
 
-## Testing
+The smoke test uses a synthetic PPC64 ELF and expects the generated program to print `OK`. It does not test commercial-game compatibility. The optional Pong pipeline requires PSL1GHT and a built PPSX33 CLI.
 
-On Windows, run `scripts\build_all.bat`, then `scripts\run_smoke_test.bat`. On Linux/macOS or a compatible MSYS environment, run `bash scripts/run_smoke_test.sh` with Python 3 and a C++17 compiler available. The smoke test uses a synthetic PPC64 ELF and expects the generated program to print `OK`; it is not a commercial-game compatibility test.
+## Engineering requirements
 
-The optional PS3 Pong pipeline requires a compatible PSL1GHT toolchain and a built PPSX33 CLI. Do not mark that pipeline as verified unless it has been executed successfully.
+- Keep changes focused and preserve established interfaces unless an interface change is required.
+- Keep `src/core/ps3core.h` synchronized with C/C++ consumers and C# P/Invoke declarations.
+- Keep generated output deterministic where possible. Do not hand-edit generated files in a game's `codebase/` directory.
+- For PPU opcode changes, verify operand decoding and architectural side effects, add focused regression tests, and update [PPU coverage](docs/PPU_COVERAGE.md).
+- For a game report update, preserve exact tool output and update the matching record and [game index](docs/games/README.md).
+- Distinguish translation counts, semantic correctness, runtime behavior, and game compatibility.
+- Identify approximate behavior, stubs, heuristics, and fallbacks accurately.
+- Do not claim a build, test, or game was validated unless the relevant command was executed and its result recorded.
+- Do not commit decrypted ELFs, EBOOT files, game dumps, encryption keys, copyrighted assets, generated commercial-game executables, or proprietary compiler binaries.
+- Use clear technical language and keep documentation suitable for external contributors.
 
-## Pull requests
+## Pull request contents
 
-Keep each change focused. Describe the problem, implementation, test commands, results, and remaining limitations. Include regression tests for instruction semantics and runtime behavior where practical.
+Include the problem being solved, design and implementation details, affected components, tests run with results, and remaining limitations. Include regression tests for instruction semantics and runtime behavior where practical. Keep unrelated refactors out of the same change.
 
-By submitting a contribution, you agree that it is provided under the project's Apache License 2.0, unless a different arrangement is agreed in writing.
+Contributions are distributed under the project's Apache License 2.0 unless a different arrangement is agreed in writing.
