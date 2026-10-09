@@ -1,234 +1,152 @@
 # PPSX33 Roadmap
 
-Legend:
+## Status legend
 
 | Mark | Meaning |
 | --- | --- |
-| [x] | Implemented or verified in the current codebase |
-| [~] | Partial, heuristic, or approximate |
-| [ ] | Planned or not yet verified |
+| [x] | Present in the codebase |
+| [~] | Partial, heuristic, approximate, or not fully validated |
+| [ ] | Not implemented or not verified |
 
-A checked item does **not** imply full semantic correctness or game compatibility unless the phase acceptance criteria say so.
+Implementation status does not establish semantic correctness or compatibility. Acceptance criteria define the evidence required to mark work complete.
 
-**Priority order**
+## Project priorities
 
-1. **God of War III (GOW3)** — primary title for runtime, HLE, and eventual playability work.
-2. **Uncharted 2: Among Thieves** — secondary **opcode-expansion only** target (static decompile / lift reports). Do **not** build or launch `game.exe` for Uncharted 2 until GOW3 runtime goals are further along.
+1. Improve PPU semantic correctness and runtime stability using synthetic tests and the God of War III (GOW3) analysis target.
+2. Use Uncharted 2: Among Thieves as a static-lift target to discover additional PPU opcode gaps. This target is currently limited to analysis and opcode expansion.
+3. Develop SPU execution, RSX/GCM support, and system-library compatibility as separate workstreams.
 
----
+## Phase 1: UI and project workflow
 
-## Phase 1 — UI and project workflow
-
-### 1A. Application shell
-
+### Application shell
 - [x] WinForms GUI (`PS3Recomp.exe`)
-- [x] Tabs: Log, Lift report, Roadmap
-- [x] Status line and marquee progress during long steps
-- [x] Cancel control (cooperative; native steps may finish the current call)
-- [x] Settings: graphics backend, PPU thread count, RPCS3 path
+- [x] Log, lift report, and roadmap views
+- [x] Status display and progress marquee
+- [x] Cooperative cancellation control
+- [x] Settings for graphics backend, PPU thread count, and RPCS3 path
 
-### 1B. Project workflow
-
+### Project workflow
 - [x] Load decrypted ELF and create `<root>/<game>/{input,codebase,output}`
-- [x] Decompile (lift) and Build actions via `ps3core`
-- [x] Copy `game.exe` / `ps3rt.dll` / `guest_image.bin` next to EBOOT folder
-- [x] Find decrypted ELF (near EBOOT + RPCS3 cache trees, ELF64-BE check)
-- [x] RPCS3 launcher helper (decrypt workflow only)
+- [x] Decompile and Build actions through `ps3core`
+- [x] Copy output artifacts beside an EBOOT folder
+- [x] Search nearby EBOOT and RPCS3 cache trees for ELF64-BE input
+- [x] RPCS3 launcher helper for the external decrypt workflow
 
-### 1C. Build integration
+### Build integration
+- [x] CMake build output under `build/`
+- [x] Native core and GUI publish path to `build/dist/`
+- [x] MSVC discovery and compiler staging documentation
+- [ ] Verify the full GUI workflow on a clean Windows installation
+- [ ] Replace marquee-only progress with structured native progress
 
-- [x] CMake x64-Release style output under `build/`
-- [x] Single-tree Rebuild All path (native core + GUI publish to `build/dist/`)
-- [x] MSVC compiler path and `Compilers-files` staging docs
-- [ ] Verify full GUI workflow on a clean Windows install
-- [ ] Structured progress percentages from native lift/build (not only marquee)
+**Acceptance:** A valid ELF completes project creation, lifting, building, and artifact inspection on a clean supported environment.
 
-**Acceptance:** Load a valid ELF; complete create → decompile → build → inspect output. **Core path met; clean-install verification still open.**
+## Phase 2: ELF analysis and PPU lifting
 
----
-
-## Phase 2 — ELF analysis and PPU lifting
-
-### 2A. ELF loader and analysis
-
-- [x] ELF64 big-endian, PowerPC64, PT_LOAD segments
+### ELF loader and analysis
+- [x] ELF64 big-endian PowerPC64 and PT_LOAD handling
 - [x] Entry OPD handling
 - [x] Symbol tables when present
-- [x] OPD / function-descriptor discovery heuristics
-- [~] PRX / module string + NID heuristics (not full import resolver)
-- [x] Embedded SPU ELF detection → `spu_image_XX.bin`
-- [x] `lift_report.txt` and `analysis_report.txt`
+- [x] OPD/function-descriptor discovery heuristics
+- [~] PRX/module string and NID heuristics
+- [x] Embedded SPU ELF detection and extraction to `spu_image_XX.bin`
+- [x] `lift_report.txt` and `analysis_report.txt` generation
 
-### 2B. PPU instruction coverage (static)
+### PPU instruction coverage
+- [x] GOW3 snapshot: 1,285,560 translated instances, zero reported unimplemented instances, 157 chunks
+- [~] Integer arithmetic, logical operations, shifts/rotates, loads/stores, and update forms
+- [~] Branches, condition-register operations, LR/CTR, selected synchronization and trap instructions
+- [~] Atomic reservation handling
+- [~] Common floating-point operations; FPSCR behavior remains incomplete
+- [~] Selected VMX/AltiVec operations; some long-tail handling remains approximate
+- [ ] Differential semantic tests against a trusted PowerPC reference
+- [ ] Complete PRX import/export and NID resolution
+- [ ] Regression coverage for each supported instruction family
 
-- [x] GOW3 lift: 1,285,560 / 1,285,560 translated, 0 unimplemented, 157 chunks (100% static for that snapshot)
-- [~] Integer ALU, logical, shifts/rotates, loads/stores, update forms
-- [~] Branches, CR ops, LR/CTR, selected sync/trap
-- [~] Atomics (`lwarx`/`stwcx.`/`ldarx`/`stdcx.`) reservation fields
-- [~] FPU common ops; FPSCR incomplete
-- [~] VMX/AltiVec selected ops + approximate long-tail
-- [~] Long-tail encodings emitted as nop / soft-continue rather than hard halt
+### Multi-game opcode expansion: Uncharted 2
+- [ ] Analyze a legally obtained decrypted ELF
+- [ ] Archive actual lift and analysis reports under `docs/games/Uncharted2/`
+- [ ] Identify missing, approximate, or fallback opcode behavior
+- [ ] Prioritize opcode work using observed instruction frequency and correctness risk
+- [ ] Add isolated synthetic regression tests where practical
+- [ ] Re-run GOW3 and synthetic tests after lifter changes
 
-### 2C. Multi-game opcode expansion (Uncharted 2)
+**Acceptance:** Implemented instructions pass differential tests where a reference is available, and synthetic or homebrew programs produce expected results. Static translation counts alone are insufficient.
 
-**Scope:** Decompile / lift only. **No** Uncharted 2 `game.exe` build or launch until GOW3 is the active runtime target.
+## Phase 3: PPU runtime correctness
 
-- [ ] Obtain legally owned decrypted Uncharted 2 ELF
-- [ ] Run lift; save `docs/games/Uncharted2/` report snapshot
-- [ ] Diff unimplemented / approximate opcodes vs GOW3 baseline
-- [ ] Implement high-frequency missing or weak opcodes in `ppu_lifter.cpp`
-- [ ] Re-lift GOW3 and Uncharted 2; record before/after counts
-- [ ] Add small regression ELF tests where practical
+### CPU state and memory
+- [x] Big-endian memory helpers, GPR/FPR/VPR storage, CR helpers, branches, LR/CTR
+- [x] Windows demand-commit guest-memory helper
+- [x] Stack and simple heap-pool regions
+- [~] Bounded handling for guest PC leaving translated code
+- [ ] Full XER CA/OV/SO behavior
+- [ ] Complete FPSCR model
+- [ ] Differential tests for branch conditions, exceptions, memory ordering, and register side effects
+- [ ] Resolve GOW3 early-halt and TOC/r2 investigation using captured diagnostics
 
-### 2D. Quality gates
-
-- [ ] Differential tests vs a trusted PowerPC reference (e.g. RPCS3 interpreter) for hot opcodes
-- [ ] Full PRX/NID import and export resolution
-- [ ] Per-family regression matrix (integer, FP, VMX, atomic, branch)
-
-**Acceptance:** Supported instructions pass differential tests; a homebrew sample produces correct output. **Static GOW3 100% does not satisfy this.**
-
----
-
-## Phase 3 — PPU runtime (host execution)
-
-**Primary title for this phase: GOW3.**
-
-### 3A. CPU state and memory
-
-- [x] BE memory helpers, GPR/FPR/VPR, CR, branches, LR/CTR
-- [x] Demand-commit guest memory (`ps3rt_touch`) on Windows
-- [x] Stack and simple heap pool regions
-- [~] External PC left range → return-via-LR stub (bounded escapes)
-- [ ] Full XER CA/OV/SO
-- [ ] Full FPSCR model
-- [ ] Fix GOW3 early halt (`pc=0x39800000`, TOC/r2 corruption investigation)
-- [ ] Differential tests for branches, memory, side effects
-
-### 3B. OS and library HLE
-
-- [x] Process exit and tty-write syscalls
-- [~] Simple `sys_memory_allocate`-style heap
-- [~] Selected SPU-related LV2 stubs return CELL_OK
-- [ ] PPU threads, sync primitives, timers
+### OS and library compatibility
+- [x] Process exit and tty-write syscall handling
+- [~] Simple guest heap and selected memory-management behavior
+- [~] Selected SPU-related LV2 stubs
+- [ ] PPU scheduling, synchronization primitives, and timers
 - [ ] Filesystem and save-data HLE
-- [ ] Common PRX modules: cellSysutil, cellPad, cellAudio, cellGcmSys, cellSpurs, cellSaveData, libc-compat
+- [ ] Common PRX modules for sysutil, pad, audio, GCM, SPURS, save-data, and libc compatibility
 
-### 3C. Performance and threading
+### Performance
+- [ ] Host scheduling that honors configured PPU thread count
+- [ ] Function-level code generation and register caching
+- [ ] Optional profile-guided optimization and link-time optimization
 
-- [ ] Host scheduling honoring configured PPU thread count
-- [ ] Function-level codegen improvements and register caching
-- [ ] Optional PGO / LTO
+**Acceptance:** Runtime tests match expected output and guest execution remains within valid translated control flow. Commercial-game compatibility is evaluated separately.
 
-**Acceptance:** Runtime tests match expected output; guest does not leave translated range unexpectedly. **Not met (GOW3 still early-halts).**
+## Phase 4: SPU execution
 
----
+- [x] SPU context and 256 KB local-store structures
+- [x] API stubs for create/destroy/load/run/stop, mailbox, and MFC DMA
+- [x] Embedded SPU image extraction during PPU lifting
+- [ ] Full SPU instruction interpreter or lifter
+- [ ] Correct MFC DMA, mailbox, signal, and atomic semantics
+- [ ] SPU thread groups and SPURS/task support
+- [ ] Host scheduling for SPU work
 
-## Phase 4 — SPU execution
+**Acceptance:** A focused homebrew SPU test produces the expected output.
 
-### 4A. Infrastructure
+## Phase 5: RSX graphics
 
-- [x] SPU context + 256 KB local store (multiple instances)
-- [x] API stubs: create/destroy/load/run/stop, mailbox, MFC DMA
-- [x] Extract embedded SPU images during PPU lift (Phase 2)
-
-### 4B. ISA and scheduling
-
-- [ ] Full SPU instruction interpreter or static lifter
-- [ ] Correct MFC DMA, mailboxes, signals, atomics
-- [ ] SPU thread groups and SPURS/task HLE
-- [ ] Host-thread scheduling for SPU work
-
-**Acceptance:** Homebrew SPU test produces correct output. **Not met** (stub run loop only).
-
----
-
-## Phase 5 — RSX graphics
-
-### 5A. Control path
-
-- [x] GUI backend selector (D3D10 / D3D11 / Vulkan)
-- [ ] GCM command-buffer parse and cellGcmSys HLE
-- [ ] Display / flip queue
-
-### 5B. Device state and shaders
-
+- [x] GUI selector for D3D10, D3D11, and Vulkan
+- [ ] GCM command-buffer parsing and cellGcmSys HLE
+- [ ] Display and flip queue
 - [ ] NV47 graphics state tracking
-- [ ] RSX vertex/fragment microcode → HLSL / SPIR-V
-- [ ] Textures, swizzling, depth, render targets
+- [ ] RSX vertex/fragment microcode translation
+- [ ] Texture formats, swizzling, depth buffers, and render targets
+- [ ] Working and tested host graphics backends
 
-### 5C. Host backends
+**Acceptance:** A homebrew rendering test produces correct output on each backend declared supported.
 
-- [ ] Direct3D 11 backend
-- [ ] Vulkan backend
-- [ ] Direct3D 10 backend (optional)
+## Phase 6: Native output and integration
 
-**Acceptance:** Homebrew render tests correct on each supported backend. **Not met.**
+- [x] C API shared library and CLI frontend
+- [x] Build driver invokes host compiler tools
+- [x] Windows output can emit `game.exe`, `ps3rt.dll`, and `guest_image.bin`
+- [~] Runtime startup and guest-PC escape handling remain experimental
+- [ ] Optional single-file output
+- [ ] Incremental builds and structured compile progress
+- [ ] CI validation on supported host platforms
 
----
-
-## Phase 6 — Native output and integration
-
-### 6A. Artifacts
-
-- [x] `ps3core` C API + CLI
-- [x] Build driver invokes MSVC (or g++ fallback)
-- [x] Emits `game.exe`, `ps3rt.dll`, `guest_image.bin`
-- [x] Post-build cleanup; retain reports at project root / output
-
-### 6B. Packaging and CI
-
-- [~] Runtime startup experimental; external-PC stub in place
-- [ ] Optional single-file package (embed image + static runtime)
-- [ ] Incremental builds and richer compile progress
-- [ ] CI on supported host platforms
-
-**Acceptance:** Synthetic and homebrew guests execute correctly; then evaluate per commercial title. **Not met for commercial titles.**
-
----
+**Acceptance:** Synthetic and homebrew guests execute correctly before broader compatibility claims are made.
 
 ## Game coverage matrix
 
-| Title | Role | Static lift | Build/run | Notes |
-| --- | --- | --- | --- | --- |
-| God of War III | **Primary** | 100% snapshot (1,285,560 insn) | Yes (experimental) | Runtime early PC leave; focus of Phase 3 |
-| Uncharted 2: Among Thieves | **Opcode expansion only** | Not measured yet | **No** (deferred) | Lift reports only; feed Phase 2C |
-| Synthetic / homebrew ELF | Regression | Smoke scripts | Yes when available | Prefer over commercial titles for correctness tests |
+| Title | Role | Static lift | Runtime status |
+| --- | --- | --- | --- |
+| God of War III | Main runtime-analysis target | 100% reported in one snapshot (1,285,560 instances) | Experimental; correct full-game execution not established |
+| Uncharted 2: Among Thieves | Opcode discovery and static lifting | Not measured | Runtime/build validation is not part of the current target scope |
+| Synthetic/homebrew ELF | Regression tests | Measured per test | Expected output required for passing tests |
 
-### God of War III
+## Related documentation
 
-See [docs/games/GOW3/GOW3.md](docs/games/GOW3/GOW3.md).
-
-### Uncharted 2: Among Thieves
-
-See [docs/games/Uncharted2/UNCHARTED2.md](docs/games/Uncharted2/UNCHARTED2.md).
-
-Workflow when starting Uncharted 2 work:
-
-1. Load decrypted ELF in the GUI (or CLI lift only).
-2. Decompile; do **not** run Build for this title yet.
-3. Archive `lift_report.txt` / `analysis_report.txt` under `docs/games/Uncharted2/`.
-4. Implement missing opcodes from the TODO list (highest frequency first).
-5. Re-run GOW3 lift to ensure no regressions in static counts.
-6. Only after GOW3 runtime is healthier, reconsider Uncharted 2 native build.
-
----
-
-## Suggested near-term sequence
-
-| Step | Phase | Action |
-| --- | --- | --- |
-| 1 | 3A | Diagnose GOW3 `pc=0x39800000` (code at `lr≈0x103ac`, TOC/r2) |
-| 2 | 2C | Lift Uncharted 2 ELF; land opcode gaps in the lifter |
-| 3 | 2B/2D | Harden approximate ops on hot paths; add tests |
-| 4 | 3B | Expand LV2 / PRX HLE needed by GOW3 CRT startup |
-| 5 | 4B | Real SPU ISA for extracted images |
-| 6 | 5 | RSX when CPU path reaches a flip |
-
----
-
-## Related docs
-
+- [Developer guide](docs/DEVELOPER_GUIDE.md)
 - [PPU coverage](docs/PPU_COVERAGE.md)
 - [Game coverage index](docs/games/README.md)
-- [README](README.md)
+- [Project overview](README.md)
