@@ -72,4 +72,4 @@ Legend: [x] implemented or verified, [~] partial, [ ] planned or not yet verifie
 
 ## Current GoW3 measurement
 
-The recorded sample contains 1,285,560 instruction instances: 1,103,166 translated and 182,394 unimplemented across 157 chunks. Static translation coverage is approximately 85.81%. These figures do not indicate game compatibility; see [GOW3 coverage record](docs/games/GOW3.md).
+The latest reported lift contains 1,285,560 instruction instances: 1,173,389 translated and 112,171 unimplemented across 157 chunks. Static translation coverage is approximately 91.28%. These figures describe static translation only and do not indicate game compatibility; see [GOW3 coverage record](docs/games/GOW3.md).
