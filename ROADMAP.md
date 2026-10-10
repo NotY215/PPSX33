@@ -4,7 +4,7 @@
 
 | Mark | Meaning |
 | --- | --- |
-| [x] | Present in the codebase |
+| [x] | Present in the codebase or completed as explicitly measured |
 | [~] | Partial, heuristic, approximate, or not fully validated |
 | [ ] | Not implemented or not verified |
 
@@ -12,8 +12,8 @@ Implementation status does not establish semantic correctness or compatibility. 
 
 ## Project priorities
 
-1. Improve PPU semantic correctness and runtime stability using synthetic tests and the God of War III (GOW3) analysis target.
-2. Use Uncharted 2: Among Thieves as a static-lift target to discover additional PPU opcode gaps. This target is currently limited to analysis and opcode expansion.
+1. Improve PPU semantic correctness and runtime stability using synthetic tests and the God of War III (GOW3) and Uncharted 2 static-lift snapshots.
+2. Inspect the Uncharted 2 reports for approximate or fallback translations, then prioritize semantic tests and fixes by frequency and correctness risk.
 3. Develop SPU execution, RSX/GCM support, and system-library compatibility as separate workstreams.
 
 ## Phase 1: UI and project workflow
@@ -54,6 +54,7 @@ Implementation status does not establish semantic correctness or compatibility. 
 
 ### PPU instruction coverage
 - [x] GOW3 snapshot: 1,285,560 translated instances, zero reported unimplemented instances, 157 chunks
+- [x] Uncharted 2 snapshot: 3,485,016 translated instances, zero reported unimplemented instances, 426 chunks
 - [~] Integer arithmetic, logical operations, shifts/rotates, loads/stores, and update forms
 - [~] Branches, condition-register operations, LR/CTR, selected synchronization and trap instructions
 - [~] Atomic reservation handling
@@ -63,11 +64,12 @@ Implementation status does not establish semantic correctness or compatibility. 
 - [ ] Complete PRX import/export and NID resolution
 - [ ] Regression coverage for each supported instruction family
 
-### Multi-game opcode expansion: Uncharted 2
-- [ ] Analyze a legally obtained decrypted ELF
-- [ ] Archive actual lift and analysis reports under `docs/games/Uncharted2/`
-- [ ] Identify missing, approximate, or fallback opcode behavior
-- [ ] Prioritize opcode work using observed instruction frequency and correctness risk
+### Multi-game analysis: Uncharted 2
+- [x] Analyze a decrypted ELF and complete the initial static lift
+- [x] Record console metrics in the game coverage documentation
+- [ ] Review the generated lift and analysis reports for approximate, fallback, or semantically risky translations
+- [ ] Archive suitable text reports under `docs/games/Uncharted2/` after reviewing them for sensitive paths and proprietary content
+- [ ] Identify instruction families that need semantic validation or regression coverage
 - [ ] Add isolated synthetic regression tests where practical
 - [ ] Re-run GOW3 and synthetic tests after lifter changes
 
@@ -140,8 +142,8 @@ Implementation status does not establish semantic correctness or compatibility. 
 
 | Title | Role | Static lift | Runtime status |
 | --- | --- | --- | --- |
-| God of War III | Main runtime-analysis target | 100% reported in one snapshot (1,285,560 instances) | Experimental; correct full-game execution not established |
-| Uncharted 2: Among Thieves | Opcode discovery and static lifting | Not measured | Runtime/build validation is not part of the current target scope |
+| God of War III | Runtime-analysis baseline | 100% reported in one snapshot (1,285,560 instances) | Experimental; correct full-game execution not established |
+| Uncharted 2: Among Thieves | Multi-game static-lift and semantic-analysis target | 100% reported in one snapshot (3,485,016 instances) | Not validated by these static-lift results |
 | Synthetic/homebrew ELF | Regression tests | Measured per test | Expected output required for passing tests |
 
 ## Related documentation
