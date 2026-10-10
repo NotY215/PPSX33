@@ -1,92 +1,39 @@
-# Compilers-files — local toolchain staging
+# Compilers-files: packaged toolchain support
 
-This directory is copied into `build/dist/Compilers-files/` when you build PPSX33.
-The **game project build** (`build_msvc.bat` from `project.cpp`) prefers tools from here so end users do not need a full Visual Studio install on `PATH`.
-
-## Required layout for developers
-
-After installing Visual Studio (or Build Tools) with **Desktop development with C++**, **copy** the MSVC host tools into this tree:
+This directory contains compiler/build tools staged with PPSX33. In the Alpha 01 distribution, the package layout is:
 
 ```text
-Compilers-files/
-  README.md                 (this file)
-  MSCV/                     ← preferred name (also accepts MSVC / msvc / mscv)
-    cl.exe
-    link.exe
-    lib.exe                 (optional)
-    *.dll                   (MSVC support DLLs next to cl.exe)
-  ninja/                    (optional)
-    ninja.exe
-  mingw64/                  (optional g++ fallback)
-    bin/g++.exe
-```
-
-### How to populate `MSCV/`
-
-1. Install Visual Studio 2022/2026 (or Build Tools) with the C++ workload and a Windows SDK.
-2. Locate the host x64 tools, for example:
-
-```text
-C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\<ver>\bin\Hostx64\x64\
-```
-
-3. Copy **at least** `cl.exe`, `link.exe`, and the supporting DLLs from that folder into:
-
-```text
-Compilers-files/MSCV/
-```
-
-4. Rebuild PPSX33 so the folder is staged under `build/dist/Compilers-files/MSCV/`.
-
-The build driver searches, in order: `MSCV`, `MSVC`, `msvc`, `mscv`, then the root of `Compilers-files`.
-
-### Windows SDK (D3D headers / libs)
-
-`cl.exe` alone is not enough to compile `rsx_stub.cpp` (D3D10/11).
-`project.cpp` still **calls `vcvars64.bat`** (when found) only to set `INCLUDE` / `LIB` for the Windows SDK. You do **not** need those SDK folders inside `Compilers-files`, but a machine build still needs a Windows SDK installed via Visual Studio Installer.
-
-Optional env: `PS3RT_GFX=D3D10` or `D3D11`.
-
-## End-user package (`build/dist`)
-
-```text
-build/dist/
-  PS3Recomp.exe
-  ps3core.dll
-  runtime/
+PPSX33-Alpha-01/
   Compilers-files/
-    MSCV/cl.exe
-    MSCV/link.exe
-  assets/
-  projects/         (created at runtime)
+    cmake.exe
+    ninja.exe
+    README.md
+    MSCV/
 ```
 
-Developers compiling from source must keep `Compilers-files/MSCV` populated so local builds match the dist layout.
+## What these tools are for
 
-## Install tools (host build of PPSX33 itself)
+- `cmake.exe` and `ninja.exe` support build orchestration.
+- `MSCV/` is the designated location for Microsoft C/C++ compiler and linker tools when those tools are available and licensed for redistribution.
+- The project build driver may also rely on a compatible Visual Studio installation and Windows SDK, depending on the generated project and selected graphics backend.
+- The end-user GUI targets `.NET 8 for Windows`; it is framework-dependent unless the release is explicitly republished as self-contained.
 
-- Visual Studio with **Desktop development with C++**
-- Windows SDK
-- CMake, Ninja
-- .NET 8 SDK (GUI)
+The exact set of tools found in the folder can vary by package. Do not assume that an empty `MSCV/` folder contains a compiler.
+
+## Developer setup
+
+For building PPSX33 from source, install Visual Studio 2022 or a compatible version with **Desktop development with C++**, a Windows SDK, CMake, Ninja, and the .NET 8 SDK. From the repository root, run:
 
 ```bat
-where cl
-where link
-where cmake
-where ninja
-where dotnet
 scripts\build_all.bat
 ```
 
-## Licensing
+Build output is staged under `build\dist\`.
 
-Do not commit proprietary MSVC binaries unless redistribution is allowed. Prefer documenting the copy steps. See [THIRD_PARTY.md](../THIRD_PARTY.md).
+## Redistribution and licensing
 
-## Verify game builds use staged tools
+Microsoft compiler and linker binaries are proprietary. Include them in a public release only if the applicable Visual Studio / Build Tools license explicitly permits the intended redistribution. Otherwise, ship the empty `MSCV/` directory or instructions for installing the required tools, and do not bundle proprietary binaries. Review [THIRD_PARTY.md](../THIRD_PARTY.md) before distributing the package.
 
-Log should show:
+## Alpha package validation
 
-```text
-Using Compilers-files cl: ...\Compilers-files\MSCV\cl.exe
-```
+Before publishing, verify that the archive contains the expected files, that `PS3Recomp.exe` starts on a clean supported Windows machine, that `ps3_cli.exe --help` responds, and that the synthetic smoke test completes. Record any skipped test and do not claim that these checks prove commercial-game compatibility.
