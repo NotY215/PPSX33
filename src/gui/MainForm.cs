@@ -284,16 +284,23 @@ public sealed partial class MainForm : Form
         UpdateButtons();
     }
 
+    /// <summary>Default project name = selected ELF/SELF file name (no extension).</summary>
     static string SuggestProjectName(string path)
     {
         try
         {
-            var dir = Path.GetDirectoryName(path) ?? "";
-            var leaf = Path.GetFileName(dir);
-            if (!string.IsNullOrWhiteSpace(leaf) && leaf.Length < 40) return leaf.Replace(' ', '_');
+            string name = Path.GetFileNameWithoutExtension(path);
+            if (string.IsNullOrWhiteSpace(name)) name = Path.GetFileName(path);
+            if (string.IsNullOrWhiteSpace(name)) return "project";
+            // Sanitize characters invalid in folder names
+            foreach (char c in Path.GetInvalidFileNameChars())
+                name = name.Replace(c, '_');
+            name = name.Replace(' ', '_');
+            if (name.Length > 64) name = name.Substring(0, 64);
+            return name;
         }
         catch { }
-        return "GOW3";
+        return "project";
     }
 
     async Task RunGameExe()
