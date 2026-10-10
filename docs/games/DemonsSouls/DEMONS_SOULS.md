@@ -6,21 +6,21 @@
 
 ## Latest lift snapshot
 
-*Not yet recorded.* Run decrypt + decompile in PPSX33 and paste metrics into the table below and into [README.md](README.md).
+Recorded from [`DemonsSouls_lift_report.txt`](DemonsSouls_lift_report.txt). This is a static-lift snapshot only; it does not establish semantic correctness or playability.
 
 | Metric | Value |
 | --- | ---: |
-| Segments | — |
-| Entry OPD | — |
-| Symbols | — |
-| OPD entries | — |
-| PRX string hits | — |
-| Embedded SPU images | — |
-| Instruction instances | — |
-| Translated | — |
-| Unimplemented | — |
-| Chunks | — |
-| Reported static coverage | — |
+| Segments | Not included in this lift report |
+| Entry OPD | Not included in this lift report |
+| Symbols | Not included in this lift report |
+| OPD entries | Not included in this lift report |
+| PRX string hits | Not included in this lift report |
+| Embedded SPU images | Not included in this lift report |
+| Instruction instances | 6,343,506 |
+| Translated | 6,343,506 |
+| Unimplemented | 0 |
+| Chunks | 775 |
+| Reported static coverage | 100% for this snapshot |
 
 ## Interpretation
 
@@ -34,4 +34,4 @@ Same caveats as Uncharted 2 / GOW3: zero unimplemented means every instruction w
 4. Diff approximate ops / SPU images against GOW3 and Uncharted 2.
 5. Harden lifter/runtime from findings; re-lift GOW3 after changes.
 
-See [ROADMAP](../../../ROADMAP.md).
+The archived report lists no missing opcodes, but this does not prove complete semantic support. See [ROADMAP](../../../ROADMAP.md).
