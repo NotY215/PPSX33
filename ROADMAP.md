@@ -60,14 +60,16 @@ Implementation status does not establish semantic correctness or compatibility.
 ### PPU instruction coverage
 - [x] GOW3 snapshot: 1,285,560 translated, 0 unimplemented, 157 chunks
 - [x] Uncharted 2 snapshot: 3,485,016 translated, 0 unimplemented, 426 chunks
+- [x] Demon's Souls snapshot: 6,343,506 translated, 0 unimplemented, 775 chunks
 - [~] Integer, logical, shifts, loads/stores, branches, atomics, FPU, VMX (many approximate)
 - [ ] Differential semantic tests against a trusted PowerPC reference
 - [~] PRX import HLE + real NID table (GOW3 modules); expand on runtime hits
 
 ### Multi-game analysis: Uncharted 2 / Demon's Souls
-- [x] Uncharted 2: initial static lift complete (metrics recorded)
-- [ ] Archive full Uncharted 2 lift/analysis text under `docs/games/Uncharted2/`
-- [ ] Demon's Souls: first decrypt + decompile; record metrics under `docs/games/DemonsSouls/`
+- [x] Uncharted 2: initial static lift complete (metrics and ELF-analysis metadata recorded)
+- [x] Demon's Souls: initial static lift complete (metrics and ELF-analysis metadata recorded)
+- [ ] Archive and review full Uncharted 2 lift/analysis reports under `docs/games/Uncharted2/`
+- [ ] Archive and review full Demon's Souls lift/analysis reports under `docs/games/DemonsSouls/`
 - [ ] Review approximate/fallback translations; add regression tests
 - [ ] Re-run GOW3 after lifter changes
 
@@ -126,7 +128,7 @@ Implementation status does not establish semantic correctness or compatibility.
 | --- | --- | --- | --- |
 | God of War III | Primary runtime | 1,285,560 / 100% snapshot | Experimental early halt |
 | Uncharted 2 | Opcode / SPU stress (lift only) | 3,485,016 / 100% snapshot; 7 SPU images | No native build yet |
-| Demon's Souls | Opcode / SPU stress (lift only) | Pending first lift | No native build yet |
+| Demon's Souls | Opcode / SPU stress (lift only) | 6,343,506 / 100% snapshot; 12 SPU images | No native build yet |
 | Synthetic/homebrew | Regression | Per test | Required for pass |
 
 ## Related documentation
