@@ -1,5 +1,8 @@
 # Contributing to PPSX33
 
+<p align="center"><img src="https://raw.githubusercontent.com/NotY215/PPSX33/main/assets/ppsx33-logo.svg" alt="PPSX33 circular logo" width="120" /></p>
+
+
 PPSX33 accepts focused contributions to the ELF loader, PPU lifter, generated-code runtime, CLI, WinForms GUI, regression tests, build scripts, and documentation.
 
 ## Development environment
