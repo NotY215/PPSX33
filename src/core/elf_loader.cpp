@@ -2,7 +2,6 @@
 #include "ps3_util.h"
 #include <fstream>
 #include <cstring>
-#include <set>
 
 namespace ps3 {
 
@@ -50,7 +49,7 @@ bool load_elf(const std::string& path, ElfImage& out, std::string& err) {
         s.vaddr  = ps3_be64(ph + 16);
         s.filesz = ps3_be64(ph + 32);
         s.memsz  = ps3_be64(ph + 40);
-        if (s.type != 1) continue;  // PT_LOAD only
+        if (s.type != 1) continue;
         if (off + s.filesz > b.size()) { err = "Segment exceeds file size."; return false; }
         s.data.assign(b.begin() + (size_t)off, b.begin() + (size_t)(off + s.filesz));
         out.segments.push_back(std::move(s));
@@ -58,13 +57,12 @@ bool load_elf(const std::string& path, ElfImage& out, std::string& err) {
     if (out.segments.empty()) { err = "ELF has no PT_LOAD segments."; return false; }
     out.fingerprint = ps3_fnv1a64(b.data(), b.size());
 
-    // Optional section headers: symbols
     if (shentsize >= 64 && shnum > 0 && shoff + (uint64_t)shnum * shentsize <= b.size()) {
         auto sh_at = [&](uint16_t i) { return &b[shoff + (uint64_t)i * shentsize]; };
         const uint8_t* shstr = nullptr;
-        uint64_t shstr_off = 0, shstr_size = 0;
+        uint64_t shstr_size = 0;
         if (shstrndx < shnum) {
-            shstr_off = ps3_be64(sh_at(shstrndx) + 24);
+            uint64_t shstr_off = ps3_be64(sh_at(shstrndx) + 24);
             shstr_size = ps3_be64(sh_at(shstrndx) + 32);
             if (shstr_off + shstr_size <= b.size()) shstr = &b[shstr_off];
         }
@@ -75,8 +73,8 @@ bool load_elf(const std::string& path, ElfImage& out, std::string& err) {
             uint32_t type = ps3_be32(sh + 4);
             std::string nm;
             if (shstr && name_off < shstr_size) nm = (const char*)(shstr + name_off);
-            if (type == 2 /* SHT_SYMTAB */ || nm == ".symtab") sym_idx = i;
-            if (type == 3 /* SHT_STRTAB */ && nm == ".strtab") str_idx = i;
+            if (type == 2 || nm == ".symtab") sym_idx = i;
+            if (type == 3 && nm == ".strtab") str_idx = i;
         }
         if (sym_idx >= 0) {
             const uint8_t* sh = sh_at((uint16_t)sym_idx);
@@ -141,46 +139,74 @@ static bool is_exec_addr(const ElfImage& img, uint64_t a) {
     return false;
 }
 
+// GOW3 OPD often appears as (entry_pc << 32) | toc when mis-read as one 64-bit;
+// normalize to entry=low/high split matching runtime (pc=0x10230 toc=0x52d6c8).
+static void normalize_opd(const ElfImage& img, OpdEntry& e) {
+    if (e.entry > 0xFFFFFFFFull) {
+        uint32_t hi = (uint32_t)(e.entry >> 32);
+        uint32_t lo = (uint32_t)e.entry;
+        if (hi != 0 && hi < 0x01000000u && lo < 0x10000000u) {
+            if (is_exec_addr(img, hi) || !is_exec_addr(img, e.entry)) {
+                e.entry = hi;
+                if (e.toc == 0 || e.toc > 0xFFFFFFFFull) e.toc = lo;
+            }
+        }
+    }
+    // Prefer low 32 bits if full value is not in an executable segment
+    if (!is_exec_addr(img, e.entry)) {
+        uint64_t low = e.entry & 0xFFFFFFFFull;
+        if (low && is_exec_addr(img, low)) e.entry = low;
+    }
+    if (e.toc > 0xFFFFFFFFull)
+        e.toc &= 0xFFFFFFFFull;
+}
+
 void analyze_elf(ElfImage& img) {
     img.opds.clear();
     img.prx_imports.clear();
     img.spu_images.clear();
 
-    // Entry OPD
     {
         OpdEntry e;
         e.addr = img.entry;
         uint64_t a = 0, t = 0;
+        // Prefer 64-bit; also try 32-bit pair (some descriptors pack tightly in practice)
         if (img.read64(img.entry, a) && img.read64(img.entry + 8, t)) {
             e.entry = a; e.toc = t;
+            normalize_opd(img, e);
             img.opds.push_back(e);
+        } else {
+            uint32_t a32 = 0, t32 = 0;
+            if (img.read32(img.entry, a32) && img.read32(img.entry + 4, t32)) {
+                e.entry = a32; e.toc = t32;
+                normalize_opd(img, e);
+                img.opds.push_back(e);
+            }
         }
     }
 
-    // Scan non-exec segments for OPD-looking pairs (code ptr in exec + toc)
     for (const auto& s : img.segments) {
         if (s.executable()) continue;
         if (s.data.size() < 16) continue;
         for (size_t off = 0; off + 16 <= s.data.size(); off += 8) {
             uint64_t code = ps3_be64(&s.data[off]);
             uint64_t toc  = ps3_be64(&s.data[off + 8]);
-            if (!is_exec_addr(img, code)) continue;
-            if (toc < 0x10000 || toc > 0xFFFFFFFFFull) continue;
             OpdEntry e;
             e.addr = s.vaddr + off;
             e.entry = code;
             e.toc = toc;
+            normalize_opd(img, e);
+            if (!is_exec_addr(img, e.entry)) continue;
+            if (e.toc < 0x10000 || e.toc > 0xFFFFFFFFull) continue;
             img.opds.push_back(e);
             if (img.opds.size() > 4096) break;
         }
         if (img.opds.size() > 4096) break;
     }
 
-    // Heuristic: strings that look like PRX / sce module names + nearby NIDs
     for (const auto& s : img.segments) {
         const auto& d = s.data;
         for (size_t i = 0; i + 8 < d.size(); ++i) {
-            // ASCII module-like: cell*, sys_, sce
             if (!((d[i] >= 'a' && d[i] <= 'z') || (d[i] >= 'A' && d[i] <= 'Z'))) continue;
             size_t j = i;
             while (j < d.size() && d[j] != 0 && j - i < 64) ++j;
@@ -188,14 +214,15 @@ void analyze_elf(ElfImage& img) {
             std::string name((const char*)&d[i], j - i);
             bool interesting =
                 name.find("cell") != std::string::npos ||
-                name.find("sys_") == 0 ||
+                name.rfind("sys_", 0) == 0 ||
                 name.find("sce") != std::string::npos ||
-                name.find("lib") == 0;
+                name.rfind("lib", 0) == 0;
             if (!interesting || name.size() < 4) { i = j; continue; }
+            // Skip long format/error strings
+            if (name.find(' ') != std::string::npos && name.size() > 24) { i = j; continue; }
             PrxImport im;
             im.name = name;
             im.stub_addr = s.vaddr + i;
-            // NID often sits as 4-byte BE word nearby
             if (i >= 4) im.nid = ps3_be32(&d[i - 4]);
             img.prx_imports.push_back(std::move(im));
             if (img.prx_imports.size() > 2048) break;
@@ -204,25 +231,22 @@ void analyze_elf(ElfImage& img) {
         if (img.prx_imports.size() > 2048) break;
     }
 
-    // Embedded SPU ELF: look for 7F ELF + class=1 (32-bit) machine=23 (SPU) inside segments
     for (const auto& s : img.segments) {
         const auto& d = s.data;
         for (size_t i = 0; i + 64 < d.size(); ++i) {
             if (d[i] != 0x7F || d[i+1] != 'E' || d[i+2] != 'L' || d[i+3] != 'F') continue;
-            if (d[i+4] != 1) continue; // ELF32
-            uint16_t mach = (uint16_t)((d[i+18] << 8) | d[i+19]); // BE
-            if (mach != 23 && mach != 0x17) continue; // EM_SPU
-            // Bound size from program headers if possible
+            if (d[i+4] != 1) continue;
+            uint16_t mach = (uint16_t)((d[i+18] << 8) | d[i+19]);
+            if (mach != 23 && mach != 0x17) continue;
             size_t max_len = d.size() - i;
             if (max_len > 512 * 1024) max_len = 512 * 1024;
             SpuImage sp;
             sp.host_addr = s.vaddr + i;
             sp.data.assign(d.begin() + (std::ptrdiff_t)i, d.begin() + (std::ptrdiff_t)(i + max_len));
-            // Trim trailing zeros a bit
             while (sp.data.size() > 256 && sp.data.back() == 0) sp.data.pop_back();
             img.spu_images.push_back(std::move(sp));
             if (img.spu_images.size() > 32) break;
-            i += 256; // skip ahead
+            i += 256;
         }
         if (img.spu_images.size() > 32) break;
     }
