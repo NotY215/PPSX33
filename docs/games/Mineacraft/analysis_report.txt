@@ -1,0 +1,106 @@
+entry_opd: 0xbbe520
+segments: 5
+symbols: 0
+opd_entries: 4097
+prx_string_hits: 45
+embedded_spu_images: 11
+
+OPD samples (up to 32):
+  [0] desc=0xbbe520 entry=0x2c8250 toc=0xbd7998
+  [1] desc=0xbb2408 entry=0xb069d8 toc=0xb069e8
+  [2] desc=0xbb2410 entry=0xb069f8 toc=0xb06a08
+  [3] desc=0xbb2418 entry=0xb06a18 toc=0xb068c8
+  [4] desc=0xbb2420 entry=0xb06a28 toc=0xbe4b00
+  [5] desc=0xbb2438 entry=0xb07400 toc=0xb07cb0
+  [6] desc=0xbb2440 entry=0xb07cc0 toc=0xb07cd8
+  [7] desc=0xbb2448 entry=0xb07cf0 toc=0xb07d08
+  [8] desc=0xbb2450 entry=0xb07d20 toc=0xb07d40
+  [9] desc=0xbb2458 entry=0xb07d60 toc=0xb07d80
+  [10] desc=0xbb2460 entry=0xb07d98 toc=0xb07dc0
+  [11] desc=0xbb2468 entry=0xb07de8 toc=0xb07e00
+  [12] desc=0xbb2470 entry=0xb07e18 toc=0xb07e30
+  [13] desc=0xbb2478 entry=0xb07e48 toc=0xb07e68
+  [14] desc=0xbb2480 entry=0xb07e88 toc=0xb07ea0
+  [15] desc=0xbb2488 entry=0xb07ec0 toc=0xb07ee0
+  [16] desc=0xbb2490 entry=0xb07ef8 toc=0xb07f10
+  [17] desc=0xbb2498 entry=0xb07f28 toc=0xb07f40
+  [18] desc=0xbb24a0 entry=0xb07f60 toc=0xb07f80
+  [19] desc=0xbb24a8 entry=0xb07fa8 toc=0xb07fd0
+  [20] desc=0xbb24b0 entry=0xb07ff0 toc=0xb08008
+  [21] desc=0xbb24b8 entry=0xb08020 toc=0xb08038
+  [22] desc=0xbb24c0 entry=0xb08058 toc=0xb08078
+  [23] desc=0xbb24c8 entry=0xb08090 toc=0xb07c98
+  [24] desc=0xbb24d0 entry=0xb080a8 toc=0xb080c0
+  [25] desc=0xbb24d8 entry=0xb080d8 toc=0xb080f8
+  [26] desc=0xbb24e0 entry=0xb08118 toc=0xb08130
+  [27] desc=0xbb24e8 entry=0xb08148 toc=0xb08160
+  [28] desc=0xbb24f0 entry=0xb08178 toc=0xb08198
+  [29] desc=0xbb24f8 entry=0xb081b0 toc=0xb081d0
+  [30] desc=0xbb2500 entry=0xb081f0 toc=0xb08210
+  [31] desc=0xbb2508 entry=0xb08230 toc=0xb08250
+
+PRX/module string samples (up to 64):
+  cellPngDec  nid=0x0  @0xa76a3c
+  cellPngEnc  nid=0x0  @0xa76a4c
+  sys_net  nid=0x0  @0xa76a5c
+  cellSaveData  nid=0x0  @0xa76a68
+  cellUserInfo  nid=0x0  @0xa76a7c
+  sceNpTrophy  nid=0x0  @0xa76a90
+  cellGame  nid=0x0  @0xa76aa0
+  cellHttp  nid=0x0  @0xa76ab0
+  cellHttpUtil  nid=0x0  @0xa76ac0
+  cellSsl  nid=0x0  @0xa76ad4
+  cellJpgDec  nid=0x0  @0xa76ae0
+  cellJpgEnc  nid=0x0  @0xa76af0
+  cellSysutilAvc2  nid=0x0  @0xa76b00
+  sceNpCommerce2  nid=0x0  @0xa76b14
+  cellGcmSys  nid=0x0  @0xa76b28
+  cellSysmodule  nid=0x0  @0xa76b38
+  cellSysutil  nid=0x0  @0xa76b4c
+  sys_io  nid=0x0  @0xa76b5c
+  cellAudio  nid=0x0  @0xa76b68
+  sys_fs  nid=0x0  @0xa76b78
+  cellSpurs  nid=0x0  @0xa76b84
+  cellSpursJq  nid=0x0  @0xa76b94
+  cellRtc  nid=0x0  @0xa76ba4
+  cellOskExtUtility  nid=0x0  @0xa76bb0
+  cellL10n  nid=0x0  @0xa76bc8
+  sceNp  nid=0x0  @0xa76bd8
+  sceNp2  nid=0x0  @0xa76be4
+  cellNetCtl  nid=0x0  @0xa76bf0
+  cellRudp  nid=0x0  @0xa76c00
+  Sub sign in cancelled
+  nid=0x0  @0xac0abc
+  cellFsClosedir
+  nid=0x0  @0xac28b4
+  cellFsOpendir failed
+  nid=0x69720a00  @0xac28c4
+  cellSaveDataAutoSave2
+  nid=0x2b2b2b  @0xac3127
+  N3sce2hl2np6TrophyE  nid=0x0  @0xb001f8
+  N3sce2hl2np10TrophySyncE  nid=0x0  @0xb00210
+  iggy/render)iggy_draw_scene  nid=0x28  @0xb01569
+  descendents  nid=0x6e677300  @0xb03088
+  scenes  nid=0x0  @0xb04690
+  ascent  nid=0x69637300  @0xb056d0
+  descent  nid=0x6e740000  @0xb056d8
+  iggy/dict/scene/table  nid=0x0  @0xb08dd0
+  iggy/dict/scene/name  nid=0x65000000  @0xb08de8
+  Decompression cancelled.  nid=0x0  @0xb35820
+  libspurs:s450001libspurs:s450001libspurs:s450001libspurs:s450001  nid=0x30303031  @0xb8cda5
+  sceversion  nid=0x6d65002e  @0xb8ce4d
+
+Embedded SPU images:
+  [0] host_va=0xb39000 size=435824
+  [1] host_va=0xb5f780 size=278256
+  [2] host_va=0xb62400 size=266864
+  [3] host_va=0xb64b80 size=256752
+  [4] host_va=0xb66b80 size=248560
+  [5] host_va=0xb69080 size=239088
+  [6] host_va=0xb6cd00 size=223600
+  [7] host_va=0xb70380 size=209648
+  [8] host_va=0xb71980 size=204016
+  [9] host_va=0xb8d100 size=91504
+  [10] host_va=0xb99f80 size=38640
+
+symbol_functions: 0

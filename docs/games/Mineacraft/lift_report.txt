@@ -1,0 +1,6 @@
+instructions: 3034530
+implemented: 3034530
+unimplemented: 0
+chunks: 371
+
+missing opcodes (most useful TODO list):
