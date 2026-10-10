@@ -4,7 +4,7 @@ This folder tracks the next planned PPSX33 opcode and static-translation coverag
 
 ## Planned work
 
-- [ ] Complete and document the Grand Theft Auto: San Andreas coverage pass first.
+- [x] Record the Grand Theft Auto: San Andreas lift and ELF-analysis snapshot.
 - [ ] Identify the exact GTA V executable/input build and record its provenance.
 - [ ] Run static ELF analysis and archive the resulting `analysis_report.txt`.
 - [ ] Run the PPU lifter and archive the resulting `lift_report.txt`.
