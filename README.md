@@ -37,7 +37,7 @@ PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction sema
 | <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="48" alt="Uncharted 2 logo artwork" /> Uncharted 2: Among Thieves | `0xdd8618` | 116 | 391 | 7 | 426 |
 | <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="86" alt="Demon's Souls logo" /> Demon's Souls | `0x1916138` | 4,097 | 134 | 12 | 775 |
 
-All four game counts describe individual static-lift snapshots. They are not proof of correct instruction semantics, successful boot, rendering, or playability. See [PPU coverage](docs/PPU_COVERAGE.md), [game records](docs/games/README.md), and [roadmap](ROADMAP.md).
+All four game counts describe individual static-lift snapshots. They are not proof of correct instruction semantics, successful boot, rendering, or playability. Grand Theft Auto: San Andreas is the next planned coverage pass; Grand Theft Auto V is planned after it. Neither title has measured coverage yet. See [PPU coverage](docs/PPU_COVERAGE.md), [game records](docs/games/README.md), and [roadmap](ROADMAP.md).
 
 ## Requirements
 
