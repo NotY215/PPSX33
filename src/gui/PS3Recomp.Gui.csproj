@@ -3,6 +3,7 @@
     Phase 1 UI – WinForms front-end.
     Built automatically by CMake (target PS3Recomp) into build/dist/
     so it sits next to ps3core.dll and runtime/.
+    Icons: repo root assets/ppsx33-logo.ico and .png
   -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -13,28 +14,23 @@
     <AssemblyName>PS3Recomp</AssemblyName>
     <RootNamespace>PS3Recomp.Gui</RootNamespace>
     <LangVersion>latest</LangVersion>
-    <ApplicationIcon>Assets\ppsx33-logo.ico</ApplicationIcon>
 
-    <!-- When built from Visual Studio / dotnet CLI the output still goes to build/dist -->
+    <!-- Icons are in the repository root assets/ folder -->
+    <ApplicationIcon>$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico</ApplicationIcon>
+
     <OutputPath>$(MSBuildThisFileDirectory)..\..\build\dist\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Exe icon + UI logo copied next to the binary -->
-    <None Include="Assets\ppsx33-logo.ico" Condition="Exists('Assets\ppsx33-logo.ico')">
+    <!-- Copy logo files next to the published exe for runtime UI load -->
+    <None Include="$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico" Condition="Exists('$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico')">
+      <Link>ppsx33-logo.ico</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\ppsx33-logo.png" Condition="Exists('Assets\ppsx33-logo.png')">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <None Include="$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.png" Condition="Exists('$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.png')">
       <Link>ppsx33-logo.png</Link>
-    </None>
-    <!-- Fallback if placed at project root -->
-    <None Include="ppsx33-logo.ico" Condition="Exists('ppsx33-logo.ico') And !Exists('Assets\ppsx33-logo.ico')">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="ppsx33-logo.png" Condition="Exists('ppsx33-logo.png') And !Exists('Assets\ppsx33-logo.png')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
