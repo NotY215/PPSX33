@@ -2,10 +2,8 @@ namespace PS3Recomp.Gui;
 
 /// <summary>
 /// Phase 1 UI. Workflow:
-///   1 Load ELF -> ask game name -> create project folders
-///   2 Decompile (lift PPU -> C++)
-///   3 Build (MSVC from Compilers-files)
-///   4 Copy result next to EBOOT.BIN
+///   Decrypt EBOOT via RPCS3 --decrypt -> auto Load ELF
+///   Decompile -> Build -> Copy
 /// </summary>
 public sealed class MainForm : Form
 {
@@ -21,7 +19,7 @@ public sealed class MainForm : Form
     private readonly Button _btnBuild = new() { Text = "3. Build exe + dll", AutoSize = true, Enabled = false };
     private readonly Button _btnCopy = new() { Text = "4. Copy to EBOOT folder…", AutoSize = true, Enabled = false };
     private readonly Button _btnCancel = new() { Text = "Cancel", AutoSize = true, Enabled = false };
-    private readonly Button _btnRpcs3 = new() { Text = "Open EBOOT in RPCS3 (decrypt)…", AutoSize = true };
+    private readonly Button _btnRpcs3 = new() { Text = "Decrypt EBOOT (RPCS3)…", AutoSize = true };
     private readonly ComboBox _gfx = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 90 };
     private readonly NumericUpDown _threads = new() { Minimum = 1, Maximum = 64, Width = 50 };
     private string? _projectDir;
@@ -76,10 +74,11 @@ public sealed class MainForm : Form
         }, enableCopy: true);
         _btnCopy.Click += (_, _) => CopyToEbootFolder();
         _btnCancel.Click += (_, _) => { try { _cts?.Cancel(); } catch { } Append("Cancel requested…"); };
-        _btnRpcs3.Click += (_, _) => OpenRpcs3();
+        _btnRpcs3.Click += async (_, _) => await DecryptEbootAndLoad();
         FormClosing += (_, _) => SaveSettings();
         Append($"ps3core version {SafeVersion()}  |  runtime: {RuntimeDir}  |  compilers: {CompilersDir}");
-        Append("Tip: use 'Find decrypted ELF' after RPCS3 has opened the game once, or Load ELF manually.");
+        Append("Decrypt EBOOT runs: rpcs3.exe --decrypt \"EBOOT.BIN\"  (same as Utilities -> Decrypt PS3 Binaries).");
+        Append("When decrypt finishes, the generated .elf is loaded automatically.");
     }
 
     private static string SafeVersion() { try { return Native.Version().ToString(); } catch (Exception ex) { return "UNAVAILABLE (" + ex.Message + ")"; } }
@@ -129,6 +128,56 @@ public sealed class MainForm : Form
         _report.Text = "(Run Decompile to generate lift_report.txt)";
     }
 
+    private async Task DecryptEbootAndLoad()
+    {
+        using var ofd = new OpenFileDialog { Title = "Select EBOOT.BIN (or other SELF) to decrypt", Filter = "EBOOT.BIN|EBOOT.BIN|SELF / BIN|*.self;*.bin;*.sprx|All files|*.*" };
+        if (ofd.ShowDialog(this) != DialogResult.OK) return;
+
+        if (string.IsNullOrEmpty(_settings.Rpcs3Path) || !File.Exists(_settings.Rpcs3Path))
+        {
+            using var rp = new OpenFileDialog { Title = "Locate rpcs3.exe", Filter = "rpcs3.exe|rpcs3.exe" };
+            if (rp.ShowDialog(this) != DialogResult.OK) return;
+            _settings.Rpcs3Path = rp.FileName;
+            SaveSettings();
+        }
+
+        string bin = ofd.FileName;
+        Append("Decrypting via RPCS3 CLI: --decrypt \"" + bin + "\"");
+        Append("(This is the same path as Utilities -> Decrypt PS3 Binaries; does not boot the game.)");
+        SetBusy(true);
+        SetStatus("Decrypting…");
+        _progress.MarqueeAnimationSpeed = 30;
+
+        string elf = "";
+        string err = "";
+        bool ok = false;
+        try
+        {
+            ok = await Task.Run(() => Rpcs3Launcher.DecryptBinary(_settings.Rpcs3Path, bin, out elf, out err));
+        }
+        catch (Exception ex)
+        {
+            err = ex.Message;
+            ok = false;
+        }
+        finally
+        {
+            _progress.MarqueeAnimationSpeed = 0;
+            SetBusy(false);
+            SetStatus(ok ? "Ready" : "Decrypt failed");
+        }
+
+        if (!ok)
+        {
+            Append("ERROR: " + err);
+            return;
+        }
+
+        Append("Decrypted ELF: " + elf);
+        Append("Loading into project…");
+        LoadElf(elf);
+    }
+
     private void FindAndLoadDecryptedElf()
     {
         using var ofd = new OpenFileDialog { Title = "Select original EBOOT.BIN (used as search root)", Filter = "EBOOT.BIN|EBOOT.BIN|All files|*.*" };
@@ -139,7 +188,7 @@ public sealed class MainForm : Form
         var hits = Rpcs3Launcher.FindDecryptedElfs(_settings.Rpcs3Path, eboot);
         if (hits.Count == 0)
         {
-            Append("No decrypted ELF found. Open the game once in RPCS3, or browse manually with Load ELF.");
+            Append("No decrypted ELF found. Use 'Decrypt EBOOT (RPCS3)' or Load ELF manually.");
             return;
         }
 
@@ -253,25 +302,11 @@ public sealed class MainForm : Form
         Append("Run game.exe from that folder (native recompile; not for RPCS3).");
     }
 
-    private void OpenRpcs3()
-    {
-        using var ofd = new OpenFileDialog { Title = "Select EBOOT.BIN to open in RPCS3", Filter = "EBOOT.BIN|EBOOT.BIN|All files|*.*" };
-        if (ofd.ShowDialog(this) != DialogResult.OK) return;
-        if (string.IsNullOrEmpty(_settings.Rpcs3Path) || !File.Exists(_settings.Rpcs3Path))
-        {
-            using var rp = new OpenFileDialog { Title = "Locate rpcs3.exe", Filter = "rpcs3.exe|rpcs3.exe" };
-            if (rp.ShowDialog(this) != DialogResult.OK) return;
-            _settings.Rpcs3Path = rp.FileName;
-        }
-        if (!Rpcs3Launcher.Launch(_settings.Rpcs3Path, ofd.FileName, out var err)) Append("ERROR: " + err);
-        else Append("RPCS3 started. After it decrypts, use 'Find decrypted ELF' or Load ELF manually.");
-    }
-
     private const string RoadmapText =
-        "Phase 1  UI                          - DONE (progress, cancel, lift report, ELF discovery)\r\n" +
-        "Phase 2  ELF decompile               - DONE for GOW3 static coverage; OPD/SPU extract added\r\n" +
-        "Phase 3  PPU runtime                 - IN PROGRESS (memory, external PC stubs, syscalls)\r\n" +
-        "Phase 4  SPU                         - IN PROGRESS (skeleton: mbox/MFC/run stub)\r\n" +
+        "Phase 1  UI                          - DONE (decrypt via --decrypt, auto-load ELF)\r\n" +
+        "Phase 2  ELF decompile               - GOW3 + Uncharted2 static 100% snapshots\r\n" +
+        "Phase 3  PPU runtime                 - IN PROGRESS (GOW3 primary)\r\n" +
+        "Phase 4  SPU                         - Interpreter (major ISA families)\r\n" +
         "Phase 5  RSX graphics                - TODO\r\n" +
         "Phase 6  Native output               - DONE (MSVC game.exe + ps3rt.dll)\r\n\r\n" +
         "Details: ROADMAP.md in the repository.";
