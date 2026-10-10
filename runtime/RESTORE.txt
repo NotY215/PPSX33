@@ -1,0 +1,5 @@
+If runtime/ppu_runtime.h or ps3rt.cpp look truncated, restore with:
+
+  git checkout b7fd04e4475b7dc654062007bc089c4cc262ce1a -- runtime/ppu_runtime.h runtime/ps3rt.cpp
+
+Then apply runtime/boot_continue.patch if present, or pull again after the full restore push.
