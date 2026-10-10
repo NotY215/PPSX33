@@ -4,7 +4,7 @@ namespace PS3Recomp.Gui;
 
 /// <summary>
 /// Persisted under %APPDATA%/PPSX33/settings.json
-/// Holds RPCS3 path, last ELF path, last BIN (EBOOT) path, graphics + threads.
+/// Holds RPCS3 path, last ELF/BIN, graphics, threads, and DualShock key map.
 /// </summary>
 public sealed class Settings
 {
@@ -13,6 +13,7 @@ public sealed class Settings
     public string Rpcs3Path { get; set; } = "";
     public string LastElfPath { get; set; } = "";
     public string LastBinPath { get; set; } = "";
+    public KeyMap KeyMap { get; set; } = KeyMap.Defaults();
 
     public static string DataDir
     {
@@ -43,7 +44,11 @@ public sealed class Settings
             {
                 string json = File.ReadAllText(FilePath);
                 var s = JsonSerializer.Deserialize<Settings>(json, JsonOpts);
-                if (s != null) return s;
+                if (s != null)
+                {
+                    if (s.KeyMap == null) s.KeyMap = KeyMap.Defaults();
+                    return s;
+                }
             }
         }
         catch { /* fall through to defaults */ }
@@ -54,6 +59,7 @@ public sealed class Settings
     {
         try
         {
+            if (KeyMap == null) KeyMap = KeyMap.Defaults();
             Directory.CreateDirectory(DataDir);
             File.WriteAllText(FilePath, JsonSerializer.Serialize(this, JsonOpts));
         }
