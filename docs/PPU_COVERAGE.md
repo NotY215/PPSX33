@@ -11,7 +11,17 @@
 | Uncharted 2: Among Thieves | 3,485,016 | 3,485,016 | 0 | 426 | 100% for this snapshot |
 | Demon's Souls | 6,343,506 | 6,343,506 | 0 | 775 | 100% for this snapshot |
 
-The GOW3 raw counts are stored in [GOW3_lift_report.txt](games/GOW3/GOW3_lift_report.txt). Uncharted 2's generated reports are currently in the local project at `E:\\PPSX33\\build\\dist\\UNCHARTED 2\\codebase\\lift_report.txt` and `analysis_report.txt`; they have not been archived in this repository. See the [Uncharted 2 analysis record](games/Uncharted2/UNCHARTED2.md).
+## ELF and analysis metadata
+
+| Game | PT_LOAD segments | Entry OPD | Symbols | OPD entries | PRX/module string hits | Embedded SPU images |
+| --- | ---: | --- | ---: | ---: | ---: | ---: |
+| God of War III | 5 | `0x50ddc0` | 0 | 3 | 47 | 8 |
+| Uncharted 2 | 5 | `0xdd8618` | 0 | 116 | 391 | 7 |
+| Demon's Souls | 5 | `0x1916138` | 0 | 4,097 | 134 | 12 |
+
+These are recorded analysis snapshots. OPD and PRX values may come from heuristics and should not be treated as confirmed import/export resolution. Zero detected symbols does not mean the ELF contains no functions.
+
+Raw lift report: [Demon's Souls report](games/DemonsSouls/DemonsSouls_lift_report.txt). The GOW3 report is linked from its [game record](games/GOW3/GOW3.md). Uncharted 2's generated `lift_report.txt` and `analysis_report.txt` remain in its local project directory unless separately archived; see the [Uncharted 2 analysis record](games/Uncharted2/UNCHARTED2.md).
 
 ## Interpreting the metric
 
@@ -24,18 +34,6 @@ Coverage is measured against the input that was analyzed. A different game, firm
 - **Semantic correctness:** whether the translated behavior matches the PowerPC specification.
 - **Runtime correctness:** whether generated code and runtime services behave correctly.
 - **Game compatibility:** whether the complete title operates correctly.
-
-## Demon's Souls lift report
-
-The archived [`DemonsSouls_lift_report.txt`](games/DemonsSouls/DemonsSouls_lift_report.txt) reports 6,343,506 instruction instances, 6,343,506 translated instances, 0 unimplemented instances, and 775 chunks. It does not provide ELF segments, entry OPD, symbol/OPD counts, PRX hits, or embedded SPU image counts. The report's empty missing-opcodes section is not proof of complete semantic support.
-
-## Uncharted 2 analysis metadata
-
-The recorded analysis reported 5 ELF load segments, entry OPD `0xdd8618`, 0 symbols, 116 OPDs, 391 PRX heuristic hits, and 7 embedded SPU images. Zero symbols does not mean zero functions; OPD/function discovery can use other analysis heuristics. PRX hits are heuristic findings, and SPU image detection does not establish SPU execution support.
-
-## Implementation locations
-
-The main PPU translation logic is in `src/core/ppu_lifter.cpp`. Generated-code helpers are in `runtime/ppu_runtime.h`. The synthetic ELF generator is `tests/make_test_elf.py`.
 
 ## Developer workflow for opcode changes
 
