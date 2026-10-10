@@ -33,7 +33,6 @@ struct PPUContext {
     int      res_size;
 };
 
-// SPU: 128 x 128-bit GPRs, 256 KB local store
 struct SPUContext {
     uint8_t  gpr[128][16];
     uint8_t  ls[256 * 1024];
@@ -194,38 +193,61 @@ PS3RT_API int  ps3rt_spu_mbox_write(int id, uint32_t val);
 PS3RT_API int  ps3rt_spu_mbox_read(int id, uint32_t* out);
 PS3RT_API int  ps3rt_spu_mfc_dma(int id, uint32_t lsa, uint64_t ea, uint32_t size, uint32_t cmd);
 
+// RSX / GCM
+PS3RT_API void     ps3rt_set_graphics_backend(int backend);
+PS3RT_API int      ps3rt_get_graphics_backend(void);
+PS3RT_API void     ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size);
+PS3RT_API void     ps3rt_rsx_set_put(uint32_t put);
+PS3RT_API uint32_t ps3rt_rsx_get_get(void);
+PS3RT_API void     ps3rt_rsx_flush(uint8_t* mem);
+PS3RT_API void     ps3rt_rsx_flip(uint32_t buf_id);
+PS3RT_API uint64_t ps3rt_rsx_flip_count(void);
+PS3RT_API int      ps3rt_rsx_cell_gcm_syscall(PPUContext* c, uint64_t nid_or_num);
+
 struct PPUChunk { uint64_t start, end; bool (*fn)(PPUContext&); };
 
+// External / import stubs: return via LR with CELL_OK. Rate-limited diagnostics.
 static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     int external_escapes = 0;
+    int logged = 0;
     while (!c.halted) {
         const PPUChunk* hit = nullptr;
         for (size_t i = 0; i < n; ++i)
             if (c.pc >= chunks[i].start && c.pc < chunks[i].end) { hit = &chunks[i]; break; }
         if (!hit) {
-            std::fprintf(stderr,
-                "[ps3] PC left recompiled range\n"
-                "  pc = 0x%llx\n  lr = 0x%llx\n  ctr = 0x%llx\n  r1 = 0x%llx\n  r2 = 0x%llx\n",
-                (unsigned long long)c.pc, (unsigned long long)c.lr,
-                (unsigned long long)c.ctr, (unsigned long long)c.gpr[1],
-                (unsigned long long)c.gpr[2]);
+            bool nullish = (c.pc == 0) || (c.pc >= 0x80000000ull && c.pc < 0xA0000000ull);
+            // Classic bad function pointer patterns seen in GOW3 (0x39800000, etc.)
+            bool importish = (c.pc == 0x39800000ull) || ((c.pc & 0xFFFF0000ull) == 0x39800000ull);
+
             if (c.lr && c.lr != c.pc) {
                 bool lr_ok = false;
                 for (size_t i = 0; i < n; ++i)
                     if (c.lr >= chunks[i].start && c.lr < chunks[i].end) { lr_ok = true; break; }
-                if (lr_ok && external_escapes < 64) {
-                    std::fprintf(stderr, "[ps3] external stub: return via lr=0x%llx (escape %d)\n",
-                        (unsigned long long)c.lr, external_escapes + 1);
+                if (lr_ok && external_escapes < 4096) {
+                    if (logged < 12) {
+                        std::fprintf(stderr,
+                            "[ps3] external/import stub pc=0x%llx -> lr=0x%llx (#%d)%s\n",
+                            (unsigned long long)c.pc, (unsigned long long)c.lr,
+                            external_escapes + 1,
+                            (nullish || importish) ? " [null/import]" : "");
+                        ++logged;
+                    }
                     c.gpr[3] = 0;
                     c.pc = c.lr;
                     ++external_escapes;
                     continue;
                 }
             }
+            std::fprintf(stderr,
+                "[ps3] halt: PC left range with no usable LR\n"
+                "  pc=0x%llx lr=0x%llx ctr=0x%llx r1=0x%llx r2=0x%llx escapes=%d\n",
+                (unsigned long long)c.pc, (unsigned long long)c.lr,
+                (unsigned long long)c.ctr, (unsigned long long)c.gpr[1],
+                (unsigned long long)c.gpr[2], external_escapes);
             c.halted = true;
             break;
         }
-        external_escapes = 0;
+        // Do not reset escape budget on every successful chunk; allow long stub sequences
         hit->fn(c);
     }
 }
