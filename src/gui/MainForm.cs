@@ -1,38 +1,35 @@
 using System.Diagnostics;
 using System.Text;
 
+using PS3Recomp.Gui.Ui;
+
 namespace PS3Recomp.Gui;
 
 /// <summary>
-/// PPSX33 main window. Dark studio UI.
+/// PPSX33 main window. PS3-themed glass / liquid-glass spatial UI (visuals live in Ui/*.cs).
 /// Workflow: Decrypt -> Load -> Decompile -> Build -> Run -> Copy.
 /// </summary>
 public sealed class MainForm : Form
 {
-    static readonly Color Bg = Color.FromArgb(18, 18, 20);
-    static readonly Color Panel = Color.FromArgb(28, 28, 32);
-    static readonly Color Panel2 = Color.FromArgb(36, 36, 42);
-    static readonly Color Border = Color.FromArgb(48, 48, 56);
-    static readonly Color TextPri = Color.FromArgb(230, 230, 235);
-    static readonly Color TextSec = Color.FromArgb(150, 152, 160);
-    static readonly Color Accent = Color.FromArgb(45, 125, 255);
-    static readonly Color AccentHover = Color.FromArgb(70, 145, 255);
-    static readonly Color Success = Color.FromArgb(60, 180, 120);
-    static readonly Color Danger = Color.FromArgb(220, 80, 80);
+    static readonly Color Bg = Theme.Void;
+    static readonly Color Panel2 = Color.FromArgb(16, 22, 46);
+    static readonly Color TextPri = Theme.TextPri;
+    static readonly Color TextSec = Theme.TextSec;
+    static readonly Color Danger = Theme.Danger;
 
     private readonly Settings _settings = Settings.Load();
     private readonly TextBox _log = new();
     private readonly TextBox _report = new();
     private readonly Label _project = new();
     private readonly Label _status = new();
-    private readonly ProgressBar _progress = new();
-    private readonly Button _btnDecrypt = new();
-    private readonly Button _btnLoad = new();
-    private readonly Button _btnLift = new();
-    private readonly Button _btnBuild = new();
-    private readonly Button _btnRun = new();
-    private readonly Button _btnCopy = new();
-    private readonly Button _btnCancel = new();
+    private readonly GlassProgress _progress = new();
+    private readonly GlassButton _btnDecrypt = new();
+    private readonly GlassButton _btnLoad = new();
+    private readonly GlassButton _btnLift = new();
+    private readonly GlassButton _btnBuild = new();
+    private readonly GlassButton _btnRun = new();
+    private readonly GlassButton _btnCopy = new();
+    private readonly GlassButton _btnCancel = new();
     private readonly ComboBox _gfx = new();
     private readonly NumericUpDown _threads = new();
     private string? _projectDir;
@@ -49,54 +46,65 @@ public sealed class MainForm : Form
     private static string RuntimeDir => Path.Combine(AppContext.BaseDirectory, "runtime");
     private static string CompilersDir => Path.Combine(AppContext.BaseDirectory, "Compilers-files");
 
+    // Layered-window compositing = flicker-free animated glass.
+    protected override CreateParams CreateParams
+    {
+        get { var cp = base.CreateParams; cp.ExStyle |= 0x02000000; return cp; }
+    }
+
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+        UiNative.DarkTitleBar(Handle);
+    }
+
     public MainForm()
     {
+        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(96f, 96f);
         Text = "PPSX33  ·  PlayStation 3 Recompiler";
-        Width = 1100;
-        Height = 720;
-        MinimumSize = new Size(900, 560);
+        Width = 1180;
+        Height = 780;
+        MinimumSize = new Size(1020, 740);
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Bg;
         ForeColor = TextPri;
-        Font = new Font("Segoe UI", 9.25f);
+        Font = Theme.Font(9.25f);
+        DoubleBuffered = true;
 
-        var header = new Panel { Dock = DockStyle.Top, Height = 52, BackColor = Panel };
-        var title = new Label
-        {
-            Text = "PPSX33",
-            Font = new Font("Segoe UI Semibold", 16f),
-            ForeColor = TextPri,
-            AutoSize = true,
-            Location = new Point(16, 12)
-        };
-        var subtitle = new Label
-        {
-            Text = "Static recompiler  ·  PPU / SPU / RSX",
-            ForeColor = TextSec,
-            AutoSize = true,
-            Location = new Point(110, 18)
-        };
-        header.Controls.Add(title);
-        header.Controls.Add(subtitle);
+        // ---- stage: animated XMB-style backdrop hosting every glass panel
+        var stage = new LiquidBackdrop { Dock = DockStyle.Fill, Padding = new Padding(8) };
+        var grid = new FlowGrid { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 3 };
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280));
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 80));
+        grid.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
 
-        var rail = new Panel { Dock = DockStyle.Left, Width = 220, BackColor = Panel, Padding = new Padding(12) };
+        // ---- header
+        var header = new HeaderBar { Dock = DockStyle.Fill, Radius = 20 };
+
+        // ---- workflow rail
+        var rail = new GlassPanel { Dock = DockStyle.Fill, AutoScroll = true };
+        rail.SetInset(16, 12, 16, 12);
         var railTitle = new Label
         {
             Text = "WORKFLOW",
-            ForeColor = TextSec,
-            Font = new Font("Segoe UI Semibold", 8f),
+            ForeColor = Theme.TextSec,
+            BackColor = Color.Transparent,
+            Font = Theme.Semi(8f),
             Dock = DockStyle.Top,
             Height = 28,
             TextAlign = ContentAlignment.MiddleLeft
         };
 
-        StylePrimaryButton(_btnDecrypt, "Decrypt EBOOT");
-        StyleStepButton(_btnLoad, "Load ELF");
-        StyleStepButton(_btnLift, "Decompile");
-        StyleStepButton(_btnBuild, "Build");
-        StylePrimaryButton(_btnRun, "Run game.exe");
-        StyleStepButton(_btnCopy, "Copy to game folder");
-        StyleDangerButton(_btnCancel, "Stop / Cancel");
+        StylePrimaryButton(_btnDecrypt, "Decrypt EBOOT", 0);
+        StyleStepButton(_btnLoad, "Load ELF", 1);
+        StyleStepButton(_btnLift, "Decompile", 2);
+        StyleStepButton(_btnBuild, "Build", 3);
+        StylePrimaryButton(_btnRun, "Run game.exe", 4);
+        StyleStepButton(_btnCopy, "Copy to game folder", 5);
+        StyleDangerButton(_btnCancel, "Stop / Cancel", 6);
         _btnLift.Enabled = false;
         _btnBuild.Enabled = false;
         _btnRun.Enabled = false;
@@ -109,100 +117,133 @@ public sealed class MainForm : Form
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
             AutoSize = true,
-            Padding = new Padding(0, 4, 0, 0)
+            BackColor = Color.Transparent,
+            Padding = new Padding(0, 2, 0, 0)
         };
         foreach (var b in new[] { _btnDecrypt, _btnLoad, _btnLift, _btnBuild, _btnRun, _btnCopy, _btnCancel })
         {
-            b.Width = 190;
-            b.Margin = new Padding(0, 0, 0, 8);
+            b.Width = 224;
+            b.Margin = new Padding(0, 0, 0, 7);
             btnStack.Controls.Add(b);
         }
 
         var optsTitle = new Label
         {
             Text = "OPTIONS",
-            ForeColor = TextSec,
-            Font = new Font("Segoe UI Semibold", 8f),
+            ForeColor = Theme.TextSec,
+            BackColor = Color.Transparent,
+            Font = Theme.Semi(8f),
             Dock = DockStyle.Top,
-            Height = 28,
-            TextAlign = ContentAlignment.MiddleLeft
+            Height = 32,
+            TextAlign = ContentAlignment.BottomLeft
         };
-        var optsPanel = new Panel { Dock = DockStyle.Top, Height = 100, BackColor = Panel };
+        var optsPanel = new Panel { Dock = DockStyle.Top, Height = 132, BackColor = Color.Transparent };
 
-        var gfxLbl = new Label { Text = "Graphics backend", ForeColor = TextSec, Location = new Point(0, 4), AutoSize = true };
+        var gfxLbl = new Label { Text = "Graphics backend", ForeColor = TextSec, BackColor = Color.Transparent, Location = new Point(0, 6), AutoSize = true };
         _gfx.DropDownStyle = ComboBoxStyle.DropDownList;
-        _gfx.Width = 190;
-        _gfx.Location = new Point(0, 24);
         _gfx.FlatStyle = FlatStyle.Flat;
         _gfx.BackColor = Panel2;
         _gfx.ForeColor = TextPri;
+        _gfx.DrawMode = DrawMode.OwnerDrawFixed;
+        _gfx.ItemHeight = 22;
+        _gfx.DrawItem += (s, e) =>
+        {
+            if (e.Index < 0) return;
+            bool sel = (e.State & DrawItemState.Selected) != 0 && (e.State & DrawItemState.ComboBoxEdit) == 0;
+            using (var bg = new SolidBrush(sel ? Color.FromArgb(56, 92, 190) : Panel2)) e.Graphics.FillRectangle(bg, e.Bounds);
+            TextRenderer.DrawText(e.Graphics, _gfx.Items[e.Index]?.ToString() ?? "", _gfx.Font,
+                new Rectangle(e.Bounds.X + 2, e.Bounds.Y, e.Bounds.Width - 2, e.Bounds.Height), TextPri,
+                TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+        };
         _gfx.Items.AddRange(new object[] { "D3D10", "D3D11", "Vulkan" });
         _gfx.SelectedItem = _settings.GraphicsBackend;
         if (_gfx.SelectedIndex < 0) _gfx.SelectedIndex = 1;
+        UiNative.DarkControl(_gfx, "DarkMode_CFD");
+        var gfxFrame = new FieldFrame { Fill = Panel2, Location = new Point(0, 28), Size = new Size(224, 34), Padding = new Padding(10, 0, 6, 0) };
+        gfxFrame.Controls.Add(_gfx);
 
-        var thrLbl = new Label { Text = "CPU threads", ForeColor = TextSec, Location = new Point(0, 56), AutoSize = true };
+        var thrLbl = new Label { Text = "CPU threads", ForeColor = TextSec, BackColor = Color.Transparent, Location = new Point(0, 74), AutoSize = true };
         _threads.Minimum = 1;
         _threads.Maximum = 64;
-        _threads.Width = 80;
-        _threads.Location = new Point(0, 74);
+        _threads.BorderStyle = BorderStyle.None;
         _threads.BackColor = Panel2;
         _threads.ForeColor = TextPri;
         _threads.Value = Math.Clamp(_settings.PpuThreads, 1, 64);
+        UiNative.DarkControl(_threads, "DarkMode_Explorer");
+        var thrFrame = new FieldFrame { Fill = Panel2, Location = new Point(0, 96), Size = new Size(104, 34), Padding = new Padding(10, 0, 6, 0) };
+        thrFrame.Controls.Add(_threads);
 
         optsPanel.Controls.Add(gfxLbl);
-        optsPanel.Controls.Add(_gfx);
+        optsPanel.Controls.Add(gfxFrame);
         optsPanel.Controls.Add(thrLbl);
-        optsPanel.Controls.Add(_threads);
+        optsPanel.Controls.Add(thrFrame);
 
         rail.Controls.Add(optsPanel);
         rail.Controls.Add(optsTitle);
         rail.Controls.Add(btnStack);
         rail.Controls.Add(railTitle);
 
-        var statusBar = new Panel { Dock = DockStyle.Bottom, Height = 32, BackColor = Panel };
+        // ---- status bar
+        var statusBar = new GlassPanel { Dock = DockStyle.Fill, Radius = 16 };
+        statusBar.SetInset(18, 0, 14, 0);
         _status.Text = "Ready";
         _status.ForeColor = TextSec;
-        _status.AutoSize = true;
-        _status.Location = new Point(12, 8);
+        _status.BackColor = Color.Transparent;
+        _status.Font = Theme.Semi(9f);
+        _status.AutoSize = false;
+        _status.Dock = DockStyle.Fill;
+        _status.TextAlign = ContentAlignment.MiddleLeft;
         _progress.Style = ProgressBarStyle.Marquee;
         _progress.MarqueeAnimationSpeed = 0;
-        _progress.Width = 180;
-        _progress.Height = 12;
-        _progress.Location = new Point(Width - 220, 10);
-        _progress.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        _progress.Width = 220;
+        _progress.Dock = DockStyle.Right;
         statusBar.Controls.Add(_status);
         statusBar.Controls.Add(_progress);
 
-        var projStrip = new Panel { Dock = DockStyle.Top, Height = 36, BackColor = Panel2 };
+        // ---- project strip
+        var projStrip = new GlassPanel { Dock = DockStyle.Fill, Radius = 16 };
+        projStrip.SetInset(44, 0, 14, 0);
+        projStrip.Decorate = (g, r) =>
+        {
+            float k = Dpi.K(projStrip), cx = r.X + 24 * k, cy = r.Y + r.Height / 2f, s = 8 * k;
+            using var pen = new Pen(Color.FromArgb(210, Theme.Cyan), 1.5f) { LineJoin = System.Drawing.Drawing2D.LineJoin.Round };
+            g.DrawPolygon(pen, new[] { new PointF(cx, cy - s), new PointF(cx + s, cy - s * .5f), new PointF(cx + s, cy + s * .5f), new PointF(cx, cy + s), new PointF(cx - s, cy + s * .5f), new PointF(cx - s, cy - s * .5f) });
+            using var db = new SolidBrush(Color.FromArgb(230, Theme.Cyan));
+            g.FillEllipse(db, cx - 2 * k, cy - 2 * k, 4 * k, 4 * k);
+        };
         _project.Text = "No project loaded";
         _project.ForeColor = TextSec;
-        _project.AutoSize = true;
-        _project.Location = new Point(12, 10);
+        _project.BackColor = Color.Transparent;
+        _project.AutoSize = false;
+        _project.Dock = DockStyle.Fill;
+        _project.TextAlign = ContentAlignment.MiddleLeft;
         projStrip.Controls.Add(_project);
 
-        var tabs = new TabControl { Dock = DockStyle.Fill, Padding = new Point(12, 8) };
+        // ---- tabs (console / report / roadmap)
+        var tabs = new GlassTabs { Dock = DockStyle.Fill };
         StyleTextBox(_log);
         StyleTextBox(_report);
-
-        var logTab = new TabPage("Console") { BackColor = Bg };
-        logTab.Controls.Add(_log);
-        var reportTab = new TabPage("Lift report") { BackColor = Bg };
-        reportTab.Controls.Add(_report);
-        var roadmapTab = new TabPage("Roadmap") { BackColor = Bg };
         var roadmapBox = new TextBox();
         StyleTextBox(roadmapBox);
         roadmapBox.Text = RoadmapText;
-        roadmapTab.Controls.Add(roadmapBox);
+        tabs.AddPage("Console", ConsoleFrame(_log));
+        tabs.AddPage("Lift report", ConsoleFrame(_report));
+        tabs.AddPage("Roadmap", ConsoleFrame(roadmapBox));
 
-        tabs.TabPages.Add(logTab);
-        tabs.TabPages.Add(reportTab);
-        tabs.TabPages.Add(roadmapTab);
+        var main = new FlowGrid { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));
+        main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        main.Controls.Add(projStrip, 0, 0);
+        main.Controls.Add(tabs, 0, 1);
 
-        Controls.Add(tabs);
-        Controls.Add(projStrip);
-        Controls.Add(statusBar);
-        Controls.Add(rail);
-        Controls.Add(header);
+        grid.Controls.Add(header, 0, 0);
+        grid.SetColumnSpan(header, 2);
+        grid.Controls.Add(rail, 0, 1);
+        grid.Controls.Add(main, 1, 1);
+        grid.Controls.Add(statusBar, 0, 2);
+        grid.SetColumnSpan(statusBar, 2);
+        stage.Controls.Add(grid);
+        Controls.Add(stage);
 
         _btnDecrypt.Click += async (_, _) => await DecryptEbootAndLoad();
         _btnLoad.Click += (_, _) => LoadElf(null);
@@ -232,6 +273,13 @@ public sealed class MainForm : Form
         Append("Run game.exe streams console output here; auto-stops after " + (StallQuietMs / 1000) + "s with no new output.");
     }
 
+    private static FieldFrame ConsoleFrame(TextBox t)
+    {
+        var f = new FieldFrame { Fill = Theme.Console, Dock = DockStyle.Fill, FillChild = true, Padding = new Padding(14, 12, 6, 12), Radius = 14 };
+        f.Controls.Add(t);
+        return f;
+    }
+
     private static void StyleTextBox(TextBox t)
     {
         t.Multiline = true;
@@ -239,49 +287,35 @@ public sealed class MainForm : Form
         t.ScrollBars = ScrollBars.Both;
         t.Dock = DockStyle.Fill;
         t.BorderStyle = BorderStyle.None;
-        t.BackColor = Bg;
-        t.ForeColor = TextPri;
-        t.Font = new Font("Consolas", 9.25f);
+        t.BackColor = Theme.Console;
+        t.ForeColor = Color.FromArgb(196, 222, 255);
+        t.Font = Theme.Mono(9.25f);
         t.WordWrap = false;
+        UiNative.DarkControl(t, "DarkMode_Explorer");
     }
 
-    private static void StylePrimaryButton(Button b, string text)
+    private static void StylePrimaryButton(GlassButton b, string text, int glyph = -1)
     {
         b.Text = text;
-        b.FlatStyle = FlatStyle.Flat;
-        b.FlatAppearance.BorderSize = 0;
-        b.BackColor = Accent;
-        b.ForeColor = Color.White;
+        b.Kind = GlassKind.Primary;
+        b.Glyph = glyph;
+        b.Height = 40;
+    }
+
+    private static void StyleStepButton(GlassButton b, string text, int glyph = -1)
+    {
+        b.Text = text;
+        b.Kind = GlassKind.Step;
+        b.Glyph = glyph;
+        b.Height = 38;
+    }
+
+    private static void StyleDangerButton(GlassButton b, string text, int glyph = -1)
+    {
+        b.Text = text;
+        b.Kind = GlassKind.Danger;
+        b.Glyph = glyph;
         b.Height = 36;
-        b.Cursor = Cursors.Hand;
-        b.Font = new Font("Segoe UI Semibold", 9.25f);
-        b.MouseEnter += (_, _) => { if (b.Enabled) b.BackColor = AccentHover; };
-        b.MouseLeave += (_, _) => { if (b.Enabled) b.BackColor = Accent; };
-    }
-
-    private static void StyleStepButton(Button b, string text)
-    {
-        b.Text = text;
-        b.FlatStyle = FlatStyle.Flat;
-        b.FlatAppearance.BorderColor = Border;
-        b.FlatAppearance.BorderSize = 1;
-        b.BackColor = Panel2;
-        b.ForeColor = TextPri;
-        b.Height = 34;
-        b.Cursor = Cursors.Hand;
-        b.MouseEnter += (_, _) => { if (b.Enabled) b.BackColor = Color.FromArgb(48, 48, 56); };
-        b.MouseLeave += (_, _) => { if (b.Enabled) b.BackColor = Panel2; };
-    }
-
-    private static void StyleDangerButton(Button b, string text)
-    {
-        b.Text = text;
-        b.FlatStyle = FlatStyle.Flat;
-        b.FlatAppearance.BorderSize = 0;
-        b.BackColor = Color.FromArgb(60, 40, 40);
-        b.ForeColor = Color.FromArgb(255, 160, 160);
-        b.Height = 32;
-        b.Cursor = Cursors.Hand;
     }
 
     private static string SafeVersion()
