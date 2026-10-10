@@ -1,4 +1,4 @@
-# God of War III (GOW3): Lift and runtime record
+# <img src="https://commons.wikimedia.org/wiki/Special:FilePath/God_of_War_Logo.png" width="150" alt="God of War logo" /> God of War III (GOW3): Lift and runtime record
 
 ## Static lift statistics
 
