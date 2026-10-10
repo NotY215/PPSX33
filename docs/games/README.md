@@ -1,6 +1,6 @@
 # PPSX33 Game Coverage Records
 
-<p align="center"><img src="https://raw.githubusercontent.com/NotY215/PPSX33/main/assets/ppsx33-logo.svg" alt="PPSX33 circular logo" width="120" /></p>
+<p align="center"><img src="https://raw.githubusercontent.com/NotY215/PPSX33/main/assets/ppsx33-logo.png" alt="PPSX33 circular logo" width="120" /></p>
 
 
 Static lifting snapshots only. Not proof of playability.
