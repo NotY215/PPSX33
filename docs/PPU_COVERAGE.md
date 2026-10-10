@@ -26,7 +26,7 @@ Raw lift reports: [GOW3](games/GOW3/GOW3_lift_report.txt), [Minecraft](games/Min
 
 ## Interpreting the metric
 
-These reports indicate that the lifter classified every instruction instance in each recorded input snapshot as translated. They do not prove that each emitted operation preserves PowerPC semantics. Approximate operations and no-op fallbacks can still be counted as translated.
+Grand Theft Auto: San Andreas is planned as the next coverage pass, followed by Grand Theft Auto V. Their folders are planning records only; no instruction totals or coverage results have been measured for either title yet. These reports indicate that the lifter classified every instruction instance in each recorded input snapshot as translated. They do not prove that each emitted operation preserves PowerPC semantics. Approximate operations and no-op fallbacks can still be counted as translated.
 
 Coverage is measured against the input that was analyzed. A different game, firmware revision, executable, or code path may exercise instruction forms absent from a snapshot. Keep these measurements separate:
 
