@@ -2,29 +2,51 @@ using System.Text.Json;
 
 namespace PS3Recomp.Gui;
 
-/// <summary>User settings under %AppData%/PPSX33/settings.json.</summary>
+/// <summary>
+/// Persisted under %APPDATA%/PPSX33/settings.json
+/// Holds RPCS3 path, last ELF path, last BIN (EBOOT) path, graphics + threads.
+/// </summary>
 public sealed class Settings
 {
     public string GraphicsBackend { get; set; } = "D3D11";
-    public int PpuThreads { get; set; } = 4;
+    public int PpuThreads { get; set; } = Math.Clamp(Environment.ProcessorCount, 1, 16);
     public string Rpcs3Path { get; set; } = "";
     public string LastElfPath { get; set; } = "";
     public string LastBinPath { get; set; } = "";
 
-    public static string DataDir =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PPSX33");
+    public static string DataDir
+    {
+        get
+        {
+            string baseDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            if (string.IsNullOrWhiteSpace(baseDir))
+                baseDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData", "Roaming");
+            string dir = Path.Combine(baseDir, "PPSX33");
+            try { Directory.CreateDirectory(dir); } catch { /* ignore */ }
+            return dir;
+        }
+    }
 
-    private static string FilePath => Path.Combine(DataDir, "settings.json");
+    static string FilePath => Path.Combine(DataDir, "settings.json");
+
+    static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true
+    };
 
     public static Settings Load()
     {
         try
         {
-            Directory.CreateDirectory(DataDir);
             if (File.Exists(FilePath))
-                return JsonSerializer.Deserialize<Settings>(File.ReadAllText(FilePath)) ?? new Settings();
+            {
+                string json = File.ReadAllText(FilePath);
+                var s = JsonSerializer.Deserialize<Settings>(json, JsonOpts);
+                if (s != null) return s;
+            }
         }
-        catch { }
+        catch { /* fall through to defaults */ }
         return new Settings();
     }
 
@@ -33,8 +55,8 @@ public sealed class Settings
         try
         {
             Directory.CreateDirectory(DataDir);
-            File.WriteAllText(FilePath, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(FilePath, JsonSerializer.Serialize(this, JsonOpts));
         }
-        catch { }
+        catch { /* ignore IO errors */ }
     }
 }
