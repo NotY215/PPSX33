@@ -1,4 +1,4 @@
-// ps3rt - guest memory + LV2 HLE + SPU interpreter + PRX/NID
+// ps3rt - guest memory + LV2 HLE + SPU + PRX/NID + pad stub
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include "nid_table.h"
@@ -28,6 +28,11 @@ static void wr_be32_guest(uint64_t addr, uint32_t val) {
     if (!g_mem || addr + 4 > g_mem_size) return;
     uint8_t b[4] = { (uint8_t)(val>>24), (uint8_t)(val>>16), (uint8_t)(val>>8), (uint8_t)val };
     std::memcpy(g_mem + addr, b, 4);
+}
+static uint32_t rd_be32_guest(uint64_t addr) {
+    if (!g_mem || addr + 4 > g_mem_size) return 0;
+    return ((uint32_t)g_mem[addr] << 24) | ((uint32_t)g_mem[addr+1] << 16) |
+           ((uint32_t)g_mem[addr+2] << 8) | (uint32_t)g_mem[addr+3];
 }
 
 static uint64_t guest_alloc(uint64_t size, uint64_t align) {
@@ -172,12 +177,21 @@ PS3RT_API int ps3rt_spu_mfc_dma(int id, uint32_t lsa, uint64_t ea, uint32_t size
     return 0;
 }
 
+// ---- Pad state (keyboard mapped at host; filled by cellPadGetData) ----
+static uint16_t g_pad_buttons = 0;
+static int16_t  g_pad_lx = 0x80, g_pad_ly = 0x80, g_pad_rx = 0x80, g_pad_ry = 0x80;
+
+PS3RT_API void ps3rt_pad_set(uint16_t buttons, int16_t lx, int16_t ly, int16_t rx, int16_t ry) {
+    g_pad_buttons = buttons;
+    g_pad_lx = lx; g_pad_ly = ly; g_pad_rx = rx; g_pad_ry = ry;
+}
+
 PS3RT_API void ps3rt_syscall(PPUContext* c) {
     if (!c) return;
     uint64_t num = c->gpr[11];
     uint64_t r3 = c->gpr[3], r4 = c->gpr[4], r5 = c->gpr[5], r6 = c->gpr[6];
     static int sys_log = 0;
-    if (sys_log < 64) {
+    if (sys_log < 96) {
         std::fprintf(stderr, "[lv2] sc %llu r3=%llx r4=%llx r5=%llx r6=%llx\n",
             (unsigned long long)num, (unsigned long long)r3, (unsigned long long)r4,
             (unsigned long long)r5, (unsigned long long)r6);
@@ -192,28 +206,83 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
         } else c->gpr[3] = 0;
         break;
     case 4: c->gpr[3] = 0; break;
-    case 18: {
+    case 14: // sys_process_exit
+        c->halted = true; c->gpr[3] = 0; break;
+    case 18: { // sys_memory_allocate
         uint64_t size = r3, out = r5;
         uint64_t va = guest_alloc(size, 0x10000);
         if (va && out && out + 8 <= g_mem_size) wr_be64_guest(out, va);
         c->gpr[3] = va ? 0 : 0x80010004ull;
         break;
     }
-    case 19: c->gpr[3] = 0; break;
-    case 20: case 22: case 25:
+    case 19: c->gpr[3] = 0; break; // sys_memory_free
+    case 20: case 22: case 25: // memory get page size / available
         if (r3 && r3 + 8 <= g_mem_size) wr_be64_guest(r3, 480ull * 1024 * 1024);
         c->gpr[3] = 0; break;
-    case 352: {
-        // GOW3: r3=size(huge), r4=outptr, r5=align, r6=0
+    case 30: case 31: // tty write/read
+        c->gpr[3] = 0; break;
+    case 41: case 43: case 44: case 48: case 52: case 53: // ppu thread
+        if ((num == 41 || num == 52) && r4 && r4 + 8 <= g_mem_size) {
+            static uint32_t tid = 0x2000;
+            wr_be32_guest(r4, ++tid);
+        }
+        c->gpr[3] = 0; break;
+    case 70: case 73: // timer
+        c->gpr[3] = 0; break;
+    case 90: case 91: case 93: case 94: // mutex
+        if (num == 90 && r4 && r4 + 4 <= g_mem_size) {
+            static uint32_t mid = 0x3000;
+            wr_be32_guest(r4, ++mid);
+        }
+        c->gpr[3] = 0; break;
+    case 96: case 97: case 98: case 99: case 100: // lwmutex
+        if (num == 96 && r4 && r4 + 4 <= g_mem_size) {
+            static uint32_t lwid = 0x4000;
+            wr_be32_guest(r4, ++lwid);
+        }
+        c->gpr[3] = 0; break;
+    case 105: case 106: case 107: case 108: case 109: // cond
+        if (num == 105 && r4 && r4 + 4 <= g_mem_size) {
+            static uint32_t cid = 0x5000;
+            wr_be32_guest(r4, ++cid);
+        }
+        c->gpr[3] = 0; break;
+    case 114: case 115: case 116: case 117: case 118: // rwlock
+        c->gpr[3] = 0; break;
+    case 120: case 121: case 122: case 123: case 124: // semaphore
+        if (num == 120 && r4 && r4 + 4 <= g_mem_size) {
+            static uint32_t sid = 0x6000;
+            wr_be32_guest(r4, ++sid);
+        }
+        c->gpr[3] = 0; break;
+    case 128: case 129: case 130: case 131: case 132: // event queue
+        if (num == 128 && r4 && r4 + 4 <= g_mem_size) {
+            static uint32_t eid = 0x7000;
+            wr_be32_guest(r4, ++eid);
+        }
+        c->gpr[3] = 0; break;
+    case 133: case 134: // event queue receive — non-blocking “no event”
+        c->gpr[3] = 0x8001000Aull; break;
+    case 135: case 136: case 137: case 138:
+        c->gpr[3] = 0; break;
+    case 141: case 142: case 143: case 144: case 145: // event port / flag
+        if ((num == 141 || num == 143) && r4 && r4 + 4 <= g_mem_size) {
+            static uint32_t fid = 0x8000;
+            wr_be32_guest(r4, ++fid);
+        }
+        c->gpr[3] = 0; break;
+    case 348: case 349: // spu thread group
+        if (r4 && r4 + 4 <= g_mem_size) wr_be32_guest(r4, 1);
+        c->gpr[3] = 0; break;
+    case 352: { // sys_mmapper_allocate_address
         uint64_t size = r3, flags = r4, align = r5 ? r5 : 0x10000, out = r6;
         if (!out && flags >= 0x10000 && flags + 8 <= g_mem_size) out = flags;
         if (size == 0 || size >= 0x08000000ull) {
             std::fprintf(stderr, "[lv2] mmapper size 0x%llx -> 1MiB (out=0x%llx)\n",
                 (unsigned long long)size, (unsigned long long)out);
             size = 0x100000;
-        } else if (size > (kAllocEnd - 0x08000000ull)) {
+        } else if (size > (kAllocEnd - 0x08000000ull))
             size = 0x100000;
-        }
         if (align < 0x1000) align = 0x10000;
         uint64_t va = guest_alloc(size, align);
         if (va && out && out + 8 <= g_mem_size) {
@@ -231,61 +300,168 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
         c->gpr[3] = va ? 0 : 0x80010004ull;
         break;
     }
-    case 353: case 354: case 355: case 356: case 357: c->gpr[3] = 0; break;
-    case 348: case 349:
-        if (r4 && r4 + 4 <= g_mem_size) wr_be32_guest(r4, 1);
+    case 353: case 354: case 355: case 356: case 357:
         c->gpr[3] = 0; break;
-    // lwmutex / cond / sem / event / thread / timer / prx
-    case 41: case 43: case 44: case 48: case 52: case 53:
-    case 70: case 73:
-    case 90: case 91: case 93: case 94:
-    case 96: case 97: case 98: case 99: case 100:
-    case 105: case 106: case 107: case 108: case 109:
-    case 114: case 115: case 116: case 117: case 118:
-    case 120: case 121: case 122: case 123: case 124:
-    case 128: case 129: case 130: case 131: case 132: case 133: case 134: case 135: case 136: case 137: case 138:
-    case 141: case 142: case 143: case 144: case 145:
-    case 403:
-    case 480: case 481: case 482: case 483: case 484: case 485: case 486: case 487: case 488: case 494:
-    case 801: case 802: case 803: case 804: case 808: case 809: case 811: case 812: case 814:
-        if ((num == 96 || num == 105 || num == 141 || num == 41 || num == 128) && r4 && r4 + 8 <= g_mem_size) {
-            static uint32_t fake_id = 0x1000;
-            wr_be32_guest(r4, ++fake_id);
+    case 403: // prx load module path — return fake module id
+        if (r4 && r4 + 4 <= g_mem_size) {
+            static uint32_t mid = 0x9000;
+            wr_be32_guest(r4, ++mid);
         }
-        if (num == 133 || num == 134) c->gpr[3] = 0x8001000Aull; // EBUSY for event receive
-        else c->gpr[3] = 0;
-        break;
+        c->gpr[3] = 0; break;
+    case 480: case 481: case 482: case 483: case 484: case 485:
+    case 486: case 487: case 488: case 494:
+        c->gpr[3] = 0; break;
+    case 801: case 802: case 803: case 804: case 808: case 809:
+    case 811: case 812: case 814: // fs
+        c->gpr[3] = 0; break;
     default:
         c->gpr[3] = 0;
         break;
     }
 }
 
+// ---- PRX / NID dispatch with real GCM + pad behavior ----
 static int g_prx_log = 0;
+static uint64_t g_gcm_fifo = 0;
+static uint32_t g_gcm_fifo_size = 0x100000;
+static int g_gcm_inited = 0;
+
 static int prx_dispatch(PPUContext* c, int kind, const char* name) {
     uint32_t maybe_nid = (uint32_t)c->gpr[11];
+    // Some call sites put NID in r0 / lr residue; also try gpr[0]
+    if (!nid_lookup(maybe_nid))
+        maybe_nid = (uint32_t)c->gpr[0];
     const NidEntry* e = nid_lookup(maybe_nid);
     if (e) {
-        if (g_prx_log < 48) {
+        if (g_prx_log < 64) {
             std::fprintf(stderr, "[prx] %s::%s nid=0x%08X\n", e->module, e->name, e->nid);
             ++g_prx_log;
         }
-        kind = e->kind; name = e->name;
-    } else if (g_prx_log < 24) {
+        kind = e->kind;
+        name = e->name;
+        // ---- cellGcmSys ----
+        if (e->nid == 0x15BAE46B) { // cellGcmInitBody
+            uint64_t fifo = c->gpr[3];
+            uint32_t size = (uint32_t)c->gpr[4];
+            if (!size) size = 0x100000;
+            g_gcm_fifo = fifo;
+            g_gcm_fifo_size = size;
+            g_gcm_inited = 1;
+            ps3rt_rsx_init(fifo, size);
+            c->gpr[3] = 0;
+            return 0;
+        }
+        if (e->nid == 0xD81D0D2D) { // cellGcmSetFlip
+            ps3rt_rsx_flip((uint32_t)c->gpr[3]);
+            c->gpr[3] = 0;
+            return 0;
+        }
+        if (e->nid == 0xA547ADDE) { // cellGcmGetFlipStatus
+            c->gpr[3] = 0; // flipped
+            return 0;
+        }
+        if (e->nid == 0xB2E761D4) { // cellGcmResetFlipStatus
+            c->gpr[3] = 0;
+            return 0;
+        }
+        if (e->nid == 0xF80196C0) { // cellGcmSetWaitFlip
+            c->gpr[3] = 0;
+            return 0;
+        }
+        if (e->nid == 0x55A14C05) { // cellGcmGetControlRegister — return a fake control struct addr
+            static uint64_t ctrl = 0;
+            if (!ctrl) ctrl = guest_alloc(0x1000, 0x1000);
+            c->gpr[3] = ctrl;
+            return 0;
+        }
+        if (e->nid == 0x5F909B17) { // cellGcmGetLabelAddress
+            static uint64_t labels = 0;
+            if (!labels) labels = guest_alloc(0x2000, 0x1000);
+            c->gpr[3] = labels + ((c->gpr[3] & 0xFF) * 0x10);
+            return 0;
+        }
+        if (e->nid == 0x4524FE95) { // cellGcmGetConfiguration
+            // Write a minimal CellGcmConfig-like block if out ptr in r3
+            uint64_t out = c->gpr[3];
+            if (out && out + 32 <= g_mem_size) {
+                wr_be32_guest(out + 0, 1280); // local memory size placeholder fields
+                wr_be32_guest(out + 4, 720);
+                wr_be32_guest(out + 8, 0);
+            }
+            c->gpr[3] = 0;
+            return 0;
+        }
+        if (e->nid == 0xA53D12AE) { // cellGcmSetDisplayBuffer
+            c->gpr[3] = 0;
+            return 0;
+        }
+        if (e->nid == 0x98396A7C) { // cellGcmSetFlipMode
+            c->gpr[3] = 0;
+            return 0;
+        }
+        // ---- sys_io / cellPad ----
+        if (e->nid == 0x1C936E6D) { // cellPadInit
+            c->gpr[3] = 0;
+            return 0;
+        }
+        if (e->nid == 0xA703A51D) { // cellPadGetInfo2
+            uint64_t out = c->gpr[3];
+            if (out && out + 16 <= g_mem_size) {
+                wr_be32_guest(out + 0, 1); // max_connect
+                wr_be32_guest(out + 4, 1); // now_connect
+                wr_be32_guest(out + 8, 1); // system_info
+            }
+            c->gpr[3] = 0;
+            return 0;
+        }
+        if (e->nid == 0x3AAAD464) { // cellPadGetData
+            // r3=port, r4=CellPadData*
+            uint64_t out = c->gpr[4];
+            if (out && out + 24 <= g_mem_size) {
+                wr_be32_guest(out + 0, 24); // len
+                wr_be16_guest_via32: ;
+                // buttons at +4 (BE16)
+                g_mem[out + 4] = (uint8_t)(g_pad_buttons >> 8);
+                g_mem[out + 5] = (uint8_t)(g_pad_buttons & 0xFF);
+                g_mem[out + 6] = (uint8_t)g_pad_lx;
+                g_mem[out + 7] = (uint8_t)g_pad_ly;
+                g_mem[out + 8] = (uint8_t)g_pad_rx;
+                g_mem[out + 9] = (uint8_t)g_pad_ry;
+            }
+            c->gpr[3] = 0;
+            return 0;
+        }
+        if (e->nid == 0x0D5F2C14) { // cellPadEnd
+            c->gpr[3] = 0;
+            return 0;
+        }
+        // ---- sysmodule / audio / spurs / sysutil / np — success stubs ----
+        if (kind >= 2 && kind <= 10) {
+            c->gpr[3] = 0;
+            return 0;
+        }
+    } else if (g_prx_log < 32) {
         std::fprintf(stderr, "[prx] stub kind=%d %s pc=0x%llx nid=0x%08X\n",
             kind, name ? name : "?", (unsigned long long)c->pc, maybe_nid);
         ++g_prx_log;
     }
     (void)kind; (void)name;
+    // GCM family fallback: if already inited, treat unknown gcm as success
+    if (kind == 1) {
+        c->gpr[3] = 0;
+        return 0;
+    }
     c->gpr[3] = 0;
     return 0;
 }
+
 PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
     if (!c) return -1;
     if (pc == 0x39800000ull || (pc & 0xFFFF0000ull) == 0x39800000ull)
         return prx_dispatch(c, 1, "cellGcmSys");
     return prx_dispatch(c, prx_module_kind("unknown"), "import");
 }
+
 PS3RT_API void ps3rt_unimplemented(PPUContext* c, uint32_t opcode, uint64_t pc) {
     static int n = 0;
     if (n < 8) {
