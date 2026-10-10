@@ -1,25 +1,41 @@
 # <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_San_Andreas_logo.svg" width="180" alt="Grand Theft Auto: San Andreas logo" /> Grand Theft Auto: San Andreas
 
-This folder is reserved for future PPSX33 analysis of Grand Theft Auto: San Andreas.
+This folder records the current PPSX33 static PPU lift and ELF-analysis snapshot for Grand Theft Auto: San Andreas.
 
-## Planned work
+## Current results
 
-- [ ] Identify and document the supported, legally obtained input ELF format.
-- [ ] Run static ELF analysis and archive the resulting `analysis_report.txt`.
-- [ ] Run the PPU lifter and archive the resulting `lift_report.txt`.
-- [ ] Record instruction totals, translated and unimplemented counts, chunk totals, ELF segments, entry OPD, OPD entries, PRX/module string hits, and embedded SPU image findings where available.
-- [ ] Review approximate operations, fallback paths, and import resolution separately from raw translation coverage.
-- [ ] Add regression tests for newly discovered PPU instruction patterns.
+| Lift metric | Result |
+| --- | ---: |
+| Instruction instances | 1,893,428 |
+| Translated instances reported | 1,893,428 |
+| Unimplemented instances reported | 0 |
+| Chunks | 232 |
+| Reported static translation coverage | 100% for this input snapshot |
 
-## Current status
+| ELF / analysis metric | Result |
+| --- | ---: |
+| PT_LOAD segments | 5 |
+| Entry OPD | `0x77b718` |
+| Detected symbols | 0 |
+| OPD entries | 4,097 |
+| PRX/module string hits | 23 |
+| Embedded SPU images detected | 0 |
 
-**Planned; not yet analyzed.** No lift or analysis metrics are recorded for this title yet. Do not interpret missing reports as zero instructions or 100% coverage.
+## Reports
 
-## Files
+- [`lift_report.txt`](lift_report.txt)
+- [`analysis_report.txt`](analysis_report.txt)
 
-- [Grand Theft Auto - San Andreas.md](Grand%20Theft%20Auto%20-%20San%20Andreas.md): title-specific tracking record.
-- `lift_report.txt` and `analysis_report.txt`: to be added after a real analysis run.
+## Follow-up work
 
-## Important notes
+- [ ] Record the exact input build, region, and PPSX33 revision used for these reports.
+- [ ] Review approximate operations, fallback paths, and opcode semantics independently of the translated count.
+- [ ] Review PRX/module strings and OPD discovery as heuristic findings.
+- [ ] Add regression tests for any identified instruction gaps.
+- [ ] Continue with the planned GTA V opcode and coverage pass after this snapshot is documented.
 
-Static translation totals alone do not prove semantic correctness or playability. Keep any future reports tied to the exact input build and tool version. Do not commit commercial-game executables, decryption keys, or other copyrighted game data.
+## Interpretation
+
+The 100% figure means the lifter reported all 1,893,428 instruction instances in this input as translated. It does not prove that emitted operations preserve PowerPC semantics or that the title boots or is playable. Zero detected symbols does not mean the input has no functions, and zero embedded SPU images means none were detected by this analysis pass.
+
+Do not commit commercial-game executables, decryption keys, or other copyrighted game data.
