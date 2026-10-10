@@ -1,5 +1,5 @@
 // ppu_runtime.h - portable MSVC + GCC/Clang
-// Full XER CA/OV/SO + FPSCR helpers added for GOW3 correctness.
+// Full XER CA/OV/SO + FPSCR helpers + VMX VPR helpers for lifted chunks.
 #pragma once
 #include <cstdint>
 #include <cstddef>
@@ -125,6 +125,47 @@ static inline void vpr_store(PPUContext& c, unsigned v, uint64_t addr) {
     std::memcpy(c.mem + addr, c.vpr[v], 16);
 }
 
+// ---- VMX / AltiVec VPR helpers (emitted by ppu_lifter case 4) ----
+static inline void vpr_and(PPUContext& c, unsigned vd, unsigned va, unsigned vb) {
+    for (int i = 0; i < 16; ++i)
+        c.vpr[vd][i] = (uint8_t)(c.vpr[va][i] & c.vpr[vb][i]);
+}
+static inline void vpr_or(PPUContext& c, unsigned vd, unsigned va, unsigned vb) {
+    for (int i = 0; i < 16; ++i)
+        c.vpr[vd][i] = (uint8_t)(c.vpr[va][i] | c.vpr[vb][i]);
+}
+static inline void vpr_xor(PPUContext& c, unsigned vd, unsigned va, unsigned vb) {
+    for (int i = 0; i < 16; ++i)
+        c.vpr[vd][i] = (uint8_t)(c.vpr[va][i] ^ c.vpr[vb][i]);
+}
+static inline void vpr_nor(PPUContext& c, unsigned vd, unsigned va, unsigned vb) {
+    for (int i = 0; i < 16; ++i)
+        c.vpr[vd][i] = (uint8_t)~(c.vpr[va][i] | c.vpr[vb][i]);
+}
+static inline void vpr_splat_u8(PPUContext& c, unsigned vd, uint8_t val) {
+    for (int i = 0; i < 16; ++i) c.vpr[vd][i] = val;
+}
+static inline void vpr_splat_u32(PPUContext& c, unsigned vd, uint32_t val) {
+    // Big-endian lane layout in each 4-byte word (PS3 / PowerPC)
+    uint8_t b[4] = {
+        (uint8_t)((val >> 24) & 0xFF),
+        (uint8_t)((val >> 16) & 0xFF),
+        (uint8_t)((val >> 8) & 0xFF),
+        (uint8_t)(val & 0xFF)
+    };
+    for (int w = 0; w < 4; ++w)
+        for (int i = 0; i < 4; ++i)
+            c.vpr[vd][w * 4 + i] = b[i];
+}
+static inline void vpr_splat_u16(PPUContext& c, unsigned vd, uint16_t val) {
+    uint8_t b0 = (uint8_t)((val >> 8) & 0xFF);
+    uint8_t b1 = (uint8_t)(val & 0xFF);
+    for (int i = 0; i < 16; i += 2) {
+        c.vpr[vd][i] = b0;
+        c.vpr[vd][i + 1] = b1;
+    }
+}
+
 static inline float  rd_f32(PPUContext& c, uint64_t a) { uint32_t bits = rd32(c, a); float f; std::memcpy(&f, &bits, 4); return f; }
 static inline double rd_f64(PPUContext& c, uint64_t a) { uint64_t bits = rd64(c, a); double d; std::memcpy(&d, &bits, 8); return d; }
 static inline void wr_f32(PPUContext& c, uint64_t a, float f) {
@@ -135,7 +176,6 @@ static inline void wr_f64(PPUContext& c, uint64_t a, double d) {
 }
 
 // ---- XER bits (PowerPC) ----
-// xer bit 32 = CA, 33 = OV, 34 = SO
 static inline void xer_set_ca(PPUContext& c, bool v) {
     if (v) c.xer |= (1ull << 32); else c.xer &= ~(1ull << 32);
 }
@@ -151,10 +191,10 @@ static inline bool xer_ov(const PPUContext& c) { return (c.xer >> 33) & 1; }
 static inline bool xer_so(const PPUContext& c) { return (c.xer >> 34) & 1; }
 
 static inline void xer_record_ca_add32(PPUContext& c, uint32_t a, uint32_t b, uint32_t res) {
-    xer_set_ca(c, res < a);
+    (void)b; xer_set_ca(c, res < a);
 }
 static inline void xer_record_ca_add64(PPUContext& c, uint64_t a, uint64_t b, uint64_t res) {
-    xer_set_ca(c, res < a);
+    (void)b; xer_set_ca(c, res < a);
 }
 static inline void xer_record_ca_sub32(PPUContext& c, uint32_t a, uint32_t b) {
     xer_set_ca(c, a >= b);
@@ -171,7 +211,6 @@ static inline void xer_record_ov_sub32(PPUContext& c, int32_t a, int32_t b, int3
     xer_set_ov(c, ov);
 }
 
-// ---- CR field helpers (include SO into CR0 when Rc=1) ----
 static inline void set_cr_signed(PPUContext& c, int f, int64_t a, int64_t b){
     uint8_t bits = (uint8_t)((a < b ? 8 : 0) | (a > b ? 4 : 0) | (a == b ? 2 : 0));
     if (f == 0 && xer_so(c)) bits |= 1;
@@ -188,7 +227,6 @@ static inline void set_cr_fp(PPUContext& c, int f, double a, double b){
     c.cr[f] = bits;
 }
 
-// ---- FPSCR (simplified but usable) ----
 enum {
     FPSCR_FX   = 0x80000000u,
     FPSCR_FEX  = 0x40000000u,
@@ -284,7 +322,6 @@ PS3RT_API int      ps3rt_rsx_cell_gcm_syscall(PPUContext* c, uint64_t nid_or_num
 
 struct PPUChunk { uint64_t start, end; bool (*fn)(PPUContext&); };
 
-// External / import stubs: return via LR with CELL_OK. Critical for GOW3 0x39800000.
 static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     int external_escapes = 0;
     int logged = 0;
