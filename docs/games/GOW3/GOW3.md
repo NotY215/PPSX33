@@ -50,10 +50,10 @@ Conclusion: the bottleneck is **missing PRX / function-pointer resolution**, not
 
 ## Next runtime steps
 
-1. Resolve or HLE the callees that produce `0x39800000` / null (module imports, init tables).
-2. Expand LV2 syscalls used during CRT/startup.
-3. Exercise the 8 SPU images under the SPU interpreter.
-4. When GCM is initialized, wire FIFO flush to RSX core and flips.
+1. Resolve or HLE the callees that produce `0x39800000` / null (module imports, init tables). Partial: external stub returns CELL_OK via LR (rate-limited).
+2. Expand LV2 syscalls used during CRT/startup. Done for common set from analysis_report: FS (cellFs*), ppu_thread, lwmutex/lwcond, timers, memory, sysmodule/prx, SPU thread group, GCM-ish hooks.
+3. Exercise the 8 SPU images under the SPU interpreter (major ISA families present; full vector/FP still partial).
+4. GCM FIFO core + flip path present in rsx_stub; next is host draw backend.
 
 ## Reproduction
 

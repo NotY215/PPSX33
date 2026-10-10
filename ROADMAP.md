@@ -82,7 +82,8 @@ Implementation status does not establish semantic correctness or compatibility.
 - [x] Exit and tty-write
 - [~] Simple heap / memory allocate
 - [~] SPU-related LV2 stubs
-- [ ] Threads, sync, timers, filesystem, common PRX modules
+- [~] Threads, lwmutex/lwcond, timers, filesystem (cellFs*), sysmodule/prx load stubs (driven by GOW3 analysis_report)
+- [ ] Full PRX NID resolution and remaining library HLE (cellAudio, sceNp, cellSpurs tasks)
 
 ### Performance
 - [ ] Host PPU thread scheduling, function-level codegen, optional PGO/LTO
@@ -105,7 +106,10 @@ Implementation status does not establish semantic correctness or compatibility.
 ## Phase 5: RSX graphics
 
 - [x] GUI backend selector
-- [ ] GCM/cellGcmSys, NV47 state, shaders, textures, host backends
+- [x] GCM FIFO method decode core (surface, viewport, clear, begin/end, draw markers)
+- [x] put/get, flush, flip counter, cellGcmSys-style syscall hook
+- [ ] Host backends (D3D11/Vulkan) and real draw submission
+- [ ] Shaders, textures, tile/zcull
 
 **Acceptance:** Homebrew render test on each supported backend.
 

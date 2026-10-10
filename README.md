@@ -15,8 +15,8 @@ PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction sema
 | Project workflow | GUI and CLI support project creation, lifting, and host build invocation |
 | Windows output | Build path can emit `game.exe`, `ps3rt.dll`, and `guest_image.bin` |
 | Runtime correctness | Experimental; commercial-game execution is not established |
-| SPU | Context and API stubs exist; full instruction execution is not implemented |
-| RSX | Backend selection exists; GCM/RSX rendering is not implemented |
+| SPU | Interpreter covers major ISA families (loads/stores, ALU, logical, branches, channels, MFC); vector/FP and SPURS still partial |
+| RSX | FIFO method decode + flip/control path implemented; host GPU backends not yet |
 
 Both game counts describe individual static-lift snapshots. They are not proof of correct instruction semantics, successful boot, rendering, or playability. See [PPU coverage](docs/PPU_COVERAGE.md), [game records](docs/games/README.md), and [roadmap](ROADMAP.md).
 
