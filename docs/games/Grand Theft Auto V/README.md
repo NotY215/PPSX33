@@ -1,6 +1,6 @@
 # <img src="https://thumb.wikimedia.org/wikipedia/it/thumb/7/76/Grand_Theft_Auto_V_logo.svg/330px-Grand_Theft_Auto_V_logo.svg.png?utm_source=it.wikipedia.org&utm_campaign=index&utm_content=thumbnail&_=20240305183247" width="180" alt="Grand Theft Auto V logo" /> Grand Theft Auto V
 
-This folder tracks a future PPSX33 opcode and static-translation coverage study for Grand Theft Auto V, planned after the Grand Theft Auto: San Andreas coverage pass.
+This folder tracks the next planned PPSX33 opcode and static-translation coverage study for Grand Theft Auto V. The GTA: San Andreas lift and ELF-analysis snapshot is now recorded.
 
 ## Planned work
 
