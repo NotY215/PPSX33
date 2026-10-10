@@ -1,11 +1,11 @@
 # PPSX33: PlayStation 3 Static Recompiler
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/NotY215/PPSX33/main/assets/ppsx33-banner.svg" alt="PPSX33 neon-blue banner" width="100%" />
+  <img src="https://raw.githubusercontent.com/NotY215/PPSX33/main/assets/ppsx33-banner.png" alt="PPSX33 neon-blue banner" width="100%" />
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/NotY215/PPSX33/main/assets/ppsx33-logo.svg" alt="PPSX33 circular logo" width="220" />
+  <img src="https://raw.githubusercontent.com/NotY215/PPSX33/main/assets/ppsx33-logo.png" alt="PPSX33 circular logo" width="220" />
 </p>
 
 <p align="center"><strong>PlayStation 3 Static Recompiler</strong><br />Decode · Translate · Play</p>
