@@ -1,4 +1,4 @@
-# Demon's Souls (BLES00632 / BLUS30443 family)
+# <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="150" alt="Demon's Souls logo" /> Demon's Souls (BLES00632 / BLUS30443 family)
 
 **Role:** Lift-only / opcode + SPU stress (not primary runtime target).
 
