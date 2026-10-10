@@ -1,14 +1,43 @@
 entry_opd: 0x50ddc0
 segments: 5
 symbols: 0
-opd_entries: 3
-prx_string_hits: 47
+opd_entries: 4097
+prx_string_hits: 23
 embedded_spu_images: 8
 
 OPD samples (up to 32):
-  [0] desc=0x50ddc0 entry=0x102300052d6c8 toc=0x102540052d6c8
-  [1] desc=0x52b0d8 entry=0xb0000 toc=0x30c0000
-  [2] desc=0x541c10 entry=0x3dea58 toc=0x300001406
+  [0] desc=0x50ddc0 entry=0x10230 toc=0x52d6c8
+  [1] desc=0x5002d0 entry=0x3cd2a8 toc=0x3cd2b0
+  [2] desc=0x5002d8 entry=0x3cd2c0 toc=0x3cd2d0
+  [3] desc=0x5002e0 entry=0x3cd2e0 toc=0x3cd420
+  [4] desc=0x500718 entry=0x3cdc68 toc=0x3cdc70
+  [5] desc=0x500720 entry=0x3cdc70 toc=0x3cdc80
+  [6] desc=0x500728 entry=0x3cdc80 toc=0x3cdc90
+  [7] desc=0x500730 entry=0x3cdc90 toc=0x3cdca0
+  [8] desc=0x500738 entry=0x3cdca0 toc=0x3cdcb0
+  [9] desc=0x500740 entry=0x3cdcb0 toc=0x3cdcc8
+  [10] desc=0x500748 entry=0x3cdcc8 toc=0x3cdce0
+  [11] desc=0x500750 entry=0x3cdce0 toc=0x3cdcf0
+  [12] desc=0x500758 entry=0x3cdcf0 toc=0x3cdd00
+  [13] desc=0x500760 entry=0x3cdd00 toc=0x3cdd08
+  [14] desc=0x500768 entry=0x3cdd08 toc=0x3cdd18
+  [15] desc=0x500770 entry=0x3cdd18 toc=0x3cdd28
+  [16] desc=0x500778 entry=0x3cdd28 toc=0x3ceb00
+  [17] desc=0x500790 entry=0x3d06d0 toc=0x3d0768
+  [18] desc=0x500798 entry=0x3d0778 toc=0x3d0788
+  [19] desc=0x500880 entry=0x3d5e98 toc=0x150000
+  [20] desc=0x500890 entry=0x170000 toc=0x110000
+  [21] desc=0x5008a8 entry=0x100000 toc=0xa0000
+  [22] desc=0x5008c0 entry=0xe0000 toc=0x160000
+  [23] desc=0x5008d8 entry=0x3da868 toc=0x3e0000
+  [24] desc=0x5008f0 entry=0x240000 toc=0x310000
+  [25] desc=0x500908 entry=0x3dd958 toc=0x3dd968
+  [26] desc=0x500910 entry=0x3dd978 toc=0x3dd988
+  [27] desc=0x500918 entry=0x3dd998 toc=0x3dee58
+  [28] desc=0x500920 entry=0x3dee60 toc=0x3dee68
+  [29] desc=0x500928 entry=0x3e9f20 toc=0x3e9f30
+  [30] desc=0x500930 entry=0x3e9f58 toc=0x3e9f60
+  [31] desc=0x500938 entry=0x3e9f78 toc=0x3e9f90
 
 PRX/module string samples (up to 64):
   sys_io  nid=0x0  @0x3ca808
@@ -26,52 +55,7 @@ PRX/module string samples (up to 64):
   sys_process_is_stack((void*)(mmAddressInQwords*16))  nid=0x21  @0x3ec819
   cellSpursGetInfoFailed
   nid=0x0  @0x3ed7b0
-  SCREAM: cellFsRead failed with error code -> %d
-  nid=0x0  @0x3f0048
-  SCREAM: cellFsLSeek failed with error code -> %d
-  nid=0x0  @0x3f0080
-  SCREAM: cellFsOpen failed for -> %s
-  nid=0x0  @0x3f00b8
   libMp3  nid=0x0  @0x3f34b0
-  d ops still in prefetch queue (cancelling)
-  nid=0x202025  @0x3f5d0b
-  cellFsStat(%s) returned 0x%08X: %s
-  nid=0xa000000  @0x3f6330
-  sys_lwcond_signal_all failed for cond '%s': %d (%s)
-  nid=0x0  @0x3f6518
-  sys_lwcond_signal failed for cond '%s': %d (%s)
-  nid=0x73270a00  @0x3f6570
-  sys_lwcond_wait failed for cond '%s': %d (%s)
-  nid=0x0  @0x3f65c8
-  sys_lwcond_destroy failed for cond '%s': %d (%s)
-  nid=0x0  @0x3f6618
-  sys_lwcond_create failed for cond '%s': %d (%s)
-  nid=0x0  @0x3f6650
-  sys_lwmutex_unlock failed on mutex '%s': %d (%s)
-  nid=0x0  @0x3f6688
-  sys_lwmutex_lock failed on mutex '%s': %d (%s)
-  nid=0xa000000  @0x3f66e8
-  sys_lwmutex_destroy failed while destroying mutex '%s': %d (%s)
-  nid=0x0  @0x3f6740
-  sys_lwmutex_create failed while creating mutex '%s': %d (%s)
-  nid=0x0  @0x3f67a8
-  sys_ppu_thread_get_priority failed! %d (%s)
-  nid=0xa000000  @0x3f67e8
-  sys_ppu_thread_get_id failed! %d (%s)
-  nid=0x0  @0x3f6818
-  sys_ppu_thread_set_priority failed! %d (%s)
-  nid=0x290a0000  @0x3f6840
-  sys_ppu_thread_join failed for thread '%s': %d (%s)
-  nid=0x0  @0x3f6870
-  sys_ppu_thread_create failed for thread '%s': %d (%s)
-  nid=0x0  @0x3f68f0
-  FIOS: cellSysmoduleInitialize() failed: 0x%08X
-  nid=0x290a0000  @0x3f6928
-  FIOS: cellSysmoduleLoadModule(0x%04X) failed: 0x%08X
-  nid=0x38580a00  @0x3f6958
-  cellAudioOutConfigure() FAILED!  nid=0x54530000  @0x3f9920
-  rbDriver::Initialize(): cellAudioInit() has already been called!  nid=0x62  @0x3f9b59
-  brbDriver::Initialize(): cellAudioInit failed with error 0x%X  nid=0x0  @0x3f9ba0
   libc:s310001libc:s310001libc:s310001libc:s310001libc:s310001  nid=0x30303031  @0x4b5775
   sceversion  nid=0x6d65002e  @0x4b584e
   libc:s310001libc:s310001libc:s310001libc:s310001libc:s310001  nid=0x30303031  @0x4d869c
