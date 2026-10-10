@@ -33,10 +33,10 @@ struct PPUContext {
     int      res_size;
 };
 
-// Lightweight SPU context (one per logical SPU thread)
+// SPU: 128 x 128-bit GPRs, 256 KB local store
 struct SPUContext {
-    uint32_t gpr[128];       // 128 x 128-bit would be heavy; use 32-bit slots for stubs
-    uint8_t  ls[256 * 1024]; // 256 KB local store
+    uint8_t  gpr[128][16];
+    uint8_t  ls[256 * 1024];
     uint32_t pc;
     uint32_t npc;
     bool     running;
@@ -51,6 +51,10 @@ struct SPUContext {
     uint32_t mfc_size;
     uint32_t mfc_tag;
     uint32_t mfc_cmd;
+    uint32_t ch_event_mask;
+    uint32_t ch_event_stat;
+    uint32_t decrementer;
+    int      stop_status;
 };
 
 static inline uint16_t bs16(uint16_t v) { return (uint16_t)((v >> 8) | (v << 8)); }
@@ -94,7 +98,6 @@ static inline uint64_t ps3_rotl32dup(uint32_t v, unsigned s) {
     return ps3_rotl64(x, s & 31u);
 }
 
-// Demand-commit helper (implemented in ps3rt.cpp)
 PS3RT_API void ps3rt_touch(uint64_t addr, size_t len);
 
 static inline void touch_rw(PPUContext& c, uint64_t a, size_t n) {
@@ -181,7 +184,6 @@ PS3RT_API uint8_t* ps3rt_memory(void);
 PS3RT_API uint64_t ps3rt_stack_top(void);
 PS3RT_API void     ps3rt_shutdown(void);
 
-// SPU API
 PS3RT_API int  ps3rt_spu_supported(void);
 PS3RT_API int  ps3rt_spu_create(int* out_id);
 PS3RT_API int  ps3rt_spu_destroy(int id);
@@ -194,8 +196,6 @@ PS3RT_API int  ps3rt_spu_mfc_dma(int id, uint32_t lsa, uint64_t ea, uint32_t siz
 
 struct PPUChunk { uint64_t start, end; bool (*fn)(PPUContext&); };
 
-// When PC leaves recompiled code, try return-via-lr (treat as external stub).
-// Caps repeated escapes so we still halt on infinite external bounce.
 static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     int external_escapes = 0;
     while (!c.halted) {
@@ -209,7 +209,6 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 (unsigned long long)c.pc, (unsigned long long)c.lr,
                 (unsigned long long)c.ctr, (unsigned long long)c.gpr[1],
                 (unsigned long long)c.gpr[2]);
-            // External / unresolved target: return via LR if it lands back in code
             if (c.lr && c.lr != c.pc) {
                 bool lr_ok = false;
                 for (size_t i = 0; i < n; ++i)
@@ -217,7 +216,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 if (lr_ok && external_escapes < 64) {
                     std::fprintf(stderr, "[ps3] external stub: return via lr=0x%llx (escape %d)\n",
                         (unsigned long long)c.lr, external_escapes + 1);
-                    c.gpr[3] = 0; // CELL_OK / success for most lib stubs
+                    c.gpr[3] = 0;
                     c.pc = c.lr;
                     ++external_escapes;
                     continue;
