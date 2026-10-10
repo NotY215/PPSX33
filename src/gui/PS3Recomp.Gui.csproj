@@ -1,1 +1,41 @@
-PLACEHOLDER2
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Phase 1 UI – WinForms front-end.
+    Built automatically by CMake (target PS3Recomp) into build/dist/
+    so it sits next to ps3core.dll and runtime/.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>PS3Recomp</AssemblyName>
+    <RootNamespace>PS3Recomp.Gui</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <ApplicationIcon>Assets\ppsx33-logo.ico</ApplicationIcon>
+
+    <!-- When built from Visual Studio / dotnet CLI the output still goes to build/dist -->
+    <OutputPath>$(MSBuildThisFileDirectory)..\..\build\dist\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Exe icon + UI logo copied next to the binary -->
+    <None Include="Assets\ppsx33-logo.ico" Condition="Exists('Assets\ppsx33-logo.ico')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\ppsx33-logo.png" Condition="Exists('Assets\ppsx33-logo.png')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>ppsx33-logo.png</Link>
+    </None>
+    <!-- Fallback if placed at project root -->
+    <None Include="ppsx33-logo.ico" Condition="Exists('ppsx33-logo.ico') And !Exists('Assets\ppsx33-logo.ico')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="ppsx33-logo.png" Condition="Exists('ppsx33-logo.png') And !Exists('Assets\ppsx33-logo.png')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>
