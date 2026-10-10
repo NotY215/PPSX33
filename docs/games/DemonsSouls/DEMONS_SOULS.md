@@ -1,37 +1,12 @@
-# Demon's Souls — static lift track
+# Demon's Souls — lift record
 
-**Role:** Secondary static-coverage target (with Uncharted 2). Primary runtime remains GOW3.
+- **Date:** 2026-10
+- **Input:** Decrypted EBOOT.ELF (RPCS3 `--decrypt`)
+- **ELF:** 5 PT_LOAD segments, entry OPD `0x1916138`
+- **Analysis:** symbols=0, opds=4097, prx_hits=134, spu_images=12
+- **Lift:** 6,343,506 instructions translated, 0 unimplemented, 775 chunks
+- **Artifacts:** `codebase/lift_report.txt`, `codebase/analysis_report.txt`, extracted `spu_image_XX.bin`
 
-**Build/run:** Do not treat native `game.exe` for Demon's Souls as a goal until GOW3 boots further.
+## Why this title
 
-## Latest lift snapshot
-
-Recorded from [`DemonsSouls_lift_report.txt`](DemonsSouls_lift_report.txt). This is a static-lift snapshot only; it does not establish semantic correctness or playability.
-
-| Metric | Value |
-| --- | ---: |
-| Segments | Not included in this lift report |
-| Entry OPD | Not included in this lift report |
-| Symbols | Not included in this lift report |
-| OPD entries | Not included in this lift report |
-| PRX string hits | Not included in this lift report |
-| Embedded SPU images | Not included in this lift report |
-| Instruction instances | 6,343,506 |
-| Translated | 6,343,506 |
-| Unimplemented | 0 |
-| Chunks | 775 |
-| Reported static coverage | 100% for this snapshot |
-
-## Interpretation
-
-Same caveats as Uncharted 2 / GOW3: zero unimplemented means every instruction word was emitted as some C++ (including approximate/nop paths). It does not prove semantic correctness or playability.
-
-## Workflow
-
-1. GUI: choose **rpcs3.exe** (OPTIONS or on first Decrypt).
-2. **Decrypt EBOOT** → load ELF into a project named e.g. `DemonsSouls`.
-3. **Decompile** only; skip Build for this title.
-4. Diff approximate ops / SPU images against GOW3 and Uncharted 2.
-5. Harden lifter/runtime from findings; re-lift GOW3 after changes.
-
-The archived report lists no missing opcodes, but this does not prove complete semantic support. See [ROADMAP](../../../ROADMAP.md).
+Large commercial binary with heavy SPU usage and many PRX imports. Used to expand coverage of the static lifter and to feed additional module/NID strings into the PRX heuristic table. Not a runtime target.
