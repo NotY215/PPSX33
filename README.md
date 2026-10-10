@@ -20,13 +20,21 @@ PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction sema
 | --- | --- |
 | ELF64 big-endian loading | Implemented for loadable segments and entry/function-descriptor handling |
 | ELF analysis | Symbol and OPD discovery, heuristic PRX/NID detection, embedded SPU image detection |
-| PPU static lifting | GOW3: 1,285,560 translated instances, zero reported unimplemented instances, 157 chunks. Uncharted 2: 3,485,016 translated instances, zero reported unimplemented instances, 426 chunks. Demon's Souls: 6,343,506 translated instances, zero reported unimplemented instances, 775 chunks |
+| PPU static lifting | GOW3: 1,285,560 translated, 0 reported unimplemented, 157 chunks. Uncharted 2: 3,485,016 translated, 0 reported unimplemented, 426 chunks. Demon's Souls: 6,343,506 translated, 0 reported unimplemented, 775 chunks |
 | PPU semantics | Partial; some operations are approximate or use no-op fallbacks |
 | Project workflow | GUI and CLI support project creation, lifting, and host build invocation |
 | Windows output | Build path can emit `game.exe`, `ps3rt.dll`, and `guest_image.bin` |
 | Runtime correctness | Experimental; commercial-game execution is not established |
 | SPU | Interpreter covers major ISA families (loads/stores, ALU, logical, branches, channels, MFC); vector/FP and SPURS still partial |
 | RSX | FIFO method decode + flip/control path implemented; host GPU backends not yet |
+
+### Game analysis snapshots
+
+| Game | Entry OPD | OPDs detected | PRX hits | Embedded SPU images | Chunks |
+| --- | --- | ---: | ---: | ---: | ---: |
+| God of War III | `0x50ddc0` | 3 | 47 | 8 | 157 |
+| Uncharted 2: Among Thieves | `0xdd8618` | 116 | 391 | 7 | 426 |
+| Demon's Souls | `0x1916138` | 4,097 | 134 | 12 | 775 |
 
 All three game counts describe individual static-lift snapshots. They are not proof of correct instruction semantics, successful boot, rendering, or playability. See [PPU coverage](docs/PPU_COVERAGE.md), [game records](docs/games/README.md), and [roadmap](ROADMAP.md).
 
