@@ -9,6 +9,7 @@
 | --- | ---: | ---: | ---: | ---: | --- |
 | God of War III (GOW3) | 1,285,560 | 1,285,560 | 0 | 157 | 100% for this snapshot |
 | Uncharted 2: Among Thieves | 3,485,016 | 3,485,016 | 0 | 426 | 100% for this snapshot |
+| Demon's Souls | 6,343,506 | 6,343,506 | 0 | 775 | 100% for this snapshot |
 
 The GOW3 raw counts are stored in [GOW3_lift_report.txt](games/GOW3/GOW3_lift_report.txt). Uncharted 2's generated reports are currently in the local project at `E:\\PPSX33\\build\\dist\\UNCHARTED 2\\codebase\\lift_report.txt` and `analysis_report.txt`; they have not been archived in this repository. See the [Uncharted 2 analysis record](games/Uncharted2/UNCHARTED2.md).
 
@@ -23,6 +24,10 @@ Coverage is measured against the input that was analyzed. A different game, firm
 - **Semantic correctness:** whether the translated behavior matches the PowerPC specification.
 - **Runtime correctness:** whether generated code and runtime services behave correctly.
 - **Game compatibility:** whether the complete title operates correctly.
+
+## Demon's Souls lift report
+
+The archived [`DemonsSouls_lift_report.txt`](games/DemonsSouls/DemonsSouls_lift_report.txt) reports 6,343,506 instruction instances, 6,343,506 translated instances, 0 unimplemented instances, and 775 chunks. It does not provide ELF segments, entry OPD, symbol/OPD counts, PRX hits, or embedded SPU image counts. The report's empty missing-opcodes section is not proof of complete semantic support.
 
 ## Uncharted 2 analysis metadata
 
