@@ -2,41 +2,40 @@
 
 ## Analysis status
 
-**Planned; not yet analyzed.**
+**Lift and ELF analysis reports recorded.** The current snapshot reports 1,893,428 instruction instances, all reported translated, 0 reported unimplemented, and 232 chunks.
 
-This record tracks a future PPSX33 static-lift and ELF-analysis pass. No measurements have been supplied or generated yet.
-
-## Planned lift metrics
+## Lift metrics
 
 | Metric | Result |
 | --- | --- |
-| Input build / region | Pending |
-| Instruction instances | Pending |
-| Translated instances reported | Pending |
-| Unimplemented instances reported | Pending |
-| Chunks | Pending |
-| Reported static translation coverage | Pending |
-| Lift report | Not generated |
-| Analysis report | Not generated |
+| Input build / region | Not recorded in the report |
+| Instruction instances | 1,893,428 |
+| Translated instances reported | 1,893,428 |
+| Unimplemented instances reported | 0 |
+| Chunks | 232 |
+| Reported static translation coverage | 100% for this snapshot |
+| Lift report | [lift_report.txt](lift_report.txt) |
 
-## Planned ELF and analysis metrics
+## ELF and analysis metrics
 
 | Metric | Result |
 | --- | --- |
-| PT_LOAD segments | Pending |
-| Entry OPD | Pending |
-| Detected symbols | Pending |
-| OPD entries | Pending |
-| PRX/module string hits | Pending |
-| Embedded SPU images | Pending |
+| PT_LOAD segments | 5 |
+| Entry OPD | `0x77b718` |
+| Detected symbols | 0 |
+| OPD entries | 4,097 |
+| PRX/module string hits | 23 |
+| Embedded SPU images detected | 0 |
+| Analysis report | [analysis_report.txt](analysis_report.txt) |
 
 ## Evaluation checklist
 
-- [ ] Record the exact input build and source of the legally obtained ELF.
-- [ ] Run ELF analysis and preserve `analysis_report.txt`.
-- [ ] Run static PPU lifting and preserve `lift_report.txt`.
-- [ ] Inspect approximate and fallback operations instead of relying only on the translated count.
-- [ ] Review imports and runtime dependencies separately.
-- [ ] Add regression tests for any newly identified instruction families.
+- [ ] Record the exact input build/region and PPSX33 revision used for this snapshot.
+- [ ] Inspect approximate and fallback translations instead of relying only on translated counts.
+- [ ] Review PRX/module string and OPD findings as heuristic analysis results.
+- [ ] Add regression tests for newly identified instruction patterns.
+- [ ] Begin the planned GTA V opcode and coverage pass after documenting this snapshot.
 
-Do not fill in metrics until they are produced by an actual analysis run. A reported 100% translation rate, if reached, would not alone prove correct semantics or playability.
+## Interpretation
+
+A reported 100% translation rate means every instruction instance in this particular input was classified as translated. It does not establish semantic correctness, successful boot, runtime compatibility, or playability. Zero detected symbols does not mean no functions exist, and zero detected SPU images does not prove the title has no SPU-related behavior.
