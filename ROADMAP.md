@@ -65,6 +65,8 @@ Implementation status does not establish semantic correctness or compatibility.
 - [x] Demon's Souls snapshot: 6,343,506 translated, 0 unimplemented, 775 chunks
 - [x] GTA: San Andreas snapshot: 1,893,428 translated, 0 unimplemented, 232 chunks
 - [~] Integer, logical, shifts, loads/stores, branches, atomics, FPU, VMX (many approximate)
+- [~] SPU runtime interpreter paths (execution, mailbox, and MFC support; full ISA/SPURS compatibility not established)
+- [~] RSX FIFO/method handling and D3D10/D3D11 integration; full rendering compatibility not established
 - [ ] Differential semantic tests against a trusted PowerPC reference
 - [~] PRX import HLE + real NID table (GOW3 modules); expand on runtime hits
 
