@@ -125,7 +125,6 @@ static inline void vpr_store(PPUContext& c, unsigned v, uint64_t addr) {
     std::memcpy(c.mem + addr, c.vpr[v], 16);
 }
 
-// ---- VMX / AltiVec VPR helpers (emitted by ppu_lifter case 4) ----
 static inline void vpr_and(PPUContext& c, unsigned vd, unsigned va, unsigned vb) {
     for (int i = 0; i < 16; ++i)
         c.vpr[vd][i] = (uint8_t)(c.vpr[va][i] & c.vpr[vb][i]);
@@ -146,7 +145,6 @@ static inline void vpr_splat_u8(PPUContext& c, unsigned vd, uint8_t val) {
     for (int i = 0; i < 16; ++i) c.vpr[vd][i] = val;
 }
 static inline void vpr_splat_u32(PPUContext& c, unsigned vd, uint32_t val) {
-    // Big-endian lane layout in each 4-byte word (PS3 / PowerPC)
     uint8_t b[4] = {
         (uint8_t)((val >> 24) & 0xFF),
         (uint8_t)((val >> 16) & 0xFF),
@@ -175,7 +173,6 @@ static inline void wr_f64(PPUContext& c, uint64_t a, double d) {
     uint64_t bits; std::memcpy(&bits, &d, 8); wr64(c, a, bits);
 }
 
-// ---- XER bits (PowerPC) ----
 static inline void xer_set_ca(PPUContext& c, bool v) {
     if (v) c.xer |= (1ull << 32); else c.xer &= ~(1ull << 32);
 }
@@ -325,6 +322,7 @@ struct PPUChunk { uint64_t start, end; bool (*fn)(PPUContext&); };
 static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     int external_escapes = 0;
     int logged = 0;
+    uint64_t steps = 0;
     while (!c.halted) {
         const PPUChunk* hit = nullptr;
         for (size_t i = 0; i < n; ++i)
@@ -362,5 +360,11 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             break;
         }
         hit->fn(c);
+        // Heartbeat so host UI does not treat quiet execution as a stall
+        if ((++steps & 0x3FFFFFull) == 0) {
+            std::fprintf(stderr, "[ps3] heartbeat steps=%llu pc=0x%llx lr=0x%llx\n",
+                (unsigned long long)steps, (unsigned long long)c.pc, (unsigned long long)c.lr);
+            std::fflush(stderr);
+        }
     }
 }
