@@ -1,0 +1,123 @@
+entry_opd: 0x1916138
+segments: 5
+symbols: 0
+opd_entries: 4097
+prx_string_hits: 134
+embedded_spu_images: 12
+
+OPD samples (up to 32):
+  [0] desc=0x1916138 entry=0x124c0 toc=0x19b5040
+  [1] desc=0x1852338 entry=0x176e7a0 toc=0x176e7b8
+  [2] desc=0x1852340 entry=0x176e7b8 toc=0x176e7d8
+  [3] desc=0x1852348 entry=0x176e7d8 toc=0x176f430
+  [4] desc=0x1852350 entry=0x176f430 toc=0x176f4c0
+  [5] desc=0x1852358 entry=0x176f4c0 toc=0x176f4c8
+  [6] desc=0x1852360 entry=0x176f4c8 toc=0x176f4d0
+  [7] desc=0x18523c8 entry=0x16e1608 toc=0x1745f08
+  [8] desc=0x18523d0 entry=0x1745f08 toc=0x1746108
+  [9] desc=0x18523d8 entry=0x1746108 toc=0x17700e0
+  [10] desc=0x18523e0 entry=0x17700e0 toc=0x17700f0
+  [11] desc=0x18523e8 entry=0x17700f0 toc=0x17700f8
+  [12] desc=0x1852b70 entry=0x16bd690 toc=0x16bd6f8
+  [13] desc=0x1852b78 entry=0x16bd6f8 toc=0x16bd778
+  [14] desc=0x1852b80 entry=0x16bd778 toc=0x16bd7f8
+  [15] desc=0x1852b88 entry=0x16bd7f8 toc=0x16bd820
+  [16] desc=0x1852b90 entry=0x16bd820 toc=0x16bd860
+  [17] desc=0x1852b98 entry=0x16bd860 toc=0x16bd8a8
+  [18] desc=0x1852ba0 entry=0x16bd8a8 toc=0x16bd8f0
+  [19] desc=0x1852ba8 entry=0x16bd8f0 toc=0x16bd920
+  [20] desc=0x1853160 entry=0x16beba0 toc=0x16beba0
+  [21] desc=0x1853168 entry=0x16beba0 toc=0x16beba0
+  [22] desc=0x1853170 entry=0x16beba0 toc=0x16bec60
+  [23] desc=0x1853178 entry=0x16bec60 toc=0x16beca0
+  [24] desc=0x1853180 entry=0x16beca0 toc=0x16bece0
+  [25] desc=0x1853188 entry=0x16bece0 toc=0x16bece0
+  [26] desc=0x1853190 entry=0x16bece0 toc=0x16bece0
+  [27] desc=0x1853198 entry=0x16bece0 toc=0x16bece0
+  [28] desc=0x18531a0 entry=0x16bece0 toc=0x16bece0
+  [29] desc=0x18531a8 entry=0x16bece0 toc=0x16bedf8
+  [30] desc=0x18531b0 entry=0x16bedf8 toc=0x16bee40
+  [31] desc=0x18531b8 entry=0x16bee40 toc=0x16bee88
+
+PRX/module string samples (up to 64):
+  cellGcmSys  nid=0x0  @0x16bb5ec
+  cellSysmodule  nid=0x0  @0x16bb5fc
+  cellL10n  nid=0x0  @0x16bb610
+  cellHttp  nid=0x0  @0x16bb620
+  cellHttpUtil  nid=0x0  @0x16bb630
+  cellSync  nid=0x0  @0x16bb644
+  sceNp  nid=0x0  @0x16bb654
+  sceNpTrophy  nid=0x0  @0x16bb660
+  sys_io  nid=0x0  @0x16bb670
+  sys_fs  nid=0x0  @0x16bb67c
+  cellRtc  nid=0x0  @0x16bb688
+  cellSysutil  nid=0x0  @0x16bb694
+  cellSaveData  nid=0x0  @0x16bb6a4
+  cellSysutilAvc2  nid=0x0  @0x16bb6b8
+  cellUserInfo  nid=0x0  @0x16bb6cc
+  sys_net  nid=0x0  @0x16bb6e0
+  cellNetCtl  nid=0x0  @0x16bb6ec
+  cellSpurs  nid=0x0  @0x16bb6fc
+  cellAudio  nid=0x0  @0x16bb70c
+  cellAtrac  nid=0x0  @0x16bb71c
+  sceNp2  nid=0x0  @0x16bb72c
+  cellSail  nid=0x0  @0x16bb738
+  cellPamf  nid=0x0  @0x16bb748
+  cellPngDec  nid=0x0  @0x16bb758
+  x-cell-fs://  nid=0x0  @0x173f5f0
+  ascendingGain  nid=0x0  @0x1748b30
+  standAscendingGain  nid=0x6e000000  @0x1748b40
+  descendingGain  nid=0x0  @0x1748b58
+  groundAscendingGain  nid=0x64000000  @0x1748ed8
+  groundDescendingGain  nid=0x0  @0x1748ef0
+  sceneLength  nid=0x74000000  @0x174d120
+  sys_mixerSurBusReq  nid=0x3130005f  @0x176a2b9
+  cellsurMixerMain  nid=0x3032005f  @0x176a2f1
+  sys_MixerChStripMain  nid=0x3231005f  @0x176a481
+  GÅÀ¾/£¾@…½ú²v½È½6½–©½Hû.¼É
+±cellMSSystemGetNeededMemorySize  nid=0x605c11be  @0x176a941
+  cellMSSystemInitBasic  nid=0x65005f5f  @0x176a982
+  cellMSSystemClose  nid=0x0  @0x176a9b0
+  cellMSSystemSignalSPU  nid=0x0  @0x176a9c8
+  cellMSCoreGetRouting8  nid=0x0  @0x176b558
+  cellMSCoreGetRouting  nid=0x38000000  @0x176b570
+  cellMSCoreGetDSPParamAddr  nid=0x0  @0x176b588
+  cellMSCoreGetDSPHandle  nid=0x0  @0x176b5a8
+  cellMSCoreGetPause  nid=0x6c650000  @0x176b5c0
+  cellMSCoreGetBypass  nid=0x0  @0x176b5d8
+  cellMSCoreGetEQEnable  nid=0x0  @0x176b5f0
+  cellMSCoreGetEQ  nid=0x65000000  @0x176b608
+  cellMSCoreGetVolume64  nid=0x74455100  @0x176b618
+  cellMSCoreGetVolume8  nid=0x34000000  @0x176b630
+  cellMSCoreGetVolume1  nid=0x0  @0x176b648
+  cellMSCoreGetWetInGain  nid=0x0  @0x176b660
+  cellMSCoreGetMasks  nid=0x696e0000  @0x176b678
+  cellMSCoreGetMask  nid=0x0  @0x176b690
+  cellMSCoreSetMasks  nid=0x0  @0x176b6a8
+  cellMSCoreSetMask  nid=0x0  @0x176b6c0
+  cellMSCoreBypassDSP  nid=0x0  @0x176b6d8
+  cellMSCoreSetDSP  nid=0x0  @0x176b6f0
+  cellMSCoreSetBypass  nid=0x0  @0x176b708
+  cellMSCoreSetEQEnable  nid=0x0  @0x176b720
+  cellMSCoreSetEQ  nid=0x65000000  @0x176b738
+  cellMSCoreSetVolume8  nid=0x74455100  @0x176b748
+  cellMSCoreSetVolume64  nid=0x0  @0x176b760
+  cellMSCoreSetVolume1  nid=0x34000000  @0x176b778
+  cellMSCoreSetWetInGain  nid=0x0  @0x176b790
+  cellMSCoreSetRouting8  nid=0x696e0000  @0x176b7a8
+
+Embedded SPU images:
+  [0] host_va=0x1770280 size=524288
+  [1] host_va=0x177c200 size=524288
+  [2] host_va=0x178cf00 size=524288
+  [3] host_va=0x1794e00 size=524288
+  [4] host_va=0x179cc00 size=524288
+  [5] host_va=0x17acd00 size=524288
+  [6] host_va=0x17be200 size=524288
+  [7] host_va=0x17d5900 size=447554
+  [8] host_va=0x17f9a00 size=299842
+  [9] host_va=0x181c600 size=157506
+  [10] host_va=0x1828080 size=109762
+  [11] host_va=0x1832680 size=67266
+
+symbol_functions: 0

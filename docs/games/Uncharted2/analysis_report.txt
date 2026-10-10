@@ -1,0 +1,124 @@
+entry_opd: 0xdd8618
+segments: 5
+symbols: 0
+opd_entries: 4097
+prx_string_hits: 130
+embedded_spu_images: 7
+
+OPD samples (up to 32):
+  [0] desc=0xdd8618 entry=0x10230 toc=0xe17d38
+  [1] desc=0xd61110 entry=0xb8c3f8 toc=0xb8c408
+  [2] desc=0xd61118 entry=0xb8c690 toc=0xb8c430
+  [3] desc=0xd61120 entry=0xb8c448 toc=0xb8c460
+  [4] desc=0xd61128 entry=0xb8c480 toc=0xb8c4a0
+  [5] desc=0xd61130 entry=0xb8c4d8 toc=0xb8c4f8
+  [6] desc=0xd61138 entry=0xb8c508 toc=0xb8c518
+  [7] desc=0xd61140 entry=0xb8c530 toc=0xb8c548
+  [8] desc=0xd61148 entry=0xb8c578 toc=0xb8c5a8
+  [9] desc=0xd61150 entry=0xb8c5e0 toc=0xb8c618
+  [10] desc=0xd61158 entry=0xb8c638 toc=0xb8c658
+  [11] desc=0xd61160 entry=0xb8c678 toc=0xb8c698
+  [12] desc=0xd61168 entry=0xb8c6c0 toc=0xb8c6e0
+  [13] desc=0xd61170 entry=0xb8c700 toc=0xb8c720
+  [14] desc=0xd61178 entry=0xb8c758 toc=0xb8c770
+  [15] desc=0xd61180 entry=0xb8c788 toc=0xb8c7a8
+  [16] desc=0xd61188 entry=0xb8c7d0 toc=0xb8c7f0
+  [17] desc=0xd61190 entry=0xb8c808 toc=0xb8c858
+  [18] desc=0xd61198 entry=0xb8c8b0 toc=0xb8c900
+  [19] desc=0xd611a0 entry=0xb8c968 toc=0xb8c9d8
+  [20] desc=0xd611a8 entry=0xb8ca20 toc=0xb8ca70
+  [21] desc=0xd611b0 entry=0xb8caa0 toc=0xb8cab8
+  [22] desc=0xd611b8 entry=0xb8cb30 toc=0xb8cba8
+  [23] desc=0xd611c0 entry=0xb8cc30 toc=0xb8cc70
+  [24] desc=0xd611c8 entry=0xb8ccc0 toc=0xb8cd10
+  [25] desc=0xd611d0 entry=0xb8cd70 toc=0xb8cdc0
+  [26] desc=0xd611d8 entry=0xb8ce18 toc=0xb8ce38
+  [27] desc=0xd611e0 entry=0xb8ce68 toc=0xb8cea0
+  [28] desc=0xd611e8 entry=0xb8cf10 toc=0xb8cf40
+  [29] desc=0xd611f0 entry=0xb8cf70 toc=0xb8cfe0
+  [30] desc=0xd611f8 entry=0xb8d008 toc=0xb8d030
+  [31] desc=0xd61200 entry=0xb8d060 toc=0xb8d088
+
+PRX/module string samples (up to 64):
+  cellHttpUtil  nid=0x0  @0xae95a8
+  cellHttp  nid=0x0  @0xae95bc
+  cellSsl  nid=0x0  @0xae95cc
+  cellSync  nid=0x0  @0xae95d8
+  cellSpurs  nid=0x0  @0xae95e8
+  cellGcmSys  nid=0x0  @0xae95f8
+  sys_net  nid=0x0  @0xae9608
+  cellNetCtl  nid=0x0  @0xae9614
+  cellSysutil  nid=0x0  @0xae9624
+  cellVoice  nid=0x0  @0xae9634
+  cellUsbd  nid=0x0  @0xae9644
+  sys_fs  nid=0x0  @0xae9654
+  sys_io  nid=0x0  @0xae9660
+  cellAudio  nid=0x0  @0xae966c
+  cellSysmodule  nid=0x0  @0xae967c
+  sceNp  nid=0x0  @0xae9690
+  sceNp2  nid=0x0  @0xae969c
+  cellRtc  nid=0x0  @0xae96a8
+  cellGame  nid=0x0  @0xae96b4
+  libvdec  nid=0x0  @0xae96c4
+  cellRec  nid=0x0  @0xae96d0
+  sceNpTrophy  nid=0x0  @0xae96dc
+  cellPngDec  nid=0x0  @0xae96ec
+  sceNpTus  nid=0x0  @0xae96fc
+  cellJpgDec  nid=0x0  @0xae970c
+  cellL10n  nid=0x0  @0xae971c
+  cellPhotoUtility  nid=0x0  @0xae972c
+  cellJpgEnc  nid=0x0  @0xae9744
+  cellSysutilNpEula  nid=0x0  @0xae9754
+  sceNpUtil  nid=0x0  @0xae976c
+  scene  nid=0x0  @0xaebb30
+  No cutscene specified
+  nid=0x65000000  @0xaebb38
+  cellGameBootCheck() OK
+  nid=0x0  @0xaec180
+  Draw visibility cell  nid=0x69747300  @0xaf1fe8
+  Cutscene Sun Scale  nid=0x0  @0xaf2740
+  kCutsceneParticleClock  nid=0x0  @0xaf7420
+  Cutscene vblur speed  nid=0x0  @0xaf9af0
+  sce-ndi-logos  nid=0x0  @0xafe168
+  cellOskDialogGetInputText	:	%S
+  nid=0x0  @0xafe6a8
+  cutscene subdivide x  nid=0x6f770000  @0xb010c0
+  cutscene subdivide y  nid=0x0  @0xb010d8
+  cutscene subdivide z  nid=0x0  @0xb010f0
+  cutscene blur passes  nid=0x0  @0xb01108
+  rain-num-cells  nid=0x6473003a  @0xb01341
+  s/src/game/script/render-settings/cutscene/%s  nid=0x25  @0xb01549
+  cutscene-blur-passes %d
+  nid=0x2020203a  @0xb02024
+  mb-cutscene-speed %.5f  nid=0x2020203a  @0xb03d3c
+  rain-num-cells %d
+  nid=0x920203a  @0xb0427c
+  rain-cell-size %.5f
+  nid=0x920203a  @0xb04314
+  rain-cell-spacing %.5f
+  nid=0x920203a  @0xb04334
+  rain-num-cells  nid=0x64730000  @0xb04998
+  sceNpTrophyCreateHandle(&legacyHandle)  nid=0x0  @0xb11250
+  sceNpTrophyDestroyContext(legacyContext)  nid=0x65290000  @0xb11278
+  sceNpTrophyDestroyHandle(legacyHandle)  nid=0x0  @0xb112f8
+  sceNpTrophyCreateHandle(&m_npHandle)  nid=0x0  @0xb113a0
+  sys_event_queue_drain(m_eventQueueId)  nid=0x0  @0xb115e0
+  sceNpTrophyDestroyHandle(m_npHandle)  nid=0x0  @0xb11638
+  sceNpTrophyDestroyContext(m_npContext)  nid=0x0  @0xb11660
+  sys_event_port_disconnect(m_eventPortId)  nid=0x74290000  @0xb11688
+  sys_event_port_destroy(m_eventPortId)  nid=0x0  @0xb116b8
+  sceNpTrophyTerm()  nid=0x0  @0xb11710
+  game/menu/menutreasurescene.cpp  nid=0x0  @0xb38ac8
+  sceNpBasicGetFriendListEntryCount(&count)  nid=0x0  @0xb3f770
+  sceNpManagerGetNpId(&npId)  nid=0x61000000  @0xb41948
+
+Embedded SPU images:
+  [0] host_va=0xcbb180 size=524288
+  [1] host_va=0xcd5180 size=524288
+  [2] host_va=0xcfb380 size=393666
+  [3] host_va=0xd0f080 size=312514
+  [4] host_va=0xd2ed80 size=182210
+  [5] host_va=0xd46a00 size=84802
+  [6] host_va=0xd4e880 size=52418
+
+symbol_functions: 0
