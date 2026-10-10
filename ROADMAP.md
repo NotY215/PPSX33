@@ -2,7 +2,6 @@
 
 <p align="center"><img src="https://raw.githubusercontent.com/NotY215/PPSX33/main/assets/ppsx33-logo.png" alt="PPSX33 circular logo" width="140" /></p>
 
-
 ## Status legend
 
 | Mark | Meaning |
@@ -16,7 +15,7 @@ Implementation status does not establish semantic correctness or compatibility.
 ## Project priorities
 
 1. **GOW3** runtime stability (Phase 3) and semantic hardening of approximate PPU ops.
-2. Use **Uncharted 2** and **Demon's Souls** static lifts to stress-test SPU interpreter and long-tail PPU paths (lift only; no native build yet for these titles).
+2. Use **Minecraft (PS3)**, **Uncharted 2**, and **Demon's Souls** static lifts to stress-test SPU interpreter and long-tail PPU paths (lift only; no native build yet for these titles).
 3. SPU, RSX, and PRX HLE as separate tracks.
 
 ## Phase 1: UI and project workflow
@@ -59,17 +58,17 @@ Implementation status does not establish semantic correctness or compatibility.
 
 ### PPU instruction coverage
 - [x] GOW3 snapshot: 1,285,560 translated, 0 unimplemented, 157 chunks
+- [x] Minecraft (PS3) snapshot: 3,034,530 translated, 0 unimplemented, 371 chunks
 - [x] Uncharted 2 snapshot: 3,485,016 translated, 0 unimplemented, 426 chunks
 - [x] Demon's Souls snapshot: 6,343,506 translated, 0 unimplemented, 775 chunks
 - [~] Integer, logical, shifts, loads/stores, branches, atomics, FPU, VMX (many approximate)
 - [ ] Differential semantic tests against a trusted PowerPC reference
 - [~] PRX import HLE + real NID table (GOW3 modules); expand on runtime hits
 
-### Multi-game analysis: Uncharted 2 / Demon's Souls
-- [x] Uncharted 2: initial static lift complete (metrics and ELF-analysis metadata recorded)
-- [x] Demon's Souls: initial static lift complete (metrics and ELF-analysis metadata recorded)
-- [ ] Archive and review full Uncharted 2 lift/analysis reports under `docs/games/Uncharted2/`
-- [ ] Archive and review full Demon's Souls lift/analysis reports under `docs/games/DemonsSouls/`
+### Multi-game analysis
+- [x] Minecraft (PS3): initial static lift and ELF analysis recorded
+- [x] Uncharted 2: initial static lift and ELF analysis recorded
+- [x] Demon's Souls: initial static lift and ELF analysis recorded
 - [ ] Review approximate/fallback translations; add regression tests
 - [ ] Re-run GOW3 after lifter changes
 
@@ -124,11 +123,12 @@ Implementation status does not establish semantic correctness or compatibility.
 
 ## Game coverage matrix
 
-| Title | Role | Static lift | Runtime |
+| Game | Role | Static lift | Runtime |
 | --- | --- | --- | --- |
-| God of War III | Primary runtime | 1,285,560 / 100% snapshot | Experimental early halt |
-| Uncharted 2 | Opcode / SPU stress (lift only) | 3,485,016 / 100% snapshot; 7 SPU images | No native build yet |
-| Demon's Souls | Opcode / SPU stress (lift only) | 6,343,506 / 100% snapshot; 12 SPU images | No native build yet |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/God_of_War_Logo.png" width="78" alt="God of War logo" /> God of War III | Primary runtime | 1,285,560 / 100% snapshot | Experimental early halt |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Minecraft_Logo.png" width="78" alt="Minecraft logo" /> Minecraft (PS3) | Opcode / SPU stress (lift only) | 3,034,530 / 100% snapshot; 11 SPU images | Not targeted |
+| <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="48" alt="Uncharted 2 logo artwork" /> Uncharted 2 | Opcode / SPU stress (lift only) | 3,485,016 / 100% snapshot; 7 SPU images | Not targeted |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | Opcode / SPU stress (lift only) | 6,343,506 / 100% snapshot; 12 SPU images | Not targeted |
 | Synthetic/homebrew | Regression | Per test | Required for pass |
 
 ## Related documentation
