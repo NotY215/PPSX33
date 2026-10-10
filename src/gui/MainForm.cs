@@ -1,12 +1,14 @@
+using System.Diagnostics;
+using System.Text;
+
 namespace PS3Recomp.Gui;
 
 /// <summary>
-/// PPSX33 main window. Dark professional layout inspired by Premiere Pro + RPCS3.
-/// Workflow: Decrypt EBOOT -> Decompile -> Build -> Copy.
+/// PPSX33 main window. Dark studio UI.
+/// Workflow: Decrypt -> Load -> Decompile -> Build -> Run -> Copy.
 /// </summary>
 public sealed class MainForm : Form
 {
-    // Palette (dark studio)
     static readonly Color Bg = Color.FromArgb(18, 18, 20);
     static readonly Color Panel = Color.FromArgb(28, 28, 32);
     static readonly Color Panel2 = Color.FromArgb(36, 36, 42);
@@ -28,14 +30,21 @@ public sealed class MainForm : Form
     private readonly Button _btnLoad = new();
     private readonly Button _btnLift = new();
     private readonly Button _btnBuild = new();
+    private readonly Button _btnRun = new();
     private readonly Button _btnCopy = new();
     private readonly Button _btnCancel = new();
     private readonly ComboBox _gfx = new();
     private readonly NumericUpDown _threads = new();
     private string? _projectDir;
     private CancellationTokenSource? _cts;
+    private Process? _gameProc;
     private bool _canBuild;
     private bool _canCopy;
+    private bool _canRun;
+
+    // Stall detection: no new stdout/stderr for this many ms -> kill
+    private const int StallQuietMs = 4000;
+    private const int MaxRunMs = 120_000;
 
     private static string RuntimeDir => Path.Combine(AppContext.BaseDirectory, "runtime");
     private static string CompilersDir => Path.Combine(AppContext.BaseDirectory, "Compilers-files");
@@ -51,8 +60,7 @@ public sealed class MainForm : Form
         ForeColor = TextPri;
         Font = new Font("Segoe UI", 9.25f);
 
-        // ---- Header ----
-        var header = new Panel { Dock = DockStyle.Top, Height = 52, BackColor = Panel, Padding = new Padding(16, 0, 16, 0) };
+        var header = new Panel { Dock = DockStyle.Top, Height = 52, BackColor = Panel };
         var title = new Label
         {
             Text = "PPSX33",
@@ -71,7 +79,6 @@ public sealed class MainForm : Form
         header.Controls.Add(title);
         header.Controls.Add(subtitle);
 
-        // ---- Left rail (workflow) ----
         var rail = new Panel { Dock = DockStyle.Left, Width = 220, BackColor = Panel, Padding = new Padding(12) };
         var railTitle = new Label
         {
@@ -84,13 +91,15 @@ public sealed class MainForm : Form
         };
 
         StylePrimaryButton(_btnDecrypt, "Decrypt EBOOT");
-        StylePrimaryButton(_btnLoad, "Load ELF");
+        StyleStepButton(_btnLoad, "Load ELF");
         StyleStepButton(_btnLift, "Decompile");
         StyleStepButton(_btnBuild, "Build");
+        StylePrimaryButton(_btnRun, "Run game.exe");
         StyleStepButton(_btnCopy, "Copy to game folder");
-        StyleDangerButton(_btnCancel, "Cancel");
+        StyleDangerButton(_btnCancel, "Stop / Cancel");
         _btnLift.Enabled = false;
         _btnBuild.Enabled = false;
+        _btnRun.Enabled = false;
         _btnCopy.Enabled = false;
         _btnCancel.Enabled = false;
 
@@ -102,7 +111,7 @@ public sealed class MainForm : Form
             AutoSize = true,
             Padding = new Padding(0, 4, 0, 0)
         };
-        foreach (var b in new[] { _btnDecrypt, _btnLoad, _btnLift, _btnBuild, _btnCopy, _btnCancel })
+        foreach (var b in new[] { _btnDecrypt, _btnLoad, _btnLift, _btnBuild, _btnRun, _btnCopy, _btnCancel })
         {
             b.Width = 190;
             b.Margin = new Padding(0, 0, 0, 8);
@@ -116,7 +125,6 @@ public sealed class MainForm : Form
             Font = new Font("Segoe UI Semibold", 8f),
             Dock = DockStyle.Top,
             Height = 28,
-            Margin = new Padding(0, 16, 0, 0),
             TextAlign = ContentAlignment.MiddleLeft
         };
         var optsPanel = new Panel { Dock = DockStyle.Top, Height = 100, BackColor = Panel };
@@ -151,8 +159,7 @@ public sealed class MainForm : Form
         rail.Controls.Add(btnStack);
         rail.Controls.Add(railTitle);
 
-        // ---- Status bar ----
-        var statusBar = new Panel { Dock = DockStyle.Bottom, Height = 32, BackColor = Panel, Padding = new Padding(12, 0, 12, 0) };
+        var statusBar = new Panel { Dock = DockStyle.Bottom, Height = 32, BackColor = Panel };
         _status.Text = "Ready";
         _status.ForeColor = TextSec;
         _status.AutoSize = true;
@@ -166,31 +173,22 @@ public sealed class MainForm : Form
         statusBar.Controls.Add(_status);
         statusBar.Controls.Add(_progress);
 
-        // ---- Project strip ----
-        var projStrip = new Panel { Dock = DockStyle.Top, Height = 36, BackColor = Panel2, Padding = new Padding(12, 0, 12, 0) };
+        var projStrip = new Panel { Dock = DockStyle.Top, Height = 36, BackColor = Panel2 };
         _project.Text = "No project loaded";
         _project.ForeColor = TextSec;
         _project.AutoSize = true;
         _project.Location = new Point(12, 10);
         projStrip.Controls.Add(_project);
 
-        // ---- Tabs / content ----
         var tabs = new TabControl { Dock = DockStyle.Fill, Padding = new Point(12, 8) };
-        tabs.Font = new Font("Segoe UI", 9f);
-
         StyleTextBox(_log);
         StyleTextBox(_report);
 
-        var logTab = new TabPage("Console");
-        logTab.BackColor = Bg;
+        var logTab = new TabPage("Console") { BackColor = Bg };
         logTab.Controls.Add(_log);
-
-        var reportTab = new TabPage("Lift report");
-        reportTab.BackColor = Bg;
+        var reportTab = new TabPage("Lift report") { BackColor = Bg };
         reportTab.Controls.Add(_report);
-
-        var roadmapTab = new TabPage("Roadmap");
-        roadmapTab.BackColor = Bg;
+        var roadmapTab = new TabPage("Roadmap") { BackColor = Bg };
         var roadmapBox = new TextBox();
         StyleTextBox(roadmapBox);
         roadmapBox.Text = RoadmapText;
@@ -219,14 +217,19 @@ public sealed class MainForm : Form
             ct.ThrowIfCancellationRequested();
             bool ok = Native.Build(_projectDir!, RuntimeDir, CompilersDir, out var l);
             return (ok, l);
-        }, enableCopy: true);
+        }, enableCopy: true, enableRun: true);
+        _btnRun.Click += async (_, _) => await RunGameExe();
         _btnCopy.Click += (_, _) => CopyToEbootFolder();
-        _btnCancel.Click += (_, _) => { try { _cts?.Cancel(); } catch { } Append("Cancel requested…"); };
-        FormClosing += (_, _) => SaveSettings();
+        _btnCancel.Click += (_, _) => StopAll();
+        FormClosing += (_, e) =>
+        {
+            StopAll();
+            SaveSettings();
+        };
 
         Append($"ps3core {SafeVersion()}  ·  runtime {RuntimeDir}");
-        Append("Decrypt EBOOT uses: rpcs3.exe --decrypt \"EBOOT.BIN\"  (Utilities → Decrypt PS3 Binaries).");
-        Append("Generated .elf is loaded automatically into a new project.");
+        Append("Decrypt: rpcs3.exe --decrypt \"EBOOT.BIN\"");
+        Append("Run game.exe streams console output here; auto-stops after " + (StallQuietMs / 1000) + "s with no new output.");
     }
 
     private static void StyleTextBox(TextBox t)
@@ -297,7 +300,7 @@ public sealed class MainForm : Form
     {
         if (InvokeRequired) { BeginInvoke(() => SetStatus(s)); return; }
         _status.Text = s;
-        _status.ForeColor = s.Contains("fail", StringComparison.OrdinalIgnoreCase) || s.Contains("Error")
+        _status.ForeColor = s.Contains("fail", StringComparison.OrdinalIgnoreCase) || s.Contains("Error") || s.Contains("stall", StringComparison.OrdinalIgnoreCase)
             ? Danger
             : TextSec;
     }
@@ -307,6 +310,20 @@ public sealed class MainForm : Form
         _settings.GraphicsBackend = _gfx.SelectedItem?.ToString() ?? "D3D11";
         _settings.PpuThreads = (int)_threads.Value;
         _settings.Save();
+    }
+
+    private void StopAll()
+    {
+        try { _cts?.Cancel(); } catch { }
+        try
+        {
+            if (_gameProc != null && !_gameProc.HasExited)
+            {
+                Append("[run] Stopping game.exe…");
+                _gameProc.Kill(entireProcessTree: true);
+            }
+        }
+        catch (Exception ex) { Append("[run] Stop error: " + ex.Message); }
     }
 
     private void LoadElf(string? presetPath)
@@ -337,8 +354,10 @@ public sealed class MainForm : Form
         Append("Created project: " + dir);
         _canBuild = false;
         _canCopy = false;
+        _canRun = File.Exists(Path.Combine(dir, "output", "game.exe"));
         _btnLift.Enabled = true;
         _btnBuild.Enabled = false;
+        _btnRun.Enabled = _canRun;
         _btnCopy.Enabled = false;
         _report.Text = "Run Decompile to generate lift_report.txt";
     }
@@ -395,7 +414,128 @@ public sealed class MainForm : Form
         LoadElf(elf);
     }
 
-    private async Task RunStep(string title, Func<CancellationToken, (bool ok, string log)> work, bool enableBuild = false, bool enableCopy = false, bool refreshReport = false)
+    private async Task RunGameExe()
+    {
+        if (_projectDir == null) return;
+        string exe = Path.Combine(_projectDir, "output", "game.exe");
+        string work = Path.Combine(_projectDir, "output");
+        if (!File.Exists(exe))
+        {
+            Append("ERROR: game.exe not found. Build first.");
+            return;
+        }
+
+        Append("[run] Starting " + exe);
+        Append("[run] Working dir: " + work);
+        Append("[run] Auto-stop if no output for " + (StallQuietMs / 1000) + "s (max " + (MaxRunMs / 1000) + "s)");
+
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+        SetBusy(true);
+        SetStatus("Running game.exe…");
+        _progress.MarqueeAnimationSpeed = 30;
+
+        try
+        {
+            await Task.Run(() =>
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = exe,
+                    WorkingDirectory = work,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                    StandardOutputEncoding = Encoding.UTF8,
+                    StandardErrorEncoding = Encoding.UTF8,
+                };
+
+                using var proc = new Process { StartInfo = psi, EnableRaisingEvents = true };
+                _gameProc = proc;
+
+                var lastOutput = DateTime.UtcNow;
+                var started = DateTime.UtcNow;
+                var lineLock = new object();
+
+                void OnLine(string? line)
+                {
+                    if (line == null) return;
+                    lock (lineLock)
+                    {
+                        lastOutput = DateTime.UtcNow;
+                    }
+                    Append(line);
+                }
+
+                proc.OutputDataReceived += (_, e) => OnLine(e.Data);
+                proc.ErrorDataReceived += (_, e) => OnLine(e.Data);
+
+                if (!proc.Start())
+                    throw new InvalidOperationException("Failed to start game.exe");
+
+                proc.BeginOutputReadLine();
+                proc.BeginErrorReadLine();
+
+                while (!proc.HasExited)
+                {
+                    if (token.IsCancellationRequested)
+                    {
+                        try { proc.Kill(entireProcessTree: true); } catch { }
+                        Append("[run] Cancelled by user.");
+                        break;
+                    }
+
+                    var now = DateTime.UtcNow;
+                    double quiet;
+                    lock (lineLock) quiet = (now - lastOutput).TotalMilliseconds;
+                    double elapsed = (now - started).TotalMilliseconds;
+
+                    if (quiet >= StallQuietMs)
+                    {
+                        Append("[run] No new output for " + (StallQuietMs / 1000) + "s — treating as stuck, stopping.");
+                        try { proc.Kill(entireProcessTree: true); } catch { }
+                        break;
+                    }
+                    if (elapsed >= MaxRunMs)
+                    {
+                        Append("[run] Max run time " + (MaxRunMs / 1000) + "s reached, stopping.");
+                        try { proc.Kill(entireProcessTree: true); } catch { }
+                        break;
+                    }
+
+                    Thread.Sleep(200);
+                }
+
+                try { proc.WaitForExit(2000); } catch { }
+                int code = -1;
+                try { code = proc.ExitCode; } catch { }
+                Append("[run] Exit code: " + code);
+                _gameProc = null;
+            }, token);
+
+            SetStatus("Run finished");
+        }
+        catch (OperationCanceledException)
+        {
+            Append("[run] CANCELLED");
+            SetStatus("Cancelled");
+        }
+        catch (Exception ex)
+        {
+            Append("[run] ERROR: " + ex.Message);
+            SetStatus("Run error");
+        }
+        finally
+        {
+            _gameProc = null;
+            _progress.MarqueeAnimationSpeed = 0;
+            SetBusy(false);
+        }
+    }
+
+    private async Task RunStep(string title, Func<CancellationToken, (bool ok, string log)> work, bool enableBuild = false, bool enableCopy = false, bool enableRun = false, bool refreshReport = false)
     {
         if (_projectDir == null) return;
         SaveSettings();
@@ -413,6 +553,7 @@ public sealed class MainForm : Form
             Append(ok ? "DONE" : "FAILED");
             if (ok && enableBuild) _canBuild = true;
             if (ok && enableCopy) _canCopy = true;
+            if (ok && enableRun) _canRun = true;
             if (refreshReport) LoadLiftReport();
             SetStatus(ok ? "Ready" : "Failed");
         }
@@ -442,6 +583,7 @@ public sealed class MainForm : Form
             Path.Combine(_projectDir, "output", "lift_report.txt"),
             Path.Combine(_projectDir, "lift_report.txt"),
             Path.Combine(_projectDir, "analysis_report.txt"),
+            Path.Combine(_projectDir, "output", "analysis_report.txt"),
         };
         foreach (var p in candidates)
         {
@@ -463,6 +605,7 @@ public sealed class MainForm : Form
         _btnLoad.Enabled = !busy;
         _btnLift.Enabled = !busy && _projectDir != null;
         _btnBuild.Enabled = !busy && _canBuild;
+        _btnRun.Enabled = !busy && _canRun;
         _btnCopy.Enabled = !busy && _canCopy;
         _btnCancel.Enabled = busy;
         UseWaitCursor = busy;
@@ -484,16 +627,16 @@ public sealed class MainForm : Form
             }
             else Append("Missing: " + name);
         }
-        Append("Run game.exe from that folder.");
+        Append("Run game.exe from that folder or use Run game.exe in the UI.");
     }
 
     private const string RoadmapText =
         "PPSX33 Roadmap (summary)\r\n\r\n" +
-        "Phase 1  UI              DONE  (dark studio UI, RPCS3 --decrypt)\r\n" +
-        "Phase 2  PPU lift        GOW3 + Uncharted2 static 100% snapshots\r\n" +
-        "Phase 3  PPU runtime     IN PROGRESS  (external stubs, HLE)\r\n" +
-        "Phase 4  SPU             Interpreter (major ISA)\r\n" +
-        "Phase 5  RSX             GCM/FIFO core started\r\n" +
-        "Phase 6  Native output   DONE  (MSVC game.exe + ps3rt.dll)\r\n\r\n" +
-        "See ROADMAP.md in the repository for full detail.\r\n";
+        "Phase 1  UI              DONE  (dark UI, decrypt, Run game.exe)\r\n" +
+        "Phase 2  PPU lift        GOW3 + Uncharted2 static 100%\r\n" +
+        "Phase 3  PPU runtime     IN PROGRESS  (import stubs @ 0x39800000)\r\n" +
+        "Phase 4  SPU             Interpreter\r\n" +
+        "Phase 5  RSX             GCM/FIFO core\r\n" +
+        "Phase 6  Native output   DONE\r\n\r\n" +
+        "See ROADMAP.md and docs/games/GOW3/GOW3.md.\r\n";
 }

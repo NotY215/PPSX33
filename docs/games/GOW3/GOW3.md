@@ -1,28 +1,64 @@
-# God of War III (GOW3): Lift Record
+# God of War III (GOW3): Lift and runtime record
 
-## Recorded lift statistics
+## Static lift statistics
 
 | Metric | Count |
 | --- | ---: |
 | Instruction instances | 1,285,560 |
-| Translated instances reported | 1,285,560 |
-| Unimplemented instances reported | 0 |
+| Translated | 1,285,560 |
+| Unimplemented | 0 |
 | Chunks | 157 |
-| Reported static translation coverage | 100% for this snapshot |
+| Segments | 5 |
+| Entry OPD | 0x50ddc0 |
+| Symbols | 0 |
+| OPD entries (heuristic) | 3 |
+| PRX string hits | 47 |
+| Embedded SPU images | 8 |
+| Reported static coverage | 100% (this snapshot) |
 
-Raw totals are available in [GOW3_lift_report.txt](GOW3_lift_report.txt).
+Raw totals: [GOW3_lift_report.txt](GOW3_lift_report.txt) when archived.
 
-## Interpretation
+## Analysis notes
 
-This snapshot classifies all 1,285,560 instruction instances as translated. It is a static-lifting measurement for one input and report. It does not prove that every emitted operation matches PowerPC semantics, or establish successful boot, correct rendering, or playability. Some less common operations may use approximate handling or no-op fallbacks.
+From the project decompile log (same metrics as analysis_report.txt):
 
-## Reproduction and regression workflow
+- No symbol table on this commercial ELF (expected).
+- Few OPD discoveries (3) vs large code size: function discovery is incomplete; control flow relies on branch targets inside lifted chunks.
+- 47 PRX/module string hits: game links many system modules; imports are not fully resolved at lift time.
+- 8 embedded SPU images: useful for Phase 4 SPU interpreter testing.
 
-1. Use an authorized decrypted ELF matching the analyzed build.
-2. Run the lift using the current PPSX33 toolchain.
-3. Archive the generated lift and analysis reports with tool revision and input identification.
-4. Compare counts and inspect changes in translated code.
-5. Run focused synthetic tests for modified opcode semantics.
-6. Validate runtime behavior independently and record exact results.
+There is no separate `docs/games/GOW3/analysis_report.txt` checked into the repo by default (reports are generated per project under the game folder). Prefer copying a redacted analysis_report.txt here when you want a permanent archive.
 
-Do not commit the ELF, EBOOT, game assets, keys, or other copyrighted game files. PPU semantics, runtime control flow, system calls, PRX imports, SPU execution, and RSX graphics require separate validation. See [PPU coverage](../../PPU_COVERAGE.md).
+## Runtime diagnostics (current)
+
+Entry after OPD resolve:
+
+```text
+entry pc=0x10230 toc=0x52d6c8
+```
+
+Soon after start, execution repeatedly hits non-translated PCs:
+
+| Observation | Meaning |
+| --- | --- |
+| `pc=0x39800000` | Not valid guest code in the lifted image; treated as external/import stub |
+| Return via `lr` (e.g. 0x103ac, 0x33aec8, 0x336660) | Stub path returns CELL_OK and continues |
+| `pc=0` with `lr=0x199c78` | Null call target; same stub path |
+| `r2=0x658c0050` | TOC often stable; sometimes cleared on bad paths |
+
+Conclusion: the bottleneck is **missing PRX / function-pointer resolution**, not missing PPU opcode decode. Static coverage is already 100% for this ELF.
+
+## Next runtime steps
+
+1. Resolve or HLE the callees that produce `0x39800000` / null (module imports, init tables).
+2. Expand LV2 syscalls used during CRT/startup.
+3. Exercise the 8 SPU images under the SPU interpreter.
+4. When GCM is initialized, wire FIFO flush to RSX core and flips.
+
+## Reproduction
+
+1. Decrypt EBOOT with PPSX33 (RPCS3 `--decrypt`) or load EBOOT.ELF.
+2. Decompile + Build.
+3. Use **Run game.exe** in the UI (streams console; auto-stops after 4s without output).
+
+Do not commit the ELF, EBOOT, assets, or keys.
