@@ -9,9 +9,16 @@ Static lifting snapshots only. Not proof of playability.
 
 | Game | Record | Instructions | Translated | Unimplemented | Chunks | Static % |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| God of War III | [GOW3](GOW3/GOW3.md) | 1,285,560 | 1,285,560 | 0 | 157 | 100% |
-| Uncharted 2 | [Uncharted2](Uncharted2/UNCHARTED2.md) | 3,485,016 | 3,485,016 | 0 | 426 | 100% |
+| God of War III | [GOW3](GOW3/GOW3.md) | 1,285,560 | 1,285,560 | 0 | 157 | 100% snapshot |
+| Uncharted 2 | [Uncharted2](Uncharted2/UNCHARTED2.md) | 3,485,016 | 3,485,016 | 0 | 426 | 100% snapshot |
 | Demon's Souls | [DemonsSouls](DemonsSouls/DEMONS_SOULS.md) | 6,343,506 | 6,343,506 | 0 | 775 | 100% snapshot |
 
-Uncharted 2 also reported 7 embedded SPU images and 391 PRX string hits.
-Demon's Souls counts are from [`DemonsSouls_lift_report.txt`](DemonsSouls/DemonsSouls_lift_report.txt). Static coverage does not establish semantic correctness or playability.
+## Analysis findings
+
+| Game | PT_LOAD segments | Entry OPD | Symbols | OPDs | PRX hits | SPU images |
+| --- | ---: | --- | ---: | ---: | ---: | ---: |
+| God of War III | 5 | `0x50ddc0` | 0 | 3 | 47 | 8 |
+| Uncharted 2 | 5 | `0xdd8618` | 0 | 116 | 391 | 7 |
+| Demon's Souls | 5 | `0x1916138` | 0 | 4,097 | 134 | 12 |
+
+These are per-input snapshots. PRX hits and OPD discovery are analysis findings, not proof of complete module resolution or runtime support. See [PPU coverage](../PPU_COVERAGE.md) for interpretation and caveats.
