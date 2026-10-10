@@ -25,8 +25,8 @@ PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction sema
 | Project workflow | GUI and CLI support project creation, lifting, and host build invocation |
 | Windows output | Build path can emit `game.exe`, `ps3rt.dll`, and `guest_image.bin` |
 | Runtime correctness | Experimental; commercial-game execution is not established |
-| SPU | Interpreter covers major ISA families (loads/stores, ALU, logical, branches, channels, MFC); vector/FP and SPURS still partial |
-| RSX | FIFO method decode + flip/control path implemented; host GPU backends not yet |
+| SPU | Runtime interpreter and create/load/run/mailbox/MFC paths exist in `runtime/ps3rt.cpp`; full ISA coverage, vector/FP behavior, and SPURS remain incomplete |
+| RSX | Partial FIFO/method decoding, surface and draw tracking, flip/control handling, and D3D10/D3D11 integration are present; complete RSX rendering compatibility is not established |
 
 ### Game analysis snapshots
 
@@ -39,6 +39,43 @@ PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction sema
 | <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_San_Andreas_logo.svg" width="86" alt="Grand Theft Auto: San Andreas logo" /> Grand Theft Auto: San Andreas | `0x77b718` | 4,097 | 23 | 0 | 232 |
 
 All four game counts describe individual static-lift snapshots. They are not proof of correct instruction semantics, successful boot, rendering, or playability. Grand Theft Auto: San Andreas now has a recorded static-lift and ELF-analysis snapshot: 1,893,428 instruction instances translated, 0 reported unimplemented, 232 chunks, 5 PT_LOAD segments, entry OPD `0x77b718`, 4,097 OPD entries, 23 PRX/module string hits, and 0 embedded SPU images detected. GTA V remains planned next. These counts do not establish semantic correctness or playability. See [PPU coverage](docs/PPU_COVERAGE.md), [game records](docs/games/README.md), and [roadmap](ROADMAP.md).
+
+## Alpha release: PPSX33-Alpha-01
+
+PPSX33-Alpha-01 is an experimental Windows package for early evaluation of the GUI, CLI, static ELF analysis, PPU lifting, and project build workflow. It is not a production release and does not claim full PS3 game compatibility.
+
+The release package is organized as follows:
+
+```text
+PPSX33-Alpha-01/
+  ppsx33-logo.ico
+  ppsx33-logo.png
+  ps3core.dll
+  ps3core.exp
+  ps3core.lib
+  PS3Recomp.deps.json
+  PS3Recomp.dll
+  PS3Recomp.exe
+  PS3Recomp.pdb
+  PS3Recomp.runtimeconfig.json
+  ps3_cli.exe
+  Compilers-files/
+    cmake.exe
+    ninja.exe
+    README.md
+    MSCV/
+  runtime/
+    boot_continue.patch
+    nid_table.h
+    ppu_runtime.h
+    ps3rt.cpp
+    rsx_stub.cpp
+    spu_stub.cpp
+```
+
+The GUI targets .NET 8 for Windows and is framework-dependent, so install the .NET 8 Desktop Runtime if it is not already available. A complete package should be smoke-tested on a clean Windows environment before publishing. The presence of compiler files does not imply that all Microsoft build tools can legally be redistributed; include MSVC binaries only when their applicable license permits redistribution. Do not include game executables, decrypted ELFs, keys, or other copyrighted game data.
+
+See the [Alpha 01 release notes](releases/PPSX33-Alpha-01.md) for scope, known limitations, and validation guidance.
 
 ## Requirements
 
