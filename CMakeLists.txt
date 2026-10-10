@@ -46,13 +46,29 @@ add_custom_target(copy_runtime ALL
     COMMENT "Copying runtime/ sources"
 )
 
+# Compilers-files can be locked by antivirus / running cl.exe / previous build.
+# Remove dest first, then copy; on Windows fall back to robocopy (exit 0-7 = success).
 if(EXISTS "${CMAKE_SOURCE_DIR}/Compilers-files")
-    add_custom_command(TARGET copy_runtime POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-                ${CMAKE_SOURCE_DIR}/Compilers-files
-                ${CMAKE_BINARY_DIR}/dist/Compilers-files
-        COMMENT "Copying Compilers-files"
-    )
+    if(WIN32)
+        add_custom_command(TARGET copy_runtime POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E rm -rf
+                    "${CMAKE_BINARY_DIR}/dist/Compilers-files"
+            COMMAND ${CMAKE_COMMAND} -E make_directory
+                    "${CMAKE_BINARY_DIR}/dist/Compilers-files"
+            COMMAND cmd /C "robocopy \"${CMAKE_SOURCE_DIR}/Compilers-files\" \"${CMAKE_BINARY_DIR}/dist/Compilers-files\" /E /NFL /NDL /NJH /NJS /nc /ns /np & if %ERRORLEVEL% GEQ 8 exit /b 1 & exit /b 0"
+            COMMENT "Copying Compilers-files (robocopy, tolerant of locks)"
+            VERBATIM
+        )
+    else()
+        add_custom_command(TARGET copy_runtime POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E rm -rf
+                    "${CMAKE_BINARY_DIR}/dist/Compilers-files"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    "${CMAKE_SOURCE_DIR}/Compilers-files"
+                    "${CMAKE_BINARY_DIR}/dist/Compilers-files"
+            COMMENT "Copying Compilers-files"
+        )
+    endif()
 endif()
 
 # ------------------------------------------------------------------
