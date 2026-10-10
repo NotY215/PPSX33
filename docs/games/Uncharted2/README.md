@@ -1,27 +1,50 @@
 # Uncharted 2: Among Thieves
 
-**Status:** Planned static-lifting and PPU opcode-analysis target  
-**Measurements:** Not yet recorded  
-**Current scope:** Analyze reports and improve PPU opcode coverage; runtime compatibility is not claimed.
+**Status:** ELF analysis and static lifting completed for the recorded input snapshot  
+**Runtime compatibility:** Not established
 
-## Purpose
+## Recorded lift results
 
-The title is an additional input for discovering PPU instructions and instruction forms that are missing, approximate, or not exercised by the GOW3 snapshot. Work from actual lift reports and isolate behavior in regression tests where practical.
+| Metric | Result |
+| --- | ---: |
+| ELF load segments | 5 |
+| Entry | OPD at `0xdd8618` |
+| Symbols detected | 0 |
+| OPDs detected | 116 |
+| PRX heuristic hits | 391 |
+| Embedded SPU images | 7 |
+| Instruction instances | 3,485,016 |
+| Translated instances reported | 3,485,016 |
+| Unimplemented instances reported | 0 |
+| Chunks | 426 |
+| Static translation coverage | 100% for this snapshot |
 
-## Workflow
+The analysis created the project at `E:\\PPSX33\\build\\dist\\UNCHARTED 2` with `input/`, `codebase/`, and `output/` directories. The ELF was copied into `input/`. The generated reports are `codebase/lift_report.txt` and `codebase/analysis_report.txt` within that local project.
 
-1. Use an authorized decrypted PS3 ELF.
-2. Run static lifting and preserve the generated text reports.
-3. Review missing, approximate, or fallback instruction handling.
-4. Prioritize opcode changes using report evidence and semantic risk.
-5. Add focused tests and re-run existing synthetic tests.
-6. Record real before-and-after counts in the [analysis plan](UNCHARTED2.md).
+These report files have not been included in this repository. The values above are the recorded console output and must not be treated as a substitute for archiving and reviewing the full reports.
 
-Do not publish instruction counts before generating a real report. Do not commit the game ELF, EBOOT, keys, assets, or generated commercial-game binaries.
+## Interpretation
+
+The lifter reported every instruction instance in this input as translated. This does not establish that each translated instruction has correct PowerPC semantics. Approximate operations and no-op fallbacks may still be counted as translated. Zero detected symbols also does not mean the ELF has no functions; OPD and function discovery can use other analysis heuristics.
+
+The seven detected SPU images are analysis findings, not evidence that SPU programs execute correctly. PRX hits are heuristic detections, not confirmed import/export resolution.
+
+## Follow-up analysis
+
+1. Inspect `codebase/lift_report.txt` and `codebase/analysis_report.txt` in the generated project.
+2. Identify approximate operations, no-op fallbacks, and instruction families that lack semantic regression tests.
+3. Compare instruction handling with the PowerPC specification or a trusted reference.
+4. Add focused synthetic regression tests before changing the lifter.
+5. Re-run this target and the GOW3 baseline after opcode changes.
+6. Record any changes to counts only from new tool output.
+
+## Artifact policy
+
+Do not commit commercial-game ELFs, EBOOT files, keys, copyrighted assets, or generated game executables. Only publish text reports that are appropriate for public release and have been checked for sensitive paths or proprietary content. Static translation counts must not be presented as semantic correctness or game compatibility.
 
 ## Related documentation
 
-- [Detailed PPU analysis plan](UNCHARTED2.md)
+- [Directory overview](README.md)
 - [Game coverage index](../README.md)
 - [PPU coverage methodology](../../PPU_COVERAGE.md)
-- [Roadmap](../../../ROADMAP.md)
+- [Developer guide](../../DEVELOPER_GUIDE.md)
