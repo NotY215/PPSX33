@@ -1,10 +1,26 @@
 // Phase 5+: RSX / GCM FIFO decode + host present (D3D10 and D3D11).
+// COM headers must NOT be included inside an anonymous namespace
+// (that makes IID/GUID types mismatch with __uuidof).
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
+
 #include <cstdio>
 #include <cstring>
 #include <mutex>
 #include <cstdlib>
+
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#include <initguid.h>
+#include <d3d11.h>
+#include <d3d10.h>
+#include <dxgi.h>
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "d3d10.lib")
+#pragma comment(lib, "dxgi.lib")
+#endif
 
 enum Ps3GfxBackend { PS3_GFX_NONE = 0, PS3_GFX_D3D10 = 1, PS3_GFX_D3D11 = 2, PS3_GFX_VULKAN = 3 };
 
@@ -132,26 +148,14 @@ void rsx_process_fifo(uint8_t* mem) {
 }
 
 #if defined(_WIN32)
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <d3d11.h>
-#include <d3d10.h>
-#include <dxgi.h>
-#pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "d3d10.lib")
-#pragma comment(lib, "dxgi.lib")
-
-// Shared window
 HWND g_hwnd = nullptr;
 bool g_host_ready = false;
 
-// D3D11 path
 ID3D11Device*           g_dev11 = nullptr;
 ID3D11DeviceContext*    g_ctx11 = nullptr;
 IDXGISwapChain*         g_sc11  = nullptr;
 ID3D11RenderTargetView* g_rtv11 = nullptr;
 
-// D3D10 path
 ID3D10Device*           g_dev10 = nullptr;
 IDXGISwapChain*         g_sc10  = nullptr;
 ID3D10RenderTargetView* g_rtv10 = nullptr;
@@ -196,8 +200,9 @@ bool rsx_host_init_d3d11(uint32_t w, uint32_t h) {
         return false;
     }
     ID3D11Texture2D* bb = nullptr;
-    g_sc11->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&bb);
-    if (bb) {
+    // IID_ constant avoids GUID vs IID mismatch (do not use __uuidof here)
+    hr = g_sc11->GetBuffer(0, IID_ID3D11Texture2D, (void**)&bb);
+    if (SUCCEEDED(hr) && bb) {
         g_dev11->CreateRenderTargetView(bb, nullptr, &g_rtv11);
         bb->Release();
     }
@@ -210,7 +215,7 @@ bool rsx_host_init_d3d10(uint32_t w, uint32_t h) {
     if (!rsx_create_window(w, h)) return false;
 
     IDXGIFactory* factory = nullptr;
-    HRESULT hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
+    HRESULT hr = CreateDXGIFactory(IID_IDXGIFactory, (void**)&factory);
     if (FAILED(hr) || !factory) {
         std::fprintf(stderr, "[rsx] DXGI factory failed hr=0x%08X\n", (unsigned)hr);
         return false;
@@ -236,8 +241,8 @@ bool rsx_host_init_d3d10(uint32_t w, uint32_t h) {
         return false;
     }
     ID3D10Texture2D* bb = nullptr;
-    g_sc10->GetBuffer(0, __uuidof(ID3D10Texture2D), (void**)&bb);
-    if (bb) {
+    hr = g_sc10->GetBuffer(0, IID_ID3D10Texture2D, (void**)&bb);
+    if (SUCCEEDED(hr) && bb) {
         g_dev10->CreateRenderTargetView(bb, nullptr, &g_rtv10);
         bb->Release();
     }
@@ -248,25 +253,18 @@ bool rsx_host_init_d3d10(uint32_t w, uint32_t h) {
 
 bool rsx_host_init(uint32_t w, uint32_t h) {
     if (g_host_ready) return true;
-    // Honour env / selected backend
     const char* env = std::getenv("PS3RT_GFX");
     if (env) {
         if (std::strcmp(env, "D3D10") == 0) g_backend = PS3_GFX_D3D10;
         else if (std::strcmp(env, "D3D11") == 0) g_backend = PS3_GFX_D3D11;
-        else if (std::strcmp(env, "Vulkan") == 0) g_backend = PS3_GFX_VULKAN;
     }
     if (g_backend == PS3_GFX_D3D10) {
         if (rsx_host_init_d3d10(w, h)) return true;
         std::fprintf(stderr, "[rsx] D3D10 failed — falling back to D3D11\n");
         return rsx_host_init_d3d11(w, h);
     }
-    if (g_backend == PS3_GFX_D3D11) {
-        if (rsx_host_init_d3d11(w, h)) return true;
-        std::fprintf(stderr, "[rsx] D3D11 failed — trying D3D10\n");
-        return rsx_host_init_d3d10(w, h);
-    }
-    // Vulkan not yet: try D3D11 then D3D10
     if (rsx_host_init_d3d11(w, h)) return true;
+    std::fprintf(stderr, "[rsx] D3D11 failed — trying D3D10\n");
     return rsx_host_init_d3d10(w, h);
 }
 
@@ -281,7 +279,6 @@ void rsx_host_present_clear() {
     if (!g_rsx.clear_mask) {
         clear[0] = 0.05f; clear[1] = 0.08f; clear[2] = 0.15f; clear[3] = 1.f;
     }
-
     if (g_ctx11 && g_rtv11 && g_sc11) {
         g_ctx11->OMSetRenderTargets(1, &g_rtv11, nullptr);
         g_ctx11->ClearRenderTargetView(g_rtv11, clear);
@@ -291,7 +288,6 @@ void rsx_host_present_clear() {
         g_dev10->ClearRenderTargetView(g_rtv10, clear);
         g_sc10->Present(0, 0);
     }
-
     MSG msg;
     while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
@@ -317,7 +313,7 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
     g_rsx.fifo_addr = fifo_addr;
     g_rsx.fifo_size = fifo_size;
     g_rsx.put = g_rsx.get = 0;
-    if (g_backend == PS3_GFX_D3D11 || g_backend == PS3_GFX_D3D10 || g_backend == PS3_GFX_VULKAN)
+    if (g_backend == PS3_GFX_D3D11 || g_backend == PS3_GFX_D3D10)
         rsx_host_init(g_rsx.width, g_rsx.height);
     std::fprintf(stderr, "[rsx] init fifo=0x%llx size=0x%x backend=%d\n",
         (unsigned long long)fifo_addr, fifo_size, g_backend);
