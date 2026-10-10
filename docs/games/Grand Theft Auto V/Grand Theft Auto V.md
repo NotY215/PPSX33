@@ -31,7 +31,7 @@
 
 ## Evaluation checklist
 
-- [ ] Finish the planned Grand Theft Auto: San Andreas coverage pass first.
+- [x] Record the Grand Theft Auto: San Andreas lift and ELF-analysis snapshot.
 - [ ] Record the exact GTA V input build and its provenance.
 - [ ] Run ELF analysis and preserve `analysis_report.txt`.
 - [ ] Run static PPU lifting and preserve `lift_report.txt`.
