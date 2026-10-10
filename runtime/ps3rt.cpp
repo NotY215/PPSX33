@@ -1,5 +1,4 @@
-// ps3rt - see prior; LV2 expanded
-// User: pull project.cpp first (rewritten with nid_table.h + Compilers-files)
+// ps3rt - guest memory + LV2 HLE + SPU interpreter + PRX/NID
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include "nid_table.h"
@@ -8,34 +7,113 @@
 #include <cstdlib>
 #include <mutex>
 #include <algorithm>
+#include <vector>
 
 static uint8_t* g_mem = nullptr;
 static size_t g_mem_size = 0;
-static const uint64_t kStackBase = 0x10000000ull;
-static const size_t kStackSize = 0x100000;
+// Stack must sit inside guest RAM (was at 0x10000000 with 256MB mem = OOB)
+static const uint64_t kStackBase = 0x0F000000ull;
+static const size_t   kStackSize = 0x100000;
 static std::mutex g_lock;
 
 PS3RT_API void ps3rt_touch(uint64_t, size_t) {}
+
+static uint32_t rd_le32(const uint8_t* p) {
+    uint32_t v; std::memcpy(&v, p, 4); return v;
+}
+static uint64_t rd_le64(const uint8_t* p) {
+    uint64_t v; std::memcpy(&v, p, 8); return v;
+}
+
+// guest_image.bin layout (written by ppu_lifter):
+//   magic "PS3IMG1\0" (8)
+//   u32 nseg (LE)
+//   nseg * { u64 vaddr, u64 filesz, u64 memsz, u64 file_off } (LE)
+//   payload bytes at each file_off
+static int load_guest_image(const char* path) {
+    FILE* f = std::fopen(path, "rb");
+    if (!f) return -1;
+    std::fseek(f, 0, SEEK_END);
+    long fsz = std::ftell(f);
+    std::fseek(f, 0, SEEK_SET);
+    if (fsz < 12) { std::fclose(f); return -1; }
+
+    std::vector<uint8_t> file((size_t)fsz);
+    if (std::fread(file.data(), 1, (size_t)fsz, f) != (size_t)fsz) {
+        std::fclose(f); return -1;
+    }
+    std::fclose(f);
+
+    // Detect PS3IMG1 container
+    if (std::memcmp(file.data(), "PS3IMG1", 7) == 0) {
+        uint32_t nseg = rd_le32(file.data() + 8);
+        size_t hdr = 12ull + (size_t)nseg * 32ull;
+        if (hdr > (size_t)fsz) {
+            std::fprintf(stderr, "[ps3rt] bad PS3IMG1 header nseg=%u\n", nseg);
+            return -1;
+        }
+        int mapped = 0;
+        for (uint32_t i = 0; i < nseg; ++i) {
+            const uint8_t* e = file.data() + 12 + i * 32;
+            uint64_t vaddr = rd_le64(e + 0);
+            uint64_t filesz = rd_le64(e + 8);
+            uint64_t memsz  = rd_le64(e + 16);
+            uint64_t off    = rd_le64(e + 24);
+            if (filesz == 0 && memsz == 0) continue;
+            if (off + filesz > (size_t)fsz) {
+                std::fprintf(stderr, "[ps3rt] segment %u off out of range\n", i);
+                continue;
+            }
+            if (vaddr + memsz > g_mem_size) {
+                std::fprintf(stderr,
+                    "[ps3rt] segment %u VA 0x%llx+0x%llx exceeds guest RAM 0x%zx — clipped\n",
+                    i, (unsigned long long)vaddr, (unsigned long long)memsz, g_mem_size);
+                if (vaddr >= g_mem_size) continue;
+                memsz = g_mem_size - vaddr;
+                if (filesz > memsz) filesz = memsz;
+            }
+            // Zero BSS region then copy file bytes
+            std::memset(g_mem + vaddr, 0, (size_t)memsz);
+            if (filesz)
+                std::memcpy(g_mem + vaddr, file.data() + (size_t)off, (size_t)filesz);
+            std::fprintf(stderr,
+                "[ps3rt] map seg%u VA=0x%llx filesz=0x%llx memsz=0x%llx\n",
+                i, (unsigned long long)vaddr, (unsigned long long)filesz, (unsigned long long)memsz);
+            ++mapped;
+        }
+        std::fprintf(stderr, "[ps3rt] PS3IMG1 loaded from %s (%d segments)\n", path, mapped);
+        return mapped > 0 ? 0 : -1;
+    }
+
+    // Fallback: raw dump at address 0 (legacy)
+    if ((size_t)fsz <= g_mem_size) {
+        std::memcpy(g_mem, file.data(), (size_t)fsz);
+        std::fprintf(stderr, "[ps3rt] raw image %zu bytes at 0 from %s\n", (size_t)fsz, path);
+        return 0;
+    }
+    std::fprintf(stderr, "[ps3rt] image too large (%ld)\n", fsz);
+    return -1;
+}
+
 PS3RT_API int ps3rt_init(const char* image_path) {
     std::lock_guard<std::mutex> lk(g_lock);
     if (g_mem) return 0;
-    g_mem_size = 256ull * 1024 * 1024;
+    // 512 MiB so stack at 0x0F000000 and low GAME segments fit
+    g_mem_size = 512ull * 1024 * 1024;
     g_mem = (uint8_t*)std::calloc(1, g_mem_size);
     if (!g_mem) return -1;
+
     const char* candidates[] = { image_path, "guest_image.bin", "output/guest_image.bin" };
+    bool ok = false;
     for (const char* p : candidates) {
         if (!p) continue;
-        FILE* f = std::fopen(p, "rb");
-        if (!f) continue;
-        std::fseek(f, 0, SEEK_END); long sz = std::ftell(f); std::fseek(f, 0, SEEK_SET);
-        if (sz > 0 && (size_t)sz <= g_mem_size) {
-            size_t n = std::fread(g_mem, 1, (size_t)sz, f);
-            std::fprintf(stderr, "[ps3rt] loaded %zu bytes from %s\n", n, p);
-        }
-        std::fclose(f); break;
+        if (load_guest_image(p) == 0) { ok = true; break; }
     }
+    if (!ok)
+        std::fprintf(stderr, "[ps3rt] warning: no guest_image.bin mapped\n");
     return 0;
 }
+
 PS3RT_API uint8_t* ps3rt_memory(void) { return g_mem; }
 PS3RT_API uint64_t ps3rt_stack_top(void) { return kStackBase + kStackSize - 0x100; }
 PS3RT_API void ps3rt_shutdown(void) {
@@ -43,6 +121,7 @@ PS3RT_API void ps3rt_shutdown(void) {
     std::free(g_mem); g_mem = nullptr; g_mem_size = 0;
 }
 
+// ======================== SPU ========================
 static constexpr int kMaxSpu = 6;
 static SPUContext g_spu[kMaxSpu];
 static bool g_spu_used[kMaxSpu] = {};
@@ -167,10 +246,16 @@ PS3RT_API int ps3rt_spu_mfc_dma(int id, uint32_t lsa, uint64_t ea, uint32_t size
     return 0;
 }
 
-// Expanded LV2 HLE — return CELL_OK for common boot paths
+// LV2 HLE
 PS3RT_API void ps3rt_syscall(PPUContext* c) {
     if (!c) return;
     uint64_t num = c->gpr[11];
+    static int sys_log = 0;
+    if (sys_log < 24) {
+        std::fprintf(stderr, "[lv2] syscall %llu r3=0x%llx r4=0x%llx\n",
+            (unsigned long long)num, (unsigned long long)c->gpr[3], (unsigned long long)c->gpr[4]);
+        ++sys_log;
+    }
     switch (num) {
     case 1: c->halted = true; break;
     case 3:
@@ -208,6 +293,7 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
         std::fprintf(stderr, "[prx] stub kind=%d %s pc=0x%llx\n", kind, name ? name : "?", (unsigned long long)c->pc);
         ++g_prx_log;
     }
+    (void)kind; (void)name;
     c->gpr[3] = 0; return 0;
 }
 PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
