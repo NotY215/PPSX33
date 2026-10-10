@@ -9,18 +9,18 @@ Static lifting snapshots only. Not proof of playability.
 
 | Game | Record | Instructions | Translated | Unimplemented | Chunks | Static % |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/God_of_War_Logo.png" width="78" alt="God of War logo" /> God of War III | [GOW3](GOW3/GOW3.md) | 1,285,560 | 1,285,560 | 0 | 157 | 100% snapshot |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Minecraft_Logo.png/160px-Minecraft_Logo.png" width="78" alt="Minecraft logo" /> Minecraft (PS3) | [Minecraft](Mineacraft/README.md) | 3,034,530 | 3,034,530 | 0 | 371 | 100% snapshot |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/God_of_War_Logo.png" width="78" alt="God of War logo" /> God of War III | [GOW3](GOW3/GOW3.md) | 1,285,560 | 1,285,560 | 0 | 157 | 100% snapshot |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Minecraft_Logo.png" width="78" alt="Minecraft logo" /> Minecraft (PS3) | [Minecraft](Mineacraft/README.md) | 3,034,530 | 3,034,530 | 0 | 371 | 100% snapshot |
 | <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="48" alt="Uncharted 2 logo artwork" /> Uncharted 2: Among Thieves | [Uncharted2](Uncharted2/UNCHARTED2.md) | 3,485,016 | 3,485,016 | 0 | 426 | 100% snapshot |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/4/4d/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | [DemonsSouls](DemonsSouls/DEMONS_SOULS.md) | 6,343,506 | 6,343,506 | 0 | 775 | 100% snapshot |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | [DemonsSouls](DemonsSouls/DEMONS_SOULS.md) | 6,343,506 | 6,343,506 | 0 | 775 | 100% snapshot |
 
 ## Analysis findings
 
 | Game | PT_LOAD segments | Entry OPD | Symbols | OPDs | PRX hits | SPU images |
 | --- | ---: | --- | ---: | ---: | ---: | ---: |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/God_of_War_Logo.png" width="78" alt="God of War logo" /> God of War III | 5 | `0x50ddc0` | 0 | 3 | 47 | 8 |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Minecraft_Logo.png/160px-Minecraft_Logo.png" width="78" alt="Minecraft logo" /> Minecraft (PS3) | 5 | `0xbbe520` | 0 | 4,097 | 45 | 11 |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/God_of_War_Logo.png" width="78" alt="God of War logo" /> God of War III | 5 | `0x50ddc0` | 0 | 3 | 47 | 8 |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Minecraft_Logo.png" width="78" alt="Minecraft logo" /> Minecraft (PS3) | 5 | `0xbbe520` | 0 | 4,097 | 45 | 11 |
 | <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="48" alt="Uncharted 2 logo artwork" /> Uncharted 2: Among Thieves | 5 | `0xdd8618` | 0 | 116 | 391 | 7 |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/4/4d/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | 5 | `0x1916138` | 0 | 4,097 | 134 | 12 |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | 5 | `0x1916138` | 0 | 4,097 | 134 | 12 |
 
 These are per-input snapshots. PRX hits and OPD discovery are analysis findings, not proof of complete module resolution or runtime support. See [PPU coverage](../PPU_COVERAGE.md) for interpretation and caveats.
