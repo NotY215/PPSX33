@@ -132,7 +132,7 @@ Implementation status does not establish semantic correctness or compatibility.
 | <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="48" alt="Uncharted 2 logo artwork" /> Uncharted 2 | Opcode / SPU stress (lift only) | 3,485,016 / 100% snapshot; 7 SPU images | Not targeted |
 | <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | Opcode / SPU stress (lift only) | 6,343,506 / 100% snapshot; 12 SPU images | Not targeted |
 | <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_San_Andreas_logo.svg" width="78" alt="Grand Theft Auto: San Andreas logo" /> Grand Theft Auto: San Andreas | Planned PPU/opcode coverage | Not measured | Not started |
-| <img src="https://thumb.wikimedia.org/wikipedia/it/thumb/7/76/Grand_Theft_Auto_V_logo.svg/330px-Grand_Theft_Auto_V_logo.svg.png?utm_source=it.wikipedia.org&utm_campaign=index&utm_content=thumbnail&_=20240305183247" width="78" alt="Grand Theft Auto V logo" /> Grand Theft Auto V | Planned after San Andreas | Not measured | Not started |
+| <img src="https://thumb.wikimedia.org/wikipedia/it/thumb/7/76/Grand_Theft_Auto_V_logo.svg/330px-Grand_Theft_Auto_V_logo.svg.png?utm_source=it.wikipedia.org&utm_campaign=index&utm_content=thumbnail&_=20240305183247" width="78" alt="Grand Theft Auto V logo" /> Grand Theft Auto V | Planned after San Andreas pass | Not measured | Not started |
 | Synthetic/homebrew | Regression | Per test | Required for pass |
 
 ## Related documentation
