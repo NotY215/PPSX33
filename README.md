@@ -10,7 +10,7 @@ PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction sema
 | --- | --- |
 | ELF64 big-endian loading | Implemented for loadable segments and entry/function-descriptor handling |
 | ELF analysis | Symbol and OPD discovery, heuristic PRX/NID detection, embedded SPU image detection |
-| PPU static lifting | GOW3 snapshot: 1,285,560 translated instruction instances, zero reported unimplemented instances, 157 chunks |
+| PPU static lifting | GOW3: 1,285,560 translated instances, zero reported unimplemented instances, 157 chunks. Uncharted 2: 3,485,016 translated instances, zero reported unimplemented instances, 426 chunks |
 | PPU semantics | Partial; some operations are approximate or use no-op fallbacks |
 | Project workflow | GUI and CLI support project creation, lifting, and host build invocation |
 | Windows output | Build path can emit `game.exe`, `ps3rt.dll`, and `guest_image.bin` |
@@ -18,7 +18,7 @@ PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction sema
 | SPU | Context and API stubs exist; full instruction execution is not implemented |
 | RSX | Backend selection exists; GCM/RSX rendering is not implemented |
 
-The GOW3 count describes one static lift snapshot. It is not proof of correct instruction semantics, successful boot, rendering, or playability. See [PPU coverage](docs/PPU_COVERAGE.md), [game records](docs/games/README.md), and [roadmap](ROADMAP.md).
+Both game counts describe individual static-lift snapshots. They are not proof of correct instruction semantics, successful boot, rendering, or playability. See [PPU coverage](docs/PPU_COVERAGE.md), [game records](docs/games/README.md), and [roadmap](ROADMAP.md).
 
 ## Requirements
 
