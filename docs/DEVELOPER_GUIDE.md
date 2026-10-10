@@ -14,8 +14,8 @@ This guide describes the repository layout, development workflow, and implementa
 | Project/build driver | `src/core/project.cpp`, `src/core/project.h` | Manage project files, invoke lifting, and coordinate host builds |
 | Core API | `src/core/ps3core.h`, `src/core/ps3core_api.cpp` | Public native interface consumed by frontends |
 | Runtime | `runtime/ppu_runtime.h`, `runtime/ps3rt.cpp` | Guest memory, CPU state helpers, and runtime support |
-| SPU stubs | `runtime/spu_stub.cpp` | Current SPU API stubs; this is not a complete SPU implementation |
-| RSX stubs | `runtime/rsx_stub.cpp` | Current RSX-related stub surface; this is not a rendering backend |
+| SPU runtime | `runtime/ps3rt.cpp`, `runtime/spu_stub.cpp` | SPU context, loading/execution helpers, mailboxes, and MFC paths are in the runtime; ISA/SPURS coverage remains partial |
+| RSX runtime | `runtime/rsx_stub.cpp` | Partial FIFO/method processing and D3D10/D3D11 integration; not a complete RSX implementation |
 | CLI | `src/cli/ps3_cli.cpp` | Command-line entry point for project processing |
 | GUI | `src/gui/` | C# WinForms interface and native interop |
 | Synthetic tests | `tests/make_test_elf.py` | Generate a small PPC64 ELF for pipeline regression tests |
@@ -32,6 +32,12 @@ scripts\build_all.bat
 ```
 
 The output is placed in `build\dist\`. The GUI is published when the .NET SDK is available.
+
+## Alpha packaging and release validation
+
+The Alpha 01 package contains the WinForms application, native core library/import artifacts, CLI, .NET runtime metadata, logos, staged build tools, and selected runtime sources. The intended directory layout is documented in the root [README](../README.md), and the public-facing notes are in [PPSX33-Alpha-01 release notes](../releases/PPSX33-Alpha-01.md).
+
+Before publishing a binary archive, validate the exact archive on a clean Windows machine. Check that the GUI starts, `ps3_cli.exe --help` returns its usage text, and the synthetic smoke test passes. If a check has not been run, identify it as unverified. Confirm all bundled third-party binaries can legally be redistributed.
 
 ## Test workflow
 
