@@ -46,24 +46,33 @@ add_custom_target(copy_runtime ALL
     COMMENT "Copying runtime/ sources"
 )
 
-# Compilers-files is often locked (AV, Explorer, cl.exe, previous game.exe).
-# NEVER delete the destination (rm -rf fails and kills the whole rebuild).
-# Just ensure the folder exists and robocopy merge; always exit 0 so ninja continues.
+# Compilers-files is often locked (AV, Explorer, cl.exe).
+# Do NOT delete destination. Merge with robocopy; always exit 0 so build continues.
 if(EXISTS "${CMAKE_SOURCE_DIR}/Compilers-files")
     if(WIN32)
-        # Use a small .bat so nested quoting does not break under ninja/cmd.
-        file(WRITE "${CMAKE_BINARY_DIR}/copy_compilers.bat"
+        # Written at configure time; invoked with plain args (no nested cmd quoting).
+        set(_cc_bat "${CMAKE_BINARY_DIR}/copy_compilers.bat")
+        file(WRITE "${_cc_bat}"
 "@echo off
-set SRC=%~1
-set DST=%~2
-if not exist \"%DST%\" mkdir \"%DST%\"
-robocopy \"%SRC%\" \"%DST%\" /E /XO /NFL /NDL /NJH /NJS /nc /ns /np >nul 2>&1
-rem robocopy: 0-7 = success / partial; >=8 = failure — we still continue
+set "SRC=%~1"
+set "DST=%~2"
+if not defined SRC exit /b 0
+if not defined DST exit /b 0
+if not exist "%DST%" mkdir "%DST%" 2>nul
+where robocopy >nul 2>&1
+if errorlevel 1 (
+  xcopy /E /I /Y /Q "%SRC%" "%DST%\" >nul 2>&1
+  exit /b 0
+)
+robocopy "%SRC%" "%DST%" /E /XO /NFL /NDL /NJH /NJS /nc /ns /np >nul 2>&1
 exit /b 0
 ")
+        # Call the .bat directly — ninja/cmake pass args cleanly (no cmd /C wrapper).
         add_custom_command(TARGET copy_runtime POST_BUILD
-            COMMAND cmd /C "\"${CMAKE_BINARY_DIR}/copy_compilers.bat\" \"${CMAKE_SOURCE_DIR}/Compilers-files\" \"${CMAKE_BINARY_DIR}/dist/Compilers-files\""
-            COMMENT "Copying Compilers-files (best-effort, never fails build)"
+            COMMAND "${_cc_bat}"
+                    "${CMAKE_SOURCE_DIR}/Compilers-files"
+                    "${CMAKE_BINARY_DIR}/dist/Compilers-files"
+            COMMENT "Copying Compilers-files (best-effort)"
             VERBATIM
         )
     else()
