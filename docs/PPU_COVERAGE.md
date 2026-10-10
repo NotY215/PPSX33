@@ -2,26 +2,27 @@
 
 <p align="center"><img src="https://raw.githubusercontent.com/NotY215/PPSX33/main/assets/ppsx33-logo.png" alt="PPSX33 circular logo" width="120" /></p>
 
-
 ## Recorded static-lift snapshots
 
 | Game | Instruction instances | Translated instances reported | Unimplemented instances reported | Chunks | Static translation coverage |
 | --- | ---: | ---: | ---: | ---: | --- |
-| God of War III (GOW3) | 1,285,560 | 1,285,560 | 0 | 157 | 100% for this snapshot |
-| Uncharted 2: Among Thieves | 3,485,016 | 3,485,016 | 0 | 426 | 100% for this snapshot |
-| Demon's Souls | 6,343,506 | 6,343,506 | 0 | 775 | 100% for this snapshot |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/God_of_War_Logo.png" width="78" alt="God of War logo" /> God of War III (GOW3) | 1,285,560 | 1,285,560 | 0 | 157 | 100% for this snapshot |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Minecraft_Logo.png" width="78" alt="Minecraft logo" /> Minecraft (PS3) | 3,034,530 | 3,034,530 | 0 | 371 | 100% for this snapshot |
+| <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="48" alt="Uncharted 2 logo artwork" /> Uncharted 2: Among Thieves | 3,485,016 | 3,485,016 | 0 | 426 | 100% for this snapshot |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | 6,343,506 | 6,343,506 | 0 | 775 | 100% for this snapshot |
 
 ## ELF and analysis metadata
 
 | Game | PT_LOAD segments | Entry OPD | Symbols | OPD entries | PRX/module string hits | Embedded SPU images |
 | --- | ---: | --- | ---: | ---: | ---: | ---: |
-| God of War III | 5 | `0x50ddc0` | 0 | 3 | 47 | 8 |
-| Uncharted 2 | 5 | `0xdd8618` | 0 | 116 | 391 | 7 |
-| Demon's Souls | 5 | `0x1916138` | 0 | 4,097 | 134 | 12 |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/God_of_War_Logo.png" width="78" alt="God of War logo" /> God of War III | 5 | `0x50ddc0` | 0 | 3 | 47 | 8 |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Minecraft_Logo.png" width="78" alt="Minecraft logo" /> Minecraft (PS3) | 5 | `0xbbe520` | 0 | 4,097 | 45 | 11 |
+| <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="48" alt="Uncharted 2 logo artwork" /> Uncharted 2 | 5 | `0xdd8618` | 0 | 116 | 391 | 7 |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | 5 | `0x1916138` | 0 | 4,097 | 134 | 12 |
 
 These are recorded analysis snapshots. OPD and PRX values may come from heuristics and should not be treated as confirmed import/export resolution. Zero detected symbols does not mean the ELF contains no functions.
 
-Raw lift report: [Demon's Souls report](games/DemonsSouls/DemonsSouls_lift_report.txt). The GOW3 report is linked from its [game record](games/GOW3/GOW3.md). Uncharted 2's generated `lift_report.txt` and `analysis_report.txt` remain in its local project directory unless separately archived; see the [Uncharted 2 analysis record](games/Uncharted2/UNCHARTED2.md).
+Raw lift reports: [GOW3](games/GOW3/GOW3_lift_report.txt), [Minecraft](games/Mineacraft/lift_report.txt), [Uncharted 2](games/Uncharted2/UNCHARTED2_lift_report.txt), and [Demon's Souls](games/DemonsSouls/DemonsSouls_lift_report.txt). Analysis reports are archived beside each game's record.
 
 ## Interpreting the metric
 
