@@ -1,27 +1,37 @@
 namespace PS3Recomp.Gui;
 
 /// <summary>
-/// Phase 1 UI. Workflow:
-///   Decrypt EBOOT via RPCS3 --decrypt -> auto Load ELF
-///   Decompile -> Build -> Copy
+/// PPSX33 main window. Dark professional layout inspired by Premiere Pro + RPCS3.
+/// Workflow: Decrypt EBOOT -> Decompile -> Build -> Copy.
 /// </summary>
 public sealed class MainForm : Form
 {
+    // Palette (dark studio)
+    static readonly Color Bg = Color.FromArgb(18, 18, 20);
+    static readonly Color Panel = Color.FromArgb(28, 28, 32);
+    static readonly Color Panel2 = Color.FromArgb(36, 36, 42);
+    static readonly Color Border = Color.FromArgb(48, 48, 56);
+    static readonly Color TextPri = Color.FromArgb(230, 230, 235);
+    static readonly Color TextSec = Color.FromArgb(150, 152, 160);
+    static readonly Color Accent = Color.FromArgb(45, 125, 255);
+    static readonly Color AccentHover = Color.FromArgb(70, 145, 255);
+    static readonly Color Success = Color.FromArgb(60, 180, 120);
+    static readonly Color Danger = Color.FromArgb(220, 80, 80);
+
     private readonly Settings _settings = Settings.Load();
-    private readonly TextBox _log = new() { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Both, Dock = DockStyle.Fill, Font = new Font("Consolas", 9f), WordWrap = false };
-    private readonly TextBox _report = new() { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Both, Dock = DockStyle.Fill, Font = new Font("Consolas", 9f), WordWrap = false };
-    private readonly Label _project = new() { Text = "No project loaded", AutoSize = true };
-    private readonly Label _status = new() { Text = "Ready", AutoSize = true, Padding = new Padding(12, 6, 0, 0) };
-    private readonly ProgressBar _progress = new() { Width = 220, Style = ProgressBarStyle.Marquee, MarqueeAnimationSpeed = 0, Visible = true };
-    private readonly Button _btnLoad = new() { Text = "1. Load ELF…", AutoSize = true };
-    private readonly Button _btnFindElf = new() { Text = "Find decrypted ELF…", AutoSize = true };
-    private readonly Button _btnLift = new() { Text = "2. Decompile / Recompile to C++", AutoSize = true, Enabled = false };
-    private readonly Button _btnBuild = new() { Text = "3. Build exe + dll", AutoSize = true, Enabled = false };
-    private readonly Button _btnCopy = new() { Text = "4. Copy to EBOOT folder…", AutoSize = true, Enabled = false };
-    private readonly Button _btnCancel = new() { Text = "Cancel", AutoSize = true, Enabled = false };
-    private readonly Button _btnRpcs3 = new() { Text = "Decrypt EBOOT (RPCS3)…", AutoSize = true };
-    private readonly ComboBox _gfx = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 90 };
-    private readonly NumericUpDown _threads = new() { Minimum = 1, Maximum = 64, Width = 50 };
+    private readonly TextBox _log = new();
+    private readonly TextBox _report = new();
+    private readonly Label _project = new();
+    private readonly Label _status = new();
+    private readonly ProgressBar _progress = new();
+    private readonly Button _btnDecrypt = new();
+    private readonly Button _btnLoad = new();
+    private readonly Button _btnLift = new();
+    private readonly Button _btnBuild = new();
+    private readonly Button _btnCopy = new();
+    private readonly Button _btnCancel = new();
+    private readonly ComboBox _gfx = new();
+    private readonly NumericUpDown _threads = new();
     private string? _projectDir;
     private CancellationTokenSource? _cts;
     private bool _canBuild;
@@ -32,34 +42,172 @@ public sealed class MainForm : Form
 
     public MainForm()
     {
-        Text = "PS3 Recompiler"; Width = 960; Height = 680; StartPosition = FormStartPosition.CenterScreen;
+        Text = "PPSX33  ·  PlayStation 3 Recompiler";
+        Width = 1100;
+        Height = 720;
+        MinimumSize = new Size(900, 560);
+        StartPosition = FormStartPosition.CenterScreen;
+        BackColor = Bg;
+        ForeColor = TextPri;
+        Font = new Font("Segoe UI", 9.25f);
 
+        // ---- Header ----
+        var header = new Panel { Dock = DockStyle.Top, Height = 52, BackColor = Panel, Padding = new Padding(16, 0, 16, 0) };
+        var title = new Label
+        {
+            Text = "PPSX33",
+            Font = new Font("Segoe UI Semibold", 16f),
+            ForeColor = TextPri,
+            AutoSize = true,
+            Location = new Point(16, 12)
+        };
+        var subtitle = new Label
+        {
+            Text = "Static recompiler  ·  PPU / SPU / RSX",
+            ForeColor = TextSec,
+            AutoSize = true,
+            Location = new Point(110, 18)
+        };
+        header.Controls.Add(title);
+        header.Controls.Add(subtitle);
+
+        // ---- Left rail (workflow) ----
+        var rail = new Panel { Dock = DockStyle.Left, Width = 220, BackColor = Panel, Padding = new Padding(12) };
+        var railTitle = new Label
+        {
+            Text = "WORKFLOW",
+            ForeColor = TextSec,
+            Font = new Font("Segoe UI Semibold", 8f),
+            Dock = DockStyle.Top,
+            Height = 28,
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+
+        StylePrimaryButton(_btnDecrypt, "Decrypt EBOOT");
+        StylePrimaryButton(_btnLoad, "Load ELF");
+        StyleStepButton(_btnLift, "Decompile");
+        StyleStepButton(_btnBuild, "Build");
+        StyleStepButton(_btnCopy, "Copy to game folder");
+        StyleDangerButton(_btnCancel, "Cancel");
+        _btnLift.Enabled = false;
+        _btnBuild.Enabled = false;
+        _btnCopy.Enabled = false;
+        _btnCancel.Enabled = false;
+
+        var btnStack = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            AutoSize = true,
+            Padding = new Padding(0, 4, 0, 0)
+        };
+        foreach (var b in new[] { _btnDecrypt, _btnLoad, _btnLift, _btnBuild, _btnCopy, _btnCancel })
+        {
+            b.Width = 190;
+            b.Margin = new Padding(0, 0, 0, 8);
+            btnStack.Controls.Add(b);
+        }
+
+        var optsTitle = new Label
+        {
+            Text = "OPTIONS",
+            ForeColor = TextSec,
+            Font = new Font("Segoe UI Semibold", 8f),
+            Dock = DockStyle.Top,
+            Height = 28,
+            Margin = new Padding(0, 16, 0, 0),
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+        var optsPanel = new Panel { Dock = DockStyle.Top, Height = 100, BackColor = Panel };
+
+        var gfxLbl = new Label { Text = "Graphics backend", ForeColor = TextSec, Location = new Point(0, 4), AutoSize = true };
+        _gfx.DropDownStyle = ComboBoxStyle.DropDownList;
+        _gfx.Width = 190;
+        _gfx.Location = new Point(0, 24);
+        _gfx.FlatStyle = FlatStyle.Flat;
+        _gfx.BackColor = Panel2;
+        _gfx.ForeColor = TextPri;
         _gfx.Items.AddRange(new object[] { "D3D10", "D3D11", "Vulkan" });
-        _gfx.SelectedItem = _settings.GraphicsBackend; if (_gfx.SelectedIndex < 0) _gfx.SelectedIndex = 1;
+        _gfx.SelectedItem = _settings.GraphicsBackend;
+        if (_gfx.SelectedIndex < 0) _gfx.SelectedIndex = 1;
+
+        var thrLbl = new Label { Text = "CPU threads", ForeColor = TextSec, Location = new Point(0, 56), AutoSize = true };
+        _threads.Minimum = 1;
+        _threads.Maximum = 64;
+        _threads.Width = 80;
+        _threads.Location = new Point(0, 74);
+        _threads.BackColor = Panel2;
+        _threads.ForeColor = TextPri;
         _threads.Value = Math.Clamp(_settings.PpuThreads, 1, 64);
 
-        var top = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, Padding = new Padding(6) };
-        top.Controls.AddRange(new Control[] { _btnLoad, _btnFindElf, _btnLift, _btnBuild, _btnCopy, _btnCancel });
-        var opts = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, Padding = new Padding(6) };
-        opts.Controls.AddRange(new Control[] {
-            new Label { Text = "Graphics:", AutoSize = true, Padding = new Padding(0, 6, 0, 0) }, _gfx,
-            new Label { Text = "CPU threads:", AutoSize = true, Padding = new Padding(12, 6, 0, 0) }, _threads, _btnRpcs3, _status, _progress });
-        var info = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, Padding = new Padding(6) };
-        info.Controls.Add(_project);
+        optsPanel.Controls.Add(gfxLbl);
+        optsPanel.Controls.Add(_gfx);
+        optsPanel.Controls.Add(thrLbl);
+        optsPanel.Controls.Add(_threads);
 
-        var tabs = new TabControl { Dock = DockStyle.Fill };
-        var logTab = new TabPage("Log"); logTab.Controls.Add(_log);
-        var reportTab = new TabPage("Lift report"); reportTab.Controls.Add(_report);
+        rail.Controls.Add(optsPanel);
+        rail.Controls.Add(optsTitle);
+        rail.Controls.Add(btnStack);
+        rail.Controls.Add(railTitle);
+
+        // ---- Status bar ----
+        var statusBar = new Panel { Dock = DockStyle.Bottom, Height = 32, BackColor = Panel, Padding = new Padding(12, 0, 12, 0) };
+        _status.Text = "Ready";
+        _status.ForeColor = TextSec;
+        _status.AutoSize = true;
+        _status.Location = new Point(12, 8);
+        _progress.Style = ProgressBarStyle.Marquee;
+        _progress.MarqueeAnimationSpeed = 0;
+        _progress.Width = 180;
+        _progress.Height = 12;
+        _progress.Location = new Point(Width - 220, 10);
+        _progress.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        statusBar.Controls.Add(_status);
+        statusBar.Controls.Add(_progress);
+
+        // ---- Project strip ----
+        var projStrip = new Panel { Dock = DockStyle.Top, Height = 36, BackColor = Panel2, Padding = new Padding(12, 0, 12, 0) };
+        _project.Text = "No project loaded";
+        _project.ForeColor = TextSec;
+        _project.AutoSize = true;
+        _project.Location = new Point(12, 10);
+        projStrip.Controls.Add(_project);
+
+        // ---- Tabs / content ----
+        var tabs = new TabControl { Dock = DockStyle.Fill, Padding = new Point(12, 8) };
+        tabs.Font = new Font("Segoe UI", 9f);
+
+        StyleTextBox(_log);
+        StyleTextBox(_report);
+
+        var logTab = new TabPage("Console");
+        logTab.BackColor = Bg;
+        logTab.Controls.Add(_log);
+
+        var reportTab = new TabPage("Lift report");
+        reportTab.BackColor = Bg;
+        reportTab.Controls.Add(_report);
+
         var roadmapTab = new TabPage("Roadmap");
-        roadmapTab.Controls.Add(new TextBox { Multiline = true, ReadOnly = true, Dock = DockStyle.Fill, ScrollBars = ScrollBars.Vertical, Text = RoadmapText });
+        roadmapTab.BackColor = Bg;
+        var roadmapBox = new TextBox();
+        StyleTextBox(roadmapBox);
+        roadmapBox.Text = RoadmapText;
+        roadmapTab.Controls.Add(roadmapBox);
+
         tabs.TabPages.Add(logTab);
         tabs.TabPages.Add(reportTab);
         tabs.TabPages.Add(roadmapTab);
 
-        Controls.Add(tabs); Controls.Add(info); Controls.Add(opts); Controls.Add(top);
+        Controls.Add(tabs);
+        Controls.Add(projStrip);
+        Controls.Add(statusBar);
+        Controls.Add(rail);
+        Controls.Add(header);
 
+        _btnDecrypt.Click += async (_, _) => await DecryptEbootAndLoad();
         _btnLoad.Click += (_, _) => LoadElf(null);
-        _btnFindElf.Click += (_, _) => FindAndLoadDecryptedElf();
         _btnLift.Click += async (_, _) => await RunStep("Decompiling…", ct =>
         {
             ct.ThrowIfCancellationRequested();
@@ -74,14 +222,70 @@ public sealed class MainForm : Form
         }, enableCopy: true);
         _btnCopy.Click += (_, _) => CopyToEbootFolder();
         _btnCancel.Click += (_, _) => { try { _cts?.Cancel(); } catch { } Append("Cancel requested…"); };
-        _btnRpcs3.Click += async (_, _) => await DecryptEbootAndLoad();
         FormClosing += (_, _) => SaveSettings();
-        Append($"ps3core version {SafeVersion()}  |  runtime: {RuntimeDir}  |  compilers: {CompilersDir}");
-        Append("Decrypt EBOOT runs: rpcs3.exe --decrypt \"EBOOT.BIN\"  (same as Utilities -> Decrypt PS3 Binaries).");
-        Append("When decrypt finishes, the generated .elf is loaded automatically.");
+
+        Append($"ps3core {SafeVersion()}  ·  runtime {RuntimeDir}");
+        Append("Decrypt EBOOT uses: rpcs3.exe --decrypt \"EBOOT.BIN\"  (Utilities → Decrypt PS3 Binaries).");
+        Append("Generated .elf is loaded automatically into a new project.");
     }
 
-    private static string SafeVersion() { try { return Native.Version().ToString(); } catch (Exception ex) { return "UNAVAILABLE (" + ex.Message + ")"; } }
+    private static void StyleTextBox(TextBox t)
+    {
+        t.Multiline = true;
+        t.ReadOnly = true;
+        t.ScrollBars = ScrollBars.Both;
+        t.Dock = DockStyle.Fill;
+        t.BorderStyle = BorderStyle.None;
+        t.BackColor = Bg;
+        t.ForeColor = TextPri;
+        t.Font = new Font("Consolas", 9.25f);
+        t.WordWrap = false;
+    }
+
+    private static void StylePrimaryButton(Button b, string text)
+    {
+        b.Text = text;
+        b.FlatStyle = FlatStyle.Flat;
+        b.FlatAppearance.BorderSize = 0;
+        b.BackColor = Accent;
+        b.ForeColor = Color.White;
+        b.Height = 36;
+        b.Cursor = Cursors.Hand;
+        b.Font = new Font("Segoe UI Semibold", 9.25f);
+        b.MouseEnter += (_, _) => { if (b.Enabled) b.BackColor = AccentHover; };
+        b.MouseLeave += (_, _) => { if (b.Enabled) b.BackColor = Accent; };
+    }
+
+    private static void StyleStepButton(Button b, string text)
+    {
+        b.Text = text;
+        b.FlatStyle = FlatStyle.Flat;
+        b.FlatAppearance.BorderColor = Border;
+        b.FlatAppearance.BorderSize = 1;
+        b.BackColor = Panel2;
+        b.ForeColor = TextPri;
+        b.Height = 34;
+        b.Cursor = Cursors.Hand;
+        b.MouseEnter += (_, _) => { if (b.Enabled) b.BackColor = Color.FromArgb(48, 48, 56); };
+        b.MouseLeave += (_, _) => { if (b.Enabled) b.BackColor = Panel2; };
+    }
+
+    private static void StyleDangerButton(Button b, string text)
+    {
+        b.Text = text;
+        b.FlatStyle = FlatStyle.Flat;
+        b.FlatAppearance.BorderSize = 0;
+        b.BackColor = Color.FromArgb(60, 40, 40);
+        b.ForeColor = Color.FromArgb(255, 160, 160);
+        b.Height = 32;
+        b.Cursor = Cursors.Hand;
+    }
+
+    private static string SafeVersion()
+    {
+        try { return Native.Version().ToString(); }
+        catch (Exception ex) { return "UNAVAILABLE (" + ex.Message + ")"; }
+    }
 
     private void Append(string s)
     {
@@ -93,6 +297,9 @@ public sealed class MainForm : Form
     {
         if (InvokeRequired) { BeginInvoke(() => SetStatus(s)); return; }
         _status.Text = s;
+        _status.ForeColor = s.Contains("fail", StringComparison.OrdinalIgnoreCase) || s.Contains("Error")
+            ? Danger
+            : TextSec;
     }
 
     private void SaveSettings()
@@ -107,30 +314,42 @@ public sealed class MainForm : Form
         string? path = presetPath;
         if (path == null)
         {
-            using var ofd = new OpenFileDialog { Title = "Select decrypted PS3 ELF", Filter = "ELF / EBOOT|*.elf;*.self;EBOOT.*|All files|*.*" };
+            using var ofd = new OpenFileDialog
+            {
+                Title = "Select decrypted PS3 ELF",
+                Filter = "ELF|*.elf;*.ELF|All files|*.*"
+            };
             if (ofd.ShowDialog(this) != DialogResult.OK) return;
             path = ofd.FileName;
         }
 
-        using var dlg = new PromptDialog("Game name", "Enter the game name (a folder with this name is created next to the app):");
+        using var dlg = new PromptDialog("Project name", "Game / project folder name:");
         if (dlg.ShowDialog(this) != DialogResult.OK || dlg.Value.Length == 0) return;
 
         if (!Native.CreateProject(AppContext.BaseDirectory, dlg.Value, path, out var dir, out var err))
-        { Append("ERROR: " + err); return; }
+        {
+            Append("ERROR: " + err);
+            return;
+        }
         _projectDir = dir;
-        _project.Text = "Project: " + dir;
-        Append($"Created project folders in {dir}\n  input/ (ELF copied)  codebase/  output/");
+        _project.Text = "Project  ·  " + dir;
+        _project.ForeColor = TextPri;
+        Append("Created project: " + dir);
         _canBuild = false;
         _canCopy = false;
         _btnLift.Enabled = true;
         _btnBuild.Enabled = false;
         _btnCopy.Enabled = false;
-        _report.Text = "(Run Decompile to generate lift_report.txt)";
+        _report.Text = "Run Decompile to generate lift_report.txt";
     }
 
     private async Task DecryptEbootAndLoad()
     {
-        using var ofd = new OpenFileDialog { Title = "Select EBOOT.BIN (or other SELF) to decrypt", Filter = "EBOOT.BIN|EBOOT.BIN|SELF / BIN|*.self;*.bin;*.sprx|All files|*.*" };
+        using var ofd = new OpenFileDialog
+        {
+            Title = "Select EBOOT.BIN (or SELF) to decrypt",
+            Filter = "EBOOT.BIN|EBOOT.BIN|SELF / BIN|*.self;*.bin;*.sprx|All files|*.*"
+        };
         if (ofd.ShowDialog(this) != DialogResult.OK) return;
 
         if (string.IsNullOrEmpty(_settings.Rpcs3Path) || !File.Exists(_settings.Rpcs3Path))
@@ -142,8 +361,7 @@ public sealed class MainForm : Form
         }
 
         string bin = ofd.FileName;
-        Append("Decrypting via RPCS3 CLI: --decrypt \"" + bin + "\"");
-        Append("(This is the same path as Utilities -> Decrypt PS3 Binaries; does not boot the game.)");
+        Append("Decrypting: " + bin);
         SetBusy(true);
         SetStatus("Decrypting…");
         _progress.MarqueeAnimationSpeed = 30;
@@ -174,41 +392,7 @@ public sealed class MainForm : Form
         }
 
         Append("Decrypted ELF: " + elf);
-        Append("Loading into project…");
         LoadElf(elf);
-    }
-
-    private void FindAndLoadDecryptedElf()
-    {
-        using var ofd = new OpenFileDialog { Title = "Select original EBOOT.BIN (used as search root)", Filter = "EBOOT.BIN|EBOOT.BIN|All files|*.*" };
-        string? eboot = null;
-        if (ofd.ShowDialog(this) == DialogResult.OK) eboot = ofd.FileName;
-
-        Append("Searching for decrypted ELF…");
-        var hits = Rpcs3Launcher.FindDecryptedElfs(_settings.Rpcs3Path, eboot);
-        if (hits.Count == 0)
-        {
-            Append("No decrypted ELF found. Use 'Decrypt EBOOT (RPCS3)' or Load ELF manually.");
-            return;
-        }
-
-        using var pick = new Form
-        {
-            Text = "Select decrypted ELF",
-            Width = 720,
-            Height = 360,
-            StartPosition = FormStartPosition.CenterParent
-        };
-        var list = new ListBox { Dock = DockStyle.Fill };
-        foreach (var h in hits) list.Items.Add(h);
-        list.SelectedIndex = 0;
-        var ok = new Button { Text = "Use selected", Dock = DockStyle.Bottom, Height = 32 };
-        ok.Click += (_, _) => { pick.DialogResult = DialogResult.OK; pick.Close(); };
-        pick.Controls.Add(list);
-        pick.Controls.Add(ok);
-        if (pick.ShowDialog(this) != DialogResult.OK || list.SelectedItem is not string chosen) return;
-        Append("Using: " + chosen);
-        LoadElf(chosen);
     }
 
     private async Task RunStep(string title, Func<CancellationToken, (bool ok, string log)> work, bool enableBuild = false, bool enableCopy = false, bool refreshReport = false)
@@ -257,8 +441,6 @@ public sealed class MainForm : Form
             Path.Combine(_projectDir, "codebase", "lift_report.txt"),
             Path.Combine(_projectDir, "output", "lift_report.txt"),
             Path.Combine(_projectDir, "lift_report.txt"),
-            Path.Combine(_projectDir, "codebase", "analysis_report.txt"),
-            Path.Combine(_projectDir, "output", "analysis_report.txt"),
             Path.Combine(_projectDir, "analysis_report.txt"),
         };
         foreach (var p in candidates)
@@ -277,37 +459,41 @@ public sealed class MainForm : Form
 
     private void SetBusy(bool busy)
     {
+        _btnDecrypt.Enabled = !busy;
         _btnLoad.Enabled = !busy;
-        _btnFindElf.Enabled = !busy;
         _btnLift.Enabled = !busy && _projectDir != null;
         _btnBuild.Enabled = !busy && _canBuild;
         _btnCopy.Enabled = !busy && _canCopy;
         _btnCancel.Enabled = busy;
-        _btnRpcs3.Enabled = !busy;
         UseWaitCursor = busy;
     }
 
     private void CopyToEbootFolder()
     {
         if (_projectDir == null) return;
-        using var fbd = new FolderBrowserDialog { Description = "Select the folder that contains EBOOT.BIN (…/PS3_GAME/USRDIR)" };
+        using var fbd = new FolderBrowserDialog { Description = "Folder that contains EBOOT.BIN (…/PS3_GAME/USRDIR)" };
         if (fbd.ShowDialog(this) != DialogResult.OK) return;
         string outDir = Path.Combine(_projectDir, "output");
         foreach (var name in new[] { "game.exe", "ps3rt.dll", "guest_image.bin" })
         {
             string src = Path.Combine(outDir, name);
-            if (File.Exists(src)) { File.Copy(src, Path.Combine(fbd.SelectedPath, name), true); Append("Copied " + name); }
-            else Append("Missing (not built?): " + name);
+            if (File.Exists(src))
+            {
+                File.Copy(src, Path.Combine(fbd.SelectedPath, name), true);
+                Append("Copied " + name);
+            }
+            else Append("Missing: " + name);
         }
-        Append("Run game.exe from that folder (native recompile; not for RPCS3).");
+        Append("Run game.exe from that folder.");
     }
 
     private const string RoadmapText =
-        "Phase 1  UI                          - DONE (decrypt via --decrypt, auto-load ELF)\r\n" +
-        "Phase 2  ELF decompile               - GOW3 + Uncharted2 static 100% snapshots\r\n" +
-        "Phase 3  PPU runtime                 - IN PROGRESS (GOW3 primary)\r\n" +
-        "Phase 4  SPU                         - Interpreter (major ISA families)\r\n" +
-        "Phase 5  RSX graphics                - TODO\r\n" +
-        "Phase 6  Native output               - DONE (MSVC game.exe + ps3rt.dll)\r\n\r\n" +
-        "Details: ROADMAP.md in the repository.";
+        "PPSX33 Roadmap (summary)\r\n\r\n" +
+        "Phase 1  UI              DONE  (dark studio UI, RPCS3 --decrypt)\r\n" +
+        "Phase 2  PPU lift        GOW3 + Uncharted2 static 100% snapshots\r\n" +
+        "Phase 3  PPU runtime     IN PROGRESS  (external stubs, HLE)\r\n" +
+        "Phase 4  SPU             Interpreter (major ISA)\r\n" +
+        "Phase 5  RSX             GCM/FIFO core started\r\n" +
+        "Phase 6  Native output   DONE  (MSVC game.exe + ps3rt.dll)\r\n\r\n" +
+        "See ROADMAP.md in the repository for full detail.\r\n";
 }
