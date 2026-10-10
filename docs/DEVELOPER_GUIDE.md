@@ -1,5 +1,8 @@
 # PPSX33 Developer Guide
 
+<p align="center"><img src="https://raw.githubusercontent.com/NotY215/PPSX33/main/assets/ppsx33-logo.svg" alt="PPSX33 circular logo" width="120" /></p>
+
+
 This guide describes the repository layout, development workflow, and implementation responsibilities for contributors.
 
 ## Architecture overview

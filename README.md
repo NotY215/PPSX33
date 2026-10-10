@@ -1,5 +1,15 @@
 # PPSX33: PlayStation 3 Static Recompiler
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/NotY215/PPSX33/main/assets/ppsx33-banner.svg" alt="PPSX33 neon-blue banner" width="100%" />
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/NotY215/PPSX33/main/assets/ppsx33-logo.svg" alt="PPSX33 circular logo" width="220" />
+</p>
+
+<p align="center"><strong>PlayStation 3 Static Recompiler</strong><br />Decode · Translate · Play</p>
+
 PPSX33 is an experimental static recompiler for decrypted ELF64 big-endian PowerPC64 input targeting the PlayStation 3. The repository contains a C/C++ core, command-line frontend, C# WinForms GUI, and guest runtime support.
 
 PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction semantics, runtime behavior, system-library compatibility, SPU execution, and RSX rendering are separate engineering problems.
