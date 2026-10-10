@@ -1,5 +1,8 @@
 # PPSX33 Roadmap
 
+<p align="center"><img src="https://raw.githubusercontent.com/NotY215/PPSX33/main/assets/ppsx33-logo.svg" alt="PPSX33 circular logo" width="140" /></p>
+
+
 ## Status legend
 
 | Mark | Meaning |
