@@ -14,7 +14,7 @@ Static lifting snapshots only. Not proof of playability.
 | <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="48" alt="Uncharted 2 logo artwork" /> Uncharted 2: Among Thieves | [Uncharted2](Uncharted2/UNCHARTED2.md) | 3,485,016 | 3,485,016 | 0 | 426 | 100% snapshot |
 | <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | [DemonsSouls](DemonsSouls/DEMONS_SOULS.md) | 6,343,506 | 6,343,506 | 0 | 775 | 100% snapshot |
 | <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_San_Andreas_logo.svg" width="78" alt="Grand Theft Auto: San Andreas logo" /> Grand Theft Auto: San Andreas | [README](Grand%20Theft%20Auto%20-%20San%20Andreas/README.md) | Not analyzed | Not analyzed | Not analyzed | Not analyzed | Planned first |
-| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_V_logo.svg" width="78" alt="Grand Theft Auto V logo" /> Grand Theft Auto V | [README](Grand%20Theft%20Auto%20V/README.md) | Not analyzed | Not analyzed | Not analyzed | Not analyzed | Planned after San Andreas |
+| <img src="https://thumb.wikimedia.org/wikipedia/it/thumb/7/76/Grand_Theft_Auto_V_logo.svg/330px-Grand_Theft_Auto_V_logo.svg.png?utm_source=it.wikipedia.org&utm_campaign=index&utm_content=thumbnail&_=20240305183247" width="78" alt="Grand Theft Auto V logo" /> Grand Theft Auto V | [README](Grand%20Theft%20Auto%20V/README.md) | Not analyzed | Not analyzed | Not analyzed | Not analyzed | Planned after San Andreas |
 
 ## Analysis findings
 
