@@ -40,11 +40,11 @@ public sealed partial class MainForm : Form
     private Process? _gameProc;
 
     // Sequential unlock flags
-    private bool _canLift;   // after successful Load ELF
-    private bool _canBuild;  // after successful Decompile
-    private bool _canCopy;   // after successful Build
-    private bool _canRun;    // after successful Build
-    private bool _gfxUnlocked; // after successful Decompile
+    private bool _canLift;
+    private bool _canBuild;
+    private bool _canCopy;
+    private bool _canRun;
+    private bool _gfxUnlocked;
     private bool _busy;
 
     private const int StallQuietMs = 4000;
@@ -67,14 +67,13 @@ public sealed partial class MainForm : Form
         Font = new Font("Segoe UI", 9.25f);
         DoubleBuffered = true;
 
-        // Try load logo icon for window
         try
         {
             string ico = Path.Combine(AppContext.BaseDirectory, "ppsx33-logo.ico");
             if (!File.Exists(ico)) ico = Path.Combine(AppContext.BaseDirectory, "Assets", "ppsx33-logo.ico");
             if (File.Exists(ico)) Icon = new Icon(ico);
         }
-        catch { /* no icon */ }
+        catch { }
 
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Padding = new Padding(10), BackColor = Bg };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 250));
@@ -82,7 +81,6 @@ public sealed partial class MainForm : Form
 
         var rail = new Panel { Dock = DockStyle.Fill, BackColor = Panel, Padding = new Padding(12) };
 
-        // Logo at top of rail
         _logo.SizeMode = PictureBoxSizeMode.Zoom;
         _logo.Height = 56;
         _logo.Dock = DockStyle.Top;
@@ -94,7 +92,7 @@ public sealed partial class MainForm : Form
             if (!File.Exists(png)) png = Path.Combine(AppContext.BaseDirectory, "Assets", "ppsx33-logo.png");
             if (File.Exists(png)) _logo.Image = Image.FromFile(png);
         }
-        catch { /* no logo image */ }
+        catch { }
 
         var railTitle = MakeLbl("WORKFLOW", TextSec, true); railTitle.Dock = DockStyle.Top; railTitle.Height = 24;
 
@@ -118,7 +116,7 @@ public sealed partial class MainForm : Form
         _gfx.BackColor = Panel2; _gfx.ForeColor = TextPri; _gfx.Location = new Point(0, 24); _gfx.Size = new Size(214, 28);
         _gfx.Items.AddRange(new object[] { "D3D10", "D3D11", "Vulkan" });
         _gfx.SelectedItem = _settings.GraphicsBackend; if (_gfx.SelectedIndex < 0) _gfx.SelectedIndex = 1;
-        _gfx.Enabled = false; // unlocked after Decompile
+        _gfx.Enabled = false;
         var thrLbl = MakeLbl("CPU threads", TextSec, false); thrLbl.Location = new Point(0, 58);
         _threads.Minimum = 1; _threads.Maximum = 64; _threads.BackColor = Panel2; _threads.ForeColor = TextPri;
         _threads.Location = new Point(0, 78); _threads.Size = new Size(100, 26);
@@ -160,8 +158,9 @@ public sealed partial class MainForm : Form
         _project.Text = "No project loaded"; _project.ForeColor = TextSec; _project.BackColor = Panel;
         _project.Dock = DockStyle.Fill; _project.TextAlign = ContentAlignment.MiddleLeft; _project.Padding = new Padding(12, 0, 0, 0);
         StyleTextBox(_log); StyleTextBox(_report); StyleTextBox(_roadmap);
-        _roadmap.Text = "PPSX33: static UI · sequential unlocks · ELF/SELF only · projects under exe/projects\r\n" +
-                        "NID table + XER/FPSCR + RSX host present (D3D10/11/Vulkan)\r\n";
+        _roadmap.Text = "PPSX33 hybrid UI: C# WinForms shell + C++ ps3core/ps3rt\r\n" +
+                        "Sequential: Load ELF → Decompile → Build → Run\r\n" +
+                        "SPU interpreter + RSX D3D11 host present + XER/FPSCR + NID\r\n";
         _tabs.Dock = DockStyle.Fill;
         AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap);
         _status.Text = "Ready"; _status.ForeColor = TextSec; _status.Dock = DockStyle.Fill;
@@ -187,7 +186,7 @@ public sealed partial class MainForm : Form
         _btnRun.Click += async (_, _) => await RunGameExe();
         _btnCopy.Click += (_, _) => CopyToEbootFolder();
         _btnCancel.Click += (_, _) => StopAll();
-        Append($"ps3core {SafeVersion()} · static UI · sequential workflow · XER/FPSCR · NID + RSX host present");
+        Append($"ps3core {SafeVersion()} · C# UI + C++ runtime · SPU interpreter · RSX D3D11 present");
         Append("Projects root: " + ProjectsRoot);
     }
 
@@ -257,7 +256,6 @@ public sealed partial class MainForm : Form
             path = ofd.FileName;
         }
 
-        // Hard reject non-ELF/SELF (no .bin)
         string ext = Path.GetExtension(path).ToLowerInvariant();
         if (ext is not (".elf" or ".self"))
         {
@@ -279,7 +277,6 @@ public sealed partial class MainForm : Form
 
         _projectDir = proj;
         _project.Text = proj;
-        // Sequential: load unlocks Decompile only
         _canLift = true;
         _canBuild = _canCopy = _canRun = false;
         _gfxUnlocked = false;
@@ -324,7 +321,7 @@ public sealed partial class MainForm : Form
             while (!_gameProc.HasExited)
             {
                 await Task.Delay(200);
-                if ((DateTime.UtcNow - lastOut).TotalMilliseconds > StallQuietMs) { Append($"[ui] stall — stopping"); try { _gameProc.Kill(true); } catch { } SetStatus("Stopped (stall)"); break; }
+                if ((DateTime.UtcNow - lastOut).TotalMilliseconds > StallQuietMs) { Append("[ui] stall — stopping"); try { _gameProc.Kill(true); } catch { } SetStatus("Stopped (stall)"); break; }
                 if ((DateTime.UtcNow - start).TotalMilliseconds > MaxRunMs) { Append("[ui] timeout — stopping"); try { _gameProc.Kill(true); } catch { } SetStatus("Stopped (timeout)"); break; }
             }
             if (_gameProc.HasExited && _status.Text.StartsWith("Running")) SetStatus($"Exit code {_gameProc.ExitCode}");
@@ -368,7 +365,7 @@ public sealed partial class MainForm : Form
 
     static string SafeVersion()
     {
-        try { return Native.Version() ?? "1"; }
+        try { return Native.Version().ToString(); }
         catch { return "1"; }
     }
 }
