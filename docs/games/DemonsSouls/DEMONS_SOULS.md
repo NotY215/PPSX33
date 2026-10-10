@@ -1,4 +1,4 @@
-# Demon's Souls — lift record
+# <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="150" alt="Demon's Souls logo" /> Demon's Souls — lift record
 
 - **Date:** 2026-10
 - **Input:** Decrypted EBOOT.ELF (RPCS3 `--decrypt`)
