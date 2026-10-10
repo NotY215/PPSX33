@@ -2,7 +2,7 @@
 
 ## Analysis status
 
-**Planned; not yet analyzed.** GTA V coverage work is scheduled after the Grand Theft Auto: San Andreas coverage pass.
+**Planned; not yet analyzed.** GTA V is the next planned title after the Grand Theft Auto: San Andreas lift and ELF-analysis snapshot was recorded.
 
 ## Planned lift metrics
 
