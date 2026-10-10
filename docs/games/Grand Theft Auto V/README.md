@@ -1,25 +1,23 @@
 # <img src="https://thumb.wikimedia.org/wikipedia/it/thumb/7/76/Grand_Theft_Auto_V_logo.svg/330px-Grand_Theft_Auto_V_logo.svg.png?utm_source=it.wikipedia.org&utm_campaign=index&utm_content=thumbnail&_=20240305183247" width="180" alt="Grand Theft Auto V logo" /> Grand Theft Auto V
 
-This folder tracks the next planned PPSX33 opcode and static-translation coverage study for Grand Theft Auto V. The GTA: San Andreas lift and ELF-analysis snapshot is now recorded.
+This folder records the PPSX33 static-lift and ELF-analysis snapshot for Grand Theft Auto V.
 
 ## Planned work
 
-- [x] Record the Grand Theft Auto: San Andreas lift and ELF-analysis snapshot.
-- [ ] Identify the exact GTA V executable/input build and record its provenance.
-- [ ] Run static ELF analysis and archive the resulting `analysis_report.txt`.
-- [ ] Run the PPU lifter and archive the resulting `lift_report.txt`.
-- [ ] Record instruction totals, translated and unimplemented counts, chunks, PT_LOAD segments, entry OPD, detected symbols, OPD entries, PRX/module string hits, and embedded SPU findings where applicable.
+- [x] Archive the GTA V `lift_report.txt` and `analysis_report.txt` snapshot.
+- [ ] Record the exact GTA V executable/input build and provenance.
 - [ ] Review opcode families, approximate operations, fallback paths, and semantic gaps beyond headline coverage.
 - [ ] Add focused synthetic regression tests for newly discovered instruction patterns.
 
 ## Current status
 
-**Planned; not yet analyzed.** No GTA V lift or analysis metrics are recorded. Missing reports do not mean zero instructions or complete coverage.
+**Static analysis recorded; semantic and runtime validation remain pending.** The archived report records 6,934,214 instruction instances, 6,934,214 translated, 0 reported unimplemented, and 847 chunks. ELF analysis records 5 PT_LOAD segments, entry OPD `0x1a90b80`, 0 detected symbols, 4,097 OPD entries, 56 PRX/module string hits, and 8 embedded SPU images. These are report metrics for this input snapshot, not proof of correct instruction semantics or playability.
 
 ## Files
 
 - [Grand Theft Auto V.md](Grand%20Theft%20Auto%20V.md): title-specific tracking record.
-- `lift_report.txt` and `analysis_report.txt`: to be added after actual analysis.
+- - [lift_report.txt](lift_report.txt): static-lift metrics.
+- [analysis_report.txt](analysis_report.txt): ELF analysis metrics.
 
 ## Important notes
 
