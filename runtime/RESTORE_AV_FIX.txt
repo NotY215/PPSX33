@@ -1,0 +1,7 @@
+Copy ppu_runtime.h and ps3rt.cpp from the agent artifacts into runtime/ then rebuild the game project.
+
+Fixes applied in those files:
+1. guest_ok bounds on all rd/wr/vpr (prevents host access violation)
+2. mmapper: when r6=0 use r4 as out pointer; log written VA
+3. ppu_run calls ps3rt_prx_import_stub on import PC
+4. Expanded LV2 lwmutex/cond/sem/event/thread stubs
