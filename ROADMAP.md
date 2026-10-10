@@ -8,13 +8,13 @@
 | [~] | Partial, heuristic, approximate, or not fully validated |
 | [ ] | Not implemented or not verified |
 
-Implementation status does not establish semantic correctness or compatibility. Acceptance criteria define the evidence required to mark work complete.
+Implementation status does not establish semantic correctness or compatibility.
 
 ## Project priorities
 
-1. Improve PPU semantic correctness and runtime stability using synthetic tests and the God of War III (GOW3) and Uncharted 2 static-lift snapshots.
-2. Inspect the Uncharted 2 reports for approximate or fallback translations, then prioritize semantic tests and fixes by frequency and correctness risk.
-3. Develop SPU execution, RSX/GCM support, and system-library compatibility as separate workstreams.
+1. **GOW3** runtime stability (Phase 3) and semantic hardening of approximate PPU ops.
+2. Use **Uncharted 2** static lift (3.48M insn, 7 SPU images) to stress-test SPU interpreter and long-tail PPU paths (no Uncharted 2 native build yet).
+3. SPU, RSX, and PRX HLE as separate tracks.
 
 ## Phase 1: UI and project workflow
 
@@ -30,7 +30,8 @@ Implementation status does not establish semantic correctness or compatibility. 
 - [x] Decompile and Build actions through `ps3core`
 - [x] Copy output artifacts beside an EBOOT folder
 - [x] Search nearby EBOOT and RPCS3 cache trees for ELF64-BE input
-- [x] RPCS3 launcher helper for the external decrypt workflow
+- [x] **Decrypt EBOOT (RPCS3):** runs `rpcs3.exe --decrypt "EBOOT.BIN"` (same as Utilities -> Decrypt PS3 Binaries), waits for `EBOOT.elf` beside the BIN, auto-loads into the project wizard
+- [x] Does **not** boot the game in RPCS3
 
 ### Build integration
 - [x] CMake build output under `build/`
@@ -53,102 +54,77 @@ Implementation status does not establish semantic correctness or compatibility. 
 - [x] `lift_report.txt` and `analysis_report.txt` generation
 
 ### PPU instruction coverage
-- [x] GOW3 snapshot: 1,285,560 translated instances, zero reported unimplemented instances, 157 chunks
-- [x] Uncharted 2 snapshot: 3,485,016 translated instances, zero reported unimplemented instances, 426 chunks
-- [~] Integer arithmetic, logical operations, shifts/rotates, loads/stores, and update forms
-- [~] Branches, condition-register operations, LR/CTR, selected synchronization and trap instructions
-- [~] Atomic reservation handling
-- [~] Common floating-point operations; FPSCR behavior remains incomplete
-- [~] Selected VMX/AltiVec operations; some long-tail handling remains approximate
+- [x] GOW3 snapshot: 1,285,560 translated, 0 unimplemented, 157 chunks
+- [x] Uncharted 2 snapshot: 3,485,016 translated, 0 unimplemented, 426 chunks
+- [~] Integer, logical, shifts, loads/stores, branches, atomics, FPU, VMX (many approximate)
 - [ ] Differential semantic tests against a trusted PowerPC reference
 - [ ] Complete PRX import/export and NID resolution
-- [ ] Regression coverage for each supported instruction family
 
 ### Multi-game analysis: Uncharted 2
-- [x] Analyze a decrypted ELF and complete the initial static lift
-- [x] Record console metrics in the game coverage documentation
-- [ ] Review the generated lift and analysis reports for approximate, fallback, or semantically risky translations
-- [ ] Archive suitable text reports under `docs/games/Uncharted2/` after reviewing them for sensitive paths and proprietary content
-- [ ] Identify instruction families that need semantic validation or regression coverage
-- [ ] Add isolated synthetic regression tests where practical
-- [ ] Re-run GOW3 and synthetic tests after lifter changes
+- [x] Initial static lift complete (metrics recorded)
+- [ ] Archive full lift/analysis text under `docs/games/Uncharted2/`
+- [ ] Review approximate/fallback translations; add regression tests
+- [ ] Re-run GOW3 after lifter changes
 
-**Acceptance:** Implemented instructions pass differential tests where a reference is available, and synthetic or homebrew programs produce expected results. Static translation counts alone are insufficient.
+**Acceptance:** Differential tests + synthetic/homebrew correct output. Static counts alone are insufficient.
 
-## Phase 3: PPU runtime correctness
+## Phase 3: PPU runtime correctness (GOW3 primary)
 
 ### CPU state and memory
-- [x] Big-endian memory helpers, GPR/FPR/VPR storage, CR helpers, branches, LR/CTR
-- [x] Windows demand-commit guest-memory helper
-- [x] Stack and simple heap-pool regions
-- [~] Bounded handling for guest PC leaving translated code
-- [ ] Full XER CA/OV/SO behavior
-- [ ] Complete FPSCR model
-- [ ] Differential tests for branch conditions, exceptions, memory ordering, and register side effects
-- [ ] Resolve GOW3 early-halt and TOC/r2 investigation using captured diagnostics
+- [x] BE memory, GPR/FPR/VPR, CR, branches, LR/CTR
+- [x] Windows demand-commit guest memory
+- [x] Stack and simple heap pool
+- [~] Bounded external-PC return-via-LR
+- [ ] Full XER / FPSCR
+- [ ] Resolve GOW3 early halt (`pc=0x39800000`, TOC/r2)
 
 ### OS and library compatibility
-- [x] Process exit and tty-write syscall handling
-- [~] Simple guest heap and selected memory-management behavior
-- [~] Selected SPU-related LV2 stubs
-- [ ] PPU scheduling, synchronization primitives, and timers
-- [ ] Filesystem and save-data HLE
-- [ ] Common PRX modules for sysutil, pad, audio, GCM, SPURS, save-data, and libc compatibility
+- [x] Exit and tty-write
+- [~] Simple heap / memory allocate
+- [~] SPU-related LV2 stubs
+- [ ] Threads, sync, timers, filesystem, common PRX modules
 
 ### Performance
-- [ ] Host scheduling that honors configured PPU thread count
-- [ ] Function-level code generation and register caching
-- [ ] Optional profile-guided optimization and link-time optimization
+- [ ] Host PPU thread scheduling, function-level codegen, optional PGO/LTO
 
-**Acceptance:** Runtime tests match expected output and guest execution remains within valid translated control flow. Commercial-game compatibility is evaluated separately.
+**Acceptance:** Runtime tests match expected output; guest stays in translated control flow.
 
 ## Phase 4: SPU execution
 
-- [x] SPU context and 256 KB local-store structures
-- [x] API stubs for create/destroy/load/run/stop, mailbox, and MFC DMA
+- [x] SPU context: 128 x 128-bit GPRs, 256 KB local store (up to 8 instances)
+- [x] API: create/destroy/load/run/stop, mailbox, MFC DMA
 - [x] Embedded SPU image extraction during PPU lifting
-- [ ] Full SPU instruction interpreter or lifter
-- [ ] Correct MFC DMA, mailbox, signal, and atomic semantics
-- [ ] SPU thread groups and SPURS/task support
-- [ ] Host scheduling for SPU work
+- [x] **Interpreter covering major ISA families:** loads/stores (lqd/stqd/lqx/stqx/lqa/stqa), immediate loads (il/ilh/ilhu/iohl), integer ALU, logical, compares, selb, branches (br/bra/brz/brnz/bi/bisl/…), channels (wrch/rdch, MFC trigger), stop/stopd/nop
+- [~] Full vector lane semantics for every instruction (many ops use preferred word / simplified 128-bit paths)
+- [~] MFC DMA get/put via channels and API
+- [ ] Complete remaining SPU opcodes (FP, full shuffles, all channel numbers)
+- [ ] SPURS/task HLE and multi-SPU host scheduling
 
-**Acceptance:** A focused homebrew SPU test produces the expected output.
+**Acceptance:** Focused homebrew SPU test produces expected output. **Not yet met** (interpreter is substantial but not proven).
 
 ## Phase 5: RSX graphics
 
-- [x] GUI selector for D3D10, D3D11, and Vulkan
-- [ ] GCM command-buffer parsing and cellGcmSys HLE
-- [ ] Display and flip queue
-- [ ] NV47 graphics state tracking
-- [ ] RSX vertex/fragment microcode translation
-- [ ] Texture formats, swizzling, depth buffers, and render targets
-- [ ] Working and tested host graphics backends
+- [x] GUI backend selector
+- [ ] GCM/cellGcmSys, NV47 state, shaders, textures, host backends
 
-**Acceptance:** A homebrew rendering test produces correct output on each backend declared supported.
+**Acceptance:** Homebrew render test on each supported backend.
 
 ## Phase 6: Native output and integration
 
-- [x] C API shared library and CLI frontend
-- [x] Build driver invokes host compiler tools
-- [x] Windows output can emit `game.exe`, `ps3rt.dll`, and `guest_image.bin`
-- [~] Runtime startup and guest-PC escape handling remain experimental
-- [ ] Optional single-file output
-- [ ] Incremental builds and structured compile progress
-- [ ] CI validation on supported host platforms
-
-**Acceptance:** Synthetic and homebrew guests execute correctly before broader compatibility claims are made.
+- [x] C API, CLI, MSVC `game.exe` + `ps3rt.dll` + `guest_image.bin`
+- [~] Runtime startup experimental
+- [ ] Single-file package, incremental builds, CI
 
 ## Game coverage matrix
 
-| Title | Role | Static lift | Runtime status |
+| Title | Role | Static lift | Runtime |
 | --- | --- | --- | --- |
-| God of War III | Runtime-analysis baseline | 100% reported in one snapshot (1,285,560 instances) | Experimental; correct full-game execution not established |
-| Uncharted 2: Among Thieves | Multi-game static-lift and semantic-analysis target | 100% reported in one snapshot (3,485,016 instances) | Not validated by these static-lift results |
-| Synthetic/homebrew ELF | Regression tests | Measured per test | Expected output required for passing tests |
+| God of War III | Primary runtime | 1,285,560 / 100% snapshot | Experimental early halt |
+| Uncharted 2 | Opcode / SPU stress (lift only) | 3,485,016 / 100% snapshot; 7 SPU images | No native build yet |
+| Synthetic/homebrew | Regression | Per test | Required for pass |
 
 ## Related documentation
 
-- [Developer guide](docs/DEVELOPER_GUIDE.md)
 - [PPU coverage](docs/PPU_COVERAGE.md)
 - [Game coverage index](docs/games/README.md)
 - [Project overview](README.md)
