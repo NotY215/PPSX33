@@ -1,0 +1,65 @@
+--- a/runtime/ppu_runtime.h
++++ b/runtime/ppu_runtime.h
+@@ -291,6 +291,7 @@
+ }
+ 
+ PS3RT_API void ps3rt_syscall(PPUContext* c);
++PS3RT_API int  ps3rt_prx_import_stub(PPUContext* c, uint64_t pc);
+ PS3RT_API void ps3rt_unimplemented(PPUContext* c, uint32_t opcode, uint64_t pc);
+ PS3RT_API int      ps3rt_init(const char* image_path);
+ PS3RT_API uint8_t* ps3rt_memory(void);
+@@ -335,16 +336,19 @@
+                 bool lr_ok = false;
+                 for (size_t i = 0; i < n; ++i)
+                     if (c.lr >= chunks[i].start && c.lr < chunks[i].end) { lr_ok = true; break; }
+-                if (lr_ok && external_escapes < 4096) {
+-                    if (logged < 12) {
++                if (lr_ok && external_escapes < 65536) {
++                    if (importish || nullish)
++                        ps3rt_prx_import_stub(&c, c.pc);
++                    if (logged < 32) {
+                         std::fprintf(stderr,
+                             "[ps3] external/import stub pc=0x%llx -> lr=0x%llx (#%d)%s\n",
+                             (unsigned long long)c.pc, (unsigned long long)c.lr,
+                             external_escapes + 1,
+                             (nullish || importish) ? " [null/import]" : "");
+                         ++logged;
+                     }
+-                    c.gpr[3] = 0;
++                    if (!(importish || nullish)) c.gpr[3] = 0;
+                     c.pc = c.lr;
+                     ++external_escapes;
+                     continue;
+@@ -362,7 +366,7 @@
+         }
+         hit->fn(c);
+         // Heartbeat so host UI does not treat quiet execution as a stall
+-        if ((++steps & 0x3FFFFFull) == 0) {
++        if ((++steps & 0x3FFFFull) == 0) {
+             std::fprintf(stderr, "[ps3] heartbeat steps=%llu pc=0x%llx lr=0x%llx\n",
+                 (unsigned long long)steps, (unsigned long long)c.pc, (unsigned long long)c.lr);
+             std::fflush(stderr);
+--- a/runtime/ps3rt.cpp
++++ b/runtime/ps3rt.cpp
+@@ -310,12 +310,20 @@
+         break;
+     case 352: {
+         uint64_t size = r3;
++        uint64_t flags = r4;
+         uint64_t align = r5 ? r5 : 0x10000;
+         uint64_t out = r6;
+-        if (size > (kAllocEnd - 0x08000000ull)) {
++        if (!out && flags >= 0x10000 && flags + 8 <= g_mem_size)
++            out = flags;
++        if (size >= 0x08000000ull) {
++            std::fprintf(stderr, "[lv2] mmapper size 0x%llx treated as non-size; using 1MiB\n",
++                (unsigned long long)size);
++            size = 0x100000;
++        } else if (size > (kAllocEnd - 0x08000000ull)) {
+             std::fprintf(stderr, "[lv2] mmapper size 0x%llx capped\n", (unsigned long long)size);
+             size = 0x100000;
+         }
++        if (align < 0x1000) align = 0x10000;
+         uint64_t va = guest_alloc(size, align);
+         if (va && out && out + 8 <= g_mem_size) wr_be64_guest(out, va);
+         else if (va && out && out + 4 <= g_mem_size) wr_be32_guest(out, (uint32_t)va);

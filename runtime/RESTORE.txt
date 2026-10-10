@@ -1,5 +1,15 @@
-If runtime/ppu_runtime.h or ps3rt.cpp look truncated, restore with:
+CRITICAL: main briefly had truncated ppu_runtime.h / ps3rt.cpp.
+
+Restore + continue boot patches:
+
+  cd /d E:\PPSX33
+  git fetch
+  git checkout b7fd04e4475b7dc654062007bc089c4cc262ce1a -- runtime/ppu_runtime.h runtime/ps3rt.cpp
+  git apply runtime/boot_continue.patch
+
+Or on Git Bash:
 
   git checkout b7fd04e4475b7dc654062007bc089c4cc262ce1a -- runtime/ppu_runtime.h runtime/ps3rt.cpp
+  patch -p1 < runtime/boot_continue.patch
 
-Then apply runtime/boot_continue.patch if present, or pull again after the full restore push.
+Then rebuild the GUI/core so dist/runtime is updated, and Build+Run GOW3 again.
