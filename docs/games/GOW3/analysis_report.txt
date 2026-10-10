@@ -1,0 +1,94 @@
+entry_opd: 0x50ddc0
+segments: 5
+symbols: 0
+opd_entries: 3
+prx_string_hits: 47
+embedded_spu_images: 8
+
+OPD samples (up to 32):
+  [0] desc=0x50ddc0 entry=0x102300052d6c8 toc=0x102540052d6c8
+  [1] desc=0x52b0d8 entry=0xb0000 toc=0x30c0000
+  [2] desc=0x541c10 entry=0x3dea58 toc=0x300001406
+
+PRX/module string samples (up to 64):
+  sys_io  nid=0x0  @0x3ca808
+  sys_fs  nid=0x0  @0x3ca814
+  cellSpurs  nid=0x0  @0x3ca820
+  cellGcmSys  nid=0x0  @0x3ca830
+  cellSysutil  nid=0x0  @0x3ca840
+  sceNp  nid=0x0  @0x3ca850
+  sceNpTrophy  nid=0x0  @0x3ca85c
+  cellSysmodule  nid=0x0  @0x3ca86c
+  cellSysutilAvconfExt  nid=0x0  @0x3ca880
+  cellGame  nid=0x0  @0x3ca89c
+  libvdec  nid=0x0  @0x3ca8ac
+  cellAudio  nid=0x0  @0x3ca8b8
+  sys_process_is_stack((void*)(mmAddressInQwords*16))  nid=0x21  @0x3ec819
+  cellSpursGetInfoFailed
+  nid=0x0  @0x3ed7b0
+  SCREAM: cellFsRead failed with error code -> %d
+  nid=0x0  @0x3f0048
+  SCREAM: cellFsLSeek failed with error code -> %d
+  nid=0x0  @0x3f0080
+  SCREAM: cellFsOpen failed for -> %s
+  nid=0x0  @0x3f00b8
+  libMp3  nid=0x0  @0x3f34b0
+  d ops still in prefetch queue (cancelling)
+  nid=0x202025  @0x3f5d0b
+  cellFsStat(%s) returned 0x%08X: %s
+  nid=0xa000000  @0x3f6330
+  sys_lwcond_signal_all failed for cond '%s': %d (%s)
+  nid=0x0  @0x3f6518
+  sys_lwcond_signal failed for cond '%s': %d (%s)
+  nid=0x73270a00  @0x3f6570
+  sys_lwcond_wait failed for cond '%s': %d (%s)
+  nid=0x0  @0x3f65c8
+  sys_lwcond_destroy failed for cond '%s': %d (%s)
+  nid=0x0  @0x3f6618
+  sys_lwcond_create failed for cond '%s': %d (%s)
+  nid=0x0  @0x3f6650
+  sys_lwmutex_unlock failed on mutex '%s': %d (%s)
+  nid=0x0  @0x3f6688
+  sys_lwmutex_lock failed on mutex '%s': %d (%s)
+  nid=0xa000000  @0x3f66e8
+  sys_lwmutex_destroy failed while destroying mutex '%s': %d (%s)
+  nid=0x0  @0x3f6740
+  sys_lwmutex_create failed while creating mutex '%s': %d (%s)
+  nid=0x0  @0x3f67a8
+  sys_ppu_thread_get_priority failed! %d (%s)
+  nid=0xa000000  @0x3f67e8
+  sys_ppu_thread_get_id failed! %d (%s)
+  nid=0x0  @0x3f6818
+  sys_ppu_thread_set_priority failed! %d (%s)
+  nid=0x290a0000  @0x3f6840
+  sys_ppu_thread_join failed for thread '%s': %d (%s)
+  nid=0x0  @0x3f6870
+  sys_ppu_thread_create failed for thread '%s': %d (%s)
+  nid=0x0  @0x3f68f0
+  FIOS: cellSysmoduleInitialize() failed: 0x%08X
+  nid=0x290a0000  @0x3f6928
+  FIOS: cellSysmoduleLoadModule(0x%04X) failed: 0x%08X
+  nid=0x38580a00  @0x3f6958
+  cellAudioOutConfigure() FAILED!  nid=0x54530000  @0x3f9920
+  rbDriver::Initialize(): cellAudioInit() has already been called!  nid=0x62  @0x3f9b59
+  brbDriver::Initialize(): cellAudioInit failed with error 0x%X  nid=0x0  @0x3f9ba0
+  libc:s310001libc:s310001libc:s310001libc:s310001libc:s310001  nid=0x30303031  @0x4b5775
+  sceversion  nid=0x6d65002e  @0x4b584e
+  libc:s310001libc:s310001libc:s310001libc:s310001libc:s310001  nid=0x30303031  @0x4d869c
+  sceversion  nid=0x6d65002e  @0x4d8775
+  libc:s310001libc:s310001  nid=0x20242900  @0x4ef647
+  sceversion  nid=0x6d65002e  @0x4ef6fc
+  libc:s310001libc:s310001  nid=0x20242900  @0x4f72ee
+  sceversion  nid=0x6d65002e  @0x4f73a3
+
+Embedded SPU images:
+  [0] host_va=0x3fb980 size=524288
+  [1] host_va=0x3feb00 size=524288
+  [2] host_va=0x40de80 size=524272
+  [3] host_va=0x415080 size=520204
+  [4] host_va=0x4a3100 size=345538
+  [5] host_va=0x4b5b80 size=269122
+  [6] host_va=0x4d8a80 size=126018
+  [7] host_va=0x4efa00 size=31938
+
+symbol_functions: 0
