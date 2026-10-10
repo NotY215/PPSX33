@@ -1,0 +1,110 @@
+entry_opd: 0x1a90b80
+segments: 5
+symbols: 0
+opd_entries: 4097
+prx_string_hits: 56
+embedded_spu_images: 8
+
+OPD samples (up to 32):
+  [0] desc=0x1a90b80 entry=0x10b7c toc=0x1affce0
+  [1] desc=0x1a90328 entry=0x17d35a0 toc=0x17d35b8
+  [2] desc=0x1a90330 entry=0x17d35b8 toc=0x17d35d8
+  [3] desc=0x1a90338 entry=0x17d35d8 toc=0x170e9e4
+  [4] desc=0x1a90340 entry=0x170e9e4 toc=0x17d3620
+  [5] desc=0x1a90348 entry=0x17d3620 toc=0x17d3628
+  [6] desc=0x1a90350 entry=0x17d3628 toc=0x17d3630
+  [7] desc=0x1a90478 entry=0x17d4b40 toc=0x1a90400
+  [8] desc=0x1a90490 entry=0x17d4b90 toc=0x1a90430
+  [9] desc=0x1a90520 entry=0x16d8bd0 toc=0x17d4d30
+  [10] desc=0x1a90528 entry=0x17d4d30 toc=0x16d8c08
+  [11] desc=0x1a90530 entry=0x16d8c08 toc=0x16d8498
+  [12] desc=0x1a90538 entry=0x16d8498 toc=0x17d4bd0
+  [13] desc=0x1a90540 entry=0x17d4bd0 toc=0x1a90400
+  [14] desc=0x1a90558 entry=0x17d4c38 toc=0x168fbec
+  [15] desc=0x1a90560 entry=0x168fbec toc=0x168fc5c
+  [16] desc=0x1a90568 entry=0x168fc5c toc=0x168fccc
+  [17] desc=0x1a90570 entry=0x168fccc toc=0x168fd3c
+  [18] desc=0x1a90578 entry=0x168fd3c toc=0x168fdac
+  [19] desc=0x1a90580 entry=0x168fdac toc=0x168fe1c
+  [20] desc=0x1a90588 entry=0x168fe1c toc=0x168f2bc
+  [21] desc=0x1a90590 entry=0x168f2bc toc=0x168f32c
+  [22] desc=0x1a90598 entry=0x168f32c toc=0x168f39c
+  [23] desc=0x1a905a0 entry=0x168f39c toc=0x168f444
+  [24] desc=0x1a905a8 entry=0x168f444 toc=0x168f4b4
+  [25] desc=0x1a905b0 entry=0x168f4b4 toc=0x168f524
+  [26] desc=0x1a905b8 entry=0x168f524 toc=0x168f594
+  [27] desc=0x1a905c0 entry=0x168f594 toc=0x168f604
+  [28] desc=0x1a905c8 entry=0x168f604 toc=0x168f674
+  [29] desc=0x1a905d0 entry=0x168f674 toc=0x168f6e4
+  [30] desc=0x1a905d8 entry=0x168f6e4 toc=0x168f754
+  [31] desc=0x1a905e0 entry=0x168f754 toc=0x168f7c4
+
+PRX/module string samples (up to 64):
+  cellSysmodule  nid=0x0  @0x1690830
+  cellVoice  nid=0x0  @0x1690844
+  cellSheap  nid=0x0  @0x1690868
+  cellHttp  nid=0x0  @0x1690878
+  cellSsl  nid=0x0  @0x1690888
+  sceNpCommerce2  nid=0x0  @0x1690894
+  cellSpurs  nid=0x0  @0x16908a8
+  cellNetCtl  nid=0x0  @0x16908b8
+  sys_net  nid=0x0  @0x16908c8
+  sys_fs  nid=0x0  @0x16908d4
+  cellRtc  nid=0x0  @0x16908e0
+  cellSysutil  nid=0x0  @0x16908ec
+  sceNp  nid=0x0  @0x16908fc
+  cellGame  nid=0x0  @0x1690908
+  cellSaveData  nid=0x0  @0x1690918
+  cellGcmSys  nid=0x0  @0x169092c
+  cellSysutilAvconfExt  nid=0x0  @0x169093c
+  sys_io  nid=0x0  @0x1690958
+  cellAudio  nid=0x0  @0x1690964
+  sceNp2  nid=0x0  @0x1690974
+  sceNpSns  nid=0x0  @0x1690980
+  sceNpTrophy  nid=0x0  @0x1690990
+  deferredcutscene  nid=0x0  @0x16aacbc
+  common:/data/ai/scenarios  nid=0x0  @0x16b79f0
+  common:/data/ai/scenariotriggers  nid=0x0  @0x16b7c40
+  cancellable  nid=0x0  @0x16d6b28
+  misc.cutscene.nearBlurMin  nid=0x0  @0x16e0614
+  In MP Cutscene  nid=0x61776e00  @0x16efb60
+  common:/data/ui/uiscenes  nid=0x61746500  @0x16f6944
+  In local cutscene  nid=0x0  @0x16fdcd0
+  Exposed for cutscene  nid=0x494f4e00  @0x16ff0c8
+  Hidden for cutscene  nid=0x0  @0x16ff0e0
+  Expose after cutscene  nid=0x65000000  @0x17033e0
+  ascent  nid=0x69640000  @0x17086c8
+  descent  nid=0x6e740000  @0x17086d0
+  ascent  nid=0x67687400  @0x170ac68
+  CCutsceneAnimatedModelEntity  nid=0x79003238  @0x171bc4a
+  CCutsceneAnimatedVehicleEntity  nid=0x79003330  @0x171bcaa
+  CCutsceneAnimatedActorEntity  nid=0x3238  @0x171bcd2
+  CCutsceneModelRequestStreamingInfo  nid=0x3334  @0x171bd7a
+  CCutsceneVariationStreamingInfo  nid=0x3331  @0x171bda2
+  ge12fwAssetStoreINS_17cutfCutsceneFile2E20cutfCutsceneFile2DefEE  nid=0x4e347261  @0x171bdec
+  CCutsceneStore  nid=0x3134  @0x171be32
+  CCutsceneMenu  nid=0x3133  @0x17277f2
+  audCutsceneAudioEntity  nid=0x3232  @0x172be82
+  camCutsceneDirectorMetadata  nid=0x3237  @0x1734c12
+  camCutsceneDirector  nid=0x3139  @0x1734f72
+  camFactoryHelperI19camCutsceneDirectorE  nid=0x3136  @0x17372aa
+  has previous scenario pt  nid=0x61677300  @0x1765c14
+  has next scenario pt  nid=0x20707400  @0x1765c2d
+  lib_task_s_cpp_639193e037CAmbientModelSetFilterScenarioVehicleE  nid=0x6d65335f  @0x1769b47
+  N4rage17cutfCutsceneFile2E  nid=0x0  @0x1777aa0
+  rage17cutfCutsceneFile227ConvertArgIndicesToPointersEvE7Visitor  nid=0x5a4e34  @0x1777d7b
+  Entering MP cutscene  nid=0x79657200  @0x17ad67c
+  libspurs:s430001libspurs:s430001libspurs:s430001libspurs:s430001  nid=0x30303031  @0x1a72fd5
+  sceversion  nid=0x6d65002e  @0x1a73087
+
+Embedded SPU images:
+  [0] host_va=0x181b680 size=524288
+  [1] host_va=0x1821f00 size=524288
+  [2] host_va=0x1a01980 size=524288
+  [3] host_va=0x1a23680 size=394368
+  [4] host_va=0x1a2bd80 size=359808
+  [5] host_va=0x1a34480 size=325248
+  [6] host_va=0x1a4e280 size=219264
+  [7] host_va=0x1a59100 size=174592
+
+symbol_functions: 0
