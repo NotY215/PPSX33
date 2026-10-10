@@ -11,10 +11,42 @@
 
 static uint8_t* g_mem = nullptr;
 static size_t g_mem_size = 0;
-// Stack must sit inside guest RAM (was at 0x10000000 with 256MB mem = OOB)
 static const uint64_t kStackBase = 0x0F000000ull;
 static const size_t   kStackSize = 0x100000;
 static std::mutex g_lock;
+
+// Guest allocator: 0x08000000 .. 0x0E000000 (below stack at 0x0F000000)
+static uint64_t g_alloc_ptr = 0x08000000ull;
+static const uint64_t kAllocEnd = 0x0E000000ull;
+
+static void wr_be64_guest(uint64_t addr, uint64_t val) {
+    if (!g_mem || addr + 8 > g_mem_size) return;
+    uint8_t b[8];
+    for (int i = 7; i >= 0; --i) { b[i] = (uint8_t)(val & 0xFF); val >>= 8; }
+    std::memcpy(g_mem + addr, b, 8);
+}
+static void wr_be32_guest(uint64_t addr, uint32_t val) {
+    if (!g_mem || addr + 4 > g_mem_size) return;
+    uint8_t b[4] = { (uint8_t)(val>>24), (uint8_t)(val>>16), (uint8_t)(val>>8), (uint8_t)val };
+    std::memcpy(g_mem + addr, b, 4);
+}
+
+static uint64_t guest_alloc(uint64_t size, uint64_t align) {
+    if (size == 0) size = 0x1000;
+    if (align < 0x1000) align = 0x1000;
+    if (align & (align - 1)) align = 0x10000;
+    uint64_t a = (g_alloc_ptr + (align - 1)) & ~(align - 1);
+    if (a + size > kAllocEnd || a + size > g_mem_size) {
+        std::fprintf(stderr, "[lv2] guest_alloc FAIL size=0x%llx align=0x%llx\n",
+            (unsigned long long)size, (unsigned long long)align);
+        return 0;
+    }
+    std::memset(g_mem + a, 0, (size_t)size);
+    g_alloc_ptr = a + size;
+    std::fprintf(stderr, "[lv2] alloc VA=0x%llx size=0x%llx\n",
+        (unsigned long long)a, (unsigned long long)size);
+    return a;
+}
 
 PS3RT_API void ps3rt_touch(uint64_t, size_t) {}
 
@@ -25,11 +57,6 @@ static uint64_t rd_le64(const uint8_t* p) {
     uint64_t v; std::memcpy(&v, p, 8); return v;
 }
 
-// guest_image.bin layout (written by ppu_lifter):
-//   magic "PS3IMG1\0" (8)
-//   u32 nseg (LE)
-//   nseg * { u64 vaddr, u64 filesz, u64 memsz, u64 file_off } (LE)
-//   payload bytes at each file_off
 static int load_guest_image(const char* path) {
     FILE* f = std::fopen(path, "rb");
     if (!f) return -1;
@@ -44,7 +71,6 @@ static int load_guest_image(const char* path) {
     }
     std::fclose(f);
 
-    // Detect PS3IMG1 container
     if (std::memcmp(file.data(), "PS3IMG1", 7) == 0) {
         uint32_t nseg = rd_le32(file.data() + 8);
         size_t hdr = 12ull + (size_t)nseg * 32ull;
@@ -66,13 +92,12 @@ static int load_guest_image(const char* path) {
             }
             if (vaddr + memsz > g_mem_size) {
                 std::fprintf(stderr,
-                    "[ps3rt] segment %u VA 0x%llx+0x%llx exceeds guest RAM 0x%zx — clipped\n",
+                    "[ps3rt] segment %u VA 0x%llx+0x%llx exceeds guest RAM 0x%zx \u2014 clipped\n",
                     i, (unsigned long long)vaddr, (unsigned long long)memsz, g_mem_size);
                 if (vaddr >= g_mem_size) continue;
                 memsz = g_mem_size - vaddr;
                 if (filesz > memsz) filesz = memsz;
             }
-            // Zero BSS region then copy file bytes
             std::memset(g_mem + vaddr, 0, (size_t)memsz);
             if (filesz)
                 std::memcpy(g_mem + vaddr, file.data() + (size_t)off, (size_t)filesz);
@@ -85,7 +110,6 @@ static int load_guest_image(const char* path) {
         return mapped > 0 ? 0 : -1;
     }
 
-    // Fallback: raw dump at address 0 (legacy)
     if ((size_t)fsz <= g_mem_size) {
         std::memcpy(g_mem, file.data(), (size_t)fsz);
         std::fprintf(stderr, "[ps3rt] raw image %zu bytes at 0 from %s\n", (size_t)fsz, path);
@@ -98,10 +122,10 @@ static int load_guest_image(const char* path) {
 PS3RT_API int ps3rt_init(const char* image_path) {
     std::lock_guard<std::mutex> lk(g_lock);
     if (g_mem) return 0;
-    // 512 MiB so stack at 0x0F000000 and low GAME segments fit
     g_mem_size = 512ull * 1024 * 1024;
     g_mem = (uint8_t*)std::calloc(1, g_mem_size);
     if (!g_mem) return -1;
+    g_alloc_ptr = 0x08000000ull;
 
     const char* candidates[] = { image_path, "guest_image.bin", "output/guest_image.bin" };
     bool ok = false;
@@ -121,7 +145,6 @@ PS3RT_API void ps3rt_shutdown(void) {
     std::free(g_mem); g_mem = nullptr; g_mem_size = 0;
 }
 
-// ======================== SPU ========================
 static constexpr int kMaxSpu = 6;
 static SPUContext g_spu[kMaxSpu];
 static bool g_spu_used[kMaxSpu] = {};
@@ -246,26 +269,66 @@ PS3RT_API int ps3rt_spu_mfc_dma(int id, uint32_t lsa, uint64_t ea, uint32_t size
     return 0;
 }
 
-// LV2 HLE
 PS3RT_API void ps3rt_syscall(PPUContext* c) {
     if (!c) return;
     uint64_t num = c->gpr[11];
+    uint64_t r3 = c->gpr[3], r4 = c->gpr[4], r5 = c->gpr[5], r6 = c->gpr[6];
     static int sys_log = 0;
-    if (sys_log < 24) {
-        std::fprintf(stderr, "[lv2] syscall %llu r3=0x%llx r4=0x%llx\n",
-            (unsigned long long)num, (unsigned long long)c->gpr[3], (unsigned long long)c->gpr[4]);
+    if (sys_log < 48) {
+        std::fprintf(stderr, "[lv2] sc %llu r3=%llx r4=%llx r5=%llx r6=%llx\n",
+            (unsigned long long)num, (unsigned long long)r3, (unsigned long long)r4,
+            (unsigned long long)r5, (unsigned long long)r6);
         ++sys_log;
     }
     switch (num) {
-    case 1: c->halted = true; break;
+    case 1:
+        c->halted = true;
+        break;
     case 3:
-        if ((c->gpr[3] == 1 || c->gpr[3] == 2) && g_mem) {
-            uint64_t buf = c->gpr[4], len = c->gpr[5];
-            if (buf + len <= g_mem_size) std::fwrite(g_mem + buf, 1, (size_t)len, stderr);
-            c->gpr[3] = len;
+        if ((r3 == 1 || r3 == 2) && g_mem) {
+            if (r4 + r5 <= g_mem_size) std::fwrite(g_mem + r4, 1, (size_t)r5, stderr);
+            c->gpr[3] = r5;
         } else c->gpr[3] = 0;
         break;
-    case 4: case 18: case 19: case 20: case 22: case 25:
+    case 4:
+        c->gpr[3] = 0;
+        break;
+    case 18: {
+        uint64_t size = r3;
+        uint64_t out = r5;
+        uint64_t va = guest_alloc(size, 0x10000);
+        if (va && out && out + 8 <= g_mem_size) wr_be64_guest(out, va);
+        c->gpr[3] = va ? 0 : 0x80010004ull;
+        break;
+    }
+    case 19:
+        c->gpr[3] = 0;
+        break;
+    case 20: case 22: case 25:
+        if (r3 && r3 + 8 <= g_mem_size) wr_be64_guest(r3, 480ull * 1024 * 1024);
+        c->gpr[3] = 0;
+        break;
+    case 352: {
+        uint64_t size = r3;
+        uint64_t align = r5 ? r5 : 0x10000;
+        uint64_t out = r6;
+        if (size > (kAllocEnd - 0x08000000ull)) {
+            std::fprintf(stderr, "[lv2] mmapper size 0x%llx capped\n", (unsigned long long)size);
+            size = 0x100000;
+        }
+        uint64_t va = guest_alloc(size, align);
+        if (va && out && out + 8 <= g_mem_size) wr_be64_guest(out, va);
+        else if (va && out && out + 4 <= g_mem_size) wr_be32_guest(out, (uint32_t)va);
+        c->gpr[3] = va ? 0 : 0x80010004ull;
+        break;
+    }
+    case 353:
+        c->gpr[3] = 0;
+        break;
+    case 348: case 349:
+        if (r4 && r4 + 4 <= g_mem_size) wr_be32_guest(r4, 1);
+        c->gpr[3] = 0;
+        break;
     case 41: case 43: case 44: case 48: case 53:
     case 70: case 73:
     case 90: case 91: case 93: case 94:
@@ -275,10 +338,13 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     case 120: case 121: case 122: case 123: case 124:
     case 128: case 129: case 130: case 131: case 132:
     case 141: case 142:
-    case 348: case 349: case 352: case 353: case 403:
+    case 403:
     case 801: case 802: case 803: case 804: case 808: case 809: case 811: case 812: case 814:
-        c->gpr[3] = 0; break;
-    default: c->gpr[3] = 0; break;
+        c->gpr[3] = 0;
+        break;
+    default:
+        c->gpr[3] = 0;
+        break;
     }
 }
 
