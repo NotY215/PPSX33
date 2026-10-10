@@ -39,7 +39,6 @@ public sealed partial class MainForm : Form
     private CancellationTokenSource? _cts;
     private Process? _gameProc;
 
-    // Sequential unlock flags
     private bool _canLift;
     private bool _canBuild;
     private bool _canCopy;
@@ -70,7 +69,7 @@ public sealed partial class MainForm : Form
         try
         {
             string ico = Path.Combine(AppContext.BaseDirectory, "ppsx33-logo.ico");
-            if (!File.Exists(ico)) ico = Path.Combine(AppContext.BaseDirectory, "Assets", "ppsx33-logo.ico");
+            if (!File.Exists(ico)) ico = Path.Combine(AppContext.BaseDirectory, "assets", "ppsx33-logo.ico");
             if (File.Exists(ico)) Icon = new Icon(ico);
         }
         catch { }
@@ -85,11 +84,10 @@ public sealed partial class MainForm : Form
         _logo.Height = 56;
         _logo.Dock = DockStyle.Top;
         _logo.BackColor = Color.Transparent;
-        _logo.Margin = new Padding(0, 0, 0, 8);
         try
         {
             string png = Path.Combine(AppContext.BaseDirectory, "ppsx33-logo.png");
-            if (!File.Exists(png)) png = Path.Combine(AppContext.BaseDirectory, "Assets", "ppsx33-logo.png");
+            if (!File.Exists(png)) png = Path.Combine(AppContext.BaseDirectory, "assets", "ppsx33-logo.png");
             if (File.Exists(png)) _logo.Image = Image.FromFile(png);
         }
         catch { }
@@ -114,7 +112,7 @@ public sealed partial class MainForm : Form
         var gfxLbl = MakeLbl("Graphics backend", TextSec, false); gfxLbl.Location = new Point(0, 4);
         _gfx.DropDownStyle = ComboBoxStyle.DropDownList; _gfx.FlatStyle = FlatStyle.Flat;
         _gfx.BackColor = Panel2; _gfx.ForeColor = TextPri; _gfx.Location = new Point(0, 24); _gfx.Size = new Size(214, 28);
-        _gfx.Items.AddRange(new object[] { "D3D10", "D3D11", "Vulkan" });
+        _gfx.Items.AddRange(new object[] { "D3D10", "D3D11" });
         _gfx.SelectedItem = _settings.GraphicsBackend; if (_gfx.SelectedIndex < 0) _gfx.SelectedIndex = 1;
         _gfx.Enabled = false;
         var thrLbl = MakeLbl("CPU threads", TextSec, false); thrLbl.Location = new Point(0, 58);
@@ -158,9 +156,9 @@ public sealed partial class MainForm : Form
         _project.Text = "No project loaded"; _project.ForeColor = TextSec; _project.BackColor = Panel;
         _project.Dock = DockStyle.Fill; _project.TextAlign = ContentAlignment.MiddleLeft; _project.Padding = new Padding(12, 0, 0, 0);
         StyleTextBox(_log); StyleTextBox(_report); StyleTextBox(_roadmap);
-        _roadmap.Text = "PPSX33 hybrid UI: C# WinForms shell + C++ ps3core/ps3rt\r\n" +
+        _roadmap.Text = "PPSX33 hybrid UI: C# WinForms + C++ ps3core/ps3rt\r\n" +
                         "Sequential: Load ELF → Decompile → Build → Run\r\n" +
-                        "SPU interpreter + RSX D3D11 host present + XER/FPSCR + NID\r\n";
+                        "SPU + RSX D3D10/11 present + XER/FPSCR + NID\r\n";
         _tabs.Dock = DockStyle.Fill;
         AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap);
         _status.Text = "Ready"; _status.ForeColor = TextSec; _status.Dock = DockStyle.Fill;
@@ -186,7 +184,7 @@ public sealed partial class MainForm : Form
         _btnRun.Click += async (_, _) => await RunGameExe();
         _btnCopy.Click += (_, _) => CopyToEbootFolder();
         _btnCancel.Click += (_, _) => StopAll();
-        Append($"ps3core {SafeVersion()} · C# UI + C++ runtime · SPU interpreter · RSX D3D11 present");
+        Append($"ps3core {SafeVersion()} · C# UI + C++ runtime · SPU · RSX D3D10/11");
         Append("Projects root: " + ProjectsRoot);
     }
 
@@ -198,7 +196,7 @@ public sealed partial class MainForm : Form
 
     static Label MakeLbl(string t, Color c, bool bold) => new() { Text = t, ForeColor = c, BackColor = Color.Transparent, Font = new Font("Segoe UI", bold ? 8f : 9f, bold ? FontStyle.Bold : FontStyle.Regular), AutoSize = true };
     void StyleBtn(Button b, string text, Color bg) { b.Text = text; b.FlatStyle = FlatStyle.Flat; b.FlatAppearance.BorderSize = 0; b.BackColor = bg; b.ForeColor = TextPri; b.Cursor = Cursors.Hand; b.UseVisualStyleBackColor = false; }
-    void StyleTextBox(TextBox t) { t.Multiline = true; t.ScrollBars = ScrollBars.Both; t.WordWrap = false; t.ReadOnly = true; t.BackColor = Color.FromArgb(14, 14, 18); t.ForeColor = Color.FromArgb(200, 210, 220); t.BorderStyle = BorderStyle.None; t.Font = new Font("Consolas", 9f); t.Dock = DockStyle.Fill; }
+    void StyleTextBox(TextBox t) { t.Multiline = true; t.ScrollBars = ScrollBars.Both; t.WordWrap = true; t.ReadOnly = true; t.BackColor = Color.FromArgb(14, 14, 18); t.ForeColor = Color.FromArgb(200, 210, 220); t.BorderStyle = BorderStyle.None; t.Font = new Font("Consolas", 9f); t.Dock = DockStyle.Fill; }
     void AddTab(string title, Control body) { var page = new TabPage(title) { BackColor = Panel, Padding = new Padding(4) }; page.Controls.Add(body); _tabs.TabPages.Add(page); }
     void Append(string s) { if (string.IsNullOrEmpty(s)) return; if (_log.InvokeRequired) { BeginInvoke(() => Append(s)); return; } _log.AppendText(s.TrimEnd() + Environment.NewLine); }
     void SetStatus(string s, bool busy = false)
@@ -259,7 +257,7 @@ public sealed partial class MainForm : Form
         string ext = Path.GetExtension(path).ToLowerInvariant();
         if (ext is not (".elf" or ".self"))
         {
-            Append("Only .elf / .self files are accepted (decrypted). Use Decrypt EBOOT for EBOOT.BIN.");
+            Append("Only .elf / .self files are accepted. Use Decrypt EBOOT for EBOOT.BIN.");
             SetStatus("Invalid file type");
             return;
         }
@@ -297,8 +295,6 @@ public sealed partial class MainForm : Form
         catch { }
         return "GOW3";
     }
-
-    // EnsureRpcs3Path / PickRpcs3Exe / DecryptEbootAndLoad live in MainForm.Decrypt.cs partial
 
     async Task RunGameExe()
     {
