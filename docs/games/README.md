@@ -11,7 +11,7 @@ Static lifting snapshots only. Not proof of playability.
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
 | God of War III | [GOW3](GOW3/GOW3.md) | 1,285,560 | 1,285,560 | 0 | 157 | 100% |
 | Uncharted 2 | [Uncharted2](Uncharted2/UNCHARTED2.md) | 3,485,016 | 3,485,016 | 0 | 426 | 100% |
-| Demon's Souls | [DemonsSouls](DemonsSouls/DEMONS_SOULS.md) | — | — | — | — | pending first lift |
+| Demon's Souls | [DemonsSouls](DemonsSouls/DEMONS_SOULS.md) | 6,343,506 | 6,343,506 | 0 | 775 | 100% snapshot |
 
 Uncharted 2 also reported 7 embedded SPU images and 391 PRX string hits.
-Demon's Souls metrics are filled after the first successful decompile.
+Demon's Souls counts are from [`DemonsSouls_lift_report.txt`](DemonsSouls/DemonsSouls_lift_report.txt). Static coverage does not establish semantic correctness or playability.
