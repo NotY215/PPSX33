@@ -16,8 +16,8 @@ Implementation status does not establish semantic correctness or compatibility.
 
 1. **GOW3** runtime stability (Phase 3) and semantic hardening of approximate PPU ops.
 2. Use **Minecraft (PS3)**, **Uncharted 2**, and **Demon's Souls** static lifts to stress-test SPU interpreter and long-tail PPU paths (lift only; no native build yet for these titles).
-3. Complete the planned **Grand Theft Auto: San Andreas** opcode and translation-coverage pass.
-4. After San Andreas, begin the planned **Grand Theft Auto V** opcode and translation-coverage pass.
+3. **Grand Theft Auto: San Andreas** static lift and ELF analysis recorded; review opcode semantics and fallbacks next.
+4. Begin the planned **Grand Theft Auto V** opcode and translation-coverage pass.
 5. SPU, RSX, and PRX HLE as separate tracks.
 
 ## Phase 1: UI and project workflow
@@ -63,6 +63,7 @@ Implementation status does not establish semantic correctness or compatibility.
 - [x] Minecraft (PS3) snapshot: 3,034,530 translated, 0 unimplemented, 371 chunks
 - [x] Uncharted 2 snapshot: 3,485,016 translated, 0 unimplemented, 426 chunks
 - [x] Demon's Souls snapshot: 6,343,506 translated, 0 unimplemented, 775 chunks
+- [x] GTA: San Andreas snapshot: 1,893,428 translated, 0 unimplemented, 232 chunks
 - [~] Integer, logical, shifts, loads/stores, branches, atomics, FPU, VMX (many approximate)
 - [ ] Differential semantic tests against a trusted PowerPC reference
 - [~] PRX import HLE + real NID table (GOW3 modules); expand on runtime hits
@@ -71,6 +72,7 @@ Implementation status does not establish semantic correctness or compatibility.
 - [x] Minecraft (PS3): initial static lift and ELF analysis recorded
 - [x] Uncharted 2: initial static lift and ELF analysis recorded
 - [x] Demon's Souls: initial static lift and ELF analysis recorded
+- [x] Grand Theft Auto: San Andreas: static lift and ELF analysis reports recorded (1,893,428 instructions, 232 chunks)
 - [ ] Review approximate/fallback translations; add regression tests
 - [ ] Re-run GOW3 after lifter changes
 
@@ -131,7 +133,7 @@ Implementation status does not establish semantic correctness or compatibility.
 | <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Minecraft_Logo.png" width="78" alt="Minecraft logo" /> Minecraft (PS3) | Opcode / SPU stress (lift only) | 3,034,530 / 100% snapshot; 11 SPU images | Not targeted |
 | <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="48" alt="Uncharted 2 logo artwork" /> Uncharted 2 | Opcode / SPU stress (lift only) | 3,485,016 / 100% snapshot; 7 SPU images | Not targeted |
 | <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | Opcode / SPU stress (lift only) | 6,343,506 / 100% snapshot; 12 SPU images | Not targeted |
-| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_San_Andreas_logo.svg" width="78" alt="Grand Theft Auto: San Andreas logo" /> Grand Theft Auto: San Andreas | Planned PPU/opcode coverage | Not measured | Not started |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_San_Andreas_logo.svg" width="78" alt="Grand Theft Auto: San Andreas logo" /> Grand Theft Auto: San Andreas | Opcode / translation stress (lift only) | 1,893,428 / 100% reported snapshot; 0 SPU images detected | Not targeted |
 | <img src="https://thumb.wikimedia.org/wikipedia/it/thumb/7/76/Grand_Theft_Auto_V_logo.svg/330px-Grand_Theft_Auto_V_logo.svg.png?utm_source=it.wikipedia.org&utm_campaign=index&utm_content=thumbnail&_=20240305183247" width="78" alt="Grand Theft Auto V logo" /> Grand Theft Auto V | Planned after San Andreas pass | Not measured | Not started |
 | Synthetic/homebrew | Regression | Per test | Required for pass |
 
