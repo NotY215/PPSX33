@@ -16,7 +16,9 @@ Implementation status does not establish semantic correctness or compatibility.
 
 1. **GOW3** runtime stability (Phase 3) and semantic hardening of approximate PPU ops.
 2. Use **Minecraft (PS3)**, **Uncharted 2**, and **Demon's Souls** static lifts to stress-test SPU interpreter and long-tail PPU paths (lift only; no native build yet for these titles).
-3. SPU, RSX, and PRX HLE as separate tracks.
+3. Complete the planned **Grand Theft Auto: San Andreas** opcode and translation-coverage pass.
+4. After San Andreas, begin the planned **Grand Theft Auto V** opcode and translation-coverage pass.
+5. SPU, RSX, and PRX HLE as separate tracks.
 
 ## Phase 1: UI and project workflow
 
@@ -129,6 +131,8 @@ Implementation status does not establish semantic correctness or compatibility.
 | <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Minecraft_Logo.png" width="78" alt="Minecraft logo" /> Minecraft (PS3) | Opcode / SPU stress (lift only) | 3,034,530 / 100% snapshot; 11 SPU images | Not targeted |
 | <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="48" alt="Uncharted 2 logo artwork" /> Uncharted 2 | Opcode / SPU stress (lift only) | 3,485,016 / 100% snapshot; 7 SPU images | Not targeted |
 | <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | Opcode / SPU stress (lift only) | 6,343,506 / 100% snapshot; 12 SPU images | Not targeted |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_San_Andreas_logo.svg" width="78" alt="Grand Theft Auto: San Andreas logo" /> Grand Theft Auto: San Andreas | Planned PPU/opcode coverage | Not measured | Not started |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_V_logo.svg" width="78" alt="Grand Theft Auto V logo" /> Grand Theft Auto V | Planned after San Andreas | Not measured | Not started |
 | Synthetic/homebrew | Regression | Per test | Required for pass |
 
 ## Related documentation
