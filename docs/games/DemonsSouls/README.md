@@ -1,6 +1,6 @@
 # Demon's Souls (PS3)
 
-**Status:** Planned for static analysis / lift (same track as Uncharted 2)  
+**Status:** Initial static lift recorded  
 **Runtime compatibility:** Not established — **lift only** until GOW3 runtime is further along.
 
 ## Role
@@ -19,9 +19,9 @@ Do not prioritize native `game.exe` build/run for Demon's Souls yet. Use decrypt
 2. **Decrypt EBOOT** — selects `rpcs3.exe` (if needed) then `EBOOT.BIN`, runs `rpcs3 --decrypt`.
 3. Create project (suggested name: `DemonsSouls` or `DEMONS SOULS`).
 4. **Decompile** only; skip **Build** / **Run** for this title for now.
-5. Copy or summarize `codebase/lift_report.txt` and `codebase/analysis_report.txt` here when you have numbers.
+5. Preserve the lift report at [`DemonsSouls_lift_report.txt`](DemonsSouls_lift_report.txt); analysis metadata not present in the lift report remains unrecorded.
 
-## Metrics (fill after first lift)
+## Recorded lift metrics
 
 | Metric | Value |
 | --- | ---: |
@@ -31,17 +31,17 @@ Do not prioritize native `game.exe` build/run for Demon's Souls yet. Use decrypt
 | OPD entries | — |
 | PRX string hits | — |
 | Embedded SPU images | — |
-| Instruction instances | — |
-| Translated | — |
-| Unimplemented | — |
-| Chunks | — |
-| Reported static coverage | — |
+| Instruction instances | 6,343,506 |
+| Translated | 6,343,506 |
+| Unimplemented | 0 |
+| Chunks | 775 |
+| Reported static coverage | 100% for this snapshot |
 
-Record values only from real tool output. Do not invent counts.
+Source: [`DemonsSouls_lift_report.txt`](DemonsSouls_lift_report.txt). The report contains instruction, translation, unimplemented, and chunk counts only. Other metadata is not provided. Zero unimplemented entries does not prove semantic correctness or playability.
 
 ## Follow-up
 
-1. Archive full lift/analysis reports under this folder (redacted paths OK).
+1. Archive the full analysis report under this folder when available; the lift report is already archived.
 2. Compare approximate/fallback ops with GOW3 and Uncharted 2.
 3. Exercise any embedded SPU images against the SPU interpreter.
 4. Expand PRX/NID HLE from module strings that appear in the analysis report.
