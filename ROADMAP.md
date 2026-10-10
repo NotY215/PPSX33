@@ -16,9 +16,8 @@ Implementation status does not establish semantic correctness or compatibility.
 
 1. **GOW3** runtime stability (Phase 3) and semantic hardening of approximate PPU ops.
 2. Use **Minecraft (PS3)**, **Uncharted 2**, and **Demon's Souls** static lifts to stress-test SPU interpreter and long-tail PPU paths (lift only; no native build yet for these titles).
-3. **Grand Theft Auto: San Andreas** static lift and ELF analysis recorded; review opcode semantics and fallbacks next.
-4. Begin the planned **Grand Theft Auto V** opcode and translation-coverage pass.
-5. SPU, RSX, and PRX HLE as separate tracks.
+3. **Grand Theft Auto: San Andreas** and **Grand Theft Auto V** static lifts and ELF analysis recorded; review opcode semantics and fallbacks next.
+4. SPU, RSX, and PRX HLE as separate tracks.
 
 ## Phase 1: UI and project workflow
 
@@ -64,6 +63,7 @@ Implementation status does not establish semantic correctness or compatibility.
 - [x] Uncharted 2 snapshot: 3,485,016 translated, 0 unimplemented, 426 chunks
 - [x] Demon's Souls snapshot: 6,343,506 translated, 0 unimplemented, 775 chunks
 - [x] GTA: San Andreas snapshot: 1,893,428 translated, 0 unimplemented, 232 chunks
+- [x] GTA V snapshot: 6,934,214 translated, 0 unimplemented, 847 chunks
 - [~] Integer, logical, shifts, loads/stores, branches, atomics, FPU, VMX (many approximate)
 - [~] SPU runtime interpreter paths (execution, mailbox, and MFC support; full ISA/SPURS compatibility not established)
 - [~] RSX FIFO/method handling and D3D10/D3D11 integration; full rendering compatibility not established
@@ -75,6 +75,7 @@ Implementation status does not establish semantic correctness or compatibility.
 - [x] Uncharted 2: initial static lift and ELF analysis recorded
 - [x] Demon's Souls: initial static lift and ELF analysis recorded
 - [x] Grand Theft Auto: San Andreas: static lift and ELF analysis reports recorded (1,893,428 instructions, 232 chunks)
+- [x] Grand Theft Auto V: static lift and ELF analysis reports recorded (6,934,214 instructions, 847 chunks)
 - [ ] Review approximate/fallback translations; add regression tests
 - [ ] Re-run GOW3 after lifter changes
 
