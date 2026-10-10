@@ -9,7 +9,7 @@
 | <img src="https://commons.wikimedia.org/wiki/Special:FilePath/God_of_War_Logo.png" width="78" alt="God of War logo" /> God of War III (GOW3) | 1,285,560 | 1,285,560 | 0 | 157 | 100% for this snapshot |
 | <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Minecraft_Logo.png" width="78" alt="Minecraft logo" /> Minecraft (PS3) | 3,034,530 | 3,034,530 | 0 | 371 | 100% for this snapshot |
 | <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="48" alt="Uncharted 2 logo artwork" /> Uncharted 2: Among Thieves | 3,485,016 | 3,485,016 | 0 | 426 | 100% for this snapshot |
-| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | 6,343,506 | 6,343,506 | 0 | 775 | 100% for this snapshot |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | 6,343,506 | 6,343,506 | 0 | 775 | 100% for this snapshot |\n| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_San_Andreas_logo.svg" width="78" alt="Grand Theft Auto: San Andreas logo" /> Grand Theft Auto: San Andreas | 1,893,428 | 1,893,428 | 0 | 232 | 100% for this snapshot |
 
 ## ELF and analysis metadata
 
@@ -18,15 +18,15 @@
 | <img src="https://commons.wikimedia.org/wiki/Special:FilePath/God_of_War_Logo.png" width="78" alt="God of War logo" /> God of War III | 5 | `0x50ddc0` | 0 | 3 | 47 | 8 |
 | <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Minecraft_Logo.png" width="78" alt="Minecraft logo" /> Minecraft (PS3) | 5 | `0xbbe520` | 0 | 4,097 | 45 | 11 |
 | <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="48" alt="Uncharted 2 logo artwork" /> Uncharted 2 | 5 | `0xdd8618` | 0 | 116 | 391 | 7 |
-| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | 5 | `0x1916138` | 0 | 4,097 | 134 | 12 |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | 5 | `0x1916138` | 0 | 4,097 | 134 | 12 |\n| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_San_Andreas_logo.svg" width="78" alt="Grand Theft Auto: San Andreas logo" /> Grand Theft Auto: San Andreas | 5 | `0x77b718` | 0 | 4,097 | 23 | 0 |
 
 These are recorded analysis snapshots. OPD and PRX values may come from heuristics and should not be treated as confirmed import/export resolution. Zero detected symbols does not mean the ELF contains no functions.
 
-Raw lift reports: [GOW3](games/GOW3/GOW3_lift_report.txt), [Minecraft](games/Mineacraft/lift_report.txt), [Uncharted 2](games/Uncharted2/UNCHARTED2_lift_report.txt), and [Demon's Souls](games/DemonsSouls/DemonsSouls_lift_report.txt). Analysis reports are archived beside each game's record.
+Raw lift reports: [GOW3](games/GOW3/GOW3_lift_report.txt), [Minecraft](games/Mineacraft/lift_report.txt), [Uncharted 2](games/Uncharted2/UNCHARTED2_lift_report.txt), [Demon's Souls](games/DemonsSouls/DemonsSouls_lift_report.txt), and [Grand Theft Auto: San Andreas](games/Grand%20Theft%20Auto%20-%20San%20Andreas/lift_report.txt). The matching [San Andreas analysis report](games/Grand%20Theft%20Auto%20-%20San%20Andreas/analysis_report.txt) is archived with its title record. Analysis reports are archived beside each game's record.
 
 ## Interpreting the metric
 
-Grand Theft Auto: San Andreas is planned as the next coverage pass, followed by Grand Theft Auto V. Their folders are planning records only; no instruction totals or coverage results have been measured for either title yet. These reports indicate that the lifter classified every instruction instance in each recorded input snapshot as translated. They do not prove that each emitted operation preserves PowerPC semantics. Approximate operations and no-op fallbacks can still be counted as translated.
+Grand Theft Auto: San Andreas has a recorded snapshot of 1,893,428 instruction instances, all reported translated, 0 reported unimplemented, and 232 chunks. ELF analysis reported 5 PT_LOAD segments, entry OPD `0x77b718`, 0 detected symbols, 4,097 OPD entries, 23 PRX/module string hits, and 0 embedded SPU images. Grand Theft Auto V remains the next planned coverage pass. These reports indicate that the lifter classified every instruction instance in each recorded input snapshot as translated. They do not prove that each emitted operation preserves PowerPC semantics. Approximate operations and no-op fallbacks can still be counted as translated.
 
 Coverage is measured against the input that was analyzed. A different game, firmware revision, executable, or code path may exercise instruction forms absent from a snapshot. Keep these measurements separate:
 
