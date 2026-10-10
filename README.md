@@ -32,10 +32,10 @@ PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction sema
 
 | Game | Entry OPD | OPDs detected | PRX hits | Embedded SPU images | Chunks |
 | --- | --- | ---: | ---: | ---: | ---: |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/God_of_War_Logo.png" width="86" alt="God of War logo" /> God of War III | `0x50ddc0` | 3 | 47 | 8 | 157 |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Minecraft_Logo.png/160px-Minecraft_Logo.png" width="86" alt="Minecraft logo" /> Minecraft (PS3) | `0xbbe520` | 4,097 | 45 | 11 | 371 |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/God_of_War_Logo.png" width="86" alt="God of War logo" /> God of War III | `0x50ddc0` | 3 | 47 | 8 | 157 |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Minecraft_Logo.png" width="86" alt="Minecraft logo" /> Minecraft (PS3) | `0xbbe520` | 4,097 | 45 | 11 | 371 |
 | <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="48" alt="Uncharted 2 logo artwork" /> Uncharted 2: Among Thieves | `0xdd8618` | 116 | 391 | 7 | 426 |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/4/4d/Demon%27s_Souls_logo_black.svg" width="86" alt="Demon's Souls logo" /> Demon's Souls | `0x1916138` | 4,097 | 134 | 12 | 775 |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="86" alt="Demon's Souls logo" /> Demon's Souls | `0x1916138` | 4,097 | 134 | 12 | 775 |
 
 All four game counts describe individual static-lift snapshots. They are not proof of correct instruction semantics, successful boot, rendering, or playability. See [PPU coverage](docs/PPU_COVERAGE.md), [game records](docs/games/README.md), and [roadmap](ROADMAP.md).
 
