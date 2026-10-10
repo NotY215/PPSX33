@@ -1,28 +1,74 @@
-# PPSX33 Compiler Setup
+# Compilers-files — local toolchain staging
 
-PPSX33 uses CMake and Ninja for native builds, MSVC for the primary Windows output path, and the .NET 8 SDK for the C# WinForms GUI. The native core and CLI require a C++17-capable compiler.
+This directory is copied into `build/dist/Compilers-files/` when you build PPSX33.
+The **game project build** (`build_msvc.bat` from `project.cpp`) prefers tools from here so end users do not need a full Visual Studio install on `PATH`.
 
-## 1. Install tools
+## Required layout for developers
 
-For Windows, install Visual Studio 2022 or a compatible newer version with:
+After installing Visual Studio (or Build Tools) with **Desktop development with C++**, **copy** the MSVC host tools into this tree:
 
-- **Desktop development with C++**
-- MSVC x64/x86 build tools
+```text
+Compilers-files/
+  README.md                 (this file)
+  MSCV/                     ← preferred name (also accepts MSVC / msvc / mscv)
+    cl.exe
+    link.exe
+    lib.exe                 (optional)
+    *.dll                   (MSVC support DLLs next to cl.exe)
+  ninja/                    (optional)
+    ninja.exe
+  mingw64/                  (optional g++ fallback)
+    bin/g++.exe
+```
+
+### How to populate `MSCV/`
+
+1. Install Visual Studio 2022/2026 (or Build Tools) with the C++ workload and a Windows SDK.
+2. Locate the host x64 tools, for example:
+
+```text
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\<ver>\bin\Hostx64\x64\
+```
+
+3. Copy **at least** `cl.exe`, `link.exe`, and the supporting DLLs from that folder into:
+
+```text
+Compilers-files/MSCV/
+```
+
+4. Rebuild PPSX33 so the folder is staged under `build/dist/Compilers-files/MSCV/`.
+
+The build driver searches, in order: `MSCV`, `MSVC`, `msvc`, `mscv`, then the root of `Compilers-files`.
+
+### Windows SDK (D3D headers / libs)
+
+`cl.exe` alone is not enough to compile `rsx_stub.cpp` (D3D10/11).
+`project.cpp` still **calls `vcvars64.bat`** (when found) only to set `INCLUDE` / `LIB` for the Windows SDK. You do **not** need those SDK folders inside `Compilers-files`, but a machine build still needs a Windows SDK installed via Visual Studio Installer.
+
+Optional env: `PS3RT_GFX=D3D10` or `D3D11`.
+
+## End-user package (`build/dist`)
+
+```text
+build/dist/
+  PS3Recomp.exe
+  ps3core.dll
+  runtime/
+  Compilers-files/
+    MSCV/cl.exe
+    MSCV/link.exe
+  assets/
+  projects/         (created at runtime)
+```
+
+Developers compiling from source must keep `Compilers-files/MSCV` populated so local builds match the dist layout.
+
+## Install tools (host build of PPSX33 itself)
+
+- Visual Studio with **Desktop development with C++**
 - Windows SDK
-- CMake and Ninja
-- .NET 8 SDK
-
-Official sources:
-
-- [Visual Studio](https://visualstudio.microsoft.com/downloads/)
-- [C++ workload](https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-community)
-- [CMake](https://cmake.org/)
-- [Ninja](https://github.com/ninja-build/ninja)
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-
-## 2. Verify tool discovery
-
-Open a Visual Studio developer command prompt and run:
+- CMake, Ninja
+- .NET 8 SDK (GUI)
 
 ```bat
 where cl
@@ -30,36 +76,17 @@ where link
 where cmake
 where ninja
 where dotnet
-```
-
-The GUI targets `net8.0-windows`. CMake may skip the GUI target when the .NET SDK is unavailable.
-
-## 3. Local compiler staging
-
-When present, `Compilers-files/` is copied into `build/dist/Compilers-files/`. The build driver accepts this directory as the compiler-tool path. Depending on the build path, tools may include `cl.exe`, `link.exe`, `ninja.exe`, and matching support files.
-
-Keep each toolset and its support files together. Do not mix binaries from different MSVC versions. Local staging does not replace a correctly configured Visual Studio environment or Windows SDK.
-
-Example MSVC path:
-
-```text
-C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\<toolset-version>\bin\Hostx64\x64\
-```
-
-The edition may be Community, Professional, Enterprise, or BuildTools. Versioned directories can differ in newer releases.
-
-## 4. Build and output
-
-From the repository root:
-
-```bat
 scripts\build_all.bat
 ```
 
-Output is placed in `build\dist\`. Expected frontends include `PS3Recomp.exe` when the GUI target is available and `ps3_cli.exe` for the CLI.
+## Licensing
 
-A project build may emit `game.exe`, `ps3rt.dll`, and `guest_image.bin`. Artifact generation does not prove correct guest execution.
+Do not commit proprietary MSVC binaries unless redistribution is allowed. Prefer documenting the copy steps. See [THIRD_PARTY.md](../THIRD_PARTY.md).
 
-## 5. Licensing
+## Verify game builds use staged tools
 
-MSVC and Visual Studio are governed by Microsoft's applicable terms. Do not commit or redistribute proprietary compiler binaries unless redistribution is explicitly permitted. See [THIRD_PARTY.md](../THIRD_PARTY.md).
+Log should show:
+
+```text
+Using Compilers-files cl: ...\Compilers-files\MSCV\cl.exe
+```
