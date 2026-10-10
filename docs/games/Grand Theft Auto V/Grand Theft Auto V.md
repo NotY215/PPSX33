@@ -2,41 +2,40 @@
 
 ## Analysis status
 
-**Planned; not yet analyzed.** GTA V is the next planned title after the Grand Theft Auto: San Andreas lift and ELF-analysis snapshot was recorded.
+**Static lift and ELF analysis recorded.** The metrics below describe the uploaded report snapshot; exact input build and provenance still need to be documented.
 
 ## Planned lift metrics
 
 | Metric | Result |
 | --- | --- |
-| Input build / region | Pending |
-| Instruction instances | Pending |
-| Translated instances reported | Pending |
-| Unimplemented instances reported | Pending |
-| Chunks | Pending |
-| Reported static translation coverage | Pending |
-| Lift report | Not generated |
-| Analysis report | Not generated |
+| Input build / region | Not recorded |
+| Instruction instances | 6,934,214 |
+| Translated instances reported | 6,934,214 |
+| Unimplemented instances reported | 0 |
+| Chunks | 847 |
+| Reported static translation coverage | 100% for this snapshot |
+| Lift report | [lift_report.txt](lift_report.txt) |
+| Analysis report | [analysis_report.txt](analysis_report.txt) |
 
 ## Planned ELF and opcode findings
 
 | Metric | Result |
 | --- | --- |
-| PT_LOAD segments | Pending |
-| Entry OPD | Pending |
-| Detected symbols | Pending |
-| OPD entries | Pending |
-| PRX/module string hits | Pending |
-| Embedded SPU images | Pending |
-| Opcode families requiring review | Pending |
+| PT_LOAD segments | 5 |
+| Entry OPD | `0x1a90b80` |
+| Detected symbols | 0 |
+| OPD entries | 4,097 |
+| PRX/module string hits | 56 |
+| Embedded SPU images | 8 |
+| Opcode families requiring review | Pending semantic review |
 
 ## Evaluation checklist
 
-- [x] Record the Grand Theft Auto: San Andreas lift and ELF-analysis snapshot.
+- [x] Run ELF analysis and preserve `analysis_report.txt`.
+- [x] Run static PPU lifting and preserve `lift_report.txt`.
 - [ ] Record the exact GTA V input build and its provenance.
-- [ ] Run ELF analysis and preserve `analysis_report.txt`.
-- [ ] Run static PPU lifting and preserve `lift_report.txt`.
 - [ ] Compare opcode-family findings with existing title snapshots.
 - [ ] Inspect approximate and fallback operations rather than relying only on translated counts.
 - [ ] Add regression tests for newly identified instruction patterns.
 
-Do not fill in metrics until an actual analysis run produces them. A reported 100% translation rate would not alone prove correct instruction semantics or playability.
+The reports record 100% static translation for this input snapshot. This does not prove correct instruction semantics, runtime compatibility, or playability; approximate operations and fallback translations may still be counted as translated.
