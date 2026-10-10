@@ -177,7 +177,6 @@ PS3RT_API int ps3rt_spu_mfc_dma(int id, uint32_t lsa, uint64_t ea, uint32_t size
     return 0;
 }
 
-// ---- Pad state (keyboard mapped at host; filled by cellPadGetData) ----
 static uint16_t g_pad_buttons = 0;
 static int16_t  g_pad_lx = 0x80, g_pad_ly = 0x80, g_pad_rx = 0x80, g_pad_ry = 0x80;
 
@@ -206,75 +205,70 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
         } else c->gpr[3] = 0;
         break;
     case 4: c->gpr[3] = 0; break;
-    case 14: // sys_process_exit
+    case 14:
         c->halted = true; c->gpr[3] = 0; break;
-    case 18: { // sys_memory_allocate
+    case 18: {
         uint64_t size = r3, out = r5;
         uint64_t va = guest_alloc(size, 0x10000);
         if (va && out && out + 8 <= g_mem_size) wr_be64_guest(out, va);
         c->gpr[3] = va ? 0 : 0x80010004ull;
         break;
     }
-    case 19: c->gpr[3] = 0; break; // sys_memory_free
-    case 20: case 22: case 25: // memory get page size / available
+    case 19: c->gpr[3] = 0; break;
+    case 20: case 22: case 25:
         if (r3 && r3 + 8 <= g_mem_size) wr_be64_guest(r3, 480ull * 1024 * 1024);
         c->gpr[3] = 0; break;
-    case 30: case 31: // tty write/read
-        c->gpr[3] = 0; break;
-    case 41: case 43: case 44: case 48: case 52: case 53: // ppu thread
+    case 30: case 31: c->gpr[3] = 0; break;
+    case 41: case 43: case 44: case 48: case 52: case 53:
         if ((num == 41 || num == 52) && r4 && r4 + 8 <= g_mem_size) {
             static uint32_t tid = 0x2000;
             wr_be32_guest(r4, ++tid);
         }
         c->gpr[3] = 0; break;
-    case 70: case 73: // timer
-        c->gpr[3] = 0; break;
-    case 90: case 91: case 93: case 94: // mutex
+    case 70: case 73: c->gpr[3] = 0; break;
+    case 90: case 91: case 93: case 94:
         if (num == 90 && r4 && r4 + 4 <= g_mem_size) {
             static uint32_t mid = 0x3000;
             wr_be32_guest(r4, ++mid);
         }
         c->gpr[3] = 0; break;
-    case 96: case 97: case 98: case 99: case 100: // lwmutex
+    case 96: case 97: case 98: case 99: case 100:
         if (num == 96 && r4 && r4 + 4 <= g_mem_size) {
             static uint32_t lwid = 0x4000;
             wr_be32_guest(r4, ++lwid);
         }
         c->gpr[3] = 0; break;
-    case 105: case 106: case 107: case 108: case 109: // cond
+    case 105: case 106: case 107: case 108: case 109:
         if (num == 105 && r4 && r4 + 4 <= g_mem_size) {
             static uint32_t cid = 0x5000;
             wr_be32_guest(r4, ++cid);
         }
         c->gpr[3] = 0; break;
-    case 114: case 115: case 116: case 117: case 118: // rwlock
-        c->gpr[3] = 0; break;
-    case 120: case 121: case 122: case 123: case 124: // semaphore
+    case 114: case 115: case 116: case 117: case 118: c->gpr[3] = 0; break;
+    case 120: case 121: case 122: case 123: case 124:
         if (num == 120 && r4 && r4 + 4 <= g_mem_size) {
             static uint32_t sid = 0x6000;
             wr_be32_guest(r4, ++sid);
         }
         c->gpr[3] = 0; break;
-    case 128: case 129: case 130: case 131: case 132: // event queue
+    case 128: case 129: case 130: case 131: case 132:
         if (num == 128 && r4 && r4 + 4 <= g_mem_size) {
             static uint32_t eid = 0x7000;
             wr_be32_guest(r4, ++eid);
         }
         c->gpr[3] = 0; break;
-    case 133: case 134: // event queue receive — non-blocking “no event”
-        c->gpr[3] = 0x8001000Aull; break;
-    case 135: case 136: case 137: case 138:
-        c->gpr[3] = 0; break;
-    case 141: case 142: case 143: case 144: case 145: // event port / flag
+    case 133: case 134: c->gpr[3] = 0x8001000Aull; break;
+    case 135: case 136: case 137: case 138: c->gpr[3] = 0; break;
+    case 141: case 142: case 143: case 144: case 145:
         if ((num == 141 || num == 143) && r4 && r4 + 4 <= g_mem_size) {
             static uint32_t fid = 0x8000;
             wr_be32_guest(r4, ++fid);
         }
         c->gpr[3] = 0; break;
-    case 348: case 349: // spu thread group
+    case 348: case 349:
         if (r4 && r4 + 4 <= g_mem_size) wr_be32_guest(r4, 1);
         c->gpr[3] = 0; break;
-    case 352: { // sys_mmapper_allocate_address
+    case 352: {
         uint64_t size = r3, flags = r4, align = r5 ? r5 : 0x10000, out = r6;
         if (!out && flags >= 0x10000 && flags + 8 <= g_mem_size) out = flags;
         if (size == 0 || size >= 0x08000000ull) {
@@ -300,27 +294,21 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
         c->gpr[3] = va ? 0 : 0x80010004ull;
         break;
     }
-    case 353: case 354: case 355: case 356: case 357:
-        c->gpr[3] = 0; break;
-    case 403: // prx load module path — return fake module id
+    case 353: case 354: case 355: case 356: case 357: c->gpr[3] = 0; break;
+    case 403:
         if (r4 && r4 + 4 <= g_mem_size) {
             static uint32_t mid = 0x9000;
             wr_be32_guest(r4, ++mid);
         }
         c->gpr[3] = 0; break;
     case 480: case 481: case 482: case 483: case 484: case 485:
-    case 486: case 487: case 488: case 494:
-        c->gpr[3] = 0; break;
+    case 486: case 487: case 488: case 494: c->gpr[3] = 0; break;
     case 801: case 802: case 803: case 804: case 808: case 809:
-    case 811: case 812: case 814: // fs
-        c->gpr[3] = 0; break;
-    default:
-        c->gpr[3] = 0;
-        break;
+    case 811: case 812: case 814: c->gpr[3] = 0; break;
+    default: c->gpr[3] = 0; break;
     }
 }
 
-// ---- PRX / NID dispatch with real GCM + pad behavior ----
 static int g_prx_log = 0;
 static uint64_t g_gcm_fifo = 0;
 static uint32_t g_gcm_fifo_size = 0x100000;
@@ -328,7 +316,6 @@ static int g_gcm_inited = 0;
 
 static int prx_dispatch(PPUContext* c, int kind, const char* name) {
     uint32_t maybe_nid = (uint32_t)c->gpr[11];
-    // Some call sites put NID in r0 / lr residue; also try gpr[0]
     if (!nid_lookup(maybe_nid))
         maybe_nid = (uint32_t)c->gpr[0];
     const NidEntry* e = nid_lookup(maybe_nid);
@@ -339,8 +326,7 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
         }
         kind = e->kind;
         name = e->name;
-        // ---- cellGcmSys ----
-        if (e->nid == 0x15BAE46B) { // cellGcmInitBody
+        if (e->nid == 0x15BAE46B) {
             uint64_t fifo = c->gpr[3];
             uint32_t size = (uint32_t)c->gpr[4];
             if (!size) size = 0x100000;
@@ -351,76 +337,56 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
             c->gpr[3] = 0;
             return 0;
         }
-        if (e->nid == 0xD81D0D2D) { // cellGcmSetFlip
+        if (e->nid == 0xD81D0D2D) {
             ps3rt_rsx_flip((uint32_t)c->gpr[3]);
             c->gpr[3] = 0;
             return 0;
         }
-        if (e->nid == 0xA547ADDE) { // cellGcmGetFlipStatus
-            c->gpr[3] = 0; // flipped
-            return 0;
-        }
-        if (e->nid == 0xB2E761D4) { // cellGcmResetFlipStatus
+        if (e->nid == 0xA547ADDE || e->nid == 0xB2E761D4 || e->nid == 0xF80196C0 ||
+            e->nid == 0xA53D12AE || e->nid == 0x98396A7C) {
             c->gpr[3] = 0;
             return 0;
         }
-        if (e->nid == 0xF80196C0) { // cellGcmSetWaitFlip
-            c->gpr[3] = 0;
-            return 0;
-        }
-        if (e->nid == 0x55A14C05) { // cellGcmGetControlRegister — return a fake control struct addr
+        if (e->nid == 0x55A14C05) {
             static uint64_t ctrl = 0;
             if (!ctrl) ctrl = guest_alloc(0x1000, 0x1000);
             c->gpr[3] = ctrl;
             return 0;
         }
-        if (e->nid == 0x5F909B17) { // cellGcmGetLabelAddress
+        if (e->nid == 0x5F909B17) {
             static uint64_t labels = 0;
             if (!labels) labels = guest_alloc(0x2000, 0x1000);
             c->gpr[3] = labels + ((c->gpr[3] & 0xFF) * 0x10);
             return 0;
         }
-        if (e->nid == 0x4524FE95) { // cellGcmGetConfiguration
-            // Write a minimal CellGcmConfig-like block if out ptr in r3
+        if (e->nid == 0x4524FE95) {
             uint64_t out = c->gpr[3];
             if (out && out + 32 <= g_mem_size) {
-                wr_be32_guest(out + 0, 1280); // local memory size placeholder fields
+                wr_be32_guest(out + 0, 1280);
                 wr_be32_guest(out + 4, 720);
                 wr_be32_guest(out + 8, 0);
             }
             c->gpr[3] = 0;
             return 0;
         }
-        if (e->nid == 0xA53D12AE) { // cellGcmSetDisplayBuffer
+        if (e->nid == 0x1C936E6D || e->nid == 0x0D5F2C14 || e->nid == 0x3F797DFF) {
             c->gpr[3] = 0;
             return 0;
         }
-        if (e->nid == 0x98396A7C) { // cellGcmSetFlipMode
-            c->gpr[3] = 0;
-            return 0;
-        }
-        // ---- sys_io / cellPad ----
-        if (e->nid == 0x1C936E6D) { // cellPadInit
-            c->gpr[3] = 0;
-            return 0;
-        }
-        if (e->nid == 0xA703A51D) { // cellPadGetInfo2
+        if (e->nid == 0xA703A51D) {
             uint64_t out = c->gpr[3];
             if (out && out + 16 <= g_mem_size) {
-                wr_be32_guest(out + 0, 1); // max_connect
-                wr_be32_guest(out + 4, 1); // now_connect
-                wr_be32_guest(out + 8, 1); // system_info
+                wr_be32_guest(out + 0, 1);
+                wr_be32_guest(out + 4, 1);
+                wr_be32_guest(out + 8, 1);
             }
             c->gpr[3] = 0;
             return 0;
         }
-        if (e->nid == 0x3AAAD464) { // cellPadGetData
-            // r3=port, r4=CellPadData*
+        if (e->nid == 0x3AAAD464) {
             uint64_t out = c->gpr[4];
             if (out && out + 24 <= g_mem_size) {
-                wr_be32_guest(out + 0, 24); // len
-                wr_be16_guest_via32: ;
-                // buttons at +4 (BE16)
+                wr_be32_guest(out + 0, 24);
                 g_mem[out + 4] = (uint8_t)(g_pad_buttons >> 8);
                 g_mem[out + 5] = (uint8_t)(g_pad_buttons & 0xFF);
                 g_mem[out + 6] = (uint8_t)g_pad_lx;
@@ -431,11 +397,6 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
             c->gpr[3] = 0;
             return 0;
         }
-        if (e->nid == 0x0D5F2C14) { // cellPadEnd
-            c->gpr[3] = 0;
-            return 0;
-        }
-        // ---- sysmodule / audio / spurs / sysutil / np — success stubs ----
         if (kind >= 2 && kind <= 10) {
             c->gpr[3] = 0;
             return 0;
@@ -446,11 +407,7 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
         ++g_prx_log;
     }
     (void)kind; (void)name;
-    // GCM family fallback: if already inited, treat unknown gcm as success
-    if (kind == 1) {
-        c->gpr[3] = 0;
-        return 0;
-    }
+    if (kind == 1) { c->gpr[3] = 0; return 0; }
     c->gpr[3] = 0;
     return 0;
 }
