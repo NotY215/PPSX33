@@ -46,36 +46,18 @@ add_custom_target(copy_runtime ALL
     COMMENT "Copying runtime/ sources"
 )
 
-# Compilers-files is often locked (AV, Explorer, cl.exe).
-# Do NOT delete destination. Merge with robocopy; always exit 0 so build continues.
+# Compilers-files: use scripts/copy_compilers.bat (repo file, always exit 0).
+# Never delete dest (locks from AV / Explorer / cl.exe). Never fail the build.
 if(EXISTS "${CMAKE_SOURCE_DIR}/Compilers-files")
-    if(WIN32)
-        # Written at configure time; invoked with plain args (no nested cmd quoting).
-        set(_cc_bat "${CMAKE_BINARY_DIR}/copy_compilers.bat")
-        file(WRITE "${_cc_bat}"
-"@echo off
-set "SRC=%~1"
-set "DST=%~2"
-if not defined SRC exit /b 0
-if not defined DST exit /b 0
-if not exist "%DST%" mkdir "%DST%" 2>nul
-where robocopy >nul 2>&1
-if errorlevel 1 (
-  xcopy /E /I /Y /Q "%SRC%" "%DST%\" >nul 2>&1
-  exit /b 0
-)
-robocopy "%SRC%" "%DST%" /E /XO /NFL /NDL /NJH /NJS /nc /ns /np >nul 2>&1
-exit /b 0
-")
-        # Call the .bat directly — ninja/cmake pass args cleanly (no cmd /C wrapper).
+    if(WIN32 AND EXISTS "${CMAKE_SOURCE_DIR}/scripts/copy_compilers.bat")
         add_custom_command(TARGET copy_runtime POST_BUILD
-            COMMAND "${_cc_bat}"
+            COMMAND "${CMAKE_SOURCE_DIR}/scripts/copy_compilers.bat"
                     "${CMAKE_SOURCE_DIR}/Compilers-files"
                     "${CMAKE_BINARY_DIR}/dist/Compilers-files"
             COMMENT "Copying Compilers-files (best-effort)"
             VERBATIM
         )
-    else()
+    elseif(NOT WIN32)
         add_custom_command(TARGET copy_runtime POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
                     "${CMAKE_SOURCE_DIR}/Compilers-files"
