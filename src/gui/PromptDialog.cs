@@ -1,78 +1,27 @@
-using PS3Recomp.Gui.Ui;
-
 namespace PS3Recomp.Gui;
 
-/// <summary>Glass modal text prompt (project name, etc.).</summary>
 internal sealed class PromptDialog : Form
 {
     private readonly TextBox _box = new();
     public string Value => _box.Text.Trim();
 
-    protected override void OnHandleCreated(EventArgs e)
+    public PromptDialog(string title, string initial)
     {
-        base.OnHandleCreated(e);
-        UiNative.DarkTitleBar(Handle);
-    }
-
-    public PromptDialog(string title, string label)
-    {
-        AutoScaleMode = AutoScaleMode.Dpi;
-        AutoScaleDimensions = new SizeF(96f, 96f);
-        Text = title;
-        Width = 480;
-        Height = 250;
+        Text = title; Width = 420; Height = 160;
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        ShowInTaskbar = false;
-        BackColor = Theme.Void;
-        ForeColor = Theme.TextPri;
-        Font = Theme.Font(9.25f);
-        DoubleBuffered = true;
-
-        var stage = new LiquidBackdrop { Dock = DockStyle.Fill, Padding = new Padding(8) };
-        var card = new GlassPanel { Dock = DockStyle.Fill, Radius = 20 };
-        card.SetInset(20, 16, 20, 16);
-
-        var lbl = new Label
-        {
-            Text = label,
-            Dock = DockStyle.Top,
-            Height = 30,
-            ForeColor = Theme.TextSec,
-            BackColor = Color.Transparent,
-            Font = Theme.Semi(9.5f),
-            TextAlign = ContentAlignment.BottomLeft
-        };
-
-        _box.BorderStyle = BorderStyle.None;
-        _box.BackColor = Color.FromArgb(16, 22, 46);
-        _box.ForeColor = Theme.TextPri;
-        _box.Font = Theme.Font(10.5f);
-        var field = new FieldFrame { Dock = DockStyle.Top, Height = 42, Fill = Color.FromArgb(16, 22, 46), Padding = new Padding(12, 0, 10, 0) };
-        field.Controls.Add(_box);
-
-        var ok = new GlassButton { Text = "OK", Kind = GlassKind.Primary, Glyph = 2, DialogResult = DialogResult.OK, Width = 150, Height = 40 };
-        var cancel = new GlassButton { Text = "Cancel", Kind = GlassKind.Step, Glyph = 1, DialogResult = DialogResult.Cancel, Width = 150, Height = 40 };
-
-        var buttons = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Bottom,
-            Height = 48,
-            FlowDirection = FlowDirection.RightToLeft,
-            BackColor = Color.Transparent
-        };
-        buttons.Controls.Add(ok);
-        buttons.Controls.Add(cancel);
-
-        card.Controls.Add(buttons);
-        card.Controls.Add(field);
-        card.Controls.Add(lbl);
-        stage.Controls.Add(card);
-        Controls.Add(stage);
-        AcceptButton = ok;
-        CancelButton = cancel;
-        Shown += (_, _) => _box.Focus();
+        MaximizeBox = false; MinimizeBox = false; ShowInTaskbar = false;
+        BackColor = Color.FromArgb(28, 28, 34);
+        ForeColor = Color.FromArgb(230, 232, 240);
+        Font = new Font("Segoe UI", 9.25f);
+        var lbl = new Label { Text = "Name", ForeColor = Color.FromArgb(140, 145, 160), Location = new Point(16, 16), AutoSize = true };
+        _box.Text = initial; _box.Location = new Point(16, 40); _box.Width = 370;
+        _box.BackColor = Color.FromArgb(18, 18, 22); _box.ForeColor = Color.FromArgb(230, 232, 240); _box.BorderStyle = BorderStyle.FixedSingle;
+        var ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Location = new Point(220, 80), Width = 80, FlatStyle = FlatStyle.Flat, BackColor = Color.FromArgb(70, 130, 255), ForeColor = Color.White };
+        ok.FlatAppearance.BorderSize = 0;
+        var cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(306, 80), Width = 80, FlatStyle = FlatStyle.Flat, BackColor = Color.FromArgb(50, 50, 58), ForeColor = Color.White };
+        cancel.FlatAppearance.BorderSize = 0;
+        Controls.Add(lbl); Controls.Add(_box); Controls.Add(ok); Controls.Add(cancel);
+        AcceptButton = ok; CancelButton = cancel;
     }
 }
