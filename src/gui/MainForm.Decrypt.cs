@@ -22,7 +22,7 @@ public sealed partial class MainForm
         if (!string.IsNullOrWhiteSpace(_settings.Rpcs3Path))
         {
             try { ofd.InitialDirectory = Path.GetDirectoryName(_settings.Rpcs3Path) ?? ""; }
-            catch { /* ignore */ }
+            catch { }
         }
         if (ofd.ShowDialog(this) != DialogResult.OK) return false;
         if (!File.Exists(ofd.FileName))
@@ -32,6 +32,7 @@ public sealed partial class MainForm
         }
         _settings.Rpcs3Path = ofd.FileName;
         SaveSettings();
+        UpdateRpcs3Button();
         return true;
     }
 
@@ -40,11 +41,22 @@ public sealed partial class MainForm
         if (!EnsureRpcs3Path())
         {
             SetStatus("RPCS3 not selected");
+            UpdateRpcs3Button();
             return;
         }
 
-        using var ofd = new OpenFileDialog { Filter = "EBOOT|EBOOT.BIN;*.BIN|All|*.*", Title = "Select EBOOT.BIN to decrypt" };
+        using var ofd = new OpenFileDialog
+        {
+            Filter = "EBOOT|EBOOT.BIN;*.BIN|All|*.*",
+            Title = "Select EBOOT.BIN to decrypt",
+            InitialDirectory = !string.IsNullOrWhiteSpace(_settings.LastBinPath) && File.Exists(_settings.LastBinPath)
+                ? (Path.GetDirectoryName(_settings.LastBinPath) ?? "")
+                : ""
+        };
         if (ofd.ShowDialog(this) != DialogResult.OK) return;
+
+        _settings.LastBinPath = ofd.FileName;
+        SaveSettings();
 
         SetStatus("Decrypting…", true); _busy = true; UpdateButtons();
         try
@@ -57,6 +69,8 @@ public sealed partial class MainForm
             if (ok && File.Exists(elf))
             {
                 Append("Decrypted: " + elf);
+                _settings.LastElfPath = elf;
+                SaveSettings();
                 LoadElf(elf);
             }
             else
@@ -71,6 +85,6 @@ public sealed partial class MainForm
             }
         }
         catch (Exception ex) { Append(ex.Message); SetStatus("Decrypt error"); }
-        finally { _busy = false; UpdateButtons(); }
+        finally { _busy = false; UpdateButtons(); UpdateRpcs3Button(); }
     }
 }
