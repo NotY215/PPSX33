@@ -46,23 +46,28 @@ add_custom_target(copy_runtime ALL
     COMMENT "Copying runtime/ sources"
 )
 
-# Compilers-files can be locked by antivirus / running cl.exe / previous build.
-# Remove dest first, then copy; on Windows fall back to robocopy (exit 0-7 = success).
+# Compilers-files is often locked (AV, Explorer, cl.exe, previous game.exe).
+# NEVER delete the destination (rm -rf fails and kills the whole rebuild).
+# Just ensure the folder exists and robocopy merge; always exit 0 so ninja continues.
 if(EXISTS "${CMAKE_SOURCE_DIR}/Compilers-files")
     if(WIN32)
+        # Use a small .bat so nested quoting does not break under ninja/cmd.
+        file(WRITE "${CMAKE_BINARY_DIR}/copy_compilers.bat"
+"@echo off
+set SRC=%~1
+set DST=%~2
+if not exist \"%DST%\" mkdir \"%DST%\"
+robocopy \"%SRC%\" \"%DST%\" /E /XO /NFL /NDL /NJH /NJS /nc /ns /np >nul 2>&1
+rem robocopy: 0-7 = success / partial; >=8 = failure — we still continue
+exit /b 0
+")
         add_custom_command(TARGET copy_runtime POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E rm -rf
-                    "${CMAKE_BINARY_DIR}/dist/Compilers-files"
-            COMMAND ${CMAKE_COMMAND} -E make_directory
-                    "${CMAKE_BINARY_DIR}/dist/Compilers-files"
-            COMMAND cmd /C "robocopy \"${CMAKE_SOURCE_DIR}/Compilers-files\" \"${CMAKE_BINARY_DIR}/dist/Compilers-files\" /E /NFL /NDL /NJH /NJS /nc /ns /np & if %ERRORLEVEL% GEQ 8 exit /b 1 & exit /b 0"
-            COMMENT "Copying Compilers-files (robocopy, tolerant of locks)"
+            COMMAND cmd /C "\"${CMAKE_BINARY_DIR}/copy_compilers.bat\" \"${CMAKE_SOURCE_DIR}/Compilers-files\" \"${CMAKE_BINARY_DIR}/dist/Compilers-files\""
+            COMMENT "Copying Compilers-files (best-effort, never fails build)"
             VERBATIM
         )
     else()
         add_custom_command(TARGET copy_runtime POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E rm -rf
-                    "${CMAKE_BINARY_DIR}/dist/Compilers-files"
             COMMAND ${CMAKE_COMMAND} -E copy_directory
                     "${CMAKE_SOURCE_DIR}/Compilers-files"
                     "${CMAKE_BINARY_DIR}/dist/Compilers-files"
@@ -91,7 +96,6 @@ if(DOTNET_EXE)
         VERBATIM
     )
 
-    # Make the common "all" target also guarantee the GUI is up to date
     add_dependencies(PS3Recomp ps3core copy_runtime)
 else()
     message(WARNING "dotnet not found on PATH – GUI target (PS3Recomp) will be skipped. Install .NET 8 SDK.")
