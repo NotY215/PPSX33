@@ -1,12 +1,11 @@
-Phase F status:
-- ppu_runtime_run.h has Phase F null-table skip (ON main)
-- ppu_runtime.h is a thin include wrapper
-- ppu_runtime_core.h / _a / _b need to be present for build
+# Historical Phase F runtime note
 
-If build fails on missing core, the previous working single-file ppu_runtime.h
-is in git history at commit 730cc349 (Phase E).
+This file records the runtime split introduced during Phase F. It is retained as development history, not as the current roadmap or recovery procedure.
 
-To restore quickly:
-  git show 730cc349:runtime/ppu_runtime.h > runtime/ppu_runtime.h
+The current PPU runtime layout is:
 
-Then rebuild.
+- `ppu_runtime.h`: include wrapper.
+- `ppu_runtime_core.h`, `ppu_runtime_core_a.h`, and `ppu_runtime_core_b.h`: shared runtime definitions and helpers.
+- `ppu_runtime_run.h`: PPU dispatch and recovery loop.
+
+Phase G is now recorded as complete in [the repository roadmap](../ROADMAP.md), including guest `cellGcmSys` state and additional PPU return-recovery logic. Phase H is the next milestone. Keep the split headers together and use the current build scripts rather than restoring an older header from history without reviewing the consequences.
