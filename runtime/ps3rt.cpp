@@ -8,7 +8,6 @@
 #include <mutex>
 #include <algorithm>
 #include <vector>
-// NOTE: Full restore content is in local /tmp - using compact Phase H build
 static uint8_t* g_mem = nullptr;
 static size_t g_mem_size = 0;
 static const uint64_t kStackBase = 0x0F000000ull;
@@ -265,17 +264,25 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
 }
 PS3RT_API void ps3rt_progress_hw(void) {
     if (!g_mem) return;
-    if (g_gcm_control && g_gcm_control + 12 <= g_mem_size) {
+    // Always sync FIFO get=put and ref so wait loops on control registers complete
+    if (g_gcm_control && g_gcm_control + 16 <= g_mem_size) {
         uint32_t put = rd_be32_guest(g_gcm_control + 0);
-        uint32_t get = rd_be32_guest(g_gcm_control + 8);
-        if (put != get) { wr_be32_guest(g_gcm_control + 8, put); ps3rt_rsx_set_put(put); ps3rt_rsx_flush(g_mem); }
-        wr_be32_guest(g_gcm_control + 4, put);
+        wr_be32_guest(g_gcm_control + 4, put);  // ref
+        wr_be32_guest(g_gcm_control + 8, put);  // get
+        ps3rt_rsx_set_put(put);
+        ps3rt_rsx_flush(g_mem);
     }
     g_gcm_flip_status = 0;
     static uint32_t s_flip_div = 0;
-    if ((++s_flip_div & 0xF) == 0) { ps3rt_rsx_flip(0); g_gcm_frame_id++; }
-    if (g_gcm_labels && g_gcm_labels + 0x100 <= g_mem_size)
-        for (int i = 0; i < 16; ++i) wr_be32_guest(g_gcm_labels + (uint64_t)i * 0x10, 0);
+    if ((++s_flip_div & 0x7) == 0) {
+        ps3rt_rsx_flip(0);
+        g_gcm_frame_id++;
+    }
+    // Clear a wide label window (games wait on label values)
+    if (g_gcm_labels && g_gcm_labels + 0x1000 <= g_mem_size) {
+        for (int i = 0; i < 256; ++i)
+            wr_be32_guest(g_gcm_labels + (uint64_t)i * 0x10, 0);
+    }
 }
 PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
     if (!c) return -1;
