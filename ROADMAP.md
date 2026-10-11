@@ -9,9 +9,9 @@
 | E | Done | Break null-call loops + restore TOC |
 | F | Done | Null-table skip + header copy |
 | **G** | **Done** | Real cellGcmSys state (ctrl/labels/flip) + LR ban |
-| H | Next | SPU + RSX command drain |
+| H | Next | SPU execution and RSX command draining |
 
-## Phase G (this turn)
+## Phase G (completed)
 
 **ps3rt.cpp**
 - `gcm_ensure_state()` allocates guest CellGcmControl + label area
@@ -23,6 +23,10 @@
 - Permanent ban list (up to 8 LRs) after soft_breaks > 48
 - Deeper stack scan (±0x400 / +0x2000)
 - Force-skip / alt-return when region exhausted
+
+## Phase H (next)
+
+Focus the next milestone on advancing SPU execution and draining RSX commands through the existing runtime interfaces. Keep partial implementations explicitly labeled, and add reproducible tests/logs for any newly supported command or instruction. Do not describe this milestone as complete until the relevant code paths and validation are present.
 
 ## Apply
 
