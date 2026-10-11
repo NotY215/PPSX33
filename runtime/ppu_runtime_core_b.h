@@ -39,6 +39,8 @@ static inline void set_cr_fp(PPUContext& c, int f, double a, double b) {
 }
 
 // Branch conditional (bc / bcx)
+// Phase K: break internal wait-loops that never return to ppu_run outer loop.
+// Lifted chunks often spin on bc inside hit->fn(); outer spin detection never runs.
 static inline bool bc_taken(PPUContext& c, unsigned bo, unsigned bi) {
     bool ctr_ok = true, cond_ok = true;
     if (!(bo & 0x04)) {
@@ -49,7 +51,37 @@ static inline bool bc_taken(PPUContext& c, unsigned bo, unsigned bi) {
         bool bit = (c.cr[bi >> 2] >> (3 - (bi & 3))) & 1;
         cond_ok = (bit == ((bo & 0x08) != 0));
     }
-    return ctr_ok && cond_ok;
+    bool taken = ctr_ok && cond_ok;
+
+    // Track consecutive taken branches (same bo/bi/pc) — force fallthrough to escape waits
+    static uint64_t s_last_key = 0;
+    static uint32_t s_taken_run = 0;
+    static uint32_t s_bc_log = 0;
+    uint64_t key = ((uint64_t)bo << 40) | ((uint64_t)bi << 32) | (c.pc & 0xFFFFFFFFu);
+    if (taken) {
+        if (key == s_last_key) ++s_taken_run;
+        else { s_last_key = key; s_taken_run = 1; }
+        // Every 4096 taken hits: poke HW progress
+        if ((s_taken_run & 0xFFF) == 0)
+            ps3rt_progress_hw();
+        // After 65536 consecutive taken of same branch: force NOT taken (escape)
+        if (s_taken_run >= 65536u) {
+            if (s_bc_log < 8) {
+                std::fprintf(stderr, "[ps3] Phase K force-fallthrough bc bo=%u bi=%u pc=0x%llx run=%u\n",
+                    bo, bi, (unsigned long long)c.pc, s_taken_run);
+                std::fflush(stderr);
+                ++s_bc_log;
+            }
+            s_taken_run = 0;
+            // Pretend success for wait loops that check r3
+            c.gpr[3] = 0;
+            return false;
+        }
+    } else {
+        s_last_key = 0;
+        s_taken_run = 0;
+    }
+    return taken;
 }
 
 struct PPUChunk {

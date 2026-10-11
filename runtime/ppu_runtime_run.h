@@ -1,4 +1,4 @@
-// Phase J: force-break pc==lr wait loops + stronger HW progress
+// Phase K+L: early ban of null LRs + force-break internal waits (see bc_taken)
 static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, size_t n,
                                          uint64_t exclude_pc = 0,
                                          const uint64_t* ban = nullptr, int nban = 0) {
@@ -33,10 +33,9 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     uint64_t last_good_ret = 0;
     uint64_t entry_toc = c.gpr[2];
     uint64_t steps = 0;
-    uint64_t ban_lr[8] = {};
+    uint64_t ban_lr[12] = {};
     int nban = 0;
 
-    // Phase J spin / wait tracking
     uint64_t spin_pc = 0;
     uint64_t spin_count = 0;
     uint64_t progress_pokes = 0;
@@ -46,8 +45,8 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     auto add_ban = [&](uint64_t lr) {
         if (!lr) return;
         for (int i = 0; i < nban; ++i) if (ban_lr[i] == lr) return;
-        if (nban < 8) ban_lr[nban++] = lr;
-        std::fprintf(stderr, "[ps3] Phase J ban LR=0x%llx (nban=%d)\n",
+        if (nban < 12) ban_lr[nban++] = lr;
+        std::fprintf(stderr, "[ps3] Phase K ban LR=0x%llx (nban=%d)\n",
             (unsigned long long)lr, nban);
     };
 
@@ -55,18 +54,16 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
         if (c.gpr[2] == 0 && entry_toc != 0)
             c.gpr[2] = entry_toc;
 
-        // Detect same-PC spin (including pc==lr wait loops)
         bool is_wait = (c.pc != 0 && c.pc == c.lr);
         if (c.pc == spin_pc || is_wait) {
             if (c.pc != spin_pc) { spin_pc = c.pc; spin_count = 0; }
             ++spin_count;
-            // Poke HW every 256 iterations (was 4096)
             if ((spin_count & 0xFF) == 0) {
                 ps3rt_progress_hw();
                 ++progress_pokes;
                 if ((progress_pokes & 0x1F) == 1) {
                     std::fprintf(stderr,
-                        "[ps3] Phase J spin pc=0x%llx count=%llu pokes=%llu wait=%d\n",
+                        "[ps3] Phase K spin pc=0x%llx count=%llu pokes=%llu wait=%d\n",
                         (unsigned long long)spin_pc,
                         (unsigned long long)spin_count,
                         (unsigned long long)progress_pokes,
@@ -74,11 +71,10 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                     std::fflush(stderr);
                 }
             }
-            // Force break after ~16k same-PC iterations
-            if (spin_count >= 0x4000 && (spin_count & 0x3FF) == 0) {
+            if (spin_count >= 0x2000 && (spin_count & 0x1FF) == 0) {
                 uint64_t alt = recover_return_pc(c, chunks, n, c.pc, ban_lr, nban);
                 if (alt && alt != c.pc) {
-                    std::fprintf(stderr, "[ps3] Phase J break spin via alt=0x%llx\n",
+                    std::fprintf(stderr, "[ps3] Phase K break spin via alt=0x%llx\n",
                         (unsigned long long)alt);
                     add_ban(c.pc);
                     c.pc = alt;
@@ -86,12 +82,11 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                     spin_pc = 0;
                     continue;
                 }
-                // No alt: advance PC by 4 (skip current wait insn)
-                if (is_wait && spin_count >= 0x10000) {
-                    std::fprintf(stderr, "[ps3] Phase J force +4 on wait pc=0x%llx\n",
+                if (is_wait && spin_count >= 0x8000) {
+                    std::fprintf(stderr, "[ps3] Phase K force +4 on wait pc=0x%llx\n",
                         (unsigned long long)c.pc);
                     c.pc += 4;
-                    c.gpr[3] = 0; // pretend success
+                    c.gpr[3] = 0;
                     spin_count = 0;
                     spin_pc = 0;
                     continue;
@@ -127,7 +122,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 else
                     c.gpr[3] = 0;
 
-                if (logged < 64) {
+                if (logged < 48) {
                     std::fprintf(stderr,
                         "[ps3] external/import stub pc=0x%llx -> ret=0x%llx (#%d)%s\n",
                         (unsigned long long)c.pc, (unsigned long long)ret,
@@ -142,22 +137,25 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                         last_good_ret = ret;
                 }
 
-                // null-loop soft skip
+                // Phase L: ban sticky null LRs early (was soft_breaks>48)
                 if (nullish || (c.lr && c.lr == last_null_lr)) {
                     ++soft_breaks;
                     uint64_t stride = 0x40;
-                    if (soft_breaks > 12) stride = 0x100;
-                    if (soft_breaks > 24) stride = 0x400;
-                    if (soft_breaks > 36) stride = 0x1000;
-                    if (soft_breaks > 48) {
-                        add_ban(c.lr ? c.lr : ret);
+                    if (soft_breaks > 6) stride = 0x100;
+                    if (soft_breaks > 12) stride = 0x400;
+                    if (soft_breaks > 18) stride = 0x1000;
+                    // Ban after only 8 repeats of same null LR
+                    if (soft_breaks > 8 && c.lr) {
+                        add_ban(c.lr);
                         uint64_t alt = recover_return_pc(c, chunks, n, ret, ban_lr, nban);
                         if (alt) ret = alt;
+                        else if (last_good_ret && last_good_ret != c.lr)
+                            ret = last_good_ret;
                     }
-                    if (ret && soft_breaks <= 64) {
+                    if (ret && soft_breaks <= 40) {
                         uint64_t new_pc = ret + stride;
                         if (pc_in_chunks(new_pc, chunks, n)) {
-                            if (soft_breaks <= 40)
+                            if (soft_breaks <= 24)
                                 std::fprintf(stderr, "[ps3] null-loop skip: 0x%llx +0x%llx -> 0x%llx (soft_breaks=%d)\n",
                                     (unsigned long long)ret, (unsigned long long)stride,
                                     (unsigned long long)new_pc, soft_breaks);
@@ -199,33 +197,27 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
 
         hit->fn(c);
 
-        // Heartbeat every 64K outer steps (more frequent)
-        if ((++steps & 0xFFFFull) == 0) {
+        if ((++steps & 0x7FFFull) == 0) {
             ps3rt_progress_hw();
             ++progress_pokes;
 
-            // Phase J: consecutive same pc==lr heartbeats => force break
             if (c.pc != 0 && c.pc == c.lr && c.pc == last_hb_pc) {
                 ++same_hb;
                 if (same_hb >= 2) {
                     uint64_t alt = recover_return_pc(c, chunks, n, c.pc, ban_lr, nban);
                     if (alt && alt != c.pc) {
-                        std::fprintf(stderr, "[ps3] Phase J hb-break spin via alt=0x%llx (same_hb=%d)\n",
+                        std::fprintf(stderr, "[ps3] Phase K hb-break via alt=0x%llx (same_hb=%d)\n",
                             (unsigned long long)alt, same_hb);
                         add_ban(c.pc);
                         c.pc = alt;
                         c.gpr[3] = 0;
-                        spin_count = 0;
-                        spin_pc = 0;
-                        same_hb = 0;
-                    } else if (same_hb >= 4) {
-                        std::fprintf(stderr, "[ps3] Phase J hb-force +4 pc=0x%llx (same_hb=%d)\n",
-                            (unsigned long long)c.pc, same_hb);
+                        spin_count = 0; spin_pc = 0; same_hb = 0;
+                    } else if (same_hb >= 3) {
+                        std::fprintf(stderr, "[ps3] Phase K hb-force +4 pc=0x%llx\n",
+                            (unsigned long long)c.pc);
                         c.pc += 4;
                         c.gpr[3] = 0;
-                        spin_count = 0;
-                        spin_pc = 0;
-                        same_hb = 0;
+                        spin_count = 0; spin_pc = 0; same_hb = 0;
                     }
                 }
             } else {
