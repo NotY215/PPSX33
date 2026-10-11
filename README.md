@@ -10,7 +10,7 @@
 
 <p align="center"><strong>PlayStation 3 Static Recompiler</strong><br />Decode · Translate · Play</p>
 
-PPSX33 is an experimental static recompiler for decrypted ELF64 big-endian PowerPC64 input targeting the PlayStation 3. The repository contains a C/C++ core, command-line frontend, C# WinForms GUI, and guest runtime support.
+PPSX33 is an experimental static recompiler for decrypted ELF64 big-endian PowerPC64 input targeting the PlayStation 3. The repository contains a C/C++ core, command-line frontend, C# WinForms GUI, and guest runtime support. Visit the [PPSX33 project website](https://notyvos.gt.tc/PPSX3/) for the project page.
 
 PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction semantics, runtime behavior, system-library compatibility, SPU execution, and RSX rendering are separate engineering problems.
 
@@ -40,6 +40,13 @@ PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction sema
 | <img src="https://thumb.wikimedia.org/wikipedia/it/thumb/7/76/Grand_Theft_Auto_V_logo.svg/330px-Grand_Theft_Auto_V_logo.svg.png?utm_source=it.wikipedia.org&utm_campaign=index&utm_content=thumbnail&_=20240305183247" width="86" alt="Grand Theft Auto V logo" /> Grand Theft Auto V | `0x1a90b80` | 4,097 | 56 | 8 | 847 |
 
 All four game counts describe individual static-lift snapshots. They are not proof of correct instruction semantics, successful boot, rendering, or playability. Grand Theft Auto: San Andreas now has a recorded static-lift and ELF-analysis snapshot: 1,893,428 instruction instances translated, 0 reported unimplemented, 232 chunks, 5 PT_LOAD segments, entry OPD `0x77b718`, 4,097 OPD entries, 23 PRX/module string hits, and 0 embedded SPU images detected. GTA V now also has a recorded snapshot: 6,934,214 instruction instances translated, 0 reported unimplemented, 847 chunks, 5 PT_LOAD segments, entry OPD `0x1a90b80`, 4,097 OPD entries, 56 PRX/module string hits, and 8 embedded SPU images detected. These counts do not establish semantic correctness or playability. See [PPU coverage](docs/PPU_COVERAGE.md), [game records](docs/games/README.md), and [roadmap](ROADMAP.md).
+
+## Project website and releases
+
+- **Project website:** [notyvos.gt.tc/PPSX3](https://notyvos.gt.tc/PPSX3/)
+- **Release documentation:** [releases/README.md](releases/README.md)
+- **Alpha 01 notes:** [releases/PPSX33-Alpha-01.md](releases/PPSX33-Alpha-01.md)
+- **Release prerequisites:** [Redist.md](Redist.md)
 
 ## Alpha release: PPSX33-Alpha-01
 
