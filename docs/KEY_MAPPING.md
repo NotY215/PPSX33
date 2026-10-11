@@ -1,5 +1,10 @@
 # Key Mapping
 
+<p align="center">
+  <img src="../assets/PPSX33%20PS3%20Controller%20Key%20Mapping.png" alt="PPSX33 PS3 controller keyboard key mapping reference" width="100%" />
+</p>
+
+
 PPSX33 uses the following default keyboard bindings for the PlayStation 3 DualShock-style controls. These defaults are defined in `src/gui/KeyMap.cs` and are stored in the `KeyMap` section of `%APPDATA%/PPSX33/settings.json`.
 
 ## Default bindings
