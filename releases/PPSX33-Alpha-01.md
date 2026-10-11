@@ -58,16 +58,16 @@ PPSX33-Alpha-01/
 - SPU instruction coverage, vector/floating-point behavior, and SPURS integration remain incomplete.
 - RSX support is partial; a complete graphics pipeline and commercial-game rendering compatibility are not established.
 - Successful analysis or compilation does not mean a game will boot, render correctly, or be playable.
-- The package is intended for Windows. The GUI targets .NET 8 for Windows and may require the .NET 8 Desktop Runtime.
+- The patched release is intended to ship with the built UI and should not require users to install .NET separately. The packaged build workflow may require the Windows SDK. See [Redist.md](../Redist.md) for the end-user prerequisite guide.
 - The presence of `MSCV/` does not guarantee that MSVC tools are included or configured. Any proprietary tool binaries must be redistributed only when their licenses permit it.
 
 ## Getting started
 
 1. Extract `PPSX33-Alpha-01` to a writable folder.
-2. Start `PS3Recomp.exe`. If it fails to start because the .NET runtime is missing, install the .NET 8 Desktop Runtime for Windows.
+2. Start `PS3Recomp.exe`. The patched package is intended to include everything required by its built UI, so users should not need a separate .NET installation. If startup fails, record the exact error and verify the release packaging.
 3. Use an ELF file you are legally authorized to analyze. The tool expects a supported decrypted ELF64 big-endian PowerPC64 input.
 4. Create a project, run the lift workflow, and inspect `lift_report.txt` and `analysis_report.txt`.
-5. Try the build workflow only when compatible host compiler/linker tools and Windows SDK components are available.
+5. Try the packaged build workflow with the included `MSCV/` tools and required Windows SDK components. See [Redist.md](../Redist.md).
 6. Keep logs and the exact steps for any issue you report.
 
 For command-line usage, run:
