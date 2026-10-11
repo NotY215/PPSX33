@@ -11,7 +11,6 @@ struct NidEntry {
 };
 
 static const NidEntry kNidTable[] = {
-    // cellGcmSys
     { 0x15BAE46B, "cellGcmSys", "cellGcmInitBody", 1 },
     { 0x21AC3697, "cellGcmSys", "cellGcmAddressToOffset", 1 },
     { 0x4524FE95, "cellGcmSys", "cellGcmGetConfiguration", 1 },
@@ -30,7 +29,20 @@ static const NidEntry kNidTable[] = {
     { 0xBC982946, "cellGcmSys", "cellGcmSetTileInfo", 1 },
     { 0x5A41C10F, "cellGcmSys", "cellGcmGetReportDataAddressLocation", 1 },
     { 0x8572C6C3, "cellGcmSys", "cellGcmSetZcull", 1 },
-    // cellFs
+    { 0x05E548B9, "cellGcmSys", "cellGcmSetFlipCommand", 1 },
+    { 0x107BF3A0, "cellGcmSys", "cellGcmSetFlipHandler", 1 },
+    { 0x1F14968B, "cellGcmSys", "cellGcmSetFlipStatusHandler", 1 },
+    { 0x2A6FBA9B, "cellGcmSys", "cellGcmSetDefaultCommandBuffer", 1 },
+    { 0x2E6CAB05, "cellGcmSys", "cellGcmSetWaitFlipUnsafe", 1 },
+    { 0x4AE8D215, "cellGcmSys", "cellGcmSetFlipMode", 1 },
+    { 0x527C6498, "cellGcmSys", "cellGcmSetZcullLimit", 1 },
+    { 0x6CD0F1D2, "cellGcmSys", "cellGcmGetTiledPitchSize", 1 },
+    { 0x8BDE5EBF, "cellGcmSys", "cellGcmInitDefaultFifoMode", 1 },
+    { 0x9DC25766, "cellGcmSys", "cellGcmSetDisplayBuffer", 1 },
+    { 0xA114EC67, "cellGcmSys", "cellGcmMapMainMemory", 1 },
+    { 0xD01BD5BE, "cellGcmSys", "cellGcmSetTile", 1 },
+    { 0xE022AEE0, "cellGcmSys", "cellGcmGetReportDataAddress", 1 },
+    { 0xF4E336C0, "cellGcmSys", "cellGcmUnmapIoAddress", 1 },
     { 0x718BF5F8, "cellFs", "cellFsOpen", 2 },
     { 0x4D5B9EF2, "cellFs", "cellFsRead", 2 },
     { 0xECDCF2AB, "cellFs", "cellFsWrite", 2 },
@@ -47,14 +59,12 @@ static const NidEntry kNidTable[] = {
     { 0x6D3BB15B, "cellFs", "cellFsFstat", 2 },
     { 0x99F813C0, "cellFs", "cellFsFtruncate", 2 },
     { 0x9B882495, "cellFs", "cellFsGetDirectoryEntries", 2 },
-    // cellSysmodule
     { 0x63FF6D4A, "cellSysmodule", "cellSysmoduleInitialize", 3 },
     { 0x96CDFA20, "cellSysmodule", "cellSysmoduleFinalize", 3 },
     { 0x3A495ADE, "cellSysmodule", "cellSysmoduleLoadModule", 3 },
     { 0x63A2A3C3, "cellSysmodule", "cellSysmoduleUnloadModule", 3 },
     { 0x5A59E258, "cellSysmodule", "cellSysmoduleIsLoaded", 3 },
     { 0x1A3F0C2C, "cellSysmodule", "cellSysmoduleGetModuleIdByAddress", 3 },
-    // cellAudio
     { 0x0B168F92, "cellAudio", "cellAudioInit", 4 },
     { 0x566966C0, "cellAudio", "cellAudioCreatePort", 4 },
     { 0x5B1E2C73, "cellAudio", "cellAudioPortOpen", 4 },
@@ -62,35 +72,35 @@ static const NidEntry kNidTable[] = {
     { 0xDDC2AB95, "cellAudio", "cellAudioPortStop", 4 },
     { 0x4129FE2A, "cellAudio", "cellAudioQuit", 4 },
     { 0xC20EE39D, "cellAudio", "cellAudioSetNotifyEventQueue", 4 },
-    // cellSpurs
     { 0xAC6B8901, "cellSpurs", "cellSpursInitialize", 5 },
     { 0xCAF8AB41, "cellSpurs", "cellSpursFinalize", 5 },
     { 0x4A5EEA63, "cellSpurs", "cellSpursCreateTaskset", 5 },
     { 0xC2ACDF43, "cellSpurs", "cellSpursJoinTaskset", 5 },
     { 0x1656D49F, "cellSpurs", "cellSpursCreateTask", 5 },
     { 0x5EF96465, "cellSpurs", "cellSpursJoinTask", 5 },
-    // cellSysutil
     { 0xCFAD36C9, "cellSysutil", "cellSysutilRegisterCallback", 7 },
     { 0x9D98AFA0, "cellSysutil", "cellSysutilUnregisterCallback", 7 },
     { 0x189A74DA, "cellSysutil", "cellSysutilCheckCallback", 7 },
     { 0x40E895D3, "cellSysutil", "cellSysutilGetSystemParamInt", 7 },
     { 0x938013A0, "cellSysutil", "cellSysutilGetSystemParamString", 7 },
-    // sceNp / Trophy
+    { 0x0BAE8772, "cellVideoOut", "cellVideoOutConfigure", 7 },
+    { 0xE558748D, "cellVideoOut", "cellVideoOutGetState", 7 },
+    { 0xC442430C, "cellVideoOut", "cellVideoOutGetResolution", 7 },
     { 0xBD28FDB1, "sceNp", "sceNpInit", 6 },
     { 0x39D4A3A8, "sceNp", "sceNpTerm", 6 },
     { 0x5F08F86B, "sceNpTrophy", "sceNpTrophyInit", 6 },
     { 0x370136C0, "sceNpTrophy", "sceNpTrophyCreateContext", 6 },
-    // sys_io / pad
     { 0x1C936E6D, "sys_io", "cellPadInit", 8 },
     { 0x3AAAD464, "sys_io", "cellPadGetData", 8 },
     { 0x0D5F2C14, "sys_io", "cellPadEnd", 8 },
     { 0xA703A51D, "sys_io", "cellPadGetInfo2", 8 },
     { 0x3F797DFF, "sys_io", "cellPadClearBuf", 8 },
-    // cellGame / libvdec
     { 0xDA9883AA, "cellGame", "cellGameDataCheck", 10 },
     { 0xB7A0F6C8, "cellGame", "cellGameBootCheck", 10 },
     { 0x2A8E6DAB, "libvdec", "cellVdecOpen", 9 },
     { 0x16698E4A, "libvdec", "cellVdecClose", 9 },
+    { 0xA45362F6, "sysPrxForUser", "sys_initialize_tls", 0 },
+    { 0x744680A2, "sysPrxForUser", "sys_initialize_tls2", 0 },
 };
 
 static constexpr int kNidTableCount = (int)(sizeof(kNidTable) / sizeof(kNidTable[0]));
@@ -101,7 +111,6 @@ static inline const NidEntry* nid_lookup(uint32_t nid) {
     return nullptr;
 }
 
-// Module-string heuristic buckets (for unresolved imports)
 static inline int prx_module_kind(const char* mod) {
     if (!mod) return 0;
     if (strstr(mod, "Gcm") || strstr(mod, "gcm")) return 1;
