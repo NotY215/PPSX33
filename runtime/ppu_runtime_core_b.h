@@ -1,4 +1,4 @@
-// ppu_runtime_core_b.h - continuation of core (rd helpers, chunks, API decls)
+// ppu_runtime_core_b.h - continuation of core (rd helpers, CR/branch, chunks, API)
 // Appended after core_a
 // NOTE: SPUContext is defined in core_a.h — do not redefine here
 
@@ -15,6 +15,41 @@ static inline double rd_f64(PPUContext& c, uint64_t addr) {
 }
 static inline void wr_f64(PPUContext& c, uint64_t addr, double v) {
     uint64_t u; std::memcpy(&u, &v, 8); wr64(c, addr, u);
+}
+
+// XER field helpers (PowerPC 64 layout used by lifter)
+static inline bool xer_ca(const PPUContext& c) { return (c.xer >> 32) & 1; }
+static inline bool xer_ov(const PPUContext& c) { return (c.xer >> 33) & 1; }
+static inline bool xer_so(const PPUContext& c) { return (c.xer >> 34) & 1; }
+
+// Condition register helpers required by lifted chunks
+static inline void set_cr_signed(PPUContext& c, int f, int64_t a, int64_t b) {
+    uint8_t bits = (uint8_t)((a < b ? 8 : 0) | (a > b ? 4 : 0) | (a == b ? 2 : 0));
+    if (f == 0 && xer_so(c)) bits |= 1;
+    c.cr[f] = bits;
+}
+static inline void set_cr_unsigned(PPUContext& c, int f, uint64_t a, uint64_t b) {
+    uint8_t bits = (uint8_t)((a < b ? 8 : 0) | (a > b ? 4 : 0) | (a == b ? 2 : 0));
+    if (f == 0 && xer_so(c)) bits |= 1;
+    c.cr[f] = bits;
+}
+static inline void set_cr_fp(PPUContext& c, int f, double a, double b) {
+    if (std::isnan(a) || std::isnan(b)) { c.cr[f] = 1; return; }
+    c.cr[f] = (uint8_t)((a < b ? 8 : 0) | (a > b ? 4 : 0) | (a == b ? 2 : 0));
+}
+
+// Branch conditional (bc / bcx)
+static inline bool bc_taken(PPUContext& c, unsigned bo, unsigned bi) {
+    bool ctr_ok = true, cond_ok = true;
+    if (!(bo & 0x04)) {
+        c.ctr -= 1;
+        ctr_ok = ((c.ctr != 0) != ((bo & 0x02) != 0));
+    }
+    if (!(bo & 0x10)) {
+        bool bit = (c.cr[bi >> 2] >> (3 - (bi & 3))) & 1;
+        cond_ok = (bit == ((bo & 0x08) != 0));
+    }
+    return ctr_ok && cond_ok;
 }
 
 struct PPUChunk {
