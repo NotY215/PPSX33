@@ -23,7 +23,7 @@ This guide describes the repository layout, development workflow, and implementa
 
 ## Build environment
 
-Windows development requires Visual Studio 2022 or a compatible newer version with the C++ workload and Windows SDK, CMake, Ninja, and the .NET 8 SDK. See [Compiler Setup](../Compilers-files/README.md).
+Windows development uses Visual Studio 2026 (version 18) with the Desktop development with C++ workload and a Windows SDK, plus CMake, Ninja, and the .NET 8 SDK. Other supported toolchain versions must be validated in CI or with the repository smoke test. See [Compiler Setup](../Compilers-files/README.md).
 
 Build from the repository root in a Visual Studio developer command prompt:
 
@@ -58,6 +58,29 @@ bash scripts/run_smoke_test.sh
 The test creates a synthetic PPC64 ELF and expects the generated program to print `OK`. Record commands and results accurately. This test does not establish compatibility with commercial games.
 
 The optional Pong workflow uses `scripts/build_pong_recompile.bat` or `scripts/build_pong_recompile.sh` and requires a compatible PSL1GHT toolchain plus a built PPSX33 CLI.
+
+## Runtime header layout and maintenance
+
+The PPU runtime is split into the following headers. All must remain available to the compiler and be copied into generated build output by the project build driver:
+
+| File | Responsibility |
+| --- | --- |
+| `runtime/ppu_runtime.h` | Thin public include wrapper for the runtime core and execution loop |
+| `runtime/ppu_runtime_core.h` | Shared PPU context and common runtime definitions |
+| `runtime/ppu_runtime_core_a.h` | First group of runtime helper definitions |
+| `runtime/ppu_runtime_core_b.h` | Additional memory, XER, condition-register, and FPSCR helpers |
+| `runtime/ppu_runtime_run.h` | PPU chunk dispatch, external-call recovery, and null-loop escape logic |
+| `runtime/ps3rt.cpp` | Guest memory setup, LV2/HLE support, SPU API paths, and GCM state handling |
+| `runtime/rsx_stub.cpp` | Partial RSX command and rendering support |
+| `runtime/spu_stub.cpp` | SPU-related fallback/stub integration |
+
+Do not restore the older single-header runtime as a routine fix. If a header is moved, renamed, or added, update `src/core/project.cpp` so every required runtime file is copied into the generated project output, then run the smoke test and a clean build.
+
+## Runtime milestone status
+
+The current [roadmap](../ROADMAP.md) marks Phase G complete. The GCM HLE path allocates guest control-register and label state and exposes basic control-register, label-address, initialization, flip-status, and main-memory mapping handlers. The PPU execution loop also tracks exhausted link-register return targets and searches deeper stack ranges during recovery. These mechanisms are experimental recovery behavior and can skip or redirect control flow; logs and tests are required before interpreting them as correct guest behavior.
+
+Phase H is the next milestone and targets SPU and RSX command draining. Existing SPU context, load/run, mailbox, and MFC paths do not imply full SPU instruction or SPURS compatibility. Existing RSX control/FIFO work does not imply a complete renderer.
 
 ## Implementing a PPU opcode
 
