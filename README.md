@@ -41,6 +41,12 @@ PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction sema
 
 All four game counts describe individual static-lift snapshots. They are not proof of correct instruction semantics, successful boot, rendering, or playability. Grand Theft Auto: San Andreas now has a recorded static-lift and ELF-analysis snapshot: 1,893,428 instruction instances translated, 0 reported unimplemented, 232 chunks, 5 PT_LOAD segments, entry OPD `0x77b718`, 4,097 OPD entries, 23 PRX/module string hits, and 0 embedded SPU images detected. GTA V now also has a recorded snapshot: 6,934,214 instruction instances translated, 0 reported unimplemented, 847 chunks, 5 PT_LOAD segments, entry OPD `0x1a90b80`, 4,097 OPD entries, 56 PRX/module string hits, and 8 embedded SPU images detected. These counts do not establish semantic correctness or playability. See [PPU coverage](docs/PPU_COVERAGE.md), [game records](docs/games/README.md), and [roadmap](ROADMAP.md).
 
+## Current runtime development status
+
+The latest roadmap records **Phase G as complete** and **Phase H as next**. Phase G adds guest-side `cellGcmSys` state initialization for the control-register and label areas, basic GCM control/label/flip handlers, filtering for pointer-like values mistaken for NIDs, and PPU return-recovery improvements that blacklist exhausted link-register targets after repeated null-loop escapes. These are runtime-recovery and HLE foundations, not proof of correct game execution.
+
+The PPU runtime is split across `runtime/ppu_runtime.h`, `runtime/ppu_runtime_core.h`, `runtime/ppu_runtime_core_a.h`, `runtime/ppu_runtime_core_b.h`, and `runtime/ppu_runtime_run.h`. Keep all split headers together when building or packaging the runtime. `ppu_runtime.h` is the include wrapper; `ppu_runtime_run.h` contains the PPU dispatch/recovery loop, while the core headers provide context, memory, register, and helper definitions. The current roadmap's next milestone is Phase H: SPU and RSX command draining.
+
 ## Project website and releases
 
 - **Project website:** [notyvos.gt.tc/PPSX3](https://notyvos.gt.tc/PPSX3/)
