@@ -283,16 +283,17 @@ static inline bool pc_in_chunks(uint64_t pc, const PPUChunk* chunks, size_t n) {
     return false;
 }
 
-// Recover a return address when LR is dead: try CTR, then stack slots near r1.
+// Recover a return address when LR is dead: try CTR, then scan stack near r1.
 static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, size_t n) {
     if (c.ctr && c.ctr != c.pc && pc_in_chunks(c.ctr, chunks, n))
         return c.ctr;
-    static const int kOffs[] = { 0x10, 0x00, 0x70, 0x80, 0x90, 0xA0, 0x20, 0x30 };
-    for (int off : kOffs) {
-        uint64_t a = c.gpr[1] + (uint64_t)(unsigned)off;
-        if (!guest_ok(c, a, 8)) continue;
+    uint64_t sp = c.gpr[1];
+    for (int off = 0; off <= 0x400; off += 8) {
+        uint64_t a = sp + (uint64_t)(unsigned)off;
+        if (!guest_ok(c, a, 8)) break;
         uint64_t cand = rd64(c, a);
-        if (cand && cand != c.pc && pc_in_chunks(cand, chunks, n))
+        if (!cand || cand == c.pc || (cand & 3ull) != 0) continue;
+        if (pc_in_chunks(cand, chunks, n))
             return cand;
     }
     return 0;
