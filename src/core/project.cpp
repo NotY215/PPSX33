@@ -205,6 +205,17 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     fs::path src = out / "src";
     std::error_code ec;
     fs::create_directories(src, ec);
+    // Output executable named after project folder (ELF / game name), e.g. GOW_3.exe
+    std::string exe_base = fs::path(project_dir).filename().string();
+    if (exe_base.empty()) exe_base = "game";
+    for (char& ch : exe_base) {
+        if (std::string("<>:\"/\\|?*").find(ch) != std::string::npos || (unsigned char)ch < 32)
+            ch = '_';
+    }
+    while (!exe_base.empty() && (exe_base.back() == ' ' || exe_base.back() == '.')) exe_base.pop_back();
+    if (exe_base.empty()) exe_base = "game";
+    const std::string out_exe = exe_base + std::string(kExe);
+
     if (!fs::exists(code / "ppu_chunks.cpp")) {
         err = "Run the lift step first (codebase is empty).";
         return false;
@@ -227,7 +238,6 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         fs::copy_file(code / "analysis_report.txt", out / "analysis_report.txt", ow, ec);
     fs::copy_file(code / "guest_image.bin", out / "guest_image.bin", ow, ec);
 
-    // CRITICAL: copy nid_table.h with runtime sources
     for (const char* n : {"ppu_runtime.h", "nid_table.h", "ps3rt.cpp", "spu_stub.cpp", "rsx_stub.cpp"}) {
         fs::path from = fs::path(runtime_dir) / n;
         if (!fs::exists(from)) { err = "Runtime file missing: " + from.string(); return false; }
@@ -246,9 +256,6 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         {
             std::ofstream f(bat);
             f << "@echo off\nsetlocal\n";
-
-            // vcvars only supplies Windows SDK INCLUDE/LIB (needed for d3d headers).
-            // Compilers-files supplies cl.exe / link.exe via absolute paths — no PATH mutation.
             if (!vcvars.empty())
                 f << "call " << q(vcvars) << " >nul 2>&1\n";
 
@@ -283,7 +290,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
                      "/c src\\" << n << " /Fo" << obj << " || exit /b 1\n";
                 game_objs += " " + obj;
             }
-            f << link_cmd << " /nologo /OUT:game.exe" << game_objs << " ps3rt.lib || exit /b 1\n"
+            f << link_cmd << " /nologo /OUT:" << out_exe << game_objs << " ps3rt.lib || exit /b 1\n"
                  "echo MSVC build OK\n"
                  "exit /b 0\n";
         }
@@ -298,7 +305,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
                   "Ensure Compilers-files has cl.exe and Windows SDK is available for d3d headers.";
             return false;
         }
-        log += "Build OK: output/game.exe + output/ps3rt.dll + output/guest_image.bin (MSVC)\n";
+        log += "Build OK: output/" + out_exe + " + output/ps3rt.dll + output/guest_image.bin (MSVC)\n";
         cleanup_after_build(project_dir, out, log);
         return true;
     }
@@ -333,7 +340,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
 #ifndef _WIN32
         rpath = " -Wl,-rpath,'$ORIGIN'";
 #endif
-        std::string exe = std::string("game") + kExe;
+        std::string exe = out_exe;
         std::vector<std::string> ins = gameObjs; ins.push_back(dll);
         steps.push_back({ins, exe, q(cxx) + objs + " ./" + dll + rpath + " -o " + exe});
     }
@@ -360,7 +367,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     }
     fs::current_path(prev, ec);
     if (rc != 0) { err = "Build failed. See log."; return false; }
-    log += "Build OK: output/game" + std::string(kExe) + " + output/" + std::string("ps3rt") + kDll + " (g++)\n";
+    log += "Build OK: output/" + out_exe + " + output/" + std::string("ps3rt") + kDll + " (g++)\n";
     cleanup_after_build(project_dir, out, log);
     return true;
 }
