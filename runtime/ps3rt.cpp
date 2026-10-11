@@ -99,7 +99,8 @@ PS3RT_API int ps3rt_spu_create(int* out_id) {
 PS3RT_API int ps3rt_spu_destroy(int id) { if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1; g_spu_used[id] = false; return 0; }
 PS3RT_API int ps3rt_spu_load(int id, const void* img, size_t len) {
     if (id < 0 || id >= kMaxSpu || !g_spu_used[id] || !img) return -1;
-    std::memcpy(g_spu[id].ls, img, std::min(len, sizeof(g_spu[id].ls))); return 0;
+    size_t ncopy = len < sizeof(g_spu[id].ls) ? len : sizeof(g_spu[id].ls);
+    std::memcpy(g_spu[id].ls, img, ncopy); return 0;
 }
 PS3RT_API int ps3rt_spu_run(int id, uint32_t entry) { if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1; g_spu[id].pc = entry & ~3u; g_spu[id].running = true; return 0; }
 PS3RT_API int ps3rt_spu_stop(int id) { if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1; g_spu[id].running = false; return 0; }
