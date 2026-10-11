@@ -39,7 +39,7 @@ PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction sema
 | <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_San_Andreas_logo.svg" width="86" alt="Grand Theft Auto: San Andreas logo" /> Grand Theft Auto: San Andreas | `0x77b718` | 4,097 | 23 | 0 | 232 |
 | <img src="https://thumb.wikimedia.org/wikipedia/it/thumb/7/76/Grand_Theft_Auto_V_logo.svg/330px-Grand_Theft_Auto_V_logo.svg.png?utm_source=it.wikipedia.org&utm_campaign=index&utm_content=thumbnail&_=20240305183247" width="86" alt="Grand Theft Auto V logo" /> Grand Theft Auto V | `0x1a90b80` | 4,097 | 56 | 8 | 847 |
 
-All four game counts describe individual static-lift snapshots. They are not proof of correct instruction semantics, successful boot, rendering, or playability. Grand Theft Auto: San Andreas now has a recorded static-lift and ELF-analysis snapshot: 1,893,428 instruction instances translated, 0 reported unimplemented, 232 chunks, 5 PT_LOAD segments, entry OPD `0x77b718`, 4,097 OPD entries, 23 PRX/module string hits, and 0 embedded SPU images detected. GTA V now also has a recorded snapshot: 6,934,214 instruction instances translated, 0 reported unimplemented, 847 chunks, 5 PT_LOAD segments, entry OPD `0x1a90b80`, 4,097 OPD entries, 56 PRX/module string hits, and 8 embedded SPU images detected. These counts do not establish semantic correctness or playability. See [PPU coverage](docs/PPU_COVERAGE.md), [game records](docs/games/README.md), and [roadmap](ROADMAP.md).
+All six game counts describe individual static-lift snapshots. They are not proof of correct instruction semantics, successful boot, rendering, or playability. Grand Theft Auto: San Andreas now has a recorded static-lift and ELF-analysis snapshot: 1,893,428 instruction instances translated, 0 reported unimplemented, 232 chunks, 5 PT_LOAD segments, entry OPD `0x77b718`, 4,097 OPD entries, 23 PRX/module string hits, and 0 embedded SPU images detected. GTA V now also has a recorded snapshot: 6,934,214 instruction instances translated, 0 reported unimplemented, 847 chunks, 5 PT_LOAD segments, entry OPD `0x1a90b80`, 4,097 OPD entries, 56 PRX/module string hits, and 8 embedded SPU images detected. These counts do not establish semantic correctness or playability. See [PPU coverage](docs/PPU_COVERAGE.md), [game records](docs/games/README.md), and [roadmap](ROADMAP.md).
 
 ## Current runtime development status
 
@@ -93,7 +93,7 @@ See the [Alpha 01 release notes](releases/PPSX33-Alpha-01.md) for scope, known l
 
 ## Requirements
 
-Windows development uses CMake, Ninja, a C++17-capable compiler, and the .NET 8 SDK for the GUI. Visual Studio 2022 with **Desktop development with C++**, a Windows SDK, and .NET 8 is a supported setup. Newer Visual Studio versions may work, but the build must be verified in that environment.
+Windows development uses CMake, Ninja, a C++17-capable compiler, and the .NET 8 SDK for the GUI. Visual Studio 2026 (version 18) with **Desktop development with C++**, a Windows SDK, and .NET 8 is the documented development setup. Other toolchain versions should be validated with the repository build and smoke test.
 
 - [Visual Studio](https://visualstudio.microsoft.com/downloads/)
 - [CMake](https://cmake.org/)
