@@ -1,4 +1,4 @@
-// ps3rt restored - see artifacts
+// ps3rt Phase P
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include "nid_table.h"
@@ -41,11 +41,10 @@ static uint64_t guest_alloc(uint64_t size, uint64_t align) {
     std::fprintf(stderr, "[lv2] alloc VA=0x%llx size=0x%llx\n", (unsigned long long)a, (unsigned long long)size);
     return a;
 }
-// Phase M: every memory access from lifted code hits this — poke HW so internal wait loops progress
 PS3RT_API void ps3rt_touch(uint64_t, size_t) {
     static uint32_t s_n = 0;
     static uint32_t s_log = 0;
-    if ((++s_n & 0x1FFF) == 0) { // every 8192 touches
+    if ((++s_n & 0x1FFF) == 0) {
         ps3rt_progress_hw();
         if (s_log < 12) {
             std::fprintf(stderr, "[ps3] Phase M touch-progress n=%u\n", s_n);
@@ -144,7 +143,7 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     if (!c) return;
     uint64_t num = c->gpr[11], r3 = c->gpr[3], r4 = c->gpr[4], r5 = c->gpr[5], r6 = c->gpr[6];
     static int sys_log = 0;
-    if (sys_log < 64) { std::fprintf(stderr, "[lv2] sc %llu r3=%llx r4=%llx r5=%llx r6=%llx\n", (unsigned long long)num, (unsigned long long)r3, (unsigned long long)r4, (unsigned long long)r5, (unsigned long long)r6); ++sys_log; }
+    if (sys_log < 80) { std::fprintf(stderr, "[lv2] sc %llu r3=%llx r4=%llx r5=%llx r6=%llx\n", (unsigned long long)num, (unsigned long long)r3, (unsigned long long)r4, (unsigned long long)r5, (unsigned long long)r6); ++sys_log; }
     auto write_u32 = [&](uint64_t a, uint32_t v) { if (a && a + 4 <= g_mem_size) wr_be32_guest(a, v); };
     auto write_u64 = [&](uint64_t a, uint64_t v) { if (a && a + 8 <= g_mem_size) wr_be64_guest(a, v); };
     auto new_id = [](uint32_t& seq) -> uint32_t { return ++seq; };
@@ -176,6 +175,17 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     case 403: { static uint32_t mid = 0x9000; write_u32(r4, new_id(mid)); c->gpr[3] = 0; break; }
     case 801: { static uint32_t fd = 3; write_u32(r4, new_id(fd)); c->gpr[3] = 0; break; }
     case 803: c->gpr[3] = r5; break;
+    case 48: case 49: case 50: case 51: c->gpr[3] = 0; break;
+    case 112: case 113: case 114: case 115: c->gpr[3] = 0; break;
+    case 141: case 142: c->gpr[3] = 0; break;
+    case 144: {
+        static uint64_t fake_sec = 1000; ++fake_sec;
+        if (r3 && r3 + 8 <= g_mem_size) wr_be64_guest(r3, fake_sec);
+        if (r4 && r4 + 8 <= g_mem_size) wr_be64_guest(r4, 0);
+        c->gpr[3] = 0; break;
+    }
+    case 145: c->gpr[3] = 79800000ull; break;
+    case 160: case 161: case 162: case 169: c->gpr[3] = 0; break;
     default: c->gpr[3] = 0; break;
     }
 }
@@ -271,17 +281,29 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
             kind, name ? name : "?", (unsigned long long)c->pc, maybe_nid, (unsigned long long)c->lr, (unsigned long long)c->gpr[11]);
         ++g_prx_log;
     }
-    if (kind == 1) gcm_ensure_state();
+    if (kind == 1) {
+        gcm_ensure_state();
+        if (g_gcm_control && g_gcm_fifo) {
+            uint32_t put = rd_be32_guest(g_gcm_control + 0);
+            uint32_t off = put % (g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000);
+            uint64_t fa = g_gcm_fifo + off;
+            if (fa + 4 <= g_mem_size) wr_be32_guest(fa, 0x00000000u);
+            put += 4;
+            wr_be32_guest(g_gcm_control + 0, put);
+            ps3rt_rsx_set_put(put);
+        }
+    }
     c->gpr[3] = 0; return 0;
 }
 PS3RT_API void ps3rt_progress_hw(void) {
     if (!g_mem) return;
+    // Phase P: flush BEFORE syncing get=put so RSX decodes methods
     if (g_gcm_control && g_gcm_control + 16 <= g_mem_size) {
         uint32_t put = rd_be32_guest(g_gcm_control + 0);
-        wr_be32_guest(g_gcm_control + 4, put);
-        wr_be32_guest(g_gcm_control + 8, put);
         ps3rt_rsx_set_put(put);
         ps3rt_rsx_flush(g_mem);
+        wr_be32_guest(g_gcm_control + 4, put);
+        wr_be32_guest(g_gcm_control + 8, put);
     }
     g_gcm_flip_status = 0;
     static uint32_t s_flip_div = 0;
