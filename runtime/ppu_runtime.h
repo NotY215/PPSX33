@@ -1,5 +1,6 @@
 // ppu_runtime.h - portable MSVC + GCC/Clang
 // XER/FPSCR/VMX helpers + bounds-checked guest memory access
+// Phase B/D: sticky last_good_ret, wide stack scan, soft-continue on pc=0 lr=0
 #pragma once
 #include <cstdint>
 #include <cstddef>
@@ -283,18 +284,24 @@ static inline bool pc_in_chunks(uint64_t pc, const PPUChunk* chunks, size_t n) {
     return false;
 }
 
-// Recover a return address when LR is dead: try CTR, then scan stack near r1.
+// Recover a return address when LR is dead: try CTR, then scan stack near r1
+// (both directions, larger window). Phase-B/D.
 static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, size_t n) {
     if (c.ctr && c.ctr != c.pc && pc_in_chunks(c.ctr, chunks, n))
         return c.ctr;
     uint64_t sp = c.gpr[1];
-    for (int off = 0; off <= 0x400; off += 8) {
-        uint64_t a = sp + (uint64_t)(unsigned)off;
-        if (!guest_ok(c, a, 8)) break;
-        uint64_t cand = rd64(c, a);
-        if (!cand || cand == c.pc || (cand & 3ull) != 0) continue;
-        if (pc_in_chunks(cand, chunks, n))
-            return cand;
+    // Scan upward then downward from SP
+    for (int dir = 0; dir < 2; ++dir) {
+        for (int off = 0; off <= 0x800; off += 8) {
+            int64_t delta = (dir == 0) ? (int64_t)off : -(int64_t)off;
+            if (dir == 1 && off == 0) continue;
+            uint64_t a = (uint64_t)((int64_t)sp + delta);
+            if (!guest_ok(c, a, 8)) continue;
+            uint64_t cand = rd64(c, a);
+            if (!cand || cand == c.pc || (cand & 3ull) != 0) continue;
+            if (pc_in_chunks(cand, chunks, n))
+                return cand;
+        }
     }
     return 0;
 }
@@ -304,6 +311,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     int logged = 0;
     int same_lr_null = 0;
     uint64_t last_null_lr = 0;
+    uint64_t last_good_ret = 0;   // Phase-B/D: sticky fallback when LR collapses to 0
     uint64_t steps = 0;
     while (!c.halted) {
         const PPUChunk* hit = nullptr;
@@ -320,13 +328,20 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             else
                 ret = recover_return_pc(c, chunks, n);
 
-            if (ret && external_escapes < 262144) {
+            // Sticky last_good: reuse when LR/stack are dead
+            if (!ret && last_good_ret && external_escapes < 524288)
+                ret = last_good_ret;
+
+            if (ret && external_escapes < 524288) {
                 if (nullish && ret == last_null_lr) {
-                    if (++same_lr_null > 4096) {
+                    if (++same_lr_null > 16384) {
                         std::fprintf(stderr,
                             "[ps3] null-call loop at lr=0x%llx (%d) — force r3=0 and continue\n",
                             (unsigned long long)ret, same_lr_null);
                         same_lr_null = 0;
+                        // Advance slightly to break tight loops
+                        if (pc_in_chunks(ret + 4, chunks, n)) ret += 4;
+                        else if (pc_in_chunks(ret + 8, chunks, n)) ret += 8;
                     }
                 } else {
                     same_lr_null = 0;
@@ -338,7 +353,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 else
                     c.gpr[3] = 0;
 
-                if (logged < 48) {
+                if (logged < 64) {
                     std::fprintf(stderr,
                         "[ps3] external/import stub pc=0x%llx -> ret=0x%llx (#%d)%s\n",
                         (unsigned long long)c.pc, (unsigned long long)ret,
@@ -346,17 +361,34 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                         (nullish || importish) ? " [null/import]" : "");
                     ++logged;
                 }
+                last_good_ret = ret;
                 c.pc = ret;
+                ++external_escapes;
+                continue;
+            }
+
+            // Final soft-continue via last_good if we have one
+            if (last_good_ret && external_escapes < 524288) {
+                std::fprintf(stderr,
+                    "[ps3] soft-continue via last_good=0x%llx (pc=0x%llx lr=0x%llx escapes=%d)\n",
+                    (unsigned long long)last_good_ret,
+                    (unsigned long long)c.pc, (unsigned long long)c.lr, external_escapes);
+                if (importish || nullish)
+                    ps3rt_prx_import_stub(&c, c.pc);
+                else
+                    c.gpr[3] = 0;
+                c.pc = last_good_ret;
                 ++external_escapes;
                 continue;
             }
 
             std::fprintf(stderr,
                 "[ps3] halt: PC left range with no usable return\n"
-                "  pc=0x%llx lr=0x%llx ctr=0x%llx r1=0x%llx r2=0x%llx escapes=%d\n",
+                "  pc=0x%llx lr=0x%llx ctr=0x%llx r1=0x%llx r2=0x%llx escapes=%d last_good=0x%llx\n",
                 (unsigned long long)c.pc, (unsigned long long)c.lr,
                 (unsigned long long)c.ctr, (unsigned long long)c.gpr[1],
-                (unsigned long long)c.gpr[2], external_escapes);
+                (unsigned long long)c.gpr[2], external_escapes,
+                (unsigned long long)last_good_ret);
             c.halted = true;
             break;
         }
