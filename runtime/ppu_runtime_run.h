@@ -1,20 +1,23 @@
-// Recover a return address when LR is dead: try CTR, then scan stack near r1
-// (wider window + both directions). Prefer code PCs that live inside lifted chunks.
-// exclude_pc: skip this candidate (used to break out of a known looping LR).
+// Phase G: recover return + permanent blacklist of exhausted null-loop sites
 static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, size_t n,
-                                         uint64_t exclude_pc = 0) {
-    if (c.ctr && c.ctr != c.pc && c.ctr != exclude_pc &&
-        (c.ctr & 3ull) == 0 && pc_in_chunks(c.ctr, chunks, n))
+                                         uint64_t exclude_pc = 0,
+                                         const uint64_t* ban = nullptr, int nban = 0) {
+    auto banned = [&](uint64_t p) -> bool {
+        if (!p || p == exclude_pc) return true;
+        for (int i = 0; i < nban; ++i) if (ban[i] == p) return true;
+        return false;
+    };
+    if (c.ctr && !banned(c.ctr) && (c.ctr & 3ull) == 0 && pc_in_chunks(c.ctr, chunks, n))
         return c.ctr;
     uint64_t sp = c.gpr[1];
     for (int dir = 0; dir < 2; ++dir) {
-        int start = (dir == 0) ? 0 : -0x200;
-        int end   = (dir == 0) ? 0x1000 : 0;
+        int start = (dir == 0) ? 0 : -0x400;
+        int end   = (dir == 0) ? 0x2000 : 0;
         for (int off = start; off <= end; off += 8) {
             uint64_t a = sp + (uint64_t)(int64_t)off;
             if (!guest_ok(c, a, 8)) continue;
             uint64_t cand = rd64(c, a);
-            if (!cand || cand == c.pc || cand == exclude_pc || (cand & 3ull) != 0) continue;
+            if (banned(cand) || (cand & 3ull) != 0) continue;
             if (pc_in_chunks(cand, chunks, n))
                 return cand;
         }
@@ -31,6 +34,17 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     uint64_t last_good_ret = 0;
     uint64_t entry_toc = c.gpr[2];
     uint64_t steps = 0;
+    // Phase G: permanent ban list for LRs that exhausted soft-break region
+    uint64_t ban_lr[8] = {};
+    int nban = 0;
+    auto add_ban = [&](uint64_t lr) {
+        if (!lr) return;
+        for (int i = 0; i < nban; ++i) if (ban_lr[i] == lr) return;
+        if (nban < 8) ban_lr[nban++] = lr;
+        std::fprintf(stderr, "[ps3] Phase G ban LR=0x%llx (nban=%d)\n",
+            (unsigned long long)lr, nban);
+    };
+
     while (!c.halted) {
         if (c.gpr[2] == 0 && entry_toc != 0)
             c.gpr[2] = entry_toc;
@@ -44,55 +58,61 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             bool importish = (c.pc == 0x39800000ull) || ((c.pc & 0xFFFF0000ull) == 0x39800000ull);
 
             uint64_t ret = 0;
-            if (c.lr && c.lr != c.pc && pc_in_chunks(c.lr, chunks, n))
-                ret = c.lr;
-            else
-                ret = recover_return_pc(c, chunks, n);
+            if (c.lr && c.lr != c.pc && pc_in_chunks(c.lr, chunks, n)) {
+                bool banned = false;
+                for (int i = 0; i < nban; ++i) if (ban_lr[i] == c.lr) { banned = true; break; }
+                if (!banned) ret = c.lr;
+            }
+            if (!ret)
+                ret = recover_return_pc(c, chunks, n, 0, ban_lr, nban);
 
-            if (!ret && last_good_ret && external_escapes < 262144)
-                ret = last_good_ret;
+            if (!ret && last_good_ret && external_escapes < 262144) {
+                bool banned = false;
+                for (int i = 0; i < nban; ++i) if (ban_lr[i] == last_good_ret) { banned = true; break; }
+                if (!banned) ret = last_good_ret;
+            }
 
             if (ret && external_escapes < 262144) {
                 bool same_site = nullish && last_null_lr &&
                     (ret == last_null_lr ||
                      (ret >= (last_null_lr & ~0xFFull) && ret < (last_null_lr & ~0xFFull) + 0x100));
+
                 if (same_site) {
-                    if (++same_lr_null > 512) {
+                    ++same_lr_null;
+                    if (same_lr_null >= 4) {
                         ++soft_breaks;
-                        same_lr_null = 0;
-                        uint64_t alt = recover_return_pc(c, chunks, n, ret);
-                        if (alt && (alt < (ret & ~0xFFull) || alt >= (ret & ~0xFFull) + 0x100)) {
-                            std::fprintf(stderr,
-                                "[ps3] null-loop break: lr=0x%llx -> alt=0x%llx (soft_breaks=%d)\n",
-                                (unsigned long long)ret, (unsigned long long)alt, soft_breaks);
-                            ret = alt;
-                            last_null_lr = 0;
-                            last_good_ret = alt;
-                        } else {
-                            uint64_t stride = 0x40;
-                            if (soft_breaks >= 4) stride = 0x100;
-                            if (soft_breaks >= 12) stride = 0x400;
-                            if (soft_breaks >= 24) stride = 0x1000;
-                            uint64_t next = (ret & ~0xFull) + stride;
-                            if (pc_in_chunks(next, chunks, n)) {
-                                std::fprintf(stderr,
-                                    "[ps3] null-loop skip: 0x%llx +0x%llx -> 0x%llx (soft_breaks=%d)\n",
-                                    (unsigned long long)ret, (unsigned long long)stride,
-                                    (unsigned long long)next, soft_breaks);
-                                ret = next;
-                            } else if (pc_in_chunks(ret + 4, chunks, n)) {
-                                ret = ret + 4;
+                        uint64_t stride = 0x40;
+                        if (soft_breaks > 12) stride = 0x100;
+                        if (soft_breaks > 24) stride = 0x400;
+                        if (soft_breaks > 36) stride = 0x1000;
+                        if (soft_breaks > 48) {
+                            // Phase G: permanently ban this LR and find a DIFFERENT return
+                            add_ban(last_null_lr);
+                            uint64_t alt = recover_return_pc(c, chunks, n, last_null_lr, ban_lr, nban);
+                            if (alt) {
+                                ret = alt;
+                                last_good_ret = alt;
+                                same_lr_null = 0;
+                                if (soft_breaks <= 56)
+                                    std::fprintf(stderr, "[ps3] null-loop escape via alt=0x%llx\n",
+                                        (unsigned long long)alt);
+                            } else {
+                                ret = (last_null_lr & ~0xFFFull) + 0x2000;
+                                if (!pc_in_chunks(ret, chunks, n))
+                                    ret = last_null_lr + 0x2000;
+                                last_good_ret = 0;
+                                same_lr_null = 0;
+                                if (soft_breaks <= 56)
+                                    std::fprintf(stderr, "[ps3] null-loop force-skip to 0x%llx\n",
+                                        (unsigned long long)ret);
                             }
-                            last_null_lr = 0;
-                        }
-                        if (soft_breaks >= 6)
-                            last_good_ret = ret;
-                        if (soft_breaks >= 48) {
-                            last_good_ret = 0;
-                            last_null_lr = 0;
-                            std::fprintf(stderr,
-                                "[ps3] null-loop region exhausted (soft_breaks=%d) -- dropping sticky\n",
-                                soft_breaks);
+                        } else {
+                            uint64_t new_pc = ret + stride;
+                            if (soft_breaks <= 64)
+                                std::fprintf(stderr, "[ps3] null-loop skip: 0x%llx +0x%llx -> 0x%llx (soft_breaks=%d)\n",
+                                    (unsigned long long)ret, (unsigned long long)stride,
+                                    (unsigned long long)new_pc, soft_breaks);
+                            ret = new_pc;
                         }
                     }
                 } else {
@@ -105,7 +125,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 else
                     c.gpr[3] = 0;
 
-                if (logged < 96) {
+                if (logged < 64) {
                     std::fprintf(stderr,
                         "[ps3] external/import stub pc=0x%llx -> ret=0x%llx (#%d)%s\n",
                         (unsigned long long)c.pc, (unsigned long long)ret,
@@ -113,35 +133,38 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                         (nullish || importish) ? " [null/import]" : "");
                     ++logged;
                 }
-                if (ret != last_null_lr)
-                    last_good_ret = ret;
+                {
+                    bool banned = false;
+                    for (int i = 0; i < nban; ++i) if (ban_lr[i] == ret) { banned = true; break; }
+                    if (!banned && ret != last_null_lr)
+                        last_good_ret = ret;
+                }
                 c.pc = ret;
                 ++external_escapes;
                 continue;
             }
 
-            if (last_good_ret && external_escapes < 262144) {
-                std::fprintf(stderr,
-                    "[ps3] soft-continue via last_good=0x%llx (pc=0x%llx lr=0x%llx escapes=%d)\n",
-                    (unsigned long long)last_good_ret,
-                    (unsigned long long)c.pc, (unsigned long long)c.lr,
-                    external_escapes);
-                if (importish || nullish)
-                    ps3rt_prx_import_stub(&c, c.pc);
-                else
-                    c.gpr[3] = 0;
-                c.pc = last_good_ret;
-                ++external_escapes;
-                continue;
+            {
+                uint64_t alt = recover_return_pc(c, chunks, n, last_null_lr, ban_lr, nban);
+                if (alt && external_escapes < 262144) {
+                    std::fprintf(stderr, "[ps3] deep-recover alt=0x%llx escapes=%d\n",
+                        (unsigned long long)alt, external_escapes);
+                    if (importish || nullish)
+                        ps3rt_prx_import_stub(&c, c.pc);
+                    c.pc = alt;
+                    last_good_ret = alt;
+                    ++external_escapes;
+                    continue;
+                }
             }
 
             std::fprintf(stderr,
                 "[ps3] halt: PC left range with no usable return\n"
-                "  pc=0x%llx lr=0x%llx ctr=0x%llx r1=0x%llx r2=0x%llx escapes=%d last_good=0x%llx soft_breaks=%d\n",
+                "  pc=0x%llx lr=0x%llx ctr=0x%llx r1=0x%llx r2=0x%llx escapes=%d last_good=0x%llx soft_breaks=%d nban=%d\n",
                 (unsigned long long)c.pc, (unsigned long long)c.lr,
                 (unsigned long long)c.ctr, (unsigned long long)c.gpr[1],
                 (unsigned long long)c.gpr[2], external_escapes,
-                (unsigned long long)last_good_ret, soft_breaks);
+                (unsigned long long)last_good_ret, soft_breaks, nban);
             c.halted = true;
             break;
         }
