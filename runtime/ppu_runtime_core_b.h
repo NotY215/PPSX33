@@ -38,9 +38,20 @@ static inline void set_cr_fp(PPUContext& c, int f, double a, double b) {
     c.cr[f] = (uint8_t)((a < b ? 8 : 0) | (a > b ? 4 : 0) | (a == b ? 2 : 0));
 }
 
+// Forward decl so bc_taken can poke HW during internal chunk spins
+#ifndef PS3RT_API
+#  if defined(_WIN32) && defined(PS3RT_BUILD_DLL)
+#    define PS3RT_API extern "C" __declspec(dllexport)
+#  elif defined(_WIN32)
+#    define PS3RT_API extern "C" __declspec(dllimport)
+#  else
+#    define PS3RT_API extern "C"
+#  endif
+#endif
+PS3RT_API void ps3rt_progress_hw(void);
+
 // Branch conditional (bc / bcx)
 // Phase K: break internal wait-loops that never return to ppu_run outer loop.
-// Lifted chunks often spin on bc inside hit->fn(); outer spin detection never runs.
 static inline bool bc_taken(PPUContext& c, unsigned bo, unsigned bi) {
     bool ctr_ok = true, cond_ok = true;
     if (!(bo & 0x04)) {
@@ -53,7 +64,6 @@ static inline bool bc_taken(PPUContext& c, unsigned bo, unsigned bi) {
     }
     bool taken = ctr_ok && cond_ok;
 
-    // Track consecutive taken branches (same bo/bi/pc) — force fallthrough to escape waits
     static uint64_t s_last_key = 0;
     static uint32_t s_taken_run = 0;
     static uint32_t s_bc_log = 0;
@@ -61,10 +71,8 @@ static inline bool bc_taken(PPUContext& c, unsigned bo, unsigned bi) {
     if (taken) {
         if (key == s_last_key) ++s_taken_run;
         else { s_last_key = key; s_taken_run = 1; }
-        // Every 4096 taken hits: poke HW progress
         if ((s_taken_run & 0xFFF) == 0)
             ps3rt_progress_hw();
-        // After 65536 consecutive taken of same branch: force NOT taken (escape)
         if (s_taken_run >= 65536u) {
             if (s_bc_log < 8) {
                 std::fprintf(stderr, "[ps3] Phase K force-fallthrough bc bo=%u bi=%u pc=0x%llx run=%u\n",
@@ -73,7 +81,6 @@ static inline bool bc_taken(PPUContext& c, unsigned bo, unsigned bi) {
                 ++s_bc_log;
             }
             s_taken_run = 0;
-            // Pretend success for wait loops that check r3
             c.gpr[3] = 0;
             return false;
         }
@@ -95,16 +102,6 @@ static inline bool pc_in_chunks(uint64_t pc, const PPUChunk* chunks, size_t n) {
         if (pc >= chunks[i].start && pc < chunks[i].end) return true;
     return false;
 }
-
-#ifndef PS3RT_API
-#  if defined(_WIN32) && defined(PS3RT_BUILD_DLL)
-#    define PS3RT_API extern "C" __declspec(dllexport)
-#  elif defined(_WIN32)
-#    define PS3RT_API extern "C" __declspec(dllimport)
-#  else
-#    define PS3RT_API extern "C"
-#  endif
-#endif
 
 PS3RT_API void ps3rt_syscall(PPUContext* c);
 PS3RT_API int  ps3rt_prx_import_stub(PPUContext* c, uint64_t pc);
@@ -131,5 +128,4 @@ PS3RT_API uint32_t ps3rt_rsx_get_get(void);
 PS3RT_API void     ps3rt_rsx_flush(uint8_t* mem);
 PS3RT_API void     ps3rt_rsx_flip(uint32_t buf_id);
 PS3RT_API uint64_t ps3rt_rsx_flip_count(void);
-PS3RT_API void     ps3rt_progress_hw(void);
 PS3RT_API int      ps3rt_rsx_cell_gcm_syscall(PPUContext* c, uint64_t nid_or_num);
