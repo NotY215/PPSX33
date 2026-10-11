@@ -1,4 +1,4 @@
-// Phase G: recover return + permanent blacklist of exhausted null-loop sites
+// Phase H: spin-loop detection + HW progress poke + LR blacklist
 static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, size_t n,
                                          uint64_t exclude_pc = 0,
                                          const uint64_t* ban = nullptr, int nban = 0) {
@@ -34,9 +34,12 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     uint64_t last_good_ret = 0;
     uint64_t entry_toc = c.gpr[2];
     uint64_t steps = 0;
-    // Phase G: permanent ban list for LRs that exhausted soft-break region
     uint64_t ban_lr[8] = {};
     int nban = 0;
+    // Phase H: tight-spin detection
+    uint64_t spin_pc = 0;
+    uint64_t spin_count = 0;
+    uint64_t progress_pokes = 0;
     auto add_ban = [&](uint64_t lr) {
         if (!lr) return;
         for (int i = 0; i < nban; ++i) if (ban_lr[i] == lr) return;
@@ -48,6 +51,37 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     while (!c.halted) {
         if (c.gpr[2] == 0 && entry_toc != 0)
             c.gpr[2] = entry_toc;
+
+        // Phase H: detect same-PC spin (wait loops)
+        if (c.pc == spin_pc) {
+            ++spin_count;
+            if ((spin_count & 0xFFF) == 0) {
+                ps3rt_progress_hw();
+                ++progress_pokes;
+                if ((progress_pokes & 0x3F) == 1) {
+                    std::fprintf(stderr,
+                        "[ps3] Phase H spin pc=0x%llx count=%llu pokes=%llu\n",
+                        (unsigned long long)spin_pc,
+                        (unsigned long long)spin_count,
+                        (unsigned long long)progress_pokes);
+                    std::fflush(stderr);
+                }
+            }
+            if (spin_count >= 0x40000 && (spin_count & 0xFFFF) == 0) {
+                uint64_t alt = recover_return_pc(c, chunks, n, c.pc, ban_lr, nban);
+                if (alt && alt != c.pc) {
+                    std::fprintf(stderr, "[ps3] Phase H break spin via alt=0x%llx\n",
+                        (unsigned long long)alt);
+                    c.pc = alt;
+                    spin_count = 0;
+                    spin_pc = 0;
+                    continue;
+                }
+            }
+        } else {
+            spin_pc = c.pc;
+            spin_count = 1;
+        }
 
         const PPUChunk* hit = nullptr;
         for (size_t i = 0; i < n; ++i)
@@ -86,7 +120,6 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                         if (soft_breaks > 24) stride = 0x400;
                         if (soft_breaks > 36) stride = 0x1000;
                         if (soft_breaks > 48) {
-                            // Phase G: permanently ban this LR and find a DIFFERENT return
                             add_ban(last_null_lr);
                             uint64_t alt = recover_return_pc(c, chunks, n, last_null_lr, ban_lr, nban);
                             if (alt) {
@@ -170,9 +203,11 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
         }
         hit->fn(c);
         if ((++steps & 0x3FFFFull) == 0) {
-            std::fprintf(stderr, "[ps3] heartbeat steps=%llu pc=0x%llx lr=0x%llx r2=0x%llx\n",
+            ps3rt_progress_hw();
+            std::fprintf(stderr, "[ps3] heartbeat steps=%llu pc=0x%llx lr=0x%llx r2=0x%llx pokes=%llu\n",
                 (unsigned long long)steps, (unsigned long long)c.pc,
-                (unsigned long long)c.lr, (unsigned long long)c.gpr[2]);
+                (unsigned long long)c.lr, (unsigned long long)c.gpr[2],
+                (unsigned long long)progress_pokes);
             std::fflush(stderr);
         }
     }
