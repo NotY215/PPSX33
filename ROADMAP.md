@@ -1,17 +1,25 @@
-# PPSX33 Roadmap (2026-10-11)
+# PPSX33 Roadmap
+
+Last updated: 2026-10-11 (Phase M)
 
 | Phase | Status | Goal |
 |-------|--------|------|
-| A–G | Done | Boot → GCM state |
-| H | Done | Spin-loop detection + progress_hw |
-| **I** | **Build fix done** | Remove duplicate SPUContext; safe SPU load |
-| J | Next | Deeper RSX method decode / real draws |
+| A–G | Done | Boot, GCM control/labels/FIFO, RSX D3D11 |
+| H–J | Done | Outer spin detect, progress_hw, pc==lr break |
+| K–L | Done | bc_taken fallthrough, early null-LR ban |
+| **M** | **Done** | Mem-touch HW poke + lower thresholds (2048) |
+| **N** | Next | Real NID from TOC/OPD + import table |
+| O | Planned | RSX method decode / draw |
+| P | Planned | SPU scheduling |
 
-## Phase I (this turn)
+## Phase M (this turn)
 
-- Removed duplicate `struct SPUContext` from `ppu_runtime_core_b.h` (kept in core_a)
-- `ps3rt_spu_load`: use explicit size ternary instead of `std::min`
-- `ps3rt_progress_hw` retained for wait-loop progress
+Silent stall after null-loop skip to `0x199ea0` was caused by an **internal chunk loop** that never returns to `ppu_run` (so outer heartbeats never run).
+
+Fixes:
+1. **`bc_taken`**: force fallthrough after **2048** consecutive taken (was 65536); progress every 512
+2. **`ps3rt_touch`**: count memory ops; every 8192 calls `progress_hw` (breaks load-based wait loops)
+3. **`ppu_run`**: ban sticky null LR after 3 soft_breaks; after 6 jump to `last_good_ret` instead of stride-skipping further into dead code
 
 ## Apply
 
@@ -20,11 +28,12 @@ cd /d E:\PPSX33
 git pull origin main
 ```
 
-Rebuild All → Build game.
+Rebuild All → Build game → Run.
 
-Build should succeed. Run and look for:
+Expect:
 ```
-[gcm] control @ ...
-[ps3] Phase H spin ...
-[rsx] flip #...
+[ps3] Phase M force-fallthrough bc ...
+[ps3] Phase M touch-progress n=...
+[ps3] Phase M ban LR=0x199c78
+[ps3] heartbeat ...
 ```
