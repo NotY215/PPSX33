@@ -161,7 +161,7 @@ The final arguments identify runtime sources and compiler tools. The CLI perform
 ```text
 Compilers-files/  Compiler setup and local tool staging
 docs/             PPU coverage and game lift records
-runtime/          Guest memory, PPU helpers, SPU stubs, runtime support
+runtime/          Guest memory, split PPU helpers, SPU/RSX support; see [runtime guide](runtime/README.md)
 src/core/         ELF loader, PPU lifter, project/build driver, C API
 src/cli/          Command-line frontend
 src/gui/          C# WinForms frontend
