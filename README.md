@@ -74,9 +74,9 @@ PPSX33-Alpha-01/
     spu_stub.cpp
 ```
 
-The GUI targets .NET 8 for Windows and is framework-dependent, so install the .NET 8 Desktop Runtime if it is not already available. A complete package should be smoke-tested on a clean Windows environment before publishing. The presence of compiler files does not imply that all Microsoft build tools can legally be redistributed; include MSVC binaries only when their applicable license permits redistribution. Do not include game executables, decrypted ELFs, keys, or other copyrighted game data.
+The patched release is distributed with its built UI and should not require users to install .NET separately. The packaged build workflow may require the Windows SDK. Check [Redist.md](Redist.md) for release prerequisites and validate the exact archive on a clean Windows environment before publishing. The presence of compiler files does not imply that all Microsoft build tools can legally be redistributed; include MSVC binaries only when their applicable license permits redistribution. Do not include game executables, decrypted ELFs, keys, or other copyrighted game data.
 
-See the [Alpha 01 release notes](releases/PPSX33-Alpha-01.md) for scope, known limitations, and validation guidance.
+See the [Alpha 01 release notes](releases/PPSX33-Alpha-01.md) for scope, known limitations, and validation guidance. End-user prerequisites are documented in [Redist.md](Redist.md).
 
 ## Requirements
 
@@ -163,6 +163,7 @@ tests/            Synthetic ELF generator and PS3 Pong sample
 - [PPU coverage methodology](docs/PPU_COVERAGE.md)
 - [Game coverage records](docs/games/README.md)
 - [Roadmap](ROADMAP.md)
+- [Release redistributables](Redist.md)
 - [Third-party software](THIRD_PARTY.md)
 - [Security policy](SECURITY.md)
 - [Support](SUPPORT.md)
