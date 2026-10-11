@@ -205,7 +205,6 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     fs::path src = out / "src";
     std::error_code ec;
     fs::create_directories(src, ec);
-    // Output executable named after project folder (ELF / game name), e.g. GOW_3.exe
     std::string exe_base = fs::path(project_dir).filename().string();
     if (exe_base.empty()) exe_base = "game";
     for (char& ch : exe_base) {
@@ -238,11 +237,19 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         fs::copy_file(code / "analysis_report.txt", out / "analysis_report.txt", ow, ec);
     fs::copy_file(code / "guest_image.bin", out / "guest_image.bin", ow, ec);
 
+    // CRITICAL: copy runtime headers + sources (Phase F split headers optional)
     for (const char* n : {"ppu_runtime.h", "nid_table.h", "ps3rt.cpp", "spu_stub.cpp", "rsx_stub.cpp"}) {
         fs::path from = fs::path(runtime_dir) / n;
         if (!fs::exists(from)) { err = "Runtime file missing: " + from.string(); return false; }
         fs::copy_file(from, src / n, ow, ec);
         if (std::string(n).find(".cpp") != std::string::npos) rtSrc.push_back(n);
+    }
+    // Phase F split headers (if present alongside ppu_runtime.h)
+    for (const char* n : {"ppu_runtime_core.h", "ppu_runtime_core_a.h",
+                          "ppu_runtime_core_b.h", "ppu_runtime_run.h"}) {
+        fs::path from = fs::path(runtime_dir) / n;
+        if (fs::exists(from))
+            fs::copy_file(from, src / n, ow, ec);
     }
     fs::create_directories(out / "obj", ec);
 
