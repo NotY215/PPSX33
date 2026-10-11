@@ -7,13 +7,27 @@
 | C | Done | LV2 expansion + PRX/NID filter |
 | D | Done | Never hard-halt while last_good exists |
 | E | Done | Break null-call loops + restore TOC |
-| F | **In progress** | Import/OPD resolution + aggressive table skip |
-| G | Later | Real cellGcmSys state (ctrl/labels/flip) |
+| F | **Done (build fix)** | Null-table skip + OPD soft-resolve + header copy |
+| G | Next | Real cellGcmSys state (ctrl/labels/flip) |
 | H | Later | SPU + RSX command drain |
 
+## Phase F (this turn)
+
+- Aggressive null-table skip (stride 0x40..0x1000)
+- Split headers: `ppu_runtime_core_*.h` + `ppu_runtime_run.h`
+- `project.cpp` now copies split headers into game `output/src/`
+
 ## Apply
+
 ```bat
 cd /d E:\PPSX33
 git pull origin main
 ```
-Then rebuild (GUI Build) and run GOW_3.
+
+Then **Rebuild All** (so ps3core.dll gets the new project.cpp), then **Build** the game.
+
+Look for:
+```
+[ps3] null-loop skip: 0x33723c +0x40 -> 0x33727c
+[ps3] heartbeat ... r2=0x52d6c8
+```
