@@ -1,5 +1,6 @@
 // ppu_runtime_core_b.h - continuation of core (rd helpers, chunks, API decls)
 // Appended after core_a
+// NOTE: SPUContext is defined in core_a.h — do not redefine here
 
 static inline float rd_f32(PPUContext& c, uint64_t addr) {
     uint32_t u = rd32(c, addr);
@@ -27,17 +28,6 @@ static inline bool pc_in_chunks(uint64_t pc, const PPUChunk* chunks, size_t n) {
         if (pc >= chunks[i].start && pc < chunks[i].end) return true;
     return false;
 }
-
-// SPU context (minimal)
-struct SPUContext {
-    uint8_t  ls[256 * 1024];
-    uint32_t pc;
-    bool     running;
-    uint32_t mailbox_in[4];
-    int      mailbox_in_count;
-    uint32_t mailbox_out[4];
-    int      mailbox_out_count;
-};
 
 #ifndef PS3RT_API
 #  if defined(_WIN32) && defined(PS3RT_BUILD_DLL)
