@@ -19,7 +19,7 @@ static inline void wr_f64(PPUContext& c, uint64_t addr, double v) {
 struct PPUChunk {
     uint64_t start;
     uint64_t end;
-    void (*fn)(PPUContext&);
+    bool (*fn)(PPUContext&);
 };
 
 static inline bool pc_in_chunks(uint64_t pc, const PPUChunk* chunks, size_t n) {
