@@ -78,10 +78,6 @@ ps3_cli.exe --help
 
 The CLI project workflow accepts a root directory, project name, ELF path, runtime directory, and compiler-tools directory. See the repository README for the exact argument order.
 
-## Validation status
-
-This release note documents the intended package and current codebase scope. It does not certify that the final archive has been tested. Before publishing, validate the exact release archive on a clean Windows x64 system, confirm the GUI starts, check CLI help, run the synthetic smoke test, and record any tests that could not be completed.
-
 ## Legal and content notes
 
 PPSX33 does not include PlayStation 3 firmware, commercial game executables, decrypted game data, encryption keys, or game assets. Use only input files you are legally authorized to analyze. Third-party components remain the property of their respective authors and are subject to their own licenses.
