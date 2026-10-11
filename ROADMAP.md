@@ -6,33 +6,33 @@
 | B | Done | Halt recovery (sticky last_good, wide stack) |
 | C | Done | LV2 expansion + PRX/NID filter |
 | D | Done | Never hard-halt while last_good exists |
-| E | In progress | Break null-call loops + restore TOC + real GCM state |
-| F | Pending | Import table / OPD resolution |
-| G | Later | SPU bring-up |
-| H | Later | RSX command-buffer drain |
+| E | **Done (on main)** | Break null-call loops + restore TOC |
+| F | Next | Import table / OPD resolution (real NIDs) |
+| G | Later | Real cellGcmSys state (ctrl/labels/flip) |
+| H | Later | SPU + RSX command drain |
 
-## Phase E (this push)
+## Phase E (committed)
 
-- When the same LR is used for a null-call >4096 times, try an *alternate* return from the stack (exclude looping LR).
-- Soft-break advances +4 / +8 / +16.
-- After 8 soft-breaks on the same site, clear sticky last_good so we stop spinning.
-- Restore r2 (TOC) from entry TOC if the guest zeroes it.
-- Escape limit lowered to 262144 to fail faster with useful logs.
-- Halt line now includes soft_breaks=.
+`runtime/ppu_runtime.h` on `main` now includes:
 
-## Apply
+- Null-loop break: after 4096 hits on the same LR, try an alternate return from the stack
+- Soft-break advances +4 / +8 / +16
+- After 8 soft-breaks, clear sticky last_good (stop infinite spin)
+- Restore r2 (TOC) from entry TOC when guest zeroes it
+- Escape limit 262144; halt line includes `soft_breaks=`
+
+## Apply (you only need git)
 
 ```bat
 cd /d E:\PPSX33
 git pull origin main
 ```
 
-Then rebuild (GUI Build) and run GOW_3 again.
+Then rebuild (GUI Build) and run GOW_3.
 
 Look for:
-
 ```
-[ps3] null-loop break: lr=0x199c78 -> alt=0x……
+[ps3] null-loop break: lr=0x199c78 -> alt=0x......
 [ps3] null-loop break: lr=0x199c78 +4
-[ps3] heartbeat … r2=0x52d6c8
+[ps3] heartbeat ... r2=0x52d6c8
 ```
