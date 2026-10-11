@@ -1,1 +1,1 @@
-// PLACEHOLDER_WILL_BE_REPLACED
+// RESTORE_NEEDED - content follows in next commit if this is stub
