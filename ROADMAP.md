@@ -1,25 +1,28 @@
 # PPSX33 Roadmap
 
-Last updated: 2026-10-11 (Phase O)
+Last updated: 2026-10-11 (Phase P)
 
 | Phase | Status | Goal |
 |-------|--------|------|
-| A–N | Done | Boot through null-region / last_good fixes |
-| **O** | **Done** | Break import stub ping-pong + TOC restore |
-| **P** | Next | Real NID from TOC/OPD + richer cellGcmSys HLE |
-| Q | Planned | RSX method decode / draws |
-| R | Planned | SPU scheduling |
+| A–O | Done | Boot, stub loops, TOC, escapes |
+| **P** | **Done** | RSX flush order, LV2 wait HLE, reject 0x10000 escapes |
+| **Q** | Next | Real GCM command emission + method counts > 0 |
+| R | Planned | Draw path / shaders |
 
-## Phase O
+## Phase P
 
-**Symptom:** Heartbeats stuck at `pc=0x39800000 lr=0x336660` for 1M+ escapes until halt.
-Code at `0x336660` immediately re-enters the import stub → infinite loop.
+**Progress from O:** Real syscalls, TOC stable, 5000+ flips, heartbeat at real PCs.
+
+**Still wrong:**
+- `draws=0 methods=0` — `progress_hw` synced get=put *before* flush (FIFO never decoded)
+- Stack-escape to `0x10000` (image base) is useless
+- Busy `sc 141` usleep / `sc 144` time / mutex locks need HLE
 
 **Fixes:**
-1. Detect consecutive same `(stub, lr)` pairs; after 4 → force `pc = lr+4` (or stack alt) and ban `lr`
-2. On heartbeat, if PC still in import range → same forced break
-3. Restore TOC (`r2`) when it looks corrupted (`> 0x10000000` or unaligned)
-4. Raise escape ceiling; import returns no longer soft-loop forever
+1. Flush FIFO **before** setting guest get=put
+2. cellGcmSys stubs advance PUT and write a NOP method into the FIFO
+3. `recover_return_pc` rejects targets `< 0x11000`
+4. New `runtime/lv2_syscalls.inl` for wait/time/mutex syscalls
 
 ## Apply
 
@@ -32,7 +35,7 @@ Rebuild All → Build → Run.
 
 Expect:
 ```
-[ps3] Phase O break stub-loop lr=0x336660 count=4 -> 0x...
-[ps3] Phase O hb-break stub -> 0x...
-[ps3] heartbeat ... pc=0x33....   (not stuck on 0x39800000)
+[rsx] flip #N draws=... methods=...   # methods should climb
+[lv2] sc 141 ...   # returns immediately
 ```
+No more `stack-escape -> 0x10000`.
