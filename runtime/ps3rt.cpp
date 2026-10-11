@@ -41,7 +41,19 @@ static uint64_t guest_alloc(uint64_t size, uint64_t align) {
     std::fprintf(stderr, "[lv2] alloc VA=0x%llx size=0x%llx\n", (unsigned long long)a, (unsigned long long)size);
     return a;
 }
-PS3RT_API void ps3rt_touch(uint64_t, size_t) {}
+// Phase M: every memory access from lifted code hits this — poke HW so internal wait loops progress
+PS3RT_API void ps3rt_touch(uint64_t, size_t) {
+    static uint32_t s_n = 0;
+    static uint32_t s_log = 0;
+    if ((++s_n & 0x1FFF) == 0) { // every 8192 touches
+        ps3rt_progress_hw();
+        if (s_log < 12) {
+            std::fprintf(stderr, "[ps3] Phase M touch-progress n=%u\n", s_n);
+            std::fflush(stderr);
+            ++s_log;
+        }
+    }
+}
 static uint32_t rd_le32(const uint8_t* p) { uint32_t v; std::memcpy(&v, p, 4); return v; }
 static uint64_t rd_le64(const uint8_t* p) { uint64_t v; std::memcpy(&v, p, 8); return v; }
 static int load_guest_image(const char* path) {
@@ -264,11 +276,10 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
 }
 PS3RT_API void ps3rt_progress_hw(void) {
     if (!g_mem) return;
-    // Always sync FIFO get=put and ref so wait loops on control registers complete
     if (g_gcm_control && g_gcm_control + 16 <= g_mem_size) {
         uint32_t put = rd_be32_guest(g_gcm_control + 0);
-        wr_be32_guest(g_gcm_control + 4, put);  // ref
-        wr_be32_guest(g_gcm_control + 8, put);  // get
+        wr_be32_guest(g_gcm_control + 4, put);
+        wr_be32_guest(g_gcm_control + 8, put);
         ps3rt_rsx_set_put(put);
         ps3rt_rsx_flush(g_mem);
     }
@@ -278,7 +289,6 @@ PS3RT_API void ps3rt_progress_hw(void) {
         ps3rt_rsx_flip(0);
         g_gcm_frame_id++;
     }
-    // Clear a wide label window (games wait on label values)
     if (g_gcm_labels && g_gcm_labels + 0x1000 <= g_mem_size) {
         for (int i = 0; i < 256; ++i)
             wr_be32_guest(g_gcm_labels + (uint64_t)i * 0x10, 0);
