@@ -1,4 +1,4 @@
-// ps3rt - guest memory + LV2 HLE + SPU + PRX/NID + pad stub
+// ps3rt - guest memory + LV2 HLE + SPU + PRX/NID + pad stub + Phase G GCM state
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include "nid_table.h"
@@ -217,7 +217,6 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     case 4: c->gpr[3] = 0; break;
     case 14: c->halted = true; c->gpr[3] = 0; break;
     case 25: write_u32(r3, 0x00440000); c->gpr[3] = 0; break;
-
     case 18: {
         uint64_t size = r3, out = r5;
         uint64_t va = guest_alloc(size, 0x10000);
@@ -229,16 +228,13 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     case 20: write_u32(r4, 0x400); c->gpr[3] = 0; break;
     case 22: write_u64(r3, 480ull * 1024 * 1024); c->gpr[3] = 0; break;
     case 23: case 24: c->gpr[3] = 0; break;
-
     case 30: write_u64(r3, 1); write_u64(r4, 0); c->gpr[3] = 0; break;
     case 31: c->gpr[3] = 79800000ull; break;
     case 70: case 73: c->gpr[3] = 0; break;
-
     case 41: { static uint32_t tid = 0x2000; write_u64(r3, new_id(tid)); c->gpr[3] = 0; break; }
     case 43: case 44: case 48: case 49: case 50: case 51: c->gpr[3] = 0; break;
     case 52: { static uint32_t self = 0x1000; write_u64(r3, self); c->gpr[3] = 0; break; }
     case 53: case 54: case 55: case 56: case 57: case 58: c->gpr[3] = 0; break;
-
     case 90: { static uint32_t mid = 0x3000; write_u32(r3, new_id(mid)); c->gpr[3] = 0; break; }
     case 91: case 92: case 93: case 94: case 95: c->gpr[3] = 0; break;
     case 96: { static uint32_t lwid = 0x4000; write_u32(r3, new_id(lwid)); c->gpr[3] = 0; break; }
@@ -254,14 +250,12 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     case 135: case 136: case 137: case 138: case 139: case 140: c->gpr[3] = 0; break;
     case 143: { static uint32_t fid = 0x8000; write_u32(r3, new_id(fid)); c->gpr[3] = 0; break; }
     case 141: case 142: case 144: case 145: case 146: case 147: case 148: case 149: c->gpr[3] = 0; break;
-
     case 160: case 161: case 162: case 163: case 164: case 165:
     case 166: case 167: case 168: case 169: case 170: case 171:
     case 172: case 173: case 174: case 175: case 176: case 177:
         c->gpr[3] = 0; break;
     case 348: write_u32(r4, 1); c->gpr[3] = 0; break;
     case 349: case 350: case 351: c->gpr[3] = 0; break;
-
     case 352: {
         uint64_t size = r3, flags = r4, align = r5 ? r5 : 0x10000, out = r6;
         if (!out && flags >= 0x10000 && flags + 8 <= g_mem_size) out = flags;
@@ -285,13 +279,11 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     }
     case 353: case 354: case 355: case 356: case 357: case 358: case 359:
         c->gpr[3] = 0; break;
-
     case 400: case 401: case 402: c->gpr[3] = 0; break;
     case 403: { static uint32_t mid = 0x9000; write_u32(r4, new_id(mid)); c->gpr[3] = 0; break; }
     case 404: case 405: case 406: case 407: case 408: case 409:
     case 410: case 411: case 412: case 413: case 414: case 415:
         c->gpr[3] = 0; break;
-
     case 801: { static uint32_t fd = 3; write_u32(r4, new_id(fd)); c->gpr[3] = 0; break; }
     case 802: c->gpr[3] = 0; break;
     case 803: c->gpr[3] = r5; break;
@@ -299,7 +291,6 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     case 811: case 812: case 813: case 814: case 815: case 816: case 817:
     case 818: case 819: case 820: case 821: case 822: case 823: case 824:
         c->gpr[3] = 0; break;
-
     case 480: case 481: case 482: case 483: case 484: case 485:
     case 486: case 487: case 488: case 489: case 490: case 491:
     case 492: case 493: case 494: case 495: case 496: case 497:
@@ -311,7 +302,6 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     case 871: case 872: case 873: c->gpr[3] = 0; break;
     case 668: case 669: case 670: case 671: case 672: case 673:
         c->gpr[3] = 0; break;
-
     default:
         c->gpr[3] = 0;
         break;
@@ -322,6 +312,48 @@ static int g_prx_log = 0;
 static uint64_t g_gcm_fifo = 0;
 static uint32_t g_gcm_fifo_size = 0x100000;
 static int g_gcm_inited = 0;
+// Phase G: real CellGcmControl + labels in guest RAM
+static uint64_t g_gcm_control = 0;
+static uint64_t g_gcm_labels  = 0;
+static uint32_t g_gcm_flip_status = 0;
+static uint32_t g_gcm_frame_id = 0;
+static const uint32_t kGcmControlSize = 0x1000;
+static const uint32_t kGcmLabelSize   = 0x10000;
+
+static void gcm_ensure_state() {
+    if (!g_gcm_control) {
+        g_gcm_control = guest_alloc(kGcmControlSize, 0x1000);
+        if (g_gcm_control) {
+            wr_be32_guest(g_gcm_control + 0, 0);
+            wr_be32_guest(g_gcm_control + 4, 0);
+            wr_be32_guest(g_gcm_control + 8, 0);
+            std::fprintf(stderr, "[gcm] control @ 0x%llx\n", (unsigned long long)g_gcm_control);
+        }
+    }
+    if (!g_gcm_labels) {
+        g_gcm_labels = guest_alloc(kGcmLabelSize, 0x1000);
+        if (g_gcm_labels)
+            std::fprintf(stderr, "[gcm] labels  @ 0x%llx\n", (unsigned long long)g_gcm_labels);
+    }
+    if (!g_gcm_inited) {
+        g_gcm_inited = 1;
+        if (!g_gcm_fifo) {
+            g_gcm_fifo = guest_alloc(g_gcm_fifo_size, 0x10000);
+        }
+        ps3rt_rsx_init(g_gcm_fifo ? g_gcm_fifo : 0, g_gcm_fifo_size);
+        std::fprintf(stderr, "[gcm] Phase G state ready fifo=0x%llx ctrl=0x%llx\n",
+            (unsigned long long)g_gcm_fifo, (unsigned long long)g_gcm_control);
+    }
+}
+
+static bool looks_like_nid(uint32_t n) {
+    if (n < 0x100u || n == 0x39800000u) return false;
+    if (n >= 0x00010000u && n < 0x02000000u) return false;
+    if (n >= 0x08000000u && n < 0x10000000u) return false;
+    if (n >= 0x20000000u && n < 0x40000000u) return false;
+    if (n <= 0x1000u) return false;
+    return true;
+}
 
 static uint32_t rd_be32_raw(uint64_t addr) {
     if (!g_mem || addr + 4 > g_mem_size) return 0;
@@ -363,41 +395,78 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
     uint32_t maybe_nid = 0;
     for (int i = 0; i < 5; ++i) {
         uint32_t n = cands[i];
-        if (!n || n == 0x39800000u || n < 0x100) continue;
+        if (!looks_like_nid(n)) continue;
         e = nid_lookup(n);
         if (e) { maybe_nid = n; break; }
         if (!maybe_nid) maybe_nid = n;
     }
+
+    if (kind == 1)
+        gcm_ensure_state();
+
     if (e) {
-        if (g_prx_log < 64) {
+        if (g_prx_log < 80) {
             std::fprintf(stderr, "[prx] %s::%s nid=0x%08X\n", e->module, e->name, e->nid);
             ++g_prx_log;
         }
         kind = e->kind;
+
         if (e->nid == 0x15BAE46B) {
             uint64_t fifo = c->gpr[3];
             uint32_t size = (uint32_t)c->gpr[4];
             if (!size) size = 0x100000;
-            g_gcm_fifo = fifo; g_gcm_fifo_size = size; g_gcm_inited = 1;
-            ps3rt_rsx_init(fifo, size);
+            if (fifo) { g_gcm_fifo = fifo; g_gcm_fifo_size = size; }
+            gcm_ensure_state();
+            if (g_gcm_fifo) ps3rt_rsx_init(g_gcm_fifo, g_gcm_fifo_size);
             c->gpr[3] = 0; return 0;
         }
-        if (e->nid == 0xD81D0D2D) { ps3rt_rsx_flip((uint32_t)c->gpr[3]); c->gpr[3] = 0; return 0; }
-        if (e->nid == 0xA547ADDE || e->nid == 0xB2E761D4 || e->nid == 0xF80196C0 ||
-            e->nid == 0xA53D12AE || e->nid == 0x98396A7C) { c->gpr[3] = 0; return 0; }
         if (e->nid == 0x55A14C05) {
-            static uint64_t ctrl = 0;
-            if (!ctrl) ctrl = guest_alloc(0x1000, 0x1000);
-            c->gpr[3] = ctrl; return 0;
+            gcm_ensure_state();
+            c->gpr[3] = g_gcm_control ? g_gcm_control : 0;
+            return 0;
         }
         if (e->nid == 0x5F909B17) {
-            static uint64_t labels = 0;
-            if (!labels) labels = guest_alloc(0x2000, 0x1000);
-            c->gpr[3] = labels + ((c->gpr[3] & 0xFF) * 0x10); return 0;
+            gcm_ensure_state();
+            uint32_t idx = (uint32_t)c->gpr[3];
+            if (idx > 255) idx = 255;
+            c->gpr[3] = g_gcm_labels ? (g_gcm_labels + (uint64_t)idx * 0x10) : 0;
+            return 0;
         }
         if (e->nid == 0x4524FE95) {
             uint64_t out = c->gpr[3];
-            if (out && out + 32 <= g_mem_size) {
+            if (out && out + 0x20 <= g_mem_size) {
+                wr_be32_guest(out + 0,  1280);
+                wr_be32_guest(out + 4,  720);
+                wr_be32_guest(out + 8,  0);
+                wr_be32_guest(out + 12, (uint32_t)(g_gcm_fifo ? g_gcm_fifo : 0));
+                wr_be32_guest(out + 16, g_gcm_fifo_size);
+            }
+            c->gpr[3] = 0; return 0;
+        }
+        if (e->nid == 0xD81D0D2D || e->nid == 0x05E548B9) {
+            ps3rt_rsx_flip((uint32_t)c->gpr[3]);
+            g_gcm_flip_status = 0;
+            g_gcm_frame_id++;
+            c->gpr[3] = 0; return 0;
+        }
+        if (e->nid == 0xA547ADDE) { c->gpr[3] = g_gcm_flip_status; return 0; }
+        if (e->nid == 0xB2E761D4) { g_gcm_flip_status = 0; c->gpr[3] = 0; return 0; }
+        if (e->nid == 0xF80196C0 || e->nid == 0x2E6CAB05) { g_gcm_flip_status = 0; c->gpr[3] = 0; return 0; }
+        if (e->nid == 0xE315A0B2) { c->gpr[3] = g_gcm_frame_id; return 0; }
+        if (e->nid == 0x21AC3697) { c->gpr[3] = (uint32_t)c->gpr[3]; return 0; }
+        if (e->nid == 0xA53D12AE || e->nid == 0x9DC25766) { c->gpr[3] = 0; return 0; }
+        if (e->nid == 0x98396A7C || e->nid == 0x4AE8D215) { c->gpr[3] = 0; return 0; }
+        if (e->nid == 0x2A6FBA9B || e->nid == 0x8BDE5EBF) { gcm_ensure_state(); c->gpr[3] = 0; return 0; }
+        if (e->nid == 0xA114EC67) {
+            uint64_t addr = c->gpr[3];
+            c->gpr[3] = (uint32_t)addr;
+            return 0;
+        }
+        if (kind == 1) { c->gpr[3] = 0; return 0; }
+
+        if (e->nid == 0xE558748D) {
+            uint64_t out = c->gpr[3];
+            if (out && out + 16 <= g_mem_size) {
                 wr_be32_guest(out + 0, 1280); wr_be32_guest(out + 4, 720); wr_be32_guest(out + 8, 0);
             }
             c->gpr[3] = 0; return 0;
@@ -424,16 +493,16 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
             c->gpr[3] = 0; return 0;
         }
         if (kind >= 2 && kind <= 10) { c->gpr[3] = 0; return 0; }
-    } else if (g_prx_log < 40) {
+    } else if (g_prx_log < 48) {
         std::fprintf(stderr, "[prx] stub kind=%d %s pc=0x%llx nid=0x%08X lr=0x%llx r11=0x%llx\n",
             kind, name ? name : "?", (unsigned long long)c->pc, maybe_nid,
             (unsigned long long)c->lr, (unsigned long long)c->gpr[11]);
         ++g_prx_log;
     }
-    (void)kind; (void)name;
-    if (kind == 1 && !g_gcm_inited) {
-        g_gcm_inited = 1;
-        ps3rt_rsx_init(0, 0x100000);
+    if (kind == 1) {
+        gcm_ensure_state();
+        c->gpr[3] = 0;
+        return 0;
     }
     c->gpr[3] = 0;
     return 0;
