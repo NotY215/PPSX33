@@ -89,7 +89,8 @@ internal sealed class Ps3BackdropPanel : Panel
 /// <summary>Custom-painted WinForms button with PS3-inspired blue focus and readable disabled states.</summary>
 internal sealed class Ps3Button : Button
 {
-    bool _hover, _down;\n    bool _glowPulse;
+    bool _hover, _down;
+    bool _glowPulse;
 
     public Ps3Button()
     {
