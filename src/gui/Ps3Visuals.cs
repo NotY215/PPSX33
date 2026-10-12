@@ -7,6 +7,7 @@ internal sealed class Ps3BackdropPanel : Panel
 {
     private Bitmap? _backgroundCache;
     private readonly System.Windows.Forms.Timer _resizePaintTimer;
+    private int _stableResizeTicks;
 
     public Ps3BackdropPanel()
     {
@@ -14,13 +15,26 @@ internal sealed class Ps3BackdropPanel : Panel
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
                  ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
         BackColor = Color.FromArgb(5, 8, 20);
-        _resizePaintTimer = new System.Windows.Forms.Timer { Interval = 90 };
-        _resizePaintTimer.Tick += (_, _) => { _resizePaintTimer.Stop(); RebuildBackground(); Invalidate(); };
-        SizeChanged += (_, _) => {
-            // Keep painting the previous cached frame while dragging the window.
-            // Regenerate the expensive wave art once the resize briefly settles.
-            _resizePaintTimer.Stop();
-            _resizePaintTimer.Start();
+        // Rebuild at a steady ~30 Hz during live resizing, then stop after the size settles.
+        _resizePaintTimer = new System.Windows.Forms.Timer { Interval = 33 };
+        _resizePaintTimer.Tick += (_, _) =>
+        {
+            if (ClientSize.Width <= 0 || ClientSize.Height <= 0) return;
+            if (_backgroundCache == null || _backgroundCache.Width != ClientSize.Width || _backgroundCache.Height != ClientSize.Height)
+            {
+                RebuildBackground();
+                _stableResizeTicks = 0;
+                Invalidate();
+            }
+            else if (++_stableResizeTicks >= 4)
+            {
+                _resizePaintTimer.Stop();
+            }
+        };
+        SizeChanged += (_, _) =>
+        {
+            _stableResizeTicks = 0;
+            if (!_resizePaintTimer.Enabled) _resizePaintTimer.Start();
             Invalidate();
         };
         Disposed += (_, _) => { _resizePaintTimer.Stop(); _resizePaintTimer.Dispose(); _backgroundCache?.Dispose(); };
@@ -91,9 +105,13 @@ internal sealed class Ps3Button : Button
 {
     bool _hover, _down;
     bool _glowPulse;
+    readonly System.Windows.Forms.Timer _glowTimer;
 
     public Ps3Button()
     {
+        _glowTimer = new System.Windows.Forms.Timer { Interval = 90 };
+        _glowTimer.Tick += (_, _) => { _glowPulse = !_glowPulse; Invalidate(); };
+        Disposed += (_, _) => { _glowTimer.Stop(); _glowTimer.Dispose(); };
         FlatStyle = FlatStyle.Flat;
         FlatAppearance.BorderSize = 0;
         UseVisualStyleBackColor = false;
@@ -105,11 +123,13 @@ internal sealed class Ps3Button : Button
         TabStop = true;
     }
 
-    protected override void OnMouseEnter(EventArgs e) { _hover = true; Invalidate(); base.OnMouseEnter(e); }
-    protected override void OnMouseLeave(EventArgs e) { _hover = false; _down = false; Invalidate(); base.OnMouseLeave(e); }
+    protected override void OnMouseEnter(EventArgs e) { _hover = true; _glowTimer.Start(); Invalidate(); base.OnMouseEnter(e); }
+    protected override void OnMouseLeave(EventArgs e) { _hover = false; _down = false; _glowTimer.Stop(); _glowPulse = false; Invalidate(); base.OnMouseLeave(e); }
+    protected override void OnGotFocus(EventArgs e) { base.OnGotFocus(e); if (!_glowTimer.Enabled) _glowTimer.Start(); Invalidate(); }
+    protected override void OnLostFocus(EventArgs e) { base.OnLostFocus(e); if (!_hover) { _glowTimer.Stop(); _glowPulse = false; } Invalidate(); }
     protected override void OnMouseDown(MouseEventArgs e) { if (e.Button == MouseButtons.Left && Enabled) _down = true; Invalidate(); base.OnMouseDown(e); }
     protected override void OnMouseUp(MouseEventArgs e) { _down = false; Invalidate(); base.OnMouseUp(e); }
-    protected override void OnEnabledChanged(EventArgs e) { base.OnEnabledChanged(e); Invalidate(); }
+    protected override void OnEnabledChanged(EventArgs e) { base.OnEnabledChanged(e); if (!Enabled) { _glowTimer.Stop(); _glowPulse = false; } Invalidate(); }
 
     protected override void OnPaint(PaintEventArgs e)
     {
@@ -127,7 +147,9 @@ internal sealed class Ps3Button : Button
         }
         if (Enabled && (Focused || _hover)) {
             using var glowPath = Rounded(new RectangleF(2, 2, Math.Max(1, Width - 5), Math.Max(1, Height - 5)), 5);
-            using var glow = new Pen(Color.FromArgb(_hover ? 105 : 50, 35, 165, 255), _hover ? 3.2f : 1.8f);
+            int glowAlpha = _hover ? (_glowPulse ? 145 : 75) : 50;
+            float glowWidth = _hover ? (_glowPulse ? 4.0f : 2.8f) : 1.8f;
+            using var glow = new Pen(Color.FromArgb(glowAlpha, 35, 165, 255), glowWidth);
             g.DrawPath(glow, glowPath);
             using var shine = new Pen(Color.FromArgb(_hover ? 85 : 35, 135, 215, 255), 1f);
             g.DrawLine(shine, 8, 3, Math.Max(8, Width - 9), 3);
