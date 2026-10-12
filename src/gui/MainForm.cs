@@ -409,13 +409,11 @@ public sealed partial class MainForm : Form
             } catch { }
         }
 
-        // Fallback for projects where staging has already happened: exclude the runtime sources.
+        // If staging already exists, count every C++ translation unit in the game's src folder.
         string stagedSrc = Path.Combine(projectDir, "output", "src");
         if (!Directory.Exists(stagedSrc)) return 0;
         try {
-            string[] runtimeFiles = { "ps3rt.cpp", "spu_stub.cpp", "rsx_stub.cpp", "ppu_chunks.cpp" };
-            return Directory.EnumerateFiles(stagedSrc, "*.cpp", SearchOption.AllDirectories)
-                .Count(file => !runtimeFiles.Contains(Path.GetFileName(file), StringComparer.OrdinalIgnoreCase));
+            return Directory.EnumerateFiles(stagedSrc, "*.cpp", SearchOption.AllDirectories).Count();
         } catch { return 0; }
     }
 
