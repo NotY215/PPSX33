@@ -1,4 +1,4 @@
-// Phase XI+XIII: never walk-ban the image; sticky leave prefers high last_good / stack; wild-PC recovery
+// Phase XIV: wild-PC excludes 0x39800000; soft-break faster; region-ban safe
 static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, size_t n,
                                          uint64_t exclude_pc = 0,
                                          const uint64_t* ban = nullptr, int nban = 0,
@@ -95,14 +95,15 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     };
 
     while (!c.halted) {
-        // Phase XIII: snap out of nonsense PCs (0 / high kernel-ish)
-        if (c.pc == 0 || c.pc >= 0x10000000ull) {
+        // Phase XIV: wild-PC — NEVER treat import stub 0x39800000 as wild
+        if ((c.pc == 0 || c.pc >= 0x10000000ull) &&
+            !(c.pc == 0x39800000ull || (c.pc & 0xFFFF0000ull) == 0x39800000ull)) {
             uint64_t alt = recover_return_pc(c, chunks, n, c.pc, nullptr, 0, nullptr, 0);
             if (!alt && last_good_ret) alt = last_good_ret;
             if (alt) {
                 static int wild_log = 0;
                 if (wild_log < 12) {
-                    ps3rt_log("[ps3] Phase XIII wild-pc 0x%llx -> 0x%llx\n",
+                    ps3rt_log("[ps3] Phase XIV wild-pc 0x%llx -> 0x%llx\n",
                         (unsigned long long)c.pc, (unsigned long long)alt);
                     ++wild_log;
                 }
@@ -139,7 +140,6 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
         }
 
         if (!hit) {
-            // PC left translated range
             uint64_t alt = recover_return_pc(c, chunks, n, c.pc, ban_lr, nban, rban, nrban);
             if (!alt && last_good_ret && !is_banned(last_good_ret)) alt = last_good_ret;
             if (alt && external_escapes < 262144) {
@@ -148,7 +148,6 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                         (unsigned long long)c.pc, (unsigned long long)alt);
                     ++logged;
                 }
-                // Detect sequential walk
                 if (last_leave && alt > last_leave && alt < last_leave + 0x10000ull) {
                     ++leave_same;
                     if (leave_same >= 4) {
@@ -172,7 +171,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             break;
         }
 
-        // Import / null stub zone
+        // Import / null stub zone — MUST run (wild-pc no longer steals 0x39800000)
         bool nullish = (c.pc == 0x39800000ull) || ((c.pc & 0xFFFF0000ull) == 0x39800000ull);
         bool importish = nullish;
         if (nullish || (c.pc < 0x10100ull)) {
@@ -192,7 +191,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                     (ret == last_null_lr ||
                      (ret >= (last_null_lr & ~0xFFull) && ret < (last_null_lr & ~0xFFull) + 0x100));
                 if (same_site) {
-                    if (++stub_same_lr > 512) {
+                    if (++stub_same_lr > 64) {
                         ++soft_breaks;
                         stub_same_lr = 0;
                         uint64_t alt = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
@@ -201,17 +200,20 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                         else if (last_good_ret && !is_banned(last_good_ret))
                             ret = last_good_ret;
                         else {
-                            uint64_t stride = 0x40;
-                            if (soft_breaks >= 4) stride = 0x100;
-                            if (soft_breaks >= 12) stride = 0x400;
-                            if (soft_breaks >= 24) stride = 0x1000;
+                            uint64_t stride = 0x100;
+                            if (soft_breaks >= 2) stride = 0x400;
+                            if (soft_breaks >= 6) stride = 0x1000;
+                            if (soft_breaks >= 12) stride = 0x4000;
                             uint64_t next = (ret & ~0xFull) + stride;
                             if (pc_in_chunks(next, chunks, n)) ret = next;
                             else if (pc_in_chunks(ret + 4, chunks, n)) ret = ret + 4;
                         }
-                        if (soft_breaks >= 48) {
+                        if (soft_breaks >= 8) {
                             add_ban(last_null_lr);
-                            last_good_ret = 0;
+                            if (ret < 0x200000ull) {
+                                uint64_t prefer = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
+                                if (prefer) ret = prefer;
+                            }
                             last_null_lr = 0;
                         }
                     }
