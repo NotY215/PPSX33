@@ -26,6 +26,7 @@ PS3CORE_API int ps3_create_project(const char* root_dir, const char* game_name, 
 PS3CORE_API int ps3_lift_project(const char* project_dir, char* log, int log_len);
 
 /* Request cancellation of an active build. Safe to call from another thread. */
+PS3CORE_API void ps3_begin_build(void);
 PS3CORE_API void ps3_cancel_build(void);
 
 /* Phase 6: copy runtime + codebase into output/, generate build.ninja and compile game.exe + ps3rt.dll.
