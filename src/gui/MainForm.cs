@@ -384,6 +384,7 @@ public sealed partial class MainForm : Form
 
         bool buildSucceeded = false;
         _buildCancelRequested = false;
+        Native.BeginBuild();
         _building = true;
         UpdateButtons();
         try {
@@ -406,7 +407,7 @@ public sealed partial class MainForm : Form
             _canLift = _canBuild = _canCopy = _canRun = _gfxUnlocked = false;
             _liftChunks = 0;
             _report.Clear();
-            _roadmap.Text = "PPSX33 · Sequential: Load ELF → Decompile → Build → Run\\r\\n";
+            _roadmap.Text = "PPSX33 · Sequential: Load ELF → Decompile → Build → Run\r\n";
             SetStatus("Build cancelled — reload ELF");
             UpdateButtons();
             MessageBox.Show(this,
@@ -423,7 +424,7 @@ public sealed partial class MainForm : Form
 
     async Task ConfirmCancelBuildAsync() {
         var answer = MessageBox.Show(this,
-            "Stopping the build will delete the generated input, codebase, and output folders and unload the selected ELF. You will need to reload the ELF file.\\n\\nAre you sure you want to stop building?",
+            "Stopping the build will delete the generated input, codebase, and output folders and unload the selected ELF. You will need to reload the ELF file.\n\nAre you sure you want to stop building?",
             "Warning — Cancel Build", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
         if (answer != DialogResult.Yes) return;
         _buildCancelRequested = true;
