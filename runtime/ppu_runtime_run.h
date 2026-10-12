@@ -90,7 +90,6 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             (unsigned long long)b, nrban);
     };
 
-    // Phase XIV (safe): sustained-spin assist only — never thrash PC every step
     uint64_t xiv_last_pc = 0;
     uint64_t xiv_same = 0;
     uint64_t xiv_log = 0;
@@ -98,7 +97,9 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     while (!c.halted) {
         if (ps3rt_should_exit()) {
             ps3rt_log("[ps3] exit requested (window closed)\n");
+            ps3rt_log("[stage] PPU run end\n");
             c.halted = true;
+            ps3rt_force_exit();
             break;
         }
 
