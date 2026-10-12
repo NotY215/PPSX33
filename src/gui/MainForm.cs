@@ -37,7 +37,6 @@ public sealed partial class MainForm : Form
     private string? _projectDir;
     private CancellationTokenSource? _cts;
     private Process? _gameProc;
-    private bool _stopGameRequested;
     private bool _building;
     private bool _buildCancelRequested;
     private bool _canLift, _canBuild, _canCopy, _canRun, _gfxUnlocked, _busy;
