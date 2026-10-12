@@ -1,4 +1,4 @@
-// ps3rt Phase S
+// ps3rt Phase T
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include "nid_table.h"
@@ -141,7 +141,8 @@ PS3RT_API void ps3rt_pad_set(uint16_t buttons, int16_t lx, int16_t ly, int16_t r
 }
 PS3RT_API void ps3rt_syscall(PPUContext* c) {
     if (!c) return;
-    uint64_t num = c->gpr[11], r3 = c->gpr[3], r4 = c->gpr[4], r5 = c->gpr[5], r6 = c->gpr[6];
+    uint64_t num = c->gpr[11] & 0xFFFFull; // Phase T: mask garbage high bits (sc 25602)
+    uint64_t r3 = c->gpr[3], r4 = c->gpr[4], r5 = c->gpr[5], r6 = c->gpr[6];
     static int sys_log = 0;
     if (sys_log < 80) { std::fprintf(stderr, "[lv2] sc %llu r3=%llx r4=%llx r5=%llx r6=%llx\n", (unsigned long long)num, (unsigned long long)r3, (unsigned long long)r4, (unsigned long long)r5, (unsigned long long)r6); ++sys_log; }
     auto write_u32 = [&](uint64_t a, uint32_t v) { if (a && a + 4 <= g_mem_size) wr_be32_guest(a, v); };
@@ -165,10 +166,10 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     case 352: {
         uint64_t size = r3, flags = r4, align = r5 ? r5 : 0x10000, out = r6;
         if (!out && flags >= 0x10000 && flags + 8 <= g_mem_size) out = flags;
-        if (size == 0 || size >= 0x08000000ull) { std::fprintf(stderr, "[lv2] mmapper size 0x%llx -> 1MiB (out=0x%llx)\n", (unsigned long long)size, (unsigned long long)out); size = 0x100000; }
+        if (size == 0 || size >= 0x08000000ull) { size = 0x100000; }
         if (align < 0x1000) align = 0x10000;
         uint64_t va = guest_alloc(size, align);
-        if (va && out && out + 8 <= g_mem_size) { wr_be64_guest(out, va); std::fprintf(stderr, "[lv2] mmapper wrote *0x%llx = 0x%llx\n", (unsigned long long)out, (unsigned long long)va); }
+        if (va && out && out + 8 <= g_mem_size) { wr_be64_guest(out, va); }
         else if (va && out && out + 4 <= g_mem_size) wr_be32_guest(out, (uint32_t)va);
         c->gpr[3] = va ? 0 : 0x80010004ull; break;
     }
@@ -216,16 +217,16 @@ static void gcm_ensure_state() {
 }
 static void gcm_fifo_emit(uint32_t method, uint32_t arg) {
     if (!g_gcm_control || !g_gcm_fifo) return;
-    uint32_t put = rd_be32_guest(g_gcm_control + 0);
     uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000;
-    uint32_t off = put % fsz;
-    uint64_t fa = g_gcm_fifo + off;
+    uint32_t put = rd_be32_guest(g_gcm_control + 0) % fsz;
+    uint64_t fa = g_gcm_fifo + put;
     uint32_t hdr = ((1u << 18) | ((method >> 2) & 0x7FF));
     if (fa + 8 <= g_mem_size) {
         wr_be32_guest(fa, hdr);
         wr_be32_guest(fa + 4, arg);
-        put += 8;
+        put = (put + 8) % fsz;
         wr_be32_guest(g_gcm_control + 0, put);
+        wr_be32_guest(g_gcm_control + 4, put);
         ps3rt_rsx_set_put(put);
     }
 }
@@ -298,22 +299,28 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
     }
     if (kind == 1) {
         gcm_ensure_state();
-        gcm_fifo_emit(0x01D8, 0xF1);
-        gcm_fifo_emit(0x0208, (1280u << 16));
-        gcm_fifo_emit(0x0214, (720u << 16));
-        gcm_fifo_emit(0x0A00, (1280u << 16));
-        gcm_fifo_emit(0x0A04, (720u << 16));
+        static uint32_t s_emit = 0;
+        if ((++s_emit & 0xF) == 1) {
+            gcm_fifo_emit(0x01D8, 0xF1);
+            gcm_fifo_emit(0x0208, (1280u << 16));
+            gcm_fifo_emit(0x0214, (720u << 16));
+            gcm_fifo_emit(0x0A00, (1280u << 16));
+            gcm_fifo_emit(0x0A04, (720u << 16));
+        }
     }
     c->gpr[3] = 0; return 0;
 }
 PS3RT_API void ps3rt_progress_hw(void) {
     if (!g_mem) return;
     if (g_gcm_control && g_gcm_control + 16 <= g_mem_size) {
-        uint32_t put = rd_be32_guest(g_gcm_control + 0);
+        uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000;
+        uint32_t put = rd_be32_guest(g_gcm_control + 0) % fsz;
+        wr_be32_guest(g_gcm_control + 0, put);
         ps3rt_rsx_set_put(put);
         ps3rt_rsx_flush(g_mem);
-        wr_be32_guest(g_gcm_control + 4, put);
-        wr_be32_guest(g_gcm_control + 8, put);
+        uint32_t get_now = ps3rt_rsx_get_get() % fsz;
+        wr_be32_guest(g_gcm_control + 4, get_now);
+        wr_be32_guest(g_gcm_control + 8, get_now);
     }
     g_gcm_flip_status = 0;
     static uint32_t s_flip_div = 0;
