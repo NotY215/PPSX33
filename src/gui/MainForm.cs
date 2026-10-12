@@ -321,29 +321,6 @@ public sealed partial class MainForm : Form
         }, afterBuild: true);
     }
 
-    async Task DecryptEbootAndLoad() {
-        Append("Decrypt: pick EBOOT.BIN then RPCS3 if needed.");
-        using var ofd = new OpenFileDialog { Title = "Select EBOOT.BIN", Filter = "EBOOT|EBOOT.BIN;*.BIN|All|*.*", CheckFileExists = true };
-        if (ofd.ShowDialog(this) != DialogResult.OK) return;
-        if (string.IsNullOrWhiteSpace(_settings.Rpcs3Path) || !File.Exists(_settings.Rpcs3Path)) {
-            if (!PickRpcs3Exe()) { Append("RPCS3 path required for decrypt."); return; }
-            SaveSettings();
-        }
-        SetStatus("Decrypting…", true); _busy = true; UpdateButtons();
-        try {
-            string? elf = await Task.Run(() => Rpcs3Launcher.DecryptEboot(ofd.FileName, _settings.Rpcs3Path, msg => BeginInvoke(() => Append(msg))));
-            if (elf != null && File.Exists(elf)) { Append("Decrypted: " + elf); LoadElf(elf); }
-            else Append("Decrypt failed.");
-        } catch (Exception ex) { Append(ex.Message); }
-        finally { _busy = false; UpdateButtons(); SetStatus("Ready"); }
-    }
-
-    bool PickRpcs3Exe() {
-        using var ofd = new OpenFileDialog { Title = "Select rpcs3.exe", Filter = "RPCS3|rpcs3.exe|EXE|*.exe", CheckFileExists = true };
-        if (ofd.ShowDialog(this) != DialogResult.OK) return false;
-        _settings.Rpcs3Path = ofd.FileName; return true;
-    }
-
     void SaveSettings() {
         _settings.GraphicsBackend = _gfx.SelectedItem?.ToString() ?? "D3D11";
         _settings.PpuThreads = _threads.SelectedItem is int ti ? ti : Math.Clamp(_settings.PpuThreads, 1, Environment.ProcessorCount);
