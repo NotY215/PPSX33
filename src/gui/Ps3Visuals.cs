@@ -125,7 +125,10 @@ internal sealed class Ps3Button : Button
             g.DrawPath(border, path);
         }
         if (Enabled && (Focused || _hover)) {
-            using var shine = new Pen(Color.FromArgb(_hover ? 55 : 25, 135, 205, 255), 1f);
+            using var glowPath = Rounded(new RectangleF(2, 2, Math.Max(1, Width - 5), Math.Max(1, Height - 5)), 5);
+            using var glow = new Pen(Color.FromArgb(_hover ? 105 : 50, 35, 165, 255), _hover ? 3.2f : 1.8f);
+            g.DrawPath(glow, glowPath);
+            using var shine = new Pen(Color.FromArgb(_hover ? 85 : 35, 135, 215, 255), 1f);
             g.DrawLine(shine, 8, 3, Math.Max(8, Width - 9), 3);
         }
         var textColor = Enabled ? ForeColor : Color.FromArgb(125, 142, 175);
