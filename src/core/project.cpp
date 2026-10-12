@@ -99,6 +99,15 @@ bool lift_project(const std::string& project_dir, std::string& log, std::string&
 
 namespace {
 std::atomic<bool> g_build_cancel_requested{false};
+FILE* g_build_live = nullptr;
+void live_log(const std::string& s) {
+    if (!g_build_live || s.empty()) return;
+    std::fwrite(s.data(), 1, s.size(), g_build_live);
+    std::fflush(g_build_live);
+}
+void live_close() {
+    if (g_build_live) { std::fclose(g_build_live); g_build_live = nullptr; }
+}
 #ifdef _WIN32
 const char* kExe = ".exe"; const char* kDll = ".dll";
 #else
@@ -110,7 +119,7 @@ struct Step { std::vector<std::string> in; std::string out; std::string cmd; };
 std::string q(const std::string& s) { return "\"" + s + "\""; }
 
 int run(const std::string& cmd, std::string& log) {
-    log += "> " + cmd + "\n";
+    log += "> " + cmd + "\n"; live_log("> " + cmd + "\n");
 #ifdef _WIN32
     if (g_build_cancel_requested.load()) { log += "BUILD_CANCELLED\n"; return 130; }
     SECURITY_ATTRIBUTES sa{}; sa.nLength = sizeof(sa); sa.bInheritHandle = TRUE;
@@ -148,7 +157,7 @@ int run(const std::string& cmd, std::string& log) {
         while (PeekNamedPipe(readPipe, nullptr, 0, nullptr, &available, nullptr) && available) {
             DWORD got = 0;
             if (!ReadFile(readPipe, buf, (DWORD)std::min<size_t>(sizeof(buf), available), &got, nullptr) || got == 0) break;
-            log.append(buf, got);
+            log.append(buf, got); live_log(std::string(buf, got));
             available = 0;
             if (!PeekNamedPipe(readPipe, nullptr, 0, nullptr, &available, nullptr)) break;
         }
@@ -162,7 +171,7 @@ int run(const std::string& cmd, std::string& log) {
             while (PeekNamedPipe(readPipe, nullptr, 0, nullptr, &availableAfter, nullptr) && availableAfter) {
                 DWORD got = 0;
                 if (!ReadFile(readPipe, buf, (DWORD)std::min<size_t>(sizeof(buf), availableAfter), &got, nullptr) || !got) break;
-                log.append(buf, got);
+                log.append(buf, got); live_log(std::string(buf, got));
             }
             break;
         }
@@ -243,13 +252,38 @@ std::string find_tool(const fs::path& dir, const std::vector<std::string>& names
 void cleanup_after_build(const fs::path& project_dir, const fs::path& out, std::string& log) {
     std::error_code ec;
     fs::path codebase = project_dir / "codebase";
+    fs::path input = project_dir / "input";
     for (const char* name : { "lift_report.txt", "analysis_report.txt" }) {
         fs::path src = codebase / name;
-        if (fs::exists(src)) fs::copy_file(src, out / name, fs::copy_options::overwrite_existing, ec);
+        if (fs::exists(src))
+            fs::copy_file(src, out / name, fs::copy_options::overwrite_existing, ec);
     }
-    // Keep build_msvc.bat on disk after failure; only remove on success path caller
-    fs::path ninja = out / "build.ninja";
-    if (fs::exists(ninja)) fs::remove(ninja, ec);
+    if (fs::exists(out / "obj")) {
+        fs::remove_all(out / "obj", ec);
+        log += "cleanup: removed output/obj\n";
+        live_log("cleanup: removed output/obj\n");
+    }
+    if (fs::exists(out / "src")) {
+        fs::remove_all(out / "src", ec);
+        log += "cleanup: removed output/src\n";
+        live_log("cleanup: removed output/src\n");
+    }
+    for (const char* name : { "build.ninja", "build_msvc.bat" }) {
+        if (fs::exists(out / name)) fs::remove(out / name, ec);
+    }
+    // Keep codebase reports only in output/; clear heavy intermediates
+    if (fs::exists(codebase)) {
+        for (auto& e : fs::directory_iterator(codebase, ec)) {
+            std::string n = e.path().filename().string();
+            if (n == "lift_report.txt" || n == "analysis_report.txt") continue;
+            fs::remove_all(e.path(), ec);
+        }
+        log += "cleanup: trimmed codebase/ (kept reports)\n";
+        live_log("cleanup: trimmed codebase/\n");
+    }
+    log += "cleanup: done (exe/dll/guest_image.bin kept)\n";
+    live_log("cleanup: done\n");
+}
 }
 
 } // namespace
@@ -265,6 +299,9 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     std::error_code ec;
     fs::create_directories(src, ec);
     fs::create_directories(out, ec);
+    live_close();
+    g_build_live = std::fopen((out / "build_live.log").string().c_str(), "w");
+    live_log("PPSX33 build started\n");
 
     if (!fs::exists(code / "ppu_chunks.cpp")) {
         err = "codebase/ppu_chunks.cpp missing — run Decompile first.";
@@ -397,12 +434,14 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             std::string tail = log;
             if (tail.size() > 3000) tail = tail.substr(tail.size() - 3000);
             err = "MSVC build failed (exit=" + std::to_string(rc) + "):\n" + tail;
-            // Leave build_msvc.bat for manual debug
+            live_log(err + "\n"); live_close();
             return false;
         }
         fs::remove(out / "build_msvc.bat", ec);
         log += "Build OK: output/" + out_exe + " + output/ps3rt.dll + output/guest_image.bin (MSVC)\n";
+        live_log("Build OK (MSVC)\n");
         cleanup_after_build(project_dir, out, log);
+        live_close();
         return true;
     }
 #endif
@@ -464,10 +503,11 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         }
     }
     fs::current_path(prev, ec);
-    if (rc != 0) { err = "g++ build failed. See log."; return false; }
+    if (rc != 0) { err = "g++ build failed. See log."; live_close(); return false; }
     log += "Build OK: output/" + out_exe + " + output/" + std::string("ps3rt") + kDll + " (g++)\n";
+    live_log("Build OK (g++)\n");
     cleanup_after_build(project_dir, out, log);
+    live_close();
     return true;
-}
-
+    
 } // namespace ps3

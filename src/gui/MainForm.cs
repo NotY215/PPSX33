@@ -45,7 +45,7 @@ public sealed partial class MainForm : Form
     private readonly Label _eta = new();
 
     private const int StallQuietMs = 4000;
-    private const int MaxRunMs = 120_000;
+    private const int MaxRunMs = 0; // unlimited
     private static string RuntimeDir => Path.Combine(AppContext.BaseDirectory, "runtime");
     private static string CompilersDir => Path.Combine(AppContext.BaseDirectory, "Compilers-files");
     private static string ProjectsRoot => Path.Combine(AppContext.BaseDirectory, "projects");
@@ -323,7 +323,7 @@ public sealed partial class MainForm : Form
                 if ((DateTime.UtcNow - lastOut).TotalMilliseconds > StallQuietMs && (DateTime.UtcNow - start).TotalMilliseconds > 8000) {
                     Append("[ui] no output for " + StallQuietMs + "ms — possible stall"); lastOut = DateTime.UtcNow;
                 }
-                if ((DateTime.UtcNow - start).TotalMilliseconds > MaxRunMs) { Append("[ui] max run time — stopping"); StopGame(); break; }
+                if (MaxRunMs > 0 && (DateTime.UtcNow - start).TotalMilliseconds > MaxRunMs) { Append("[ui] max run time — stopping"); StopGame(); break; }
             }
             Append(exeName + " exited code=" + (_gameProc?.ExitCode ?? -1)); SetStatus("Run finished");
         } catch (Exception ex) { Append(ex.Message); SetStatus("Run error"); }
@@ -355,13 +355,94 @@ public sealed partial class MainForm : Form
 
     async Task BuildWithProgress() {
         if (_projectDir == null) return;
-        _building = true; _buildCancelRequested = false; UpdateButtons();
-        await RunStep("Building…", ct => {
+        _building = true; _buildCancelRequested = false;
+        _busy = true; UpdateButtons();
+        SaveSettings();
+        string livePath = Path.Combine(_projectDir, "output", "build_live.log");
+        try { if (File.Exists(livePath)) File.Delete(livePath); } catch { }
+
+        int estSteps = Math.Max(8, 5 + Math.Max(1, _liftChunks / 50));
+        int stepsDone = 0;
+        long readPos = 0;
+        var start = DateTime.UtcNow;
+        SetStatus("Building…", true, 0, "ETA —");
+        Append("Build started — live console follows:");
+
+        string? finalLog = null;
+        var buildTask = Task.Run(() => {
             bool ok = Native.Build(_projectDir!, RuntimeDir, CompilersDir, out var l);
-            BeginInvoke(() => Append(l));
+            finalLog = l;
             return ok;
-        }, afterBuild: true);
-        _building = false; UpdateButtons();
+        });
+
+        while (!buildTask.IsCompleted) {
+            await Task.Delay(200);
+            try {
+                if (File.Exists(livePath)) {
+                    using var fs = new FileStream(livePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    if (fs.Length > readPos) {
+                        fs.Seek(readPos, SeekOrigin.Begin);
+                        using var sr = new StreamReader(fs, Encoding.UTF8);
+                        string chunk = await sr.ReadToEndAsync();
+                        readPos = fs.Position;
+                        foreach (var line in chunk.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None)) {
+                            if (string.IsNullOrWhiteSpace(line)) continue;
+                            Append(line);
+                            if (line.StartsWith("COMPILE", StringComparison.OrdinalIgnoreCase) ||
+                                line.StartsWith("LINK", StringComparison.OrdinalIgnoreCase) ||
+                                line.StartsWith("cleanup", StringComparison.OrdinalIgnoreCase))
+                                stepsDone++;
+                        }
+                    }
+                }
+            } catch { }
+
+            double elapsed = (DateTime.UtcNow - start).TotalSeconds;
+            int pct = Math.Clamp((int)(100.0 * stepsDone / Math.Max(1, estSteps)), 0, 99);
+            string eta = "ETA —";
+            if (stepsDone >= 2 && elapsed > 1.5) {
+                int remain = (int)Math.Max(0, (estSteps - stepsDone) * (elapsed / stepsDone));
+                eta = remain >= 60 ? $"ETA {remain / 60}m {remain % 60}s" : $"ETA {remain}s";
+            }
+            SetStatus($"Building… {stepsDone}/{estSteps}", true, pct, eta);
+            if (_buildCancelRequested) Native.CancelBuild();
+        }
+
+        bool ok = false;
+        try { ok = await buildTask; } catch (Exception ex) { Append(ex.Message); }
+
+        try {
+            if (File.Exists(livePath)) {
+                using var fs = new FileStream(livePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                if (fs.Length > readPos) {
+                    fs.Seek(readPos, SeekOrigin.Begin);
+                    using var sr = new StreamReader(fs, Encoding.UTF8);
+                    string rest = await sr.ReadToEndAsync();
+                    if (!string.IsNullOrWhiteSpace(rest)) Append(rest.TrimEnd());
+                }
+            }
+        } catch { }
+
+        if (!string.IsNullOrEmpty(finalLog)) {
+            foreach (var line in finalLog.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)) {
+                if (line.StartsWith("Build OK", StringComparison.OrdinalIgnoreCase) ||
+                    line.Contains("failed", StringComparison.OrdinalIgnoreCase) ||
+                    line.StartsWith("cleanup:", StringComparison.OrdinalIgnoreCase) ||
+                    line.StartsWith("MSVC:", StringComparison.OrdinalIgnoreCase))
+                    Append(line);
+            }
+        }
+
+        if (ok) {
+            _canCopy = true; _canRun = true;
+            SetStatus("Building successful", false, 100, "");
+            Append("Building successful — Run and Copy unlocked.");
+        } else if (_buildCancelRequested) {
+            SetStatus("Build cancelled");
+        } else {
+            SetStatus("Building failed");
+        }
+        _building = false; _busy = false; UpdateButtons();
     }
 
     async Task ConfirmCancelBuildAsync() {
