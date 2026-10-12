@@ -38,6 +38,7 @@ public sealed partial class MainForm : Form
     private string? _projectDir;
     private CancellationTokenSource? _cts;
     private Process? _gameProc;
+    private bool _stopGameRequested;
     private bool _canLift, _canBuild, _canCopy, _canRun, _gfxUnlocked, _busy;
     private int _liftChunks;
     private Ps3Button? _btnRpcs3;
@@ -152,7 +153,8 @@ public sealed partial class MainForm : Form
         _btnBuild.Click += async (_, _) => await BuildWithProgress();
         _btnRun.Click += async (_, _) => await RunGameExe();
         _btnCopy.Click += (_, _) => CopyToGameFolder();
-        _btnCancel.Click += (_, _) => { _cts?.Cancel(); StopGame(); SetStatus("Stopped"); };
+        _btnCancel.Text = "Stop Game";
+        _btnCancel.Click += (_, _) => { if (_gameProc != null) StopGame(); };
         Append("PPSX33 ready · core v" + SafeVersion());
         Append("Settings: " + Settings.DataDir);
         UpdateButtons();
@@ -206,7 +208,7 @@ public sealed partial class MainForm : Form
     void UpdateButtons() {
         _btnLift.Enabled = _canLift && !_busy; _btnBuild.Enabled = _canBuild && !_busy;
         _btnRun.Enabled = _canRun && !_busy; _btnCopy.Enabled = _canCopy && !_busy;
-        _btnCancel.Enabled = _busy || _gameProc != null; _btnDecrypt.Enabled = !_busy; _btnLoad.Enabled = !_busy;
+        _btnCancel.Enabled = _gameProc != null; _btnDecrypt.Enabled = !_busy; _btnLoad.Enabled = !_busy;
         _gfx.Enabled = _gfxUnlocked && !_busy;
     }
 
@@ -284,28 +286,38 @@ public sealed partial class MainForm : Form
         StopGame(); SaveSettings();
         var psi = new ProcessStartInfo { FileName = exe, WorkingDirectory = Path.GetDirectoryName(exe)!, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
         psi.Environment["PS3RT_GFX"] = _gfx.SelectedItem?.ToString() ?? "D3D11";
-        _gameProc = new Process { StartInfo = psi, EnableRaisingEvents = true };
+        var gameProc = new Process { StartInfo = psi, EnableRaisingEvents = true };
+        _gameProc = gameProc;
+        _stopGameRequested = false;
         var lastOut = DateTime.UtcNow;
         void OnData(string? line) { if (line == null) return; lastOut = DateTime.UtcNow; BeginInvoke(() => Append(line)); }
-        _gameProc.OutputDataReceived += (_, e) => OnData(e.Data);
-        _gameProc.ErrorDataReceived += (_, e) => OnData(e.Data);
+        gameProc.OutputDataReceived += (_, e) => OnData(e.Data);
+        gameProc.ErrorDataReceived += (_, e) => OnData(e.Data);
         try {
-            _gameProc.Start(); _gameProc.BeginOutputReadLine(); _gameProc.BeginErrorReadLine();
+            gameProc.Start(); gameProc.BeginOutputReadLine(); gameProc.BeginErrorReadLine();
             _busy = true; UpdateButtons(); SetStatus("Running " + exeName + "…", true);
             var start = DateTime.UtcNow;
-            while (!_gameProc.HasExited) {
-                await Task.Delay(500);
+            while (!gameProc.HasExited) {
+                await Task.Delay(250);
+                if (_stopGameRequested) break;
                 if ((DateTime.UtcNow - lastOut).TotalMilliseconds > StallQuietMs && (DateTime.UtcNow - start).TotalMilliseconds > 8000) {
                     Append("[ui] no output for " + StallQuietMs + "ms — possible stall"); lastOut = DateTime.UtcNow;
                 }
                 if ((DateTime.UtcNow - start).TotalMilliseconds > MaxRunMs) { Append("[ui] max run time — stopping"); StopGame(); break; }
             }
-            Append(exeName + " exited code=" + (_gameProc?.ExitCode ?? -1)); SetStatus("Run finished");
+            if (_stopGameRequested) { Append(exeName + " stopped by user."); SetStatus("Game stopped"); }
+            else { Append(exeName + " exited code=" + gameProc.ExitCode); SetStatus("Run finished"); }
         } catch (Exception ex) { Append(ex.Message); SetStatus("Run error"); }
-        finally { _busy = false; UpdateButtons(); _gameProc = null; }
+        finally { _busy = false; _gameProc = null; _stopGameRequested = false; UpdateButtons(); }
     }
 
-    void StopGame() { try { if (_gameProc is { HasExited: false }) _gameProc.Kill(true); } catch { } _gameProc = null; }
+    void StopGame() {
+        var game = _gameProc;
+        if (game == null) return;
+        _stopGameRequested = true;
+        try { if (!game.HasExited) game.Kill(true); } catch { }
+        UpdateButtons();
+    }
 
     void CopyToGameFolder() {
         if (_projectDir == null) return;
