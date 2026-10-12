@@ -16,7 +16,7 @@ internal sealed class Ps3BackdropPanel : Panel
                  ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
         BackColor = Color.FromArgb(5, 8, 20);
         // Rebuild at a steady ~30 Hz during live resizing, then stop after the size settles.
-        _resizePaintTimer = new System.Windows.Forms.Timer { Interval = 33 };
+        _resizePaintTimer = new System.Windows.Forms.Timer { Interval = 17 };
         _resizePaintTimer.Tick += (_, _) =>
         {
             if (ClientSize.Width <= 0 || ClientSize.Height <= 0) return;
