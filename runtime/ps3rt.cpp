@@ -1,4 +1,4 @@
-// ps3rt Phase XIII (surfaces + GCM nid0 + log tee)
+// ps3rt Phase XIV (GCM early + import stub fixed in run.h)
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include "nid_table.h"
@@ -385,6 +385,7 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
 PS3RT_API void ps3rt_progress_hw(void) {
     if (!g_mem) return;
     spu_tick_all();
+    if (!g_gcm_inited) gcm_ensure_state();
     static uint32_t s_last_put = 0;
     static uint32_t s_stall = 0;
     static uint32_t s_inject = 0;
@@ -399,7 +400,7 @@ PS3RT_API void ps3rt_progress_hw(void) {
             }
             s_last_put = put; s_stall = 0;
         } else ++s_stall;
-        if (g_gcm_inited && s_stall > 64 && (++s_inject & 0x3F) == 1) {
+        if (g_gcm_inited && s_stall > 8 && (++s_inject & 0xF) == 1) {
             gcm_fifo_emit(0x01D8, 0xF1);
             gcm_fifo_emit(0x0208, (1280u << 16));
             gcm_fifo_emit(0x020C, (720u << 16));
