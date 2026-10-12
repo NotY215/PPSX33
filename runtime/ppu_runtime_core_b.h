@@ -63,7 +63,7 @@ PS3RT_API void ps3rt_request_exit(void);
 PS3RT_API int  ps3rt_should_exit(void);
 
 // Phase M: force fallthrough after 2048 consecutive taken (was 65536)
-static inline bool bc_should_take(PPUContext& c, uint32_t bo, uint32_t bi) {
+static inline bool bc_taken(PPUContext& c, unsigned bo, unsigned bi) {
     bool ctr_ok = true;
     if ((bo & 4) == 0) {
         c.ctr -= 1;
@@ -81,19 +81,15 @@ static inline bool bc_should_take(PPUContext& c, uint32_t bo, uint32_t bi) {
 }
 
 struct PPUChunk {
-    uint64_t lo, hi;
-    void (*fn)(PPUContext&);
+    uint64_t start;
+    uint64_t end;
+    bool (*fn)(PPUContext&);
 };
 
-static inline const PPUChunk* find_chunk(const PPUChunk* chunks, size_t n, uint64_t pc) {
-    size_t lo = 0, hi = n;
-    while (lo < hi) {
-        size_t mid = (lo + hi) / 2;
-        if (pc < chunks[mid].lo) hi = mid;
-        else if (pc >= chunks[mid].hi) lo = mid + 1;
-        else return &chunks[mid];
-    }
-    return nullptr;
+static inline bool pc_in_chunks(uint64_t pc, const PPUChunk* chunks, size_t n) {
+    for (size_t i = 0; i < n; ++i)
+        if (pc >= chunks[i].start && pc < chunks[i].end) return true;
+    return false;
 }
 
 PS3RT_API void ps3rt_syscall(PPUContext* c);
