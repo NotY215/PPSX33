@@ -1,25 +1,6 @@
 // ppu_runtime_core_b.h - continuation of core (rd helpers, CR/branch, chunks, API)
 // Appended after core_a
-// NOTE: SPUContext is defined in core_a.h — do not redefine here
-
-static inline float rd_f32(PPUContext& c, uint64_t addr) {
-    uint32_t u = rd32(c, addr);
-    float f; std::memcpy(&f, &u, 4); return f;
-}
-static inline void wr_f32(PPUContext& c, uint64_t addr, float v) {
-    uint32_t u; std::memcpy(&u, &v, 4); wr32(c, addr, u);
-}
-static inline double rd_f64(PPUContext& c, uint64_t addr) {
-    uint64_t u = rd64(c, addr);
-    double d; std::memcpy(&d, &u, 8); return d;
-}
-static inline void wr_f64(PPUContext& c, uint64_t addr, double v) {
-    uint64_t u; std::memcpy(&u, &v, 8); wr64(c, addr, u);
-}
-
-static inline bool xer_ca(const PPUContext& c) { return (c.xer >> 32) & 1; }
-static inline bool xer_ov(const PPUContext& c) { return (c.xer >> 33) & 1; }
-static inline bool xer_so(const PPUContext& c) { return (c.xer >> 34) & 1; }
+// NOTE: SPUContext is defined in core_a.h — do not redeclare
 
 static inline void set_cr_signed(PPUContext& c, int f, int64_t a, int64_t b) {
     uint8_t bits = (uint8_t)((a < b ? 8 : 0) | (a > b ? 4 : 0) | (a == b ? 2 : 0));
@@ -46,58 +27,31 @@ static inline void set_cr_fp(PPUContext& c, int f, double a, double b) {
 #  endif
 #endif
 PS3RT_API void ps3rt_progress_hw(void);
+PS3RT_API void ps3rt_request_exit(void);
+PS3RT_API int  ps3rt_should_exit(void);
 
 // Phase M: force fallthrough after 2048 consecutive taken (was 65536)
-static inline bool bc_taken(PPUContext& c, unsigned bo, unsigned bi) {
-    bool ctr_ok = true, cond_ok = true;
-    if (!(bo & 0x04)) {
-        c.ctr -= 1;
-        ctr_ok = ((c.ctr != 0) != ((bo & 0x02) != 0));
+static inline bool branch_taken_bo(PPUContext& c, int bo, int bi) {
+    bool ctr_ok = true;
+    if ((bo & 4) == 0) {
+        c.ctr--;
+        ctr_ok = ((bo & 2) != 0) ? (c.ctr == 0) : (c.ctr != 0);
     }
-    if (!(bo & 0x10)) {
-        bool bit = (c.cr[bi >> 2] >> (3 - (bi & 3))) & 1;
-        cond_ok = (bit == ((bo & 0x08) != 0));
+    bool cond_ok = true;
+    if ((bo & 16) == 0) {
+        int crb = (bi >> 2) & 7;
+        int bit = 3 - (bi & 3);
+        bool v = (c.cr[crb] & (1u << bit)) != 0;
+        cond_ok = ((bo & 8) != 0) ? v : !v;
     }
-    bool taken = ctr_ok && cond_ok;
-
-    static uint64_t s_last_key = 0;
-    static uint32_t s_taken_run = 0;
-    static uint32_t s_bc_log = 0;
-    uint64_t key = ((uint64_t)bo << 40) | ((uint64_t)bi << 32) | (c.pc & 0xFFFFFFFFu);
-    if (taken) {
-        if (key == s_last_key) ++s_taken_run;
-        else { s_last_key = key; s_taken_run = 1; }
-        if ((s_taken_run & 0x1FF) == 0)
-            ps3rt_progress_hw();
-        if (s_taken_run >= 2048u) {
-            if (s_bc_log < 16) {
-                std::fprintf(stderr, "[ps3] Phase M force-fallthrough bc bo=%u bi=%u pc=0x%llx run=%u\n",
-                    bo, bi, (unsigned long long)c.pc, s_taken_run);
-                std::fflush(stderr);
-                ++s_bc_log;
-            }
-            s_taken_run = 0;
-            c.gpr[3] = 0;
-            return false;
-        }
-    } else {
-        s_last_key = 0;
-        s_taken_run = 0;
-    }
-    return taken;
+    return ctr_ok && cond_ok;
 }
 
 struct PPUChunk {
     uint64_t start;
     uint64_t end;
-    bool (*fn)(PPUContext&);
+    void (*fn)(PPUContext&);
 };
-
-static inline bool pc_in_chunks(uint64_t pc, const PPUChunk* chunks, size_t n) {
-    for (size_t i = 0; i < n; ++i)
-        if (pc >= chunks[i].start && pc < chunks[i].end) return true;
-    return false;
-}
 
 PS3RT_API void ps3rt_syscall(PPUContext* c);
 PS3RT_API int  ps3rt_prx_import_stub(PPUContext* c, uint64_t pc);
