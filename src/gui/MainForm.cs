@@ -30,7 +30,7 @@ public sealed partial class MainForm : Form
     private readonly Button _btnCopy = new();
     private readonly Button _btnCancel = new();
     private readonly ComboBox _gfx = new();
-    private readonly NumericUpDown _threads = new();
+    private readonly ComboBox _threads = new();
     private readonly TabControl _tabs = new();
     private readonly PictureBox _logo = new();
     private string? _projectDir;
@@ -99,9 +99,14 @@ public sealed partial class MainForm : Form
         _gfx.SelectedItem = _settings.GraphicsBackend; if (_gfx.SelectedIndex < 0) _gfx.SelectedIndex = 1;
         _gfx.Enabled = false;
         var thrLbl = MakeLbl("CPU threads", TextSec, false); thrLbl.Location = new Point(0, 58);
-        _threads.Minimum = 1; _threads.Maximum = 64; _threads.BackColor = Panel2; _threads.ForeColor = TextPri;
-        _threads.Location = new Point(0, 78); _threads.Size = new Size(100, 26);
-        _threads.Value = Math.Clamp(_settings.PpuThreads, 1, 64);
+        _threads.DropDownStyle = ComboBoxStyle.DropDownList; _threads.FlatStyle = FlatStyle.Flat;
+        _threads.BackColor = Panel2; _threads.ForeColor = TextPri;
+        _threads.Location = new Point(0, 78); _threads.Size = new Size(100, 28);
+        int maxThr = Math.Max(1, Environment.ProcessorCount);
+        for (int i = 1; i <= maxThr; i++) _threads.Items.Add(i);
+        int want = Math.Clamp(_settings.PpuThreads, 1, maxThr);
+        _threads.SelectedItem = want;
+        if (_threads.SelectedIndex < 0) _threads.SelectedIndex = Math.Min(want, maxThr) - 1;
         var rpcs3Lbl = MakeLbl("RPCS3 (decrypt)", TextSec, false); rpcs3Lbl.Location = new Point(0, 108);
         _btnRpcs3 = new Button { Text = "Choose rpcs3.exe…", FlatStyle = FlatStyle.Flat, BackColor = Panel2, ForeColor = TextPri, Location = new Point(0, 128), Size = new Size(214, 28), Cursor = Cursors.Hand };
         _btnRpcs3.FlatAppearance.BorderSize = 0;
@@ -237,7 +242,6 @@ public sealed partial class MainForm : Form
         } catch { } return "project";
     }
 
-    /// <summary>Prefer projectName.exe (ELF/project name); fall back to game.exe.</summary>
     string? ResolveOutputExe() {
         if (_projectDir == null) return null;
         string outDir = Path.Combine(_projectDir, "output");
@@ -299,89 +303,55 @@ public sealed partial class MainForm : Form
             }
             string dest = Path.Combine(destDir!, Path.GetFileName(src));
             File.Copy(src, dest, true);
-            Append("Copied to " + dest); SetStatus("Copied");
-        } catch (Exception ex) { Append(ex.Message); SetStatus("Copy failed"); }
+            string dll = Path.Combine(Path.GetDirectoryName(src)!, "ps3rt.dll");
+            if (File.Exists(dll)) File.Copy(dll, Path.Combine(destDir!, "ps3rt.dll"), true);
+            string img = Path.Combine(Path.GetDirectoryName(src)!, "guest_image.bin");
+            if (File.Exists(img)) File.Copy(img, Path.Combine(destDir!, "guest_image.bin"), true);
+            Append("Copied to " + destDir);
+            SetStatus("Copied");
+        } catch (Exception ex) { Append(ex.Message); }
     }
 
     async Task BuildWithProgress() {
-        if (_projectDir == null) { Append("No project."); return; }
-        _cts?.Cancel(); _cts = new CancellationTokenSource();
-        _busy = true; UpdateButtons(); SaveSettings();
-        int chunks = Math.Max(_liftChunks, 1);
-        string codeDir = Path.Combine(_projectDir, "codebase");
-        string objDir = Path.Combine(_projectDir, "output", "obj");
-        int totalSrc = CountSourceUnits(codeDir, chunks);
-        if (totalSrc < 1) totalSrc = chunks + 6;
-        var sw = Stopwatch.StartNew();
-        int lastDone = 0;
-        double secPerFile = 0.45;
-        SetStatus($"Building… 0/{totalSrc} files", true, 0, "ETA —");
-        var buildTask = Task.Run(() => {
+        if (_projectDir == null) return;
+        await RunStep("Building…", ct => {
             bool ok = Native.Build(_projectDir!, RuntimeDir, CompilersDir, out var l);
-            return (ok, l);
-        }, _cts.Token);
-        try {
-            while (!buildTask.IsCompleted) {
-                await Task.Delay(300, _cts.Token);
-                int done = CountObjUnits(objDir);
-                if (done > totalSrc) done = totalSrc;
-                if (done > lastDone) {
-                    lastDone = done;
-                    if (done > 0 && sw.Elapsed.TotalSeconds > 0.3)
-                        secPerFile = sw.Elapsed.TotalSeconds / done;
-                }
-                int remaining = Math.Max(0, totalSrc - done);
-                double remainSec = remaining * secPerFile;
-                int pct = totalSrc > 0 ? (int)Math.Clamp(done * 100.0 / totalSrc, 0, 99) : 0;
-                string rate = secPerFile >= 1.0 ? $"{secPerFile:0.0}s/file" : $"{secPerFile * 1000:0}ms/file";
-                string eta = remainSec > 90 ? $"ETA ~{remainSec / 60:0.0}m" : $"ETA ~{Math.Max(0, remainSec):0}s";
-                if (done == 0)
-                    SetStatus($"Building… compiling runtime (0/{totalSrc})", true, Math.Min(pct, 4), eta);
-                else
-                    SetStatus($"Building… {done}/{totalSrc} objs · {rate}", true, pct, eta);
-            }
-            var (ok, log) = await buildTask;
-            Append(log);
-            if (ok) {
-                _canCopy = true; _canRun = true;
-                Append("Build OK — Run and Copy unlocked.");
-                double totalSec = sw.Elapsed.TotalSeconds;
-                Append($"Build timing: {totalSrc} sources, {totalSec:0.0}s total, ~{(totalSrc > 0 ? totalSec / totalSrc : 0):0.00}s/file");
-            }
-            SetStatus(ok ? "Done" : "Failed", false, ok ? 100 : 0, "");
-        } catch (OperationCanceledException) { SetStatus("Cancelled"); }
-        catch (Exception ex) { Append(ex.Message); SetStatus("Error"); }
-        finally { _busy = false; UpdateButtons(); }
+            BeginInvoke(() => Append(l));
+            return ok;
+        }, afterBuild: true);
     }
 
-    static int CountSourceUnits(string codeDir, int expectedChunks) {
+    async Task DecryptEbootAndLoad() {
+        Append("Decrypt: pick EBOOT.BIN then RPCS3 if needed.");
+        using var ofd = new OpenFileDialog { Title = "Select EBOOT.BIN", Filter = "EBOOT|EBOOT.BIN;*.BIN|All|*.*", CheckFileExists = true };
+        if (ofd.ShowDialog(this) != DialogResult.OK) return;
+        if (string.IsNullOrWhiteSpace(_settings.Rpcs3Path) || !File.Exists(_settings.Rpcs3Path)) {
+            if (!PickRpcs3Exe()) { Append("RPCS3 path required for decrypt."); return; }
+            SaveSettings();
+        }
+        SetStatus("Decrypting…", true); _busy = true; UpdateButtons();
         try {
-            if (Directory.Exists(codeDir)) {
-                int chunks = 0;
-                foreach (var _ in Directory.EnumerateFiles(codeDir, "ppu_chunk_*.cpp"))
-                    chunks++;
-                if (chunks > 0) return 5 + chunks;
-            }
-        } catch { }
-        return 5 + Math.Max(expectedChunks, 0);
+            string? elf = await Task.Run(() => Rpcs3Launcher.DecryptEboot(ofd.FileName, _settings.Rpcs3Path, msg => BeginInvoke(() => Append(msg))));
+            if (elf != null && File.Exists(elf)) { Append("Decrypted: " + elf); LoadElf(elf); }
+            else Append("Decrypt failed.");
+        } catch (Exception ex) { Append(ex.Message); }
+        finally { _busy = false; UpdateButtons(); SetStatus("Ready"); }
     }
 
-    static int CountObjUnits(string objDir) {
-        int n = 0;
-        try {
-            if (!Directory.Exists(objDir)) return 0;
-            foreach (var f in Directory.EnumerateFiles(objDir, "*.obj")) n++;
-        } catch { }
-        return n;
+    bool PickRpcs3Exe() {
+        using var ofd = new OpenFileDialog { Title = "Select rpcs3.exe", Filter = "RPCS3|rpcs3.exe|EXE|*.exe", CheckFileExists = true };
+        if (ofd.ShowDialog(this) != DialogResult.OK) return false;
+        _settings.Rpcs3Path = ofd.FileName; return true;
     }
 
     void SaveSettings() {
         _settings.GraphicsBackend = _gfx.SelectedItem?.ToString() ?? "D3D11";
-        _settings.PpuThreads = (int)_threads.Value;
+        _settings.PpuThreads = _threads.SelectedItem is int ti ? ti : Math.Clamp(_settings.PpuThreads, 1, Environment.ProcessorCount);
         _settings.Save();
     }
 
     static string SafeVersion() {
-        try { return Native.Version().ToString(); } catch { return "1"; }
+        try { return typeof(MainForm).Assembly.GetName().Version?.ToString(3) ?? "1"; }
+        catch { return "1"; }
     }
 }
