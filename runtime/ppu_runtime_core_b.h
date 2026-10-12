@@ -60,6 +60,7 @@ static inline void set_cr_fp(PPUContext& c, int f, double a, double b) {
 #endif
 PS3RT_API void ps3rt_progress_hw(void);
 PS3RT_API void ps3rt_request_exit(void);
+PS3RT_API void ps3rt_force_exit(void);
 PS3RT_API int  ps3rt_should_exit(void);
 
 // Phase M: force fallthrough after 2048 consecutive taken (was 65536)
