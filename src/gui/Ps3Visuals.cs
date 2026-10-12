@@ -16,7 +16,7 @@ internal sealed class Ps3BackdropPanel : Panel
                  ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
         BackColor = Color.FromArgb(5, 8, 20);
         // Rebuild at a steady ~30 Hz during live resizing, then stop after the size settles.
-        _resizePaintTimer = new System.Windows.Forms.Timer { Interval = 17 };
+        _resizePaintTimer = new System.Windows.Forms.Timer { Interval = 33 };
         _resizePaintTimer.Tick += (_, _) =>
         {
             if (ClientSize.Width <= 0 || ClientSize.Height <= 0) return;
@@ -24,18 +24,19 @@ internal sealed class Ps3BackdropPanel : Panel
             {
                 RebuildBackground();
                 _stableResizeTicks = 0;
-                Invalidate();
+                Invalidate(false); // only this panel, not children
             }
-            else if (++_stableResizeTicks >= 4)
+            else if (++_stableResizeTicks >= 3)
             {
                 _resizePaintTimer.Stop();
             }
         };
         SizeChanged += (_, _) =>
         {
+            // Do not Invalidate here — that redraws text/controls every pixel of drag.
+            // Timer rebuilds the cached backdrop at ~30Hz until size settles.
             _stableResizeTicks = 0;
             if (!_resizePaintTimer.Enabled) _resizePaintTimer.Start();
-            Invalidate();
         };
         Disposed += (_, _) => { _resizePaintTimer.Stop(); _resizePaintTimer.Dispose(); _backgroundCache?.Dispose(); };
     }
