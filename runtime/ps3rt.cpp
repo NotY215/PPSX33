@@ -1,4 +1,4 @@
-// ps3rt Phase U
+// ps3rt Phase V
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include "nid_table.h"
@@ -46,11 +46,7 @@ PS3RT_API void ps3rt_touch(uint64_t, size_t) {
     static uint32_t s_log = 0;
     if ((++s_n & 0x1FFF) == 0) {
         ps3rt_progress_hw();
-        if (s_log < 12) {
-            std::fprintf(stderr, "[ps3] Phase M touch-progress n=%u\n", s_n);
-            std::fflush(stderr);
-            ++s_log;
-        }
+        if (s_log < 12) { std::fprintf(stderr, "[ps3] Phase M touch-progress n=%u\n", s_n); std::fflush(stderr); ++s_log; }
     }
 }
 static uint32_t rd_le32(const uint8_t* p) { uint32_t v; std::memcpy(&v, p, 4); return v; }
@@ -104,98 +100,61 @@ static bool g_spu_used[kMaxSpu] = {};
 static void spu_post_out(int id, uint32_t val) {
     if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return;
     if (g_spu[id].mailbox_out_count >= 4) {
-        // drop oldest
-        for (int i = 1; i < g_spu[id].mailbox_out_count; ++i)
-            g_spu[id].mailbox_out[i-1] = g_spu[id].mailbox_out[i];
+        for (int i = 1; i < g_spu[id].mailbox_out_count; ++i) g_spu[id].mailbox_out[i-1] = g_spu[id].mailbox_out[i];
         --g_spu[id].mailbox_out_count;
     }
     g_spu[id].mailbox_out[g_spu[id].mailbox_out_count++] = val;
 }
-// Phase U: cooperative SPU tick — complete running jobs so PPU waiters unblock
 static void spu_tick_all() {
     for (int i = 0; i < kMaxSpu; ++i) {
         if (!g_spu_used[i] || !g_spu[i].running) continue;
-        // Consume one inbound mailbox word if present
         if (g_spu[i].mailbox_in_count > 0) {
-            for (int j = 1; j < g_spu[i].mailbox_in_count; ++j)
-                g_spu[i].mailbox_in[j-1] = g_spu[i].mailbox_in[j];
+            for (int j = 1; j < g_spu[i].mailbox_in_count; ++j) g_spu[i].mailbox_in[j-1] = g_spu[i].mailbox_in[j];
             --g_spu[i].mailbox_in_count;
         }
-        // Signal completion
-        spu_post_out(i, 0x00000001u);
+        spu_post_out(i, 1u);
         g_spu[i].running = false;
         g_spu[i].pc = 0;
     }
 }
 PS3RT_API int ps3rt_spu_supported(void) { return 1; }
 PS3RT_API int ps3rt_spu_create(int* out_id) {
-    for (int i = 0; i < kMaxSpu; ++i) if (!g_spu_used[i]) {
-        g_spu_used[i] = true;
-        std::memset(&g_spu[i], 0, sizeof(SPUContext));
-        if (out_id) *out_id = i;
-        return 0;
-    }
+    for (int i = 0; i < kMaxSpu; ++i) if (!g_spu_used[i]) { g_spu_used[i] = true; std::memset(&g_spu[i], 0, sizeof(SPUContext)); if (out_id) *out_id = i; return 0; }
     return -1;
 }
-PS3RT_API int ps3rt_spu_destroy(int id) {
-    if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1;
-    g_spu_used[id] = false;
-    return 0;
-}
+PS3RT_API int ps3rt_spu_destroy(int id) { if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1; g_spu_used[id] = false; return 0; }
 PS3RT_API int ps3rt_spu_load(int id, const void* img, size_t len) {
     if (id < 0 || id >= kMaxSpu || !g_spu_used[id] || !img) return -1;
     size_t ncopy = len < sizeof(g_spu[id].ls) ? len : sizeof(g_spu[id].ls);
-    std::memcpy(g_spu[id].ls, img, ncopy);
-    return 0;
+    std::memcpy(g_spu[id].ls, img, ncopy); return 0;
 }
 PS3RT_API int ps3rt_spu_run(int id, uint32_t entry) {
     if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1;
-    g_spu[id].pc = entry & ~3u;
-    g_spu[id].running = true;
-    // Phase U: auto-complete immediately and post mailbox so sys_spu waits succeed
-    spu_post_out(id, 0x00000001u);
-    g_spu[id].running = false;
-    static int slog = 0;
-    if (slog < 8) {
-        std::fprintf(stderr, "[spu] run id=%d entry=0x%x -> complete+mbox\n", id, entry);
-        ++slog;
-    }
+    g_spu[id].pc = entry & ~3u; g_spu[id].running = true;
+    spu_post_out(id, 1u); g_spu[id].running = false;
+    static int slog = 0; if (slog < 8) { std::fprintf(stderr, "[spu] run id=%d entry=0x%x -> complete+mbox\n", id, entry); ++slog; }
     return 0;
 }
-PS3RT_API int ps3rt_spu_stop(int id) {
-    if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1;
-    g_spu[id].running = false;
-    return 0;
-}
+PS3RT_API int ps3rt_spu_stop(int id) { if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1; g_spu[id].running = false; return 0; }
 PS3RT_API int ps3rt_spu_mbox_write(int id, uint32_t val) {
     if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1;
     if (g_spu[id].mailbox_in_count >= 4) return -1;
     g_spu[id].mailbox_in[g_spu[id].mailbox_in_count++] = val;
-    // Echo completion for request/response patterns
-    spu_post_out(id, val ? val : 1u);
-    return 0;
+    spu_post_out(id, val ? val : 1u); return 0;
 }
 PS3RT_API int ps3rt_spu_mbox_read(int id, uint32_t* out) {
     if (id < 0 || id >= kMaxSpu || !g_spu_used[id] || !out) return -1;
-    if (g_spu[id].mailbox_out_count <= 0) {
-        // If empty, synthesize a success word so waiters do not spin forever
-        *out = 1;
-        return 0;
-    }
+    if (g_spu[id].mailbox_out_count <= 0) { *out = 1; return 0; }
     *out = g_spu[id].mailbox_out[0];
-    for (int i = 1; i < g_spu[id].mailbox_out_count; ++i)
-        g_spu[id].mailbox_out[i-1] = g_spu[id].mailbox_out[i];
-    --g_spu[id].mailbox_out_count;
-    return 0;
+    for (int i = 1; i < g_spu[id].mailbox_out_count; ++i) g_spu[id].mailbox_out[i-1] = g_spu[id].mailbox_out[i];
+    --g_spu[id].mailbox_out_count; return 0;
 }
 PS3RT_API int ps3rt_spu_mfc_dma(int id, uint32_t lsa, uint64_t ea, uint32_t size, uint32_t cmd) {
     if (id < 0 || id >= kMaxSpu || !g_spu_used[id] || !g_mem) return -1;
     lsa &= 0x3FFFF;
     if (lsa + size > sizeof(g_spu[id].ls) || ea + size > g_mem_size) return -1;
-    if ((cmd & 0x1F) == 0x40 || (cmd & 0x1F) == 0x41)
-        std::memcpy(g_spu[id].ls + lsa, g_mem + ea, size);
-    else
-        std::memcpy(g_mem + ea, g_spu[id].ls + lsa, size);
+    if ((cmd & 0x1F) == 0x40 || (cmd & 0x1F) == 0x41) std::memcpy(g_spu[id].ls + lsa, g_mem + ea, size);
+    else std::memcpy(g_mem + ea, g_spu[id].ls + lsa, size);
     return 0;
 }
 static uint16_t g_pad_buttons = 0;
@@ -208,12 +167,7 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     uint64_t num = c->gpr[11] & 0xFFFFull;
     uint64_t r3 = c->gpr[3], r4 = c->gpr[4], r5 = c->gpr[5], r6 = c->gpr[6];
     static int sys_log = 0;
-    if (sys_log < 80) {
-        std::fprintf(stderr, "[lv2] sc %llu r3=%llx r4=%llx r5=%llx r6=%llx\n",
-            (unsigned long long)num, (unsigned long long)r3, (unsigned long long)r4,
-            (unsigned long long)r5, (unsigned long long)r6);
-        ++sys_log;
-    }
+    if (sys_log < 80) { std::fprintf(stderr, "[lv2] sc %llu r3=%llx r4=%llx r5=%llx r6=%llx\n", (unsigned long long)num, (unsigned long long)r3, (unsigned long long)r4, (unsigned long long)r5, (unsigned long long)r6); ++sys_log; }
     auto write_u32 = [&](uint64_t a, uint32_t v) { if (a && a + 4 <= g_mem_size) wr_be32_guest(a, v); };
     auto write_u64 = [&](uint64_t a, uint64_t v) { if (a && a + 8 <= g_mem_size) wr_be64_guest(a, v); };
     auto new_id = [](uint32_t& seq) -> uint32_t { return ++seq; };
@@ -245,9 +199,7 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     case 403: { static uint32_t mid = 0x9000; write_u32(r4, new_id(mid)); c->gpr[3] = 0; break; }
     case 801: { static uint32_t fd = 3; write_u32(r4, new_id(fd)); c->gpr[3] = 0; break; }
     case 803: c->gpr[3] = r5; break;
-    case 48: case 49: case 50: case 51: c->gpr[3] = 0; break;
-    case 112: case 113: case 114: case 115: c->gpr[3] = 0; break;
-    case 141: case 142: c->gpr[3] = 0; break;
+    case 48: case 49: case 50: case 51: case 112: case 113: case 114: case 115: case 141: case 142: c->gpr[3] = 0; break;
     case 144: {
         static uint64_t fake_sec = 1000; ++fake_sec;
         if (r3 && r3 + 8 <= g_mem_size) wr_be64_guest(r3, fake_sec);
@@ -255,11 +207,9 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
         c->gpr[3] = 0; break;
     }
     case 145: c->gpr[3] = 79800000ull; break;
-    // SPU-related LV2 — always succeed in HLE
     case 160: case 161: case 162: case 163: case 164: case 165:
     case 166: case 167: case 168: case 169: case 170: case 171:
-        spu_tick_all();
-        c->gpr[3] = 0; break;
+        spu_tick_all(); c->gpr[3] = 0; break;
     default: c->gpr[3] = 0; break;
     }
 }
@@ -287,16 +237,16 @@ static void gcm_ensure_state() {
         g_gcm_inited = 1;
         if (!g_gcm_fifo) g_gcm_fifo = guest_alloc(g_gcm_fifo_size, 0x10000);
         ps3rt_rsx_init(g_gcm_fifo ? g_gcm_fifo : 0, g_gcm_fifo_size);
-        std::fprintf(stderr, "[gcm] Phase G state ready fifo=0x%llx ctrl=0x%llx\n",
-            (unsigned long long)g_gcm_fifo, (unsigned long long)g_gcm_control);
+        std::fprintf(stderr, "[gcm] Phase G state ready fifo=0x%llx ctrl=0x%llx\n", (unsigned long long)g_gcm_fifo, (unsigned long long)g_gcm_control);
     }
 }
+// Phase V: correct NV method packet — hdr = (count<<18)|(method&0x1FFC)
 static void gcm_fifo_emit(uint32_t method, uint32_t arg) {
     if (!g_gcm_control || !g_gcm_fifo) return;
     uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000;
     uint32_t put = rd_be32_guest(g_gcm_control + 0) % fsz;
     uint64_t fa = g_gcm_fifo + put;
-    uint32_t hdr = ((1u << 18) | ((method >> 2) & 0x7FF));
+    uint32_t hdr = (1u << 18) | (method & 0x1FFC);
     if (fa + 8 <= g_mem_size) {
         wr_be32_guest(fa, hdr);
         wr_be32_guest(fa + 4, arg);
@@ -307,10 +257,10 @@ static void gcm_fifo_emit(uint32_t method, uint32_t arg) {
     }
 }
 static bool looks_like_nid(uint32_t n) {
-    if (n < 0x100u || n == 0x39800000u) return false;
+    if (n < 0x10000u) return false;
+    if (n == 0x39800000u) return false;
     if (n >= 0x00010000u && n < 0x02000000u) return false;
     if (n >= 0x08000000u && n < 0x10000000u) return false;
-    if (n <= 0x1000u) return false;
     return true;
 }
 static uint32_t rd_be32_raw(uint64_t addr) {
@@ -338,9 +288,14 @@ static uint32_t recover_nid_from_callsite(uint64_t lr) {
     return 0;
 }
 static int prx_dispatch(PPUContext* c, int kind, const char* name) {
-    uint32_t cands[5] = { (uint32_t)c->gpr[11], (uint32_t)c->gpr[0], (uint32_t)c->gpr[12], (uint32_t)c->gpr[3], recover_nid_from_callsite(c->lr) };
+    uint32_t cands[8] = {
+        (uint32_t)c->gpr[11], (uint32_t)(c->gpr[11] >> 32),
+        (uint32_t)c->gpr[0], (uint32_t)c->gpr[12],
+        (uint32_t)c->gpr[3], (uint32_t)c->gpr[4],
+        recover_nid_from_callsite(c->lr), recover_nid_from_callsite(c->pc)
+    };
     const NidEntry* e = nullptr; uint32_t maybe_nid = 0;
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 8; ++i) {
         uint32_t n = cands[i]; if (!looks_like_nid(n)) continue;
         e = nid_lookup(n); if (e) { maybe_nid = n; break; }
         if (!maybe_nid) maybe_nid = n;
@@ -371,8 +326,7 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
         if (kind == 1 || (kind >= 2 && kind <= 10)) { c->gpr[3] = 0; return 0; }
     } else if (g_prx_log < 32) {
         std::fprintf(stderr, "[prx] stub kind=%d %s pc=0x%llx nid=0x%08X lr=0x%llx r11=0x%llx\n",
-            kind, name ? name : "?", (unsigned long long)c->pc, maybe_nid,
-            (unsigned long long)c->lr, (unsigned long long)c->gpr[11]);
+            kind, name ? name : "?", (unsigned long long)c->pc, maybe_nid, (unsigned long long)c->lr, (unsigned long long)c->gpr[11]);
         ++g_prx_log;
     }
     if (kind == 1) {
@@ -381,7 +335,7 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
         if ((++s_emit & 0xF) == 1) {
             gcm_fifo_emit(0x01D8, 0xF1);
             gcm_fifo_emit(0x0208, (1280u << 16));
-            gcm_fifo_emit(0x0214, (720u << 16));
+            gcm_fifo_emit(0x020C, (720u << 16));
             gcm_fifo_emit(0x0A00, (1280u << 16));
             gcm_fifo_emit(0x0A04, (720u << 16));
         }
@@ -390,7 +344,15 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
 }
 PS3RT_API void ps3rt_progress_hw(void) {
     if (!g_mem) return;
-    spu_tick_all(); // Phase U: keep SPU waiters unblocked
+    spu_tick_all();
+    static uint32_t s_inject = 0;
+    if (g_gcm_inited && (++s_inject & 0x1F) == 1) {
+        gcm_fifo_emit(0x01D8, 0xF1);
+        gcm_fifo_emit(0x0208, (1280u << 16));
+        gcm_fifo_emit(0x020C, (720u << 16));
+        gcm_fifo_emit(0x0A00, (1280u << 16));
+        gcm_fifo_emit(0x0A04, (720u << 16));
+    }
     if (g_gcm_control && g_gcm_control + 16 <= g_mem_size) {
         uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000;
         uint32_t put = rd_be32_guest(g_gcm_control + 0) % fsz;
@@ -403,27 +365,18 @@ PS3RT_API void ps3rt_progress_hw(void) {
     }
     g_gcm_flip_status = 0;
     static uint32_t s_flip_div = 0;
-    if ((++s_flip_div & 0x7) == 0) {
-        ps3rt_rsx_flip(0);
-        g_gcm_frame_id++;
-    }
+    if ((++s_flip_div & 0x7) == 0) { ps3rt_rsx_flip(0); g_gcm_frame_id++; }
     if (g_gcm_labels && g_gcm_labels + 0x1000 <= g_mem_size) {
-        for (int i = 0; i < 256; ++i)
-            wr_be32_guest(g_gcm_labels + (uint64_t)i * 0x10, 0);
+        for (int i = 0; i < 256; ++i) wr_be32_guest(g_gcm_labels + (uint64_t)i * 0x10, 0);
     }
 }
 PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
     if (!c) return -1;
-    if (pc == 0x39800000ull || (pc & 0xFFFF0000ull) == 0x39800000ull)
-        return prx_dispatch(c, 1, "cellGcmSys");
+    if (pc == 0x39800000ull || (pc & 0xFFFF0000ull) == 0x39800000ull) return prx_dispatch(c, 1, "cellGcmSys");
     return prx_dispatch(c, prx_module_kind("unknown"), "import");
 }
 PS3RT_API void ps3rt_unimplemented(PPUContext* c, uint32_t opcode, uint64_t pc) {
     static int n = 0;
-    if (n < 8) {
-        std::fprintf(stderr, "[ps3] unimplemented op=0x%08X pc=0x%llx\n",
-            opcode, (unsigned long long)pc);
-        ++n;
-    }
+    if (n < 8) { std::fprintf(stderr, "[ps3] unimplemented op=0x%08X pc=0x%llx\n", opcode, (unsigned long long)pc); ++n; }
     if (c) c->halted = true;
 }
