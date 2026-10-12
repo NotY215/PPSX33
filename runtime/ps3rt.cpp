@@ -1,4 +1,4 @@
-// ps3rt Phase T
+// ps3rt Phase U
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include "nid_table.h"
@@ -101,37 +101,101 @@ PS3RT_API void ps3rt_shutdown(void) { std::lock_guard<std::mutex> lk(g_lock); st
 static constexpr int kMaxSpu = 6;
 static SPUContext g_spu[kMaxSpu];
 static bool g_spu_used[kMaxSpu] = {};
+static void spu_post_out(int id, uint32_t val) {
+    if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return;
+    if (g_spu[id].mailbox_out_count >= 4) {
+        // drop oldest
+        for (int i = 1; i < g_spu[id].mailbox_out_count; ++i)
+            g_spu[id].mailbox_out[i-1] = g_spu[id].mailbox_out[i];
+        --g_spu[id].mailbox_out_count;
+    }
+    g_spu[id].mailbox_out[g_spu[id].mailbox_out_count++] = val;
+}
+// Phase U: cooperative SPU tick — complete running jobs so PPU waiters unblock
+static void spu_tick_all() {
+    for (int i = 0; i < kMaxSpu; ++i) {
+        if (!g_spu_used[i] || !g_spu[i].running) continue;
+        // Consume one inbound mailbox word if present
+        if (g_spu[i].mailbox_in_count > 0) {
+            for (int j = 1; j < g_spu[i].mailbox_in_count; ++j)
+                g_spu[i].mailbox_in[j-1] = g_spu[i].mailbox_in[j];
+            --g_spu[i].mailbox_in_count;
+        }
+        // Signal completion
+        spu_post_out(i, 0x00000001u);
+        g_spu[i].running = false;
+        g_spu[i].pc = 0;
+    }
+}
 PS3RT_API int ps3rt_spu_supported(void) { return 1; }
 PS3RT_API int ps3rt_spu_create(int* out_id) {
-    for (int i = 0; i < kMaxSpu; ++i) if (!g_spu_used[i]) { g_spu_used[i] = true; std::memset(&g_spu[i], 0, sizeof(SPUContext)); if (out_id) *out_id = i; return 0; }
+    for (int i = 0; i < kMaxSpu; ++i) if (!g_spu_used[i]) {
+        g_spu_used[i] = true;
+        std::memset(&g_spu[i], 0, sizeof(SPUContext));
+        if (out_id) *out_id = i;
+        return 0;
+    }
     return -1;
 }
-PS3RT_API int ps3rt_spu_destroy(int id) { if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1; g_spu_used[id] = false; return 0; }
+PS3RT_API int ps3rt_spu_destroy(int id) {
+    if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1;
+    g_spu_used[id] = false;
+    return 0;
+}
 PS3RT_API int ps3rt_spu_load(int id, const void* img, size_t len) {
     if (id < 0 || id >= kMaxSpu || !g_spu_used[id] || !img) return -1;
     size_t ncopy = len < sizeof(g_spu[id].ls) ? len : sizeof(g_spu[id].ls);
-    std::memcpy(g_spu[id].ls, img, ncopy); return 0;
+    std::memcpy(g_spu[id].ls, img, ncopy);
+    return 0;
 }
-PS3RT_API int ps3rt_spu_run(int id, uint32_t entry) { if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1; g_spu[id].pc = entry & ~3u; g_spu[id].running = true; return 0; }
-PS3RT_API int ps3rt_spu_stop(int id) { if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1; g_spu[id].running = false; return 0; }
+PS3RT_API int ps3rt_spu_run(int id, uint32_t entry) {
+    if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1;
+    g_spu[id].pc = entry & ~3u;
+    g_spu[id].running = true;
+    // Phase U: auto-complete immediately and post mailbox so sys_spu waits succeed
+    spu_post_out(id, 0x00000001u);
+    g_spu[id].running = false;
+    static int slog = 0;
+    if (slog < 8) {
+        std::fprintf(stderr, "[spu] run id=%d entry=0x%x -> complete+mbox\n", id, entry);
+        ++slog;
+    }
+    return 0;
+}
+PS3RT_API int ps3rt_spu_stop(int id) {
+    if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1;
+    g_spu[id].running = false;
+    return 0;
+}
 PS3RT_API int ps3rt_spu_mbox_write(int id, uint32_t val) {
     if (id < 0 || id >= kMaxSpu || !g_spu_used[id]) return -1;
     if (g_spu[id].mailbox_in_count >= 4) return -1;
-    g_spu[id].mailbox_in[g_spu[id].mailbox_in_count++] = val; return 0;
+    g_spu[id].mailbox_in[g_spu[id].mailbox_in_count++] = val;
+    // Echo completion for request/response patterns
+    spu_post_out(id, val ? val : 1u);
+    return 0;
 }
 PS3RT_API int ps3rt_spu_mbox_read(int id, uint32_t* out) {
     if (id < 0 || id >= kMaxSpu || !g_spu_used[id] || !out) return -1;
-    if (g_spu[id].mailbox_out_count <= 0) return -1;
+    if (g_spu[id].mailbox_out_count <= 0) {
+        // If empty, synthesize a success word so waiters do not spin forever
+        *out = 1;
+        return 0;
+    }
     *out = g_spu[id].mailbox_out[0];
-    for (int i = 1; i < g_spu[id].mailbox_out_count; ++i) g_spu[id].mailbox_out[i-1] = g_spu[id].mailbox_out[i];
-    --g_spu[id].mailbox_out_count; return 0;
+    for (int i = 1; i < g_spu[id].mailbox_out_count; ++i)
+        g_spu[id].mailbox_out[i-1] = g_spu[id].mailbox_out[i];
+    --g_spu[id].mailbox_out_count;
+    return 0;
 }
 PS3RT_API int ps3rt_spu_mfc_dma(int id, uint32_t lsa, uint64_t ea, uint32_t size, uint32_t cmd) {
     if (id < 0 || id >= kMaxSpu || !g_spu_used[id] || !g_mem) return -1;
     lsa &= 0x3FFFF;
     if (lsa + size > sizeof(g_spu[id].ls) || ea + size > g_mem_size) return -1;
-    if ((cmd & 0x1F) == 0x40 || (cmd & 0x1F) == 0x41) std::memcpy(g_spu[id].ls + lsa, g_mem + ea, size);
-    else std::memcpy(g_mem + ea, g_spu[id].ls + lsa, size);
+    if ((cmd & 0x1F) == 0x40 || (cmd & 0x1F) == 0x41)
+        std::memcpy(g_spu[id].ls + lsa, g_mem + ea, size);
+    else
+        std::memcpy(g_mem + ea, g_spu[id].ls + lsa, size);
     return 0;
 }
 static uint16_t g_pad_buttons = 0;
@@ -141,10 +205,15 @@ PS3RT_API void ps3rt_pad_set(uint16_t buttons, int16_t lx, int16_t ly, int16_t r
 }
 PS3RT_API void ps3rt_syscall(PPUContext* c) {
     if (!c) return;
-    uint64_t num = c->gpr[11] & 0xFFFFull; // Phase T: mask garbage high bits (sc 25602)
+    uint64_t num = c->gpr[11] & 0xFFFFull;
     uint64_t r3 = c->gpr[3], r4 = c->gpr[4], r5 = c->gpr[5], r6 = c->gpr[6];
     static int sys_log = 0;
-    if (sys_log < 80) { std::fprintf(stderr, "[lv2] sc %llu r3=%llx r4=%llx r5=%llx r6=%llx\n", (unsigned long long)num, (unsigned long long)r3, (unsigned long long)r4, (unsigned long long)r5, (unsigned long long)r6); ++sys_log; }
+    if (sys_log < 80) {
+        std::fprintf(stderr, "[lv2] sc %llu r3=%llx r4=%llx r5=%llx r6=%llx\n",
+            (unsigned long long)num, (unsigned long long)r3, (unsigned long long)r4,
+            (unsigned long long)r5, (unsigned long long)r6);
+        ++sys_log;
+    }
     auto write_u32 = [&](uint64_t a, uint32_t v) { if (a && a + 4 <= g_mem_size) wr_be32_guest(a, v); };
     auto write_u64 = [&](uint64_t a, uint64_t v) { if (a && a + 8 <= g_mem_size) wr_be64_guest(a, v); };
     auto new_id = [](uint32_t& seq) -> uint32_t { return ++seq; };
@@ -166,10 +235,10 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     case 352: {
         uint64_t size = r3, flags = r4, align = r5 ? r5 : 0x10000, out = r6;
         if (!out && flags >= 0x10000 && flags + 8 <= g_mem_size) out = flags;
-        if (size == 0 || size >= 0x08000000ull) { size = 0x100000; }
+        if (size == 0 || size >= 0x08000000ull) size = 0x100000;
         if (align < 0x1000) align = 0x10000;
         uint64_t va = guest_alloc(size, align);
-        if (va && out && out + 8 <= g_mem_size) { wr_be64_guest(out, va); }
+        if (va && out && out + 8 <= g_mem_size) wr_be64_guest(out, va);
         else if (va && out && out + 4 <= g_mem_size) wr_be32_guest(out, (uint32_t)va);
         c->gpr[3] = va ? 0 : 0x80010004ull; break;
     }
@@ -186,7 +255,11 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
         c->gpr[3] = 0; break;
     }
     case 145: c->gpr[3] = 79800000ull; break;
-    case 160: case 161: case 162: case 169: c->gpr[3] = 0; break;
+    // SPU-related LV2 — always succeed in HLE
+    case 160: case 161: case 162: case 163: case 164: case 165:
+    case 166: case 167: case 168: case 169: case 170: case 171:
+        spu_tick_all();
+        c->gpr[3] = 0; break;
     default: c->gpr[3] = 0; break;
     }
 }
@@ -201,8 +274,10 @@ static uint32_t g_gcm_frame_id = 0;
 static void gcm_ensure_state() {
     if (!g_gcm_control) {
         g_gcm_control = guest_alloc(0x1000, 0x1000);
-        if (g_gcm_control) { wr_be32_guest(g_gcm_control+0,0); wr_be32_guest(g_gcm_control+4,0); wr_be32_guest(g_gcm_control+8,0);
-            std::fprintf(stderr, "[gcm] control @ 0x%llx\n", (unsigned long long)g_gcm_control); }
+        if (g_gcm_control) {
+            wr_be32_guest(g_gcm_control+0,0); wr_be32_guest(g_gcm_control+4,0); wr_be32_guest(g_gcm_control+8,0);
+            std::fprintf(stderr, "[gcm] control @ 0x%llx\n", (unsigned long long)g_gcm_control);
+        }
     }
     if (!g_gcm_labels) {
         g_gcm_labels = guest_alloc(0x10000, 0x1000);
@@ -212,7 +287,8 @@ static void gcm_ensure_state() {
         g_gcm_inited = 1;
         if (!g_gcm_fifo) g_gcm_fifo = guest_alloc(g_gcm_fifo_size, 0x10000);
         ps3rt_rsx_init(g_gcm_fifo ? g_gcm_fifo : 0, g_gcm_fifo_size);
-        std::fprintf(stderr, "[gcm] Phase G state ready fifo=0x%llx ctrl=0x%llx\n", (unsigned long long)g_gcm_fifo, (unsigned long long)g_gcm_control);
+        std::fprintf(stderr, "[gcm] Phase G state ready fifo=0x%llx ctrl=0x%llx\n",
+            (unsigned long long)g_gcm_fifo, (unsigned long long)g_gcm_control);
     }
 }
 static void gcm_fifo_emit(uint32_t method, uint32_t arg) {
@@ -239,7 +315,8 @@ static bool looks_like_nid(uint32_t n) {
 }
 static uint32_t rd_be32_raw(uint64_t addr) {
     if (!g_mem || addr + 4 > g_mem_size) return 0;
-    return ((uint32_t)g_mem[addr] << 24) | ((uint32_t)g_mem[addr+1] << 16) | ((uint32_t)g_mem[addr+2] << 8) | (uint32_t)g_mem[addr+3];
+    return ((uint32_t)g_mem[addr] << 24) | ((uint32_t)g_mem[addr+1] << 16) |
+           ((uint32_t)g_mem[addr+2] << 8) | (uint32_t)g_mem[addr+3];
 }
 static uint32_t recover_nid_from_callsite(uint64_t lr) {
     if (!lr || lr < 16) return 0;
@@ -294,7 +371,8 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
         if (kind == 1 || (kind >= 2 && kind <= 10)) { c->gpr[3] = 0; return 0; }
     } else if (g_prx_log < 32) {
         std::fprintf(stderr, "[prx] stub kind=%d %s pc=0x%llx nid=0x%08X lr=0x%llx r11=0x%llx\n",
-            kind, name ? name : "?", (unsigned long long)c->pc, maybe_nid, (unsigned long long)c->lr, (unsigned long long)c->gpr[11]);
+            kind, name ? name : "?", (unsigned long long)c->pc, maybe_nid,
+            (unsigned long long)c->lr, (unsigned long long)c->gpr[11]);
         ++g_prx_log;
     }
     if (kind == 1) {
@@ -312,6 +390,7 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
 }
 PS3RT_API void ps3rt_progress_hw(void) {
     if (!g_mem) return;
+    spu_tick_all(); // Phase U: keep SPU waiters unblocked
     if (g_gcm_control && g_gcm_control + 16 <= g_mem_size) {
         uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000;
         uint32_t put = rd_be32_guest(g_gcm_control + 0) % fsz;
@@ -335,11 +414,16 @@ PS3RT_API void ps3rt_progress_hw(void) {
 }
 PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
     if (!c) return -1;
-    if (pc == 0x39800000ull || (pc & 0xFFFF0000ull) == 0x39800000ull) return prx_dispatch(c, 1, "cellGcmSys");
+    if (pc == 0x39800000ull || (pc & 0xFFFF0000ull) == 0x39800000ull)
+        return prx_dispatch(c, 1, "cellGcmSys");
     return prx_dispatch(c, prx_module_kind("unknown"), "import");
 }
 PS3RT_API void ps3rt_unimplemented(PPUContext* c, uint32_t opcode, uint64_t pc) {
     static int n = 0;
-    if (n < 8) { std::fprintf(stderr, "[ps3] unimplemented op=0x%08X pc=0x%llx\n", opcode, (unsigned long long)pc); ++n; }
+    if (n < 8) {
+        std::fprintf(stderr, "[ps3] unimplemented op=0x%08X pc=0x%llx\n",
+            opcode, (unsigned long long)pc);
+        ++n;
+    }
     if (c) c->halted = true;
 }
