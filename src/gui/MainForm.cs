@@ -365,32 +365,58 @@ public sealed partial class MainForm : Form
             } catch { /* A transient filesystem/UI race must not interrupt the build. */ }
         }, null, 0, 750);
 
+        bool buildSucceeded = false;
         await RunStep("Building…", ct => {
             bool ok = Native.Build(project, RuntimeDir, CompilersDir, out var l);
+            buildSucceeded = ok;
             BeginInvoke(() => Append(l));
             return ok;
         }, afterBuild: true);
+
+        // Only remove temporary project inputs after a successful build.
+        // Keep output binaries, reports, and staged output/src intact.
+        if (buildSucceeded) CleanupBuildIntermediates(project);
         SetStatus("Build finished");
     }
 
-    static int CountBuildSources(string projectDir) {
-        int count = 0;
-        try {
-            foreach (string file in Directory.EnumerateFiles(projectDir, "*", SearchOption.AllDirectories)) {
-                string rel = Path.GetRelativePath(projectDir, file);
-                if (rel.StartsWith("build" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
-                    rel.StartsWith("output" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
-                    rel.StartsWith(".git" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                    continue;
-                string ext = Path.GetExtension(file);
-                if (ext.Equals(".cpp", StringComparison.OrdinalIgnoreCase) ||
-                    ext.Equals(".c", StringComparison.OrdinalIgnoreCase) ||
-                    ext.Equals(".cc", StringComparison.OrdinalIgnoreCase) ||
-                    ext.Equals(".cxx", StringComparison.OrdinalIgnoreCase))
-                    count++;
+    static void CleanupBuildIntermediates(string projectDir) {
+        string[] paths = {
+            Path.Combine(projectDir, "input"),
+            Path.Combine(projectDir, "codebase"),
+            Path.Combine(projectDir, "output", "obj")
+        };
+        foreach (string path in paths) {
+            try {
+                if (Directory.Exists(path)) {
+                    Directory.Delete(path, recursive: true);
+                    // The console log is UI-thread-owned, so marshal cleanup notices.
+                    if (!IsDisposed) { }
+                }
+            } catch (Exception ex) {
+                // Cleanup is best-effort: a locked file must not turn a successful build into a failure.
+                System.Diagnostics.Debug.WriteLine($"PPSX33 cleanup skipped '{path}': {ex.Message}");
             }
-        } catch { }
-        return count;
+        }
+    }
+
+    static int CountBuildSources(string projectDir) {
+        // Count only generated game translation units, not runtime stubs or helper/header files.
+        // The codebase folder is the canonical source of game .cpp files before the build stages them into output/src.
+        string codebase = Path.Combine(projectDir, "codebase");
+        if (Directory.Exists(codebase)) {
+            try {
+                return Directory.EnumerateFiles(codebase, "*.cpp", SearchOption.AllDirectories).Count();
+            } catch { }
+        }
+
+        // Fallback for projects where staging has already happened: exclude the runtime sources.
+        string stagedSrc = Path.Combine(projectDir, "output", "src");
+        if (!Directory.Exists(stagedSrc)) return 0;
+        try {
+            string[] runtimeFiles = { "ps3rt.cpp", "spu_stub.cpp", "rsx_stub.cpp", "ppu_chunks.cpp" };
+            return Directory.EnumerateFiles(stagedSrc, "*.cpp", SearchOption.AllDirectories)
+                .Count(file => !runtimeFiles.Contains(Path.GetFileName(file), StringComparer.OrdinalIgnoreCase));
+        } catch { return 0; }
     }
 
     static string FormatDuration(TimeSpan duration) {
