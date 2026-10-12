@@ -1,6 +1,7 @@
 // Phase XV: RSX window + debounced resize; close never kills process
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
+#include "ps3rt_stage.h"
 #include <cstdio>
 #include <cstring>
 #include <mutex>
@@ -233,6 +234,7 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
         back->Release();
     }
     ps3rt_log("[rsx] D3D11 host present ready %ux%u\n", w, h);
+    PS3RT_STAGE("RSX ready end");
 }
 
 static void rsx_host_present_clear() {

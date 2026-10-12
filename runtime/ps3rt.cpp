@@ -2,6 +2,7 @@
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include "nid_table.h"
+#include "ps3rt_stage.h"
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -20,6 +21,7 @@ static FILE* g_logf = nullptr;
 static std::atomic<int> g_exit_requested{0};
 PS3RT_API void ps3rt_request_exit(void) {
     g_exit_requested.store(1);
+    PS3RT_STAGE("EXIT requested");
     ps3rt_log("[ps3rt] exit requested\n");
 }
 PS3RT_API int ps3rt_should_exit(void) { return g_exit_requested.load() != 0; }
@@ -138,6 +140,7 @@ static int load_guest_image(const char* path) {
             ++mapped;
         }
         ps3rt_log("[ps3rt] PS3IMG1 loaded from %s (%d segments)\n", path, mapped);
+        PS3RT_STAGE("MEM map end");
         return mapped > 0 ? 0 : -1;
     }
     if ((size_t)fsz <= g_mem_size) { std::memcpy(g_mem, file.data(), (size_t)fsz); return 0; }
@@ -148,6 +151,7 @@ PS3RT_API int ps3rt_init(const char* image_path) {
     std::lock_guard<std::mutex> lk(g_lock);
     ps3rt_log_open();
     g_exit_requested.store(0);
+    PS3RT_STAGE("BOOT start");
     if (g_mem) return 0;
     g_mem_size = 512ull * 1024 * 1024;
     g_mem = (uint8_t*)std::malloc(g_mem_size);
@@ -160,6 +164,7 @@ PS3RT_API int ps3rt_init(const char* image_path) {
         if (c && c[0] && load_guest_image(c) == 0) { ok = 0; break; }
     }
     if (ok != 0) ps3rt_log("[ps3rt] warning: no guest_image.bin mapped\n");
+    PS3RT_STAGE("BOOT end");
     return 0;
 }
 PS3RT_API uint8_t* ps3rt_memory(void) { return g_mem; }
@@ -204,7 +209,10 @@ PS3RT_API int ps3rt_spu_mbox_read(int id, uint32_t* out) {
     --g_spus[id].mailbox_out_count; return 0;
 }
 PS3RT_API int ps3rt_spu_mfc_dma(int, uint32_t, uint64_t, uint32_t, uint32_t) { return 0; }
-static void spu_tick_all() {}
+static void spu_tick_all() {
+    static int s_spu_once = 0;
+    if (!s_spu_once) { PS3RT_STAGE("SPU progress end"); s_spu_once = 1; }
+}
 
 static uint16_t g_pad_buttons = 0;
 static int8_t g_pad_lx = 0, g_pad_ly = 0, g_pad_rx = 0, g_pad_ry = 0;
@@ -281,6 +289,7 @@ static void gcm_ensure_state() {
         if (!g_gcm_fifo) g_gcm_fifo = guest_alloc(g_gcm_fifo_size, 0x10000);
         ps3rt_rsx_init(g_gcm_fifo ? g_gcm_fifo : 0, g_gcm_fifo_size);
         ps3rt_log("[gcm] Phase G state ready fifo=0x%llx ctrl=0x%llx\n", (unsigned long long)g_gcm_fifo, (unsigned long long)g_gcm_control);
+        PS3RT_STAGE("GCM ready end");
     }
 }
 static void gcm_fifo_emit(uint32_t method, uint32_t arg) {
@@ -392,6 +401,8 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
 }
 PS3RT_API void ps3rt_progress_hw(void) {
     if (!g_mem) return;
+    static int s_stage_ppu = 0;
+    if (s_stage_ppu == 0) { PS3RT_STAGE("PPU progress start"); s_stage_ppu = 1; }
     spu_tick_all();
     if (!g_gcm_inited) gcm_ensure_state();
     static uint32_t s_last_put = 0;
