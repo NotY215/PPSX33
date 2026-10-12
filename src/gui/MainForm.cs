@@ -389,8 +389,6 @@ public sealed partial class MainForm : Form
             try {
                 if (Directory.Exists(path)) {
                     Directory.Delete(path, recursive: true);
-                    // The console log is UI-thread-owned, so marshal cleanup notices.
-                    if (!IsDisposed) { }
                 }
             } catch (Exception ex) {
                 // Cleanup is best-effort: a locked file must not turn a successful build into a failure.
