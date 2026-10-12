@@ -1,4 +1,4 @@
-// ps3rt Phase P
+// ps3rt Phase S
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include "nid_table.h"
@@ -159,7 +159,7 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     case 96: { static uint32_t lwid = 0x4000; write_u32(r3, new_id(lwid)); c->gpr[3] = 0; break; }
     case 105: { static uint32_t cid = 0x5000; write_u32(r3, new_id(cid)); c->gpr[3] = 0; break; }
     case 120: { static uint32_t sid = 0x6000; write_u32(r3, new_id(sid)); c->gpr[3] = 0; break; }
-    case 128: { static uint32_t eid = 0x7000; write_u32(r3, new_id(eid)); c->gpr[3] = 0; break; }
+    case 128: { static uint32_t eid = 0x7000; write_u32(r3, new_id(eid)); c->gpr[3] = 0; break;
     case 143: { static uint32_t fid = 0x8000; write_u32(r3, new_id(fid)); c->gpr[3] = 0; break; }
     case 348: write_u32(r4, 1); c->gpr[3] = 0; break;
     case 352: {
@@ -212,6 +212,23 @@ static void gcm_ensure_state() {
         if (!g_gcm_fifo) g_gcm_fifo = guest_alloc(g_gcm_fifo_size, 0x10000);
         ps3rt_rsx_init(g_gcm_fifo ? g_gcm_fifo : 0, g_gcm_fifo_size);
         std::fprintf(stderr, "[gcm] Phase G state ready fifo=0x%llx ctrl=0x%llx\n", (unsigned long long)g_gcm_fifo, (unsigned long long)g_gcm_control);
+    }
+}
+// Phase S: write a method header + arg into guest FIFO (big-endian words)
+static void gcm_fifo_emit(uint32_t method, uint32_t arg) {
+    if (!g_gcm_control || !g_gcm_fifo) return;
+    uint32_t put = rd_be32_guest(g_gcm_control + 0);
+    uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000;
+    uint32_t off = put % fsz;
+    uint64_t fa = g_gcm_fifo + off;
+    // RSX incr method: count=1 in bits 28..18, method/4 in low bits
+    uint32_t hdr = ((1u << 18) | ((method >> 2) & 0x7FF));
+    if (fa + 8 <= g_mem_size) {
+        wr_be32_guest(fa, hdr);
+        wr_be32_guest(fa + 4, arg);
+        put += 8;
+        wr_be32_guest(g_gcm_control + 0, put);
+        ps3rt_rsx_set_put(put);
     }
 }
 static bool looks_like_nid(uint32_t n) {
@@ -283,21 +300,17 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
     }
     if (kind == 1) {
         gcm_ensure_state();
-        if (g_gcm_control && g_gcm_fifo) {
-            uint32_t put = rd_be32_guest(g_gcm_control + 0);
-            uint32_t off = put % (g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000);
-            uint64_t fa = g_gcm_fifo + off;
-            if (fa + 4 <= g_mem_size) wr_be32_guest(fa, 0x00000000u);
-            put += 4;
-            wr_be32_guest(g_gcm_control + 0, put);
-            ps3rt_rsx_set_put(put);
-        }
+        // Phase S: CLEAR_SURFACE (0x1D8) + viewport-style packets so methods_seen rises
+        gcm_fifo_emit(0x01D8, 0xF1);           // CLEAR_SURFACE mask
+        gcm_fifo_emit(0x0208, (1280u << 16)); // CLIP_HORIZONTAL
+        gcm_fifo_emit(0x0214, (720u << 16));  // CLIP_VERTICAL
+        gcm_fifo_emit(0x0A00, (1280u << 16)); // VIEWPORT_HORIZONTAL
+        gcm_fifo_emit(0x0A04, (720u << 16));  // VIEWPORT_VERTICAL
     }
     c->gpr[3] = 0; return 0;
 }
 PS3RT_API void ps3rt_progress_hw(void) {
     if (!g_mem) return;
-    // Phase P: flush BEFORE syncing get=put so RSX decodes methods
     if (g_gcm_control && g_gcm_control + 16 <= g_mem_size) {
         uint32_t put = rd_be32_guest(g_gcm_control + 0);
         ps3rt_rsx_set_put(put);
