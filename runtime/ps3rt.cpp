@@ -10,12 +10,19 @@
 #include <vector>
 #include <cstdarg>
 #include <ctime>
+#include <atomic>
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
 
 static FILE* g_logf = nullptr;
+static std::atomic<int> g_exit_requested{0};
+PS3RT_API void ps3rt_request_exit(void) {
+    g_exit_requested.store(1);
+    ps3rt_log("[ps3rt] exit requested\n");
+}
+PS3RT_API int ps3rt_should_exit(void) { return g_exit_requested.load() != 0; }
 static void ps3rt_log_close(void) {
     if (g_logf) { std::fprintf(g_logf, "\n--- log end ---\n"); std::fflush(g_logf); std::fclose(g_logf); g_logf = nullptr; }
 }
@@ -140,6 +147,7 @@ static int load_guest_image(const char* path) {
 PS3RT_API int ps3rt_init(const char* image_path) {
     std::lock_guard<std::mutex> lk(g_lock);
     ps3rt_log_open();
+    g_exit_requested.store(0);
     if (g_mem) return 0;
     g_mem_size = 512ull * 1024 * 1024;
     g_mem = (uint8_t*)std::malloc(g_mem_size);

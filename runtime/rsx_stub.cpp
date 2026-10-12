@@ -160,14 +160,18 @@ static IDXGISwapChain* g_swap = nullptr;
 static ID3D11RenderTargetView* g_rtv = nullptr;
 
 static LRESULT CALLBACK RsxWndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
-    if (m == WM_CLOSE) {
-        ShowWindow(h, SW_HIDE);
+    if (m == WM_CLOSE || (m == WM_SYSCOMMAND && (w & 0xFFF0) == SC_CLOSE)) {
         g_user_closed = true;
-        ps3rt_log("[rsx] window closed by user — continuing headless\n");
+        ps3rt_log("[rsx] window closed by user — exiting\n");
+        ps3rt_request_exit();
+        DestroyWindow(h);
         return 0;
     }
     if (m == WM_DESTROY) {
         if (h == g_hwnd) g_hwnd = nullptr;
+        g_user_closed = true;
+        ps3rt_request_exit();
+        PostQuitMessage(0);
         return 0;
     }
     if (m == WM_SYSCOMMAND && (w & 0xFFF0) == SC_CLOSE) {
