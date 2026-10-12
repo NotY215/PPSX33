@@ -1,4 +1,4 @@
-// Phase V: correct NV method packets; known method recognition; guest FIFO decode
+// Phase W: closing RSX window never stops the process
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 
@@ -93,87 +93,41 @@ void rsx_apply_method(uint32_t method, uint32_t arg) {
     method &= 0x1FFC;
     bool known = true;
     switch (method) {
-    case NV4097_NO_OPERATION:
-    case NV4097_NOTIFY:
-    case NV4097_WAIT_FOR_IDLE:
-    case NV4097_PM_TRIGGER:
-    case NV406E_SET_REFERENCE:
-        break;
-    case NV4097_SET_CONTEXT_DMA_COLOR_A:
-    case NV4097_SET_CONTEXT_DMA_ZETA:
-        break;
-    case NV4097_SET_SURFACE_COLOR_AOFFSET:
-        g_rsx.color_offset[0] = arg;
-        break;
-    case NV4097_SET_SURFACE_ZETA_OFFSET:
-        g_rsx.depth_offset = arg;
-        break;
-    case NV4097_SET_SURFACE_COLOR_BOFFSET:
-        g_rsx.color_offset[1] = arg;
-        break;
-    case NV4097_SET_SURFACE_PITCH_A:
-        g_rsx.pitch = arg & 0xFFFF;
-        break;
+    case NV4097_NO_OPERATION: case NV4097_NOTIFY: case NV4097_WAIT_FOR_IDLE:
+    case NV4097_PM_TRIGGER: case NV406E_SET_REFERENCE: break;
+    case NV4097_SET_CONTEXT_DMA_COLOR_A: case NV4097_SET_CONTEXT_DMA_ZETA: break;
+    case NV4097_SET_SURFACE_COLOR_AOFFSET: g_rsx.color_offset[0] = arg; break;
+    case NV4097_SET_SURFACE_ZETA_OFFSET: g_rsx.depth_offset = arg; break;
+    case NV4097_SET_SURFACE_COLOR_BOFFSET: g_rsx.color_offset[1] = arg; break;
+    case NV4097_SET_SURFACE_PITCH_A: g_rsx.pitch = arg & 0xFFFF; break;
     case NV4097_SET_SURFACE_FORMAT:
-        g_rsx.color_format = arg & 0x1F;
-        g_rsx.depth_format = (arg >> 5) & 0x7;
-        break;
+        g_rsx.color_format = arg & 0x1F; g_rsx.depth_format = (arg >> 5) & 0x7; break;
     case NV4097_SET_SURFACE_CLIP_HORIZONTAL:
-        g_rsx.clip_w = (arg >> 16) & 0xFFFF;
-        if (g_rsx.clip_w) g_rsx.width = g_rsx.clip_w;
-        break;
+        g_rsx.clip_w = (arg >> 16) & 0xFFFF; if (g_rsx.clip_w) g_rsx.width = g_rsx.clip_w; break;
     case NV4097_SET_SURFACE_CLIP_VERTICAL:
-        g_rsx.clip_h = (arg >> 16) & 0xFFFF;
-        if (g_rsx.clip_h) g_rsx.height = g_rsx.clip_h;
-        break;
+        g_rsx.clip_h = (arg >> 16) & 0xFFFF; if (g_rsx.clip_h) g_rsx.height = g_rsx.clip_h; break;
     case NV4097_SET_VIEWPORT_HORIZONTAL:
-        g_rsx.viewport_x = arg & 0xFFFF;
-        g_rsx.viewport_w = (arg >> 16) & 0xFFFF;
-        break;
+        g_rsx.viewport_x = arg & 0xFFFF; g_rsx.viewport_w = (arg >> 16) & 0xFFFF; break;
     case NV4097_SET_VIEWPORT_VERTICAL:
-        g_rsx.viewport_y = arg & 0xFFFF;
-        g_rsx.viewport_h = (arg >> 16) & 0xFFFF;
-        break;
+        g_rsx.viewport_y = arg & 0xFFFF; g_rsx.viewport_h = (arg >> 16) & 0xFFFF; break;
     case NV4097_SET_SCISSOR_HORIZONTAL:
-        g_rsx.scissor_x = arg & 0xFFFF;
-        g_rsx.scissor_w = (arg >> 16) & 0xFFFF;
-        break;
+        g_rsx.scissor_x = arg & 0xFFFF; g_rsx.scissor_w = (arg >> 16) & 0xFFFF; break;
     case NV4097_SET_SCISSOR_VERTICAL:
-        g_rsx.scissor_y = arg & 0xFFFF;
-        g_rsx.scissor_h = (arg >> 16) & 0xFFFF;
-        break;
+        g_rsx.scissor_y = arg & 0xFFFF; g_rsx.scissor_h = (arg >> 16) & 0xFFFF; break;
     case NV4097_CLEAR_SURFACE:
-        g_rsx.clear_mask = arg;
-        g_rsx.clear_color = 0xFF1a2a3a;
-        ++g_rsx.clears;
-        ++g_rsx.draws; // soft draw: clear is visible work
-        break;
-    case NV4097_SET_BEGIN_END:
-        g_rsx.in_begin = (arg != 0);
-        break;
-    case NV4097_DRAW_ARRAYS:
-    case NV4097_DRAW_INDEX_ARRAY:
-    case NV4097_INLINE_ARRAY:
-        ++g_rsx.draws;
-        break;
-    case NV406E_SEMAPHORE_OFFSET:
-        g_rsx.label_addr = arg;
-        break;
-    case NV406E_SEMAPHORE_RELEASE:
-    case NV406E_SEMAPHORE_ACQUIRE:
-        g_rsx.flip_label = arg;
-        break;
-    default:
-        known = false;
-        ++g_rsx.unknown_methods;
-        break;
+        g_rsx.clear_mask = arg; g_rsx.clear_color = 0xFF1a2a3a;
+        ++g_rsx.clears; ++g_rsx.draws; break;
+    case NV4097_SET_BEGIN_END: g_rsx.in_begin = (arg != 0); break;
+    case NV4097_DRAW_ARRAYS: case NV4097_DRAW_INDEX_ARRAY: case NV4097_INLINE_ARRAY:
+        ++g_rsx.draws; break;
+    case NV406E_SEMAPHORE_OFFSET: g_rsx.label_addr = arg; break;
+    case NV406E_SEMAPHORE_RELEASE: case NV406E_SEMAPHORE_ACQUIRE:
+        g_rsx.flip_label = arg; break;
+    default: known = false; ++g_rsx.unknown_methods; break;
     }
     if (known) ++g_rsx.known_methods;
 }
 
-// Phase V: standard NV method format
-//   bits[31:29]=0, bits[28:18]=count, bits[12:2]=method>>2, bits[1:0]=0
-// Equivalent: hdr = (count << 18) | (method & 0x1FFC)
 void rsx_process_fifo(uint8_t* mem) {
     if (!mem || !g_rsx.fifo_addr) return;
     uint32_t size = g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000;
@@ -186,17 +140,12 @@ void rsx_process_fifo(uint8_t* mem) {
         if (addr + 4 > 512ull * 1024 * 1024) break;
         uint32_t w = 0;
         std::memcpy(&w, mem + addr, 4);
-        // guest memory is big-endian
         w = (w >> 24) | ((w >> 8) & 0xFF00) | ((w << 8) & 0xFF0000) | (w << 24);
         get = (get + 4) % size;
         ++steps;
-
-        // Skip pure zeros
         if (w == 0) continue;
-
         const uint32_t type = (w >> 29) & 7;
-        if (type == 0) {
-            // increasing methods
+        if (type == 0 || type == 1) {
             uint32_t method = w & 0x1FFC;
             uint32_t count = (w >> 18) & 0x7FF;
             if (count == 0) count = 1;
@@ -207,27 +156,9 @@ void rsx_process_fifo(uint8_t* mem) {
                 std::memcpy(&arg, mem + da, 4);
                 arg = (arg >> 24) | ((arg >> 8) & 0xFF00) | ((arg << 8) & 0xFF0000) | (arg << 24);
                 get = (get + 4) % size;
-                rsx_apply_method(method + i * 4, arg);
+                rsx_apply_method(type == 0 ? method + i * 4 : method, arg);
             }
-        } else if (type == 1) {
-            // non-increasing methods (same method, count args)
-            uint32_t method = w & 0x1FFC;
-            uint32_t count = (w >> 18) & 0x7FF;
-            if (count == 0) count = 1;
-            if (count > 64) count = 64;
-            for (uint32_t i = 0; i < count && get != put; ++i) {
-                uint64_t da = g_rsx.fifo_addr + get;
-                uint32_t arg = 0;
-                std::memcpy(&arg, mem + da, 4);
-                arg = (arg >> 24) | ((arg >> 8) & 0xFF00) | ((arg << 8) & 0xFF0000) | (arg << 24);
-                get = (get + 4) % size;
-                rsx_apply_method(method, arg);
-            }
-        } else if (type == 2) {
-            // jump / call — treat as NOP for now (skip)
-            continue;
         }
-        // other types: ignore
     }
     g_rsx.get = get;
 }
@@ -235,6 +166,7 @@ void rsx_process_fifo(uint8_t* mem) {
 #if defined(_WIN32)
 HWND g_hwnd = nullptr;
 bool g_host_ready = false;
+bool g_user_closed = false; // Phase W: user hid/closed window — keep running headless
 
 ID3D11Device*           g_dev11 = nullptr;
 ID3D11DeviceContext*    g_ctx11 = nullptr;
@@ -246,22 +178,40 @@ IDXGISwapChain*         g_sc10  = nullptr;
 ID3D10RenderTargetView* g_rtv10 = nullptr;
 
 LRESULT CALLBACK RsxWndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
-    if (m == WM_DESTROY) { PostQuitMessage(0); return 0; }
-    if (m == WM_CLOSE) { ShowWindow(h, SW_HIDE); return 0; }
+    // Phase W: closing the RSX window must NEVER stop the emulator process.
+    if (m == WM_CLOSE) {
+        ShowWindow(h, SW_HIDE);
+        g_user_closed = true;
+        std::fprintf(stderr, "[rsx] window closed by user — continuing headless\n");
+        std::fflush(stderr);
+        return 0; // do not DestroyWindow / do not PostQuitMessage
+    }
+    if (m == WM_DESTROY) {
+        // Still no PostQuitMessage
+        if (h == g_hwnd) g_hwnd = nullptr;
+        return 0;
+    }
+    if (m == WM_SYSCOMMAND && (w & 0xFFF0) == SC_CLOSE) {
+        ShowWindow(h, SW_HIDE);
+        g_user_closed = true;
+        return 0;
+    }
     return DefWindowProcW(h, m, w, l);
 }
 
 bool rsx_create_window(uint32_t w, uint32_t h) {
-    if (g_hwnd) return true;
+    if (g_hwnd && IsWindow(g_hwnd)) return true;
+    g_hwnd = nullptr;
     WNDCLASSW wc = {};
     wc.lpfnWndProc = RsxWndProc;
     wc.hInstance = GetModuleHandleW(nullptr);
     wc.lpszClassName = L"PPSX33_RSX";
     wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
     RegisterClassW(&wc);
-    g_hwnd = CreateWindowExW(0, L"PPSX33_RSX", L"PPSX33 RSX",
+    g_hwnd = CreateWindowExW(0, L"PPSX33_RSX", L"PPSX33 RSX (close = hide, game keeps running)",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
         (int)w + 16, (int)h + 39, nullptr, nullptr, wc.hInstance, nullptr);
+    g_user_closed = false;
     return g_hwnd != nullptr;
 }
 
@@ -336,10 +286,28 @@ bool rsx_host_init(uint32_t w, uint32_t h) {
     return rsx_host_init_d3d10(w, h);
 }
 
+void rsx_pump_messages() {
+    MSG msg;
+    while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
+        // Never let WM_QUIT kill the game thread
+        if (msg.message == WM_QUIT)
+            continue;
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
+    }
+}
+
 void rsx_host_present_clear() {
     if (!g_host_ready) return;
-    // Guard against destroyed swapchain
+
+    // User closed/hid the window — keep flipping headless (no Present)
+    if (g_user_closed || !g_hwnd || !IsWindow(g_hwnd)) {
+        rsx_pump_messages();
+        return;
+    }
+
     if (!g_sc11 && !g_sc10) return;
+
     float clear[4] = {
         ((g_rsx.clear_color >> 16) & 0xFF) / 255.f,
         ((g_rsx.clear_color >> 8) & 0xFF) / 255.f,
@@ -347,28 +315,30 @@ void rsx_host_present_clear() {
         ((g_rsx.clear_color >> 24) & 0xFF) / 255.f
     };
     if (!g_rsx.clear_mask && g_rsx.clears == 0) {
-        // animated soft clear so window is visibly alive
         float t = (float)(g_rsx.flip_count & 0xFF) / 255.f;
         clear[0] = 0.05f + 0.05f * t;
         clear[1] = 0.08f;
         clear[2] = 0.15f + 0.05f * (1.f - t);
         clear[3] = 1.f;
     }
-    if (g_ctx11 && g_rtv11 && g_sc11) {
-        g_ctx11->OMSetRenderTargets(1, &g_rtv11, nullptr);
-        g_ctx11->ClearRenderTargetView(g_rtv11, clear);
-        HRESULT hr = g_sc11->Present(0, 0);
-        (void)hr;
-    } else if (g_dev10 && g_rtv10 && g_sc10) {
-        g_dev10->OMSetRenderTargets(1, &g_rtv10, nullptr);
-        g_dev10->ClearRenderTargetView(g_rtv10, clear);
-        g_sc10->Present(0, 0);
+
+    // Present is best-effort — failures must not abort the process
+    __try {
+        if (g_ctx11 && g_rtv11 && g_sc11) {
+            g_ctx11->OMSetRenderTargets(1, &g_rtv11, nullptr);
+            g_ctx11->ClearRenderTargetView(g_rtv11, clear);
+            g_sc11->Present(0, 0);
+        } else if (g_dev10 && g_rtv10 && g_sc10) {
+            g_dev10->OMSetRenderTargets(1, &g_rtv10, nullptr);
+            g_dev10->ClearRenderTargetView(g_rtv10, clear);
+            g_sc10->Present(0, 0);
+        }
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        g_user_closed = true;
+        std::fprintf(stderr, "[rsx] present exception — switching headless\n");
     }
-    MSG msg;
-    while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
-        TranslateMessage(&msg);
-        DispatchMessageW(&msg);
-    }
+
+    rsx_pump_messages();
 }
 #else
 bool rsx_host_init(uint32_t, uint32_t) { return false; }
