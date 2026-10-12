@@ -39,6 +39,8 @@ public sealed partial class MainForm : Form
     private CancellationTokenSource? _cts;
     private Process? _gameProc;
     private bool _stopGameRequested;
+    private bool _building;
+    private bool _buildCancelRequested;
     private bool _canLift, _canBuild, _canCopy, _canRun, _gfxUnlocked, _busy;
     private int _liftChunks;
     private Ps3Button? _btnRpcs3;
@@ -153,8 +155,10 @@ public sealed partial class MainForm : Form
         _btnBuild.Click += async (_, _) => await BuildWithProgress();
         _btnRun.Click += async (_, _) => await RunGameExe();
         _btnCopy.Click += (_, _) => CopyToGameFolder();
-        _btnCancel.Text = "Stop Game";
-        _btnCancel.Click += (_, _) => { if (_gameProc != null) StopGame(); };
+        _btnCancel.Click += async (_, _) => {
+            if (_gameProc != null) { StopGame(); return; }
+            if (_building && !_buildCancelRequested) await ConfirmCancelBuildAsync();
+        };
         Append("PPSX33 ready · core v" + SafeVersion());
         Append("Settings: " + Settings.DataDir);
         UpdateButtons();
@@ -208,7 +212,8 @@ public sealed partial class MainForm : Form
     void UpdateButtons() {
         _btnLift.Enabled = _canLift && !_busy; _btnBuild.Enabled = _canBuild && !_busy;
         _btnRun.Enabled = _canRun && !_busy; _btnCopy.Enabled = _canCopy && !_busy;
-        _btnCancel.Enabled = _gameProc != null; _btnDecrypt.Enabled = !_busy; _btnLoad.Enabled = !_busy;
+        _btnCancel.Text = _building ? "Stop / Cancel Build" : "Stop Game";
+        _btnCancel.Enabled = _gameProc != null || _building; _btnDecrypt.Enabled = !_busy; _btnLoad.Enabled = !_busy;
         _gfx.Enabled = _gfxUnlocked && !_busy;
     }
 
@@ -378,17 +383,66 @@ public sealed partial class MainForm : Form
         }, null, 0, 750);
 
         bool buildSucceeded = false;
-        await RunStep("Building…", ct => {
-            bool ok = Native.Build(project, RuntimeDir, CompilersDir, out var l);
-            buildSucceeded = ok;
-            BeginInvoke(() => Append(l));
-            return ok;
-        }, afterBuild: true);
+        _buildCancelRequested = false;
+        _building = true;
+        UpdateButtons();
+        try {
+            await RunStep("Building…", ct => {
+                bool ok = Native.Build(project, RuntimeDir, CompilersDir, out var l);
+                buildSucceeded = ok;
+                BeginInvoke(() => Append(l));
+                return ok;
+            }, afterBuild: true);
+        } finally {
+            _building = false;
+            UpdateButtons();
+        }
+
+        if (_buildCancelRequested) {
+            // Cancellation intentionally discards all generated project folders and requires a fresh ELF load.
+            DeleteCancelledBuildFolders(project);
+            _projectDir = null;
+            _project.Text = "PROJECT  /  NO PROJECT LOADED";
+            _canLift = _canBuild = _canCopy = _canRun = _gfxUnlocked = false;
+            _liftChunks = 0;
+            _report.Clear();
+            _roadmap.Text = "PPSX33 · Sequential: Load ELF → Decompile → Build → Run\\r\\n";
+            SetStatus("Build cancelled — reload ELF");
+            UpdateButtons();
+            MessageBox.Show(this,
+                "Building has been cancelled. The selected ELF has been unloaded and generated folders were deleted. Please reload the ELF file to continue.",
+                "PPSX33 — Build Cancelled", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
 
         // Only remove temporary project inputs after a successful build.
         // Keep output binaries, reports, and staged output/src intact.
         if (buildSucceeded) CleanupBuildIntermediates(project);
         SetStatus("Build finished");
+    }
+
+    async Task ConfirmCancelBuildAsync() {
+        var answer = MessageBox.Show(this,
+            "Stopping the build will delete the generated input, codebase, and output folders and unload the selected ELF. You will need to reload the ELF file.\\n\\nAre you sure you want to stop building?",
+            "Warning — Cancel Build", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+        if (answer != DialogResult.Yes) return;
+        _buildCancelRequested = true;
+        Append("[ui] Build cancellation requested by user.");
+        SetStatus("Stopping build…", true);
+        try { Native.CancelBuild(); }
+        catch (Exception ex) { Append("Could not request native build cancellation: " + ex.Message); }
+        await Task.CompletedTask;
+    }
+
+    static void DeleteCancelledBuildFolders(string projectDir) {
+        foreach (string name in new[] { "codebase", "input", "output" }) {
+            string path = Path.Combine(projectDir, name);
+            try {
+                if (Directory.Exists(path)) Directory.Delete(path, recursive: true);
+            } catch (Exception ex) {
+                System.Diagnostics.Debug.WriteLine($"PPSX33 cancelled-build cleanup skipped '{path}': {ex.Message}");
+            }
+        }
     }
 
     static void CleanupBuildIntermediates(string projectDir) {
