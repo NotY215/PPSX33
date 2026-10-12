@@ -1,4 +1,4 @@
-// Phase U: sticky-region set (not just LR bans); never re-leave to same target
+// Phase XI: never walk-ban the image; sticky leave prefers high last_good / stack
 static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, size_t n,
                                          uint64_t exclude_pc = 0,
                                          const uint64_t* ban = nullptr, int nban = 0,
@@ -15,7 +15,9 @@ static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, 
     };
     if (c.ctr && !banned(c.ctr) && (c.ctr & 3ull) == 0 && pc_in_chunks(c.ctr, chunks, n))
         return c.ctr;
+    // Prefer stack slots that look like mid/high code (GOW lives ~0x10000-0x500000)
     uint64_t sp = c.gpr[1];
+    uint64_t best_hi = 0;
     for (int dir = 0; dir < 2; ++dir) {
         int start = (dir == 0) ? 0 : -0x1000;
         int end   = (dir == 0) ? 0x4000 : 0;
@@ -24,17 +26,15 @@ static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, 
             if (!guest_ok(c, a, 8)) continue;
             uint64_t cand = rd64(c, a);
             if (banned(cand) || (cand & 3ull) != 0) continue;
-            if (pc_in_chunks(cand, chunks, n))
-                return cand;
+            if (!pc_in_chunks(cand, chunks, n)) continue;
+            // Prefer addresses in the "active" band seen in successful boots
+            if (cand >= 0x300000ull && cand < 0x500000ull) return cand;
+            if (cand >= 0x20000ull && !best_hi) best_hi = cand;
+            if (!best_hi) best_hi = cand;
         }
     }
-    // Scan chunk starts as last resort (skip first chunk = boot)
-    for (size_t i = 1; i < n; ++i) {
-        uint64_t s = chunks[i].start;
-        if (!banned(s) && (s & 3ull) == 0)
-            return s;
-    }
-    return 0;
+    if (best_hi) return best_hi;
+    return 0; // Phase XI: do NOT fall back to sequential chunk starts (caused ban-walk)
 }
 
 static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
@@ -48,11 +48,9 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     uint64_t entry_toc = c.gpr[2];
     uint64_t steps = 0;
 
-    // Circular LR ban table
     uint64_t ban_lr[32] = {};
     int nban = 0, ban_w = 0;
 
-    // Region bans: whole 0x400 windows
     uint64_t rban[16] = {};
     int nrban = 0, rban_w = 0;
 
@@ -62,6 +60,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     int region_hits = 0;
     uint64_t last_leave = 0;
     int leave_same = 0;
+    int walk_guard = 0; // Phase XI: detect sequential leave walk
 
     uint64_t spin_pc = 0;
     uint64_t spin_count = 0;
@@ -87,12 +86,15 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
         if (nban < 32) ++nban;
     };
     auto add_rban = [&](uint64_t base) {
+        // Phase XI: never region-ban low image walk targets (< 0x100000)
+        // Those are code pages; banning them causes the 0x18000..0x90000 walk.
         uint64_t b = base & ~0x3FFull;
-        if (in_rban(b)) return; // already banned — do not spam log
+        if (b < 0x100000ull) return;
+        if (in_rban(b)) return;
         rban[rban_w] = b;
         rban_w = (rban_w + 1) % 16;
         if (nrban < 16) ++nrban;
-        std::fprintf(stderr, "[ps3] Phase U region-ban 0x%llx (nrban=%d)\n",
+        std::fprintf(stderr, "[ps3] Phase XI region-ban 0x%llx (nrban=%d)\n",
             (unsigned long long)b, nrban);
     };
 
@@ -127,19 +129,14 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             spin_count = 1;
         }
 
-        // If PC is inside a banned region, force out immediately
-        if (in_rban(c.pc)) {
+        // Only force-out of banned regions in the HIGH sticky zone, not low image
+        if (in_rban(c.pc) && c.pc >= 0x100000ull) {
             uint64_t alt = recover_return_pc(c, chunks, n, c.pc, ban_lr, nban, rban, nrban);
-            if (!alt) {
-                // pick any non-banned chunk start
-                for (size_t i = 1; i < n; ++i) {
-                    if (!is_banned(chunks[i].start)) { alt = chunks[i].start; break; }
-                }
-            }
+            if (!alt && last_good_ret && !is_banned(last_good_ret)) alt = last_good_ret;
             if (alt) {
                 static int rban_log = 0;
                 if (rban_log < 8) {
-                    std::fprintf(stderr, "[ps3] Phase U force-out banned-region pc=0x%llx -> 0x%llx\n",
+                    std::fprintf(stderr, "[ps3] Phase XI force-out pc=0x%llx -> 0x%llx\n",
                         (unsigned long long)c.pc, (unsigned long long)alt);
                     ++rban_log;
                 }
@@ -158,6 +155,8 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             bool importish = (c.pc == 0x39800000ull) || ((c.pc & 0xFFFF0000ull) == 0x39800000ull);
             if (c.pc >= 0x0F000000ull && c.pc < 0x10000000ull) nullish = true;
             if (c.pc >= 0x600000ull && c.pc < 0x700000ull) nullish = true;
+            // Garbage PCs
+            if (c.pc > 0x10000000ull && !importish) nullish = true;
 
             if (importish && c.lr) {
                 if (c.lr == stub_lr_sticky) ++stub_same_lr;
@@ -166,6 +165,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                     uint64_t force = c.lr + 4;
                     uint64_t alt = recover_return_pc(c, chunks, n, c.lr, ban_lr, nban, rban, nrban);
                     if (alt && !is_banned(alt)) force = alt;
+                    else if (last_good_ret && !is_banned(last_good_ret)) force = last_good_ret;
                     ps3rt_prx_import_stub(&c, c.pc);
                     c.gpr[3] = 0;
                     add_ban(c.lr);
@@ -213,51 +213,55 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                     ++logged;
                 }
 
-                if (!nullish && !importish && !is_banned(ret))
+                // Track last_good only for solid mid/high code returns
+                if (!nullish && !importish && !is_banned(ret) && ret >= 0x20000ull)
                     last_good_ret = ret;
 
-                // Sticky region detector
                 uint64_t rbase = ret & ~0x3FFull;
                 if (rbase == region_sticky) ++region_hits;
                 else { region_sticky = rbase; region_hits = 1; }
 
-                if (region_hits >= 4 || in_rban(ret)) {
+                // Sticky only for HIGH regions — low image is never region-banned
+                if (region_hits >= 4 && rbase >= 0x100000ull) {
                     add_rban(rbase);
                     region_hits = 0;
-
                     uint64_t alt = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
-                    // Never leave to the same target twice
                     if (alt && alt == last_leave) alt = 0;
-                    if (!alt) {
-                        for (size_t i = 1; i < n; ++i) {
-                            uint64_t s = chunks[i].start;
-                            if (!is_banned(s) && s != last_leave) { alt = s; break; }
-                        }
-                    }
+                    if (!alt && last_good_ret && !is_banned(last_good_ret)) alt = last_good_ret;
                     if (alt) ret = alt;
-                    else ret = (ret + 0x1000) & ~3ull;
 
-                    if (ret == last_leave) {
-                        ++leave_same;
-                        if (leave_same >= 2) {
-                            // Hard break: jump to a different chunk entirely
-                            for (size_t i = n > 2 ? 2 : 0; i < n; ++i) {
-                                if (!is_banned(chunks[i].start)) {
-                                    ret = chunks[i].start;
-                                    break;
-                                }
-                            }
-                            leave_same = 0;
-                            std::fprintf(stderr, "[ps3] Phase U hard-leave -> 0x%llx\n",
-                                (unsigned long long)ret);
-                        }
+                    // Walk detector: leaves advancing by ~0x8000 repeatedly
+                    if (last_leave && ret > last_leave && (ret - last_leave) <= 0x10000ull) {
+                        ++walk_guard;
                     } else {
-                        leave_same = 0;
+                        walk_guard = 0;
                     }
+                    if (walk_guard >= 3) {
+                        // Abort walk — snap back to last_good or a known-good mid address
+                        if (last_good_ret && last_good_ret >= 0x300000ull)
+                            ret = last_good_ret;
+                        else
+                            ret = 0x33b1a0; // was a successful leave target in logs
+                        if (!pc_in_chunks(ret, chunks, n))
+                            ret = recover_return_pc(c, chunks, n, 0, ban_lr, nban, rban, nrban);
+                        walk_guard = 0;
+                        soft_breaks = 0;
+                        std::fprintf(stderr, "[ps3] Phase XI abort address-walk -> 0x%llx\n",
+                            (unsigned long long)ret);
+                    }
+
                     last_leave = ret;
                     soft_breaks = 0;
-                    std::fprintf(stderr, "[ps3] Phase U leave sticky -> 0x%llx\n",
+                    std::fprintf(stderr, "[ps3] Phase XI leave sticky -> 0x%llx\n",
                         (unsigned long long)ret);
+                } else if (region_hits >= 6 && rbase < 0x100000ull) {
+                    // Low sticky: just stride out, do not ban
+                    region_hits = 0;
+                    if (last_good_ret && !is_banned(last_good_ret))
+                        ret = last_good_ret;
+                    else
+                        ret = (ret + 0x400) & ~3ull;
+                    soft_breaks = 0;
                 }
 
                 if (nullish || (c.lr && (c.lr == last_null_lr || is_banned(c.lr)))) {
@@ -271,11 +275,10 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                         soft_breaks = 1;
                         last_null_lr = 0;
                     } else if (soft_breaks > 6) {
-                        if (alt) ret = alt;
-                        else {
-                            for (size_t i = 1; i < n; ++i)
-                                if (!is_banned(chunks[i].start)) { ret = chunks[i].start; break; }
-                        }
+                        if (last_good_ret && !is_banned(last_good_ret))
+                            ret = last_good_ret;
+                        else if (alt)
+                            ret = alt;
                         soft_breaks = 0;
                         last_null_lr = 0;
                         if (!ret) { c.halted = true; break; }
@@ -290,10 +293,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 if (!ret || is_banned(ret)) {
                     uint64_t alt = recover_return_pc(c, chunks, n, 0, ban_lr, nban, rban, nrban);
                     if (alt) ret = alt;
-                    else {
-                        for (size_t i = 1; i < n; ++i)
-                            if (!is_banned(chunks[i].start)) { ret = chunks[i].start; break; }
-                    }
+                    else if (last_good_ret) ret = last_good_ret;
                     if (!ret) { c.halted = true; break; }
                 }
                 c.pc = ret;
@@ -302,6 +302,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             }
 
             uint64_t alt = recover_return_pc(c, chunks, n, last_null_lr, ban_lr, nban, rban, nrban);
+            if (!alt && last_good_ret) alt = last_good_ret;
             if (alt && external_escapes < 2000000) {
                 if (importish || nullish) ps3rt_prx_import_stub(&c, c.pc);
                 c.pc = alt;
@@ -318,11 +319,16 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             }
 
             std::fprintf(stderr,
-                "[ps3] halt: PC left range pc=0x%llx lr=0x%llx escapes=%d nrban=%d\n",
-                (unsigned long long)c.pc, (unsigned long long)c.lr, external_escapes, nrban);
+                "[ps3] halt: PC left range pc=0x%llx lr=0x%llx escapes=%d nrban=%d last_good=0x%llx\n",
+                (unsigned long long)c.pc, (unsigned long long)c.lr, external_escapes, nrban,
+                (unsigned long long)last_good_ret);
             c.halted = true;
             break;
         }
+
+        // Remember solid execution PCs as last_good
+        if (c.pc >= 0x300000ull && c.pc < 0x500000ull)
+            last_good_ret = c.pc;
 
         hit->fn(c);
 
@@ -333,6 +339,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 uint64_t force = (c.lr && !is_banned(c.lr)) ? (c.lr + 4) : 0;
                 uint64_t alt = recover_return_pc(c, chunks, n, c.lr, ban_lr, nban, rban, nrban);
                 if (alt) force = alt;
+                else if (last_good_ret) force = last_good_ret;
                 if (force && pc_in_chunks(force, chunks, n)) {
                     if (c.lr) add_ban(c.lr);
                     ps3rt_prx_import_stub(&c, c.pc);
