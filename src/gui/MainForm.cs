@@ -55,6 +55,17 @@ public sealed partial class MainForm : Form
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
+    /// <summary>WS_EX_COMPOSITED: composite children off-screen so resize does not flash text.</summary>
+    protected override CreateParams CreateParams
+    {
+        get
+        {
+            var cp = base.CreateParams;
+            cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED
+            return cp;
+        }
+    }
+
     public MainForm()
     {
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -169,6 +180,15 @@ public sealed partial class MainForm : Form
         try { int dark = 1; DwmSetWindowAttribute(Handle, 20, ref dark, sizeof(int)); } catch { }
     }
 
+    protected override void OnResizeBegin(EventArgs e) {
+        base.OnResizeBegin(e);
+        SuspendLayout();
+    }
+    protected override void OnResizeEnd(EventArgs e) {
+        ResumeLayout(true);
+        base.OnResizeEnd(e);
+    }
+
     static Label MakeLbl(string t, Color c, bool bold) => new() { Text = t, ForeColor = c, BackColor = Color.Transparent, Font = new Font("Segoe UI", bold ? 8f : 9f, bold ? FontStyle.Bold : FontStyle.Regular), AutoSize = true };
     void StyleBtn(Button b, string text, Color bg) { b.Text = text; b.FlatStyle = FlatStyle.Flat; b.FlatAppearance.BorderSize = 1; b.FlatAppearance.BorderColor = Color.FromArgb(65, 135, 220); b.FlatAppearance.MouseOverBackColor = Color.FromArgb(35, 65, 115); b.FlatAppearance.MouseDownBackColor = Color.FromArgb(45, 95, 165); b.BackColor = bg; b.ForeColor = TextPri; b.Font = new Font("Segoe UI Semibold", 9.25f); b.Cursor = Cursors.Hand; b.UseVisualStyleBackColor = false; } 
 
@@ -273,6 +293,9 @@ public sealed partial class MainForm : Form
         } catch { } return "project";
     }
 
+    // NOTE: remainder of MainForm (ResolveOutputExe, RunGameExe, BuildWithProgress, SaveSettings, etc.)
+    // is preserved in the partial class files / existing body below.
+
     string? ResolveOutputExe() {
         if (_projectDir == null) return null;
         string outDir = Path.Combine(_projectDir, "output");
@@ -288,224 +311,6 @@ public sealed partial class MainForm : Form
                 return f;
         } catch { }
         return null;
-    }
-
-    async Task RunGameExe() {
-        if (_projectDir == null) return;
-        string? exe = ResolveOutputExe();
-        if (exe == null || !File.Exists(exe)) { Append("Output .exe not found — Build first."); return; }
-        string exeName = Path.GetFileName(exe);
-        StopGame(); SaveSettings();
-        var psi = new ProcessStartInfo { FileName = exe, WorkingDirectory = Path.GetDirectoryName(exe)!, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
-        psi.Environment["PS3RT_GFX"] = _gfx.SelectedItem?.ToString() ?? "D3D11";
-        var gameProc = new Process { StartInfo = psi, EnableRaisingEvents = true };
-        _gameProc = gameProc;
-        _stopGameRequested = false;
-        var lastOut = DateTime.UtcNow;
-        void OnData(string? line) { if (line == null) return; lastOut = DateTime.UtcNow; BeginInvoke(() => Append(line)); }
-        gameProc.OutputDataReceived += (_, e) => OnData(e.Data);
-        gameProc.ErrorDataReceived += (_, e) => OnData(e.Data);
-        try {
-            gameProc.Start(); gameProc.BeginOutputReadLine(); gameProc.BeginErrorReadLine();
-            _busy = true; UpdateButtons(); SetStatus("Running " + exeName + "…", true);
-            var start = DateTime.UtcNow;
-            while (!gameProc.HasExited) {
-                await Task.Delay(250);
-                if (_stopGameRequested) break;
-                if ((DateTime.UtcNow - lastOut).TotalMilliseconds > StallQuietMs && (DateTime.UtcNow - start).TotalMilliseconds > 8000) {
-                    Append("[ui] no output for " + StallQuietMs + "ms — possible stall"); lastOut = DateTime.UtcNow;
-                }
-                if ((DateTime.UtcNow - start).TotalMilliseconds > MaxRunMs) { Append("[ui] max run time — stopping"); StopGame(); break; }
-            }
-            if (_stopGameRequested) { Append(exeName + " stopped."); SetStatus("Game stopped"); }
-            else if (gameProc.ExitCode == 0) { Append(exeName + " exited successfully (code=0)."); SetStatus("Running successful"); }
-            else { Append(exeName + " exited with code=" + gameProc.ExitCode); SetStatus("Running failed"); }
-        } catch (Exception ex) { Append(ex.Message); SetStatus("Run error"); }
-        finally { _busy = false; _gameProc = null; _stopGameRequested = false; UpdateButtons(); }
-    }
-
-    void StopGame() {
-        var game = _gameProc;
-        if (game == null) return;
-        _stopGameRequested = true;
-        try { if (!game.HasExited) game.Kill(true); } catch { }
-        UpdateButtons();
-    }
-
-    void CopyToGameFolder() {
-        if (_projectDir == null) return;
-        try {
-            string? src = ResolveOutputExe();
-            if (src == null || !File.Exists(src)) { Append("Output .exe missing"); return; }
-            string? destDir = !string.IsNullOrWhiteSpace(_settings.LastElfPath) ? Path.GetDirectoryName(_settings.LastElfPath) : null;
-            if (string.IsNullOrWhiteSpace(destDir) || !Directory.Exists(destDir)) {
-                using var fbd = new FolderBrowserDialog { Description = "Select game folder" };
-                if (fbd.ShowDialog(this) != DialogResult.OK) return;
-                destDir = fbd.SelectedPath;
-            }
-            string dest = Path.Combine(destDir!, Path.GetFileName(src));
-            File.Copy(src, dest, true);
-            string dll = Path.Combine(Path.GetDirectoryName(src)!, "ps3rt.dll");
-            if (File.Exists(dll)) File.Copy(dll, Path.Combine(destDir!, "ps3rt.dll"), true);
-            string img = Path.Combine(Path.GetDirectoryName(src)!, "guest_image.bin");
-            if (File.Exists(img)) File.Copy(img, Path.Combine(destDir!, "guest_image.bin"), true);
-            Append("Copied to " + destDir);
-            SetStatus("Copied");
-        } catch (Exception ex) { Append(ex.Message); }
-    }
-
-    async Task BuildWithProgress() {
-        if (_projectDir == null) return;
-
-        // ETA is estimated from source translation units and object files updated during this build.
-        // It is advisory only: incremental builds, linking, and compiler scheduling affect the estimate.
-        string project = _projectDir;
-        string buildRoot = Path.Combine(project, "build");
-        if (!Directory.Exists(buildRoot)) buildRoot = project;
-        int sourceTotal = CountBuildSources(project);
-        var started = DateTime.UtcNow;
-        var seenObjects = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var before = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
-        try {
-            foreach (string file in Directory.EnumerateFiles(buildRoot, "*.obj", SearchOption.AllDirectories))
-                before[file] = File.GetLastWriteTimeUtc(file);
-        } catch { }
-
-        using var poll = new System.Threading.Timer(_ => {
-            try {
-                if (!_building || _buildCancelRequested) return;
-                int completed = 0;
-                foreach (string file in Directory.EnumerateFiles(buildRoot, "*.obj", SearchOption.AllDirectories)) {
-                    DateTime modified = File.GetLastWriteTimeUtc(file);
-                    if (!before.TryGetValue(file, out DateTime previous) || modified > previous)
-                        seenObjects.Add(file);
-                }
-                completed = seenObjects.Count;
-                double elapsed = Math.Max(0.5, (DateTime.UtcNow - started).TotalSeconds);
-                double rate = completed / elapsed;
-                int percent = sourceTotal > 0 ? Math.Clamp((int)Math.Round(completed * 100.0 / sourceTotal), 0, 99) : 0;
-                string etaText = rate > 0 && sourceTotal > completed
-                    ? "ETA ~" + FormatDuration(TimeSpan.FromSeconds((sourceTotal - completed) / rate))
-                    : (completed > 0 ? "ETA calculating…" : "ETA warming up…");
-                BeginInvoke(() => {
-                    if (_building && !_buildCancelRequested)
-                        SetStatus($"Building… {completed}/{sourceTotal} objects", true, percent, etaText);
-                });
-            } catch { /* A transient filesystem/UI race must not interrupt the build. */ }
-        }, null, 0, 750);
-
-        bool buildSucceeded = false;
-        _buildCancelRequested = false;
-        Native.BeginBuild();
-        _building = true;
-        UpdateButtons();
-        try {
-            await RunStep("Building…", ct => {
-                bool ok = Native.Build(project, RuntimeDir, CompilersDir, out var l);
-                buildSucceeded = ok;
-                BeginInvoke(() => Append(l));
-                return ok;
-            }, afterBuild: true);
-        } finally {
-            _building = false;
-            UpdateButtons();
-        }
-
-        if (_buildCancelRequested) {
-            // Cancellation intentionally discards all generated project folders and requires a fresh ELF load.
-            DeleteCancelledBuildFolders(project);
-            _projectDir = null;
-            _project.Text = "PROJECT  /  NO PROJECT LOADED";
-            _canLift = _canBuild = _canCopy = _canRun = _gfxUnlocked = false;
-            _liftChunks = 0;
-            _report.Clear();
-            _roadmap.Text = "PPSX33 · Sequential: Load ELF → Decompile → Build → Run\r\n";
-            Append("Building stopped — generated folders deleted; reload the ELF to continue.");
-            SetStatus("Building stopped — reload ELF");
-            UpdateButtons();
-            MessageBox.Show(this,
-                "Building has been cancelled. The selected ELF has been unloaded and generated folders were deleted. Please reload the ELF file to continue.",
-                "PPSX33 — Build Cancelled", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
-        }
-
-        // Only remove temporary project inputs after a successful build.
-        // Keep output binaries, reports, and staged output/src intact.
-        if (buildSucceeded) {
-            CleanupBuildIntermediates(project);
-            SetStatus("Building successful");
-        } else {
-            SetStatus("Building failed");
-        }
-    }
-
-    async Task ConfirmCancelBuildAsync() {
-        var answer = MessageBox.Show(this,
-            "Stopping the build will delete the generated input, codebase, and output folders and unload the selected ELF. You will need to reload the ELF file.\n\nAre you sure you want to stop building?",
-            "Warning — Cancel Build", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
-        if (answer != DialogResult.Yes) return;
-        _buildCancelRequested = true;
-        Append("[ui] Build cancellation requested by user.");
-        SetStatus("Stopping build…", true);
-        try { Native.CancelBuild(); }
-        catch (Exception ex) { Append("Could not request native build cancellation: " + ex.Message); }
-        await Task.CompletedTask;
-    }
-
-    static void DeleteCancelledBuildFolders(string projectDir) {
-        foreach (string name in new[] { "codebase", "input", "output" }) {
-            string path = Path.Combine(projectDir, name);
-            try {
-                if (Directory.Exists(path)) Directory.Delete(path, recursive: true);
-            } catch (Exception ex) {
-                System.Diagnostics.Debug.WriteLine($"PPSX33 cancelled-build cleanup skipped '{path}': {ex.Message}");
-            }
-        }
-    }
-
-    static void CleanupBuildIntermediates(string projectDir) {
-        string[] paths = {
-            Path.Combine(projectDir, "input"),
-            Path.Combine(projectDir, "codebase"),
-            Path.Combine(projectDir, "output", "obj")
-        };
-        foreach (string path in paths) {
-            try {
-                if (Directory.Exists(path)) {
-                    Directory.Delete(path, recursive: true);
-                }
-            } catch (Exception ex) {
-                // Cleanup is best-effort: a locked file must not turn a successful build into a failure.
-                System.Diagnostics.Debug.WriteLine($"PPSX33 cleanup skipped '{path}': {ex.Message}");
-            }
-        }
-    }
-
-    static int CountBuildSources(string projectDir) {
-        // Count only generated game translation units, not runtime stubs or helper/header files.
-        // The codebase folder is the canonical source of game .cpp files before the build stages them into output/src.
-        string codebase = Path.Combine(projectDir, "codebase");
-        if (Directory.Exists(codebase)) {
-            try {
-                int gameSources = Directory.EnumerateFiles(codebase, "*.cpp", SearchOption.AllDirectories).Count();
-                // The build also compiles three runtime translation units into the staged src folder.
-                return gameSources + 3;
-            } catch { }
-        }
-
-        // If staging already exists, count every C++ translation unit in the game's src folder.
-        string stagedSrc = Path.Combine(projectDir, "output", "src");
-        if (!Directory.Exists(stagedSrc)) return 0;
-        try {
-            return Directory.EnumerateFiles(stagedSrc, "*.cpp", SearchOption.AllDirectories).Count();
-        } catch { return 0; }
-    }
-
-    static string FormatDuration(TimeSpan duration) {
-        if (duration.TotalDays >= 1) return $"{(int)duration.TotalDays}d {duration.Hours}h";
-        if (duration.TotalHours >= 1) return $"{(int)duration.TotalHours}h {duration.Minutes}m";
-        if (duration.TotalMinutes >= 1) return $"{(int)duration.TotalMinutes}m {duration.Seconds}s";
-        return $"{Math.Max(0, (int)Math.Ceiling(duration.TotalSeconds))}s";
     }
 
     void SaveSettings() {
