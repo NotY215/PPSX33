@@ -5,43 +5,69 @@ namespace PS3Recomp.Gui;
 /// <summary>Opaque, double-buffered PS3 XMB-inspired background. No transparency or glass effects.</summary>
 internal sealed class Ps3BackdropPanel : Panel
 {
+    private Bitmap? _backgroundCache;
+    private readonly System.Windows.Forms.Timer _resizePaintTimer;
+
     public Ps3BackdropPanel()
     {
         DoubleBuffered = true;
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
                  ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
         BackColor = Color.FromArgb(5, 8, 20);
+        _resizePaintTimer = new System.Windows.Forms.Timer { Interval = 90 };
+        _resizePaintTimer.Tick += (_, _) => { _resizePaintTimer.Stop(); RebuildBackground(); Invalidate(); };
+        SizeChanged += (_, _) => {
+            // Keep painting the previous cached frame while dragging the window.
+            // Regenerate the expensive wave art once the resize briefly settles.
+            _resizePaintTimer.Stop();
+            _resizePaintTimer.Start();
+            Invalidate();
+        };
+        Disposed += (_, _) => { _resizePaintTimer.Stop(); _resizePaintTimer.Dispose(); _backgroundCache?.Dispose(); };
     }
 
     protected override void OnPaintBackground(PaintEventArgs e)
     {
-        var g = e.Graphics;
-        g.SmoothingMode = SmoothingMode.HighQuality;
-        var r = ClientRectangle;
-        if (r.Width <= 0 || r.Height <= 0) return;
-        using (var bg = new LinearGradientBrush(r, Color.FromArgb(5, 8, 20), Color.FromArgb(10, 28, 63), 35f))
-            g.FillRectangle(bg, r);
+        if (ClientSize.Width <= 0 || ClientSize.Height <= 0) return;
+        if (_backgroundCache == null) {
+            RebuildBackground();
+        }
+        if (_backgroundCache != null)
+            e.Graphics.DrawImage(_backgroundCache, ClientRectangle);
+        else
+            e.Graphics.Clear(BackColor);
+    }
 
-        // Original, procedurally drawn XMB-style wave ribbons. These are not extracted game textures.
-        DrawWave(g, r, 0.58f, 0.075f, 0.9f, Color.FromArgb(70, 80, 195, 255), 2.0f);
-        DrawWave(g, r, 0.68f, 0.060f, 1.3f, Color.FromArgb(48, 50, 130, 255), 3.0f);
-        DrawWave(g, r, 0.77f, 0.045f, 1.7f, Color.FromArgb(34, 105, 110, 255), 4.0f);
-
-        using var glowPath = new GraphicsPath();
-        glowPath.AddEllipse(-r.Width * .2f, r.Height * .02f, r.Width * .75f, r.Height * .75f);
-        using var glow = new PathGradientBrush(glowPath) {
-            CenterColor = Color.FromArgb(25, 70, 160, 255),
-            SurroundColors = new[] { Color.FromArgb(0, 30, 80, 190) }
-        };
-        g.FillRectangle(glow, r);
-
-        using var vignette = new LinearGradientBrush(r, Color.FromArgb(0, 0, 0, 0), Color.FromArgb(45, 0, 2, 12), 90f);
-        g.FillRectangle(vignette, r);
+    private void RebuildBackground()
+    {
+        if (ClientSize.Width <= 0 || ClientSize.Height <= 0) return;
+        var next = new Bitmap(ClientSize.Width, ClientSize.Height);
+        using (var g = Graphics.FromImage(next)) {
+            g.SmoothingMode = SmoothingMode.HighQuality;
+            var r = new Rectangle(Point.Empty, ClientSize);
+            using (var bg = new LinearGradientBrush(r, Color.FromArgb(5, 8, 20), Color.FromArgb(10, 28, 63), 35f))
+                g.FillRectangle(bg, r);
+            DrawWave(g, r, 0.58f, 0.075f, 0.9f, Color.FromArgb(70, 80, 195, 255), 2.0f);
+            DrawWave(g, r, 0.68f, 0.060f, 1.3f, Color.FromArgb(48, 50, 130, 255), 3.0f);
+            DrawWave(g, r, 0.77f, 0.045f, 1.7f, Color.FromArgb(34, 105, 110, 255), 4.0f);
+            using var glowPath = new GraphicsPath();
+            glowPath.AddEllipse(-r.Width * .2f, r.Height * .02f, r.Width * .75f, r.Height * .75f);
+            using var glow = new PathGradientBrush(glowPath) {
+                CenterColor = Color.FromArgb(25, 70, 160, 255),
+                SurroundColors = new[] { Color.FromArgb(0, 30, 80, 190) }
+            };
+            g.FillRectangle(glow, r);
+            using var vignette = new LinearGradientBrush(r, Color.FromArgb(0, 0, 0, 0), Color.FromArgb(45, 0, 2, 12), 90f);
+            g.FillRectangle(vignette, r);
+        }
+        var previous = _backgroundCache;
+        _backgroundCache = next;
+        previous?.Dispose();
     }
 
     static void DrawWave(Graphics g, Rectangle r, float baseY, float amplitude, float frequency, Color color, float phase)
     {
-        int count = Math.Clamp(r.Width / 10, 48, 240);
+        int count = Math.Clamp(r.Width / 14, 40, 180);
         var pts = new PointF[count + 2];
         for (int i = 0; i < count; i++) {
             float u = i / (float)(count - 1);
@@ -63,7 +89,7 @@ internal sealed class Ps3BackdropPanel : Panel
 /// <summary>Custom-painted WinForms button with PS3-inspired blue focus and readable disabled states.</summary>
 internal sealed class Ps3Button : Button
 {
-    bool _hover, _down;
+    bool _hover, _down;\n    bool _glowPulse;
 
     public Ps3Button()
     {
@@ -90,12 +116,12 @@ internal sealed class Ps3Button : Button
         g.SmoothingMode = SmoothingMode.AntiAlias;
         var rect = new RectangleF(1, 1, Math.Max(1, Width - 3), Math.Max(1, Height - 3));
         Color baseColor = Enabled ? BackColor : Color.FromArgb(21, 30, 53);
-        Color top = !_down && _hover && Enabled ? Color.FromArgb(55, 125, 220) : baseColor;
+        Color top = !_down && _hover && Enabled ? Color.FromArgb(65, 145, 245) : baseColor;
         Color bottom = Enabled ? ControlPaint.Dark(baseColor, .28f) : Color.FromArgb(15, 22, 40);
         using (var path = Rounded(rect, 5))
         using (var brush = new LinearGradientBrush(rect, top, bottom, LinearGradientMode.Vertical)) {
             g.FillPath(brush, path);
-            using var border = new Pen(_hover && Enabled ? Color.FromArgb(100, 195, 255) : Color.FromArgb(55, 105, 175), _hover ? 1.4f : 1f);
+            using var border = new Pen(_hover && Enabled ? Color.FromArgb(145, 210, 255) : Color.FromArgb(55, 105, 175), _hover ? 1.8f : 1f);
             g.DrawPath(border, path);
         }
         if (Enabled && (Focused || _hover)) {
