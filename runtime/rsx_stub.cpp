@@ -1,4 +1,4 @@
-// Phase W+XIII: closing RSX window never stops the process; varying clear colour
+// Phase XV: RSX window + debounced resize; close never kills process
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include <cstdio>
@@ -44,7 +44,7 @@ struct RsxState {
 };
 static RsxState g_rsx;
 static std::mutex g_rsx_mu;
-static int g_backend = 1; // D3D11 default
+static int g_backend = 1;
 
 enum {
     NV4097_NO_OPERATION = 0x0100,
@@ -152,13 +152,12 @@ void rsx_process_fifo(uint8_t* mem) {
 #if defined(_WIN32)
 static HWND g_hwnd = nullptr;
 static bool g_user_closed = false;
+static bool g_resize_pending = false;
+static UINT g_resize_w = 0, g_resize_h = 0;
 static ID3D11Device* g_dev11 = nullptr;
 static ID3D11DeviceContext* g_ctx11 = nullptr;
 static IDXGISwapChain* g_swap = nullptr;
 static ID3D11RenderTargetView* g_rtv = nullptr;
-static ID3D10Device* g_dev10 = nullptr;
-static IDXGISwapChain* g_swap10 = nullptr;
-static ID3D10RenderTargetView* g_rtv10 = nullptr;
 
 static LRESULT CALLBACK RsxWndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
     if (m == WM_CLOSE) {
@@ -176,6 +175,15 @@ static LRESULT CALLBACK RsxWndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
         g_user_closed = true;
         return 0;
     }
+    if (m == WM_SIZE) {
+        UINT nw = (UINT)LOWORD(l), nh = (UINT)HIWORD(l);
+        if (nw >= 64 && nh >= 64) {
+            g_resize_w = nw; g_resize_h = nh;
+            g_resize_pending = true;
+        }
+        return 0;
+    }
+    if (m == WM_ENTERSIZEMOVE || m == WM_EXITSIZEMOVE) return 0;
     return DefWindowProcW(h, m, w, l);
 }
 
@@ -224,22 +232,35 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
 }
 
 static void rsx_host_present_clear() {
-    if (g_user_closed || !g_hwnd) {
-        // headless: still count flips
-        return;
-    }
+    if (g_user_closed || !g_hwnd) return;
     MSG msg;
     while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
-        if (msg.message == WM_QUIT) continue; // ignore quit
+        if (msg.message == WM_QUIT) continue;
         TranslateMessage(&msg);
         DispatchMessageW(&msg);
     }
-    if (!g_ctx11 || !g_rtv || !g_swap) return;
+    if (!g_ctx11 || !g_swap) return;
+    if (g_resize_pending && g_resize_w >= 64 && g_resize_h >= 64) {
+        g_resize_pending = false;
+        g_ctx11->OMSetRenderTargets(0, nullptr, nullptr);
+        if (g_rtv) { g_rtv->Release(); g_rtv = nullptr; }
+        HRESULT hr = g_swap->ResizeBuffers(0, g_resize_w, g_resize_h, DXGI_FORMAT_UNKNOWN, 0);
+        if (SUCCEEDED(hr)) {
+            ID3D11Texture2D* back = nullptr;
+            g_swap->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&back);
+            if (back) {
+                g_dev11->CreateRenderTargetView(back, nullptr, &g_rtv);
+                back->Release();
+            }
+            g_rsx.width = g_resize_w;
+            g_rsx.height = g_resize_h;
+        }
+    }
+    if (!g_rtv) return;
     float r = ((g_rsx.clear_color >> 16) & 0xFF) / 255.f;
     float g = ((g_rsx.clear_color >> 8) & 0xFF) / 255.f;
     float b = (g_rsx.clear_color & 0xFF) / 255.f;
-    float a = 1.f;
-    float col[4] = { r, g, b, a };
+    float col[4] = { r, g, b, 1.f };
     try {
         g_ctx11->OMSetRenderTargets(1, &g_rtv, nullptr);
         g_ctx11->ClearRenderTargetView(g_rtv, col);
