@@ -29,6 +29,8 @@ PS3CORE_API int ps3_lift_project(const char* pd, char* log, int logn) {
     return ok ? 0 : 1;
 }
 
+PS3CORE_API void ps3_cancel_build(void) { ps3::cancel_build(); }
+
 PS3CORE_API int ps3_build_project(const char* pd, const char* rt, const char* comp, char* log, int logn) {
     std::string l, e;
     bool ok = ps3::build_project(pd, rt, comp, l, e);
