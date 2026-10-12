@@ -1,6 +1,38 @@
 // ppu_runtime_core_b.h - continuation of core (rd helpers, CR/branch, chunks, API)
 // Appended after core_a
-// NOTE: SPUContext is defined in core_a.h — do not redeclare
+// NOTE: SPUContext is defined in core_a.h — do not redefine here
+
+static inline float rd_f32(PPUContext& c, uint64_t addr) {
+    uint32_t u = rd32(c, addr);
+    float f; std::memcpy(&f, &u, 4);
+    return f;
+}
+static inline double rd_f64(PPUContext& c, uint64_t addr) {
+    uint64_t u = rd64(c, addr);
+    double d; std::memcpy(&d, &u, 8);
+    return d;
+}
+static inline void wr_f32(PPUContext& c, uint64_t addr, float v) {
+    uint32_t u; std::memcpy(&u, &v, 4);
+    wr32(c, addr, u);
+}
+static inline void wr_f64(PPUContext& c, uint64_t addr, double v) {
+    uint64_t u; std::memcpy(&u, &v, 8);
+    wr64(c, addr, u);
+}
+
+static inline bool xer_so(const PPUContext& c) { return (c.xer & 0x80000000ull) != 0; }
+static inline void xer_set_so(PPUContext& c, bool v) {
+    if (v) c.xer |= 0x80000000ull; else c.xer &= ~0x80000000ull;
+}
+static inline void xer_set_ov(PPUContext& c, bool v) {
+    if (v) c.xer |= 0x40000000ull; else c.xer &= ~0x40000000ull;
+    if (v) c.xer |= 0x80000000ull;
+}
+static inline void xer_set_ca(PPUContext& c, bool v) {
+    if (v) c.xer |= 0x20000000ull; else c.xer &= ~0x20000000ull;
+}
+static inline bool xer_ca(const PPUContext& c) { return (c.xer & 0x20000000ull) != 0; }
 
 static inline void set_cr_signed(PPUContext& c, int f, int64_t a, int64_t b) {
     uint8_t bits = (uint8_t)((a < b ? 8 : 0) | (a > b ? 4 : 0) | (a == b ? 2 : 0));
@@ -31,27 +63,38 @@ PS3RT_API void ps3rt_request_exit(void);
 PS3RT_API int  ps3rt_should_exit(void);
 
 // Phase M: force fallthrough after 2048 consecutive taken (was 65536)
-static inline bool branch_taken_bo(PPUContext& c, int bo, int bi) {
+static inline bool bc_should_take(PPUContext& c, uint32_t bo, uint32_t bi) {
     bool ctr_ok = true;
     if ((bo & 4) == 0) {
-        c.ctr--;
-        ctr_ok = ((bo & 2) != 0) ? (c.ctr == 0) : (c.ctr != 0);
+        c.ctr -= 1;
+        bool ctr_zero = (c.ctr == 0);
+        ctr_ok = (bo & 2) ? ctr_zero : !ctr_zero;
     }
     bool cond_ok = true;
     if ((bo & 16) == 0) {
-        int crb = (bi >> 2) & 7;
-        int bit = 3 - (bi & 3);
-        bool v = (c.cr[crb] & (1u << bit)) != 0;
-        cond_ok = ((bo & 8) != 0) ? v : !v;
+        int cr_field = (int)(bi >> 2);
+        int cr_bit = 3 - (int)(bi & 3);
+        bool bit = (c.cr[cr_field] & (1u << cr_bit)) != 0;
+        cond_ok = (bo & 8) ? bit : !bit;
     }
     return ctr_ok && cond_ok;
 }
 
 struct PPUChunk {
-    uint64_t start;
-    uint64_t end;
+    uint64_t lo, hi;
     void (*fn)(PPUContext&);
 };
+
+static inline const PPUChunk* find_chunk(const PPUChunk* chunks, size_t n, uint64_t pc) {
+    size_t lo = 0, hi = n;
+    while (lo < hi) {
+        size_t mid = (lo + hi) / 2;
+        if (pc < chunks[mid].lo) hi = mid;
+        else if (pc >= chunks[mid].hi) lo = mid + 1;
+        else return &chunks[mid];
+    }
+    return nullptr;
+}
 
 PS3RT_API void ps3rt_syscall(PPUContext* c);
 PS3RT_API int  ps3rt_prx_import_stub(PPUContext* c, uint64_t pc);
