@@ -1,6 +1,4 @@
-// Phase 5+: RSX / GCM FIFO decode + host present (D3D10 and D3D11).
-// COM headers must NOT be included inside an anonymous namespace
-// (that makes IID/GUID types mismatch with __uuidof).
+// Phase T: FIFO get/put always modulo size — stops infinite re-decode
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 
@@ -109,7 +107,7 @@ void rsx_apply_method(uint32_t method, uint32_t arg) {
         g_rsx.scissor_x = arg & 0xFFFF; g_rsx.scissor_w = (arg >> 16) & 0xFFFF; break;
     case NV4097_SET_SCISSOR_VERTICAL:
         g_rsx.scissor_y = arg & 0xFFFF; g_rsx.scissor_h = (arg >> 16) & 0xFFFF; break;
-    case NV4097_CLEAR_SURFACE: g_rsx.clear_mask = arg; break;
+    case NV4097_CLEAR_SURFACE: g_rsx.clear_mask = arg; g_rsx.clear_color = 0xFF102030; break;
     case NV4097_SET_BEGIN_END: break;
     case NV4097_DRAW_ARRAYS: case NV4097_DRAW_INDEX_ARRAY: ++g_rsx.draws; break;
     case NV406E_SEMAPHORE_OFFSET: g_rsx.label_addr = arg; break;
@@ -119,23 +117,27 @@ void rsx_apply_method(uint32_t method, uint32_t arg) {
 }
 
 void rsx_process_fifo(uint8_t* mem) {
-    if (!mem || !g_rsx.fifo_addr || g_rsx.put == g_rsx.get) return;
-    uint32_t get = g_rsx.get;
-    uint32_t put = g_rsx.put;
+    if (!mem || !g_rsx.fifo_addr) return;
     uint32_t size = g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000;
+    // Phase T: BOTH ends modulo size so get!=put cannot spin the whole ring forever
+    uint32_t get = g_rsx.get % size;
+    uint32_t put = g_rsx.put % size;
+    if (get == put) return;
     int steps = 0;
-    while (get != put && steps < 65536) {
-        uint64_t addr = g_rsx.fifo_addr + (get % size);
+    while (get != put && steps < 4096) {
+        uint64_t addr = g_rsx.fifo_addr + get;
+        if (addr + 4 > 512ull * 1024 * 1024) break;
         uint32_t w = 0;
         std::memcpy(&w, mem + addr, 4);
         w = (w >> 24) | ((w >> 8) & 0xFF00) | ((w << 8) & 0xFF0000) | (w << 24);
         get = (get + 4) % size;
         ++steps;
         if ((w & 0xE0000000u) == 0) {
-            uint32_t method = (w >> 2) & 0x7FF;
+            uint32_t method = ((w & 0x1FFC));
             uint32_t count = (w >> 18) & 0x7FF;
+            if (count > 32) count = 32; // clamp garbage
             for (uint32_t i = 0; i < count && get != put; ++i) {
-                uint64_t da = g_rsx.fifo_addr + (get % size);
+                uint64_t da = g_rsx.fifo_addr + get;
                 uint32_t arg = 0;
                 std::memcpy(&arg, mem + da, 4);
                 arg = (arg >> 24) | ((arg >> 8) & 0xFF00) | ((arg << 8) & 0xFF0000) | (arg << 24);
@@ -145,6 +147,8 @@ void rsx_process_fifo(uint8_t* mem) {
         }
     }
     g_rsx.get = get;
+    // Keep put normalized too
+    g_rsx.put = put;
 }
 
 #if defined(_WIN32)
@@ -200,7 +204,6 @@ bool rsx_host_init_d3d11(uint32_t w, uint32_t h) {
         return false;
     }
     ID3D11Texture2D* bb = nullptr;
-    // IID_ constant avoids GUID vs IID mismatch (do not use __uuidof here)
     hr = g_sc11->GetBuffer(0, IID_ID3D11Texture2D, (void**)&bb);
     if (SUCCEEDED(hr) && bb) {
         g_dev11->CreateRenderTargetView(bb, nullptr, &g_rtv11);
@@ -213,39 +216,23 @@ bool rsx_host_init_d3d11(uint32_t w, uint32_t h) {
 
 bool rsx_host_init_d3d10(uint32_t w, uint32_t h) {
     if (!rsx_create_window(w, h)) return false;
-
     IDXGIFactory* factory = nullptr;
     HRESULT hr = CreateDXGIFactory(IID_IDXGIFactory, (void**)&factory);
-    if (FAILED(hr) || !factory) {
-        std::fprintf(stderr, "[rsx] DXGI factory failed hr=0x%08X\n", (unsigned)hr);
-        return false;
-    }
-
+    if (FAILED(hr) || !factory) return false;
     DXGI_SWAP_CHAIN_DESC sd = {};
     sd.BufferCount = 2;
-    sd.BufferDesc.Width = w;
-    sd.BufferDesc.Height = h;
+    sd.BufferDesc.Width = w; sd.BufferDesc.Height = h;
     sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    sd.OutputWindow = g_hwnd;
-    sd.SampleDesc.Count = 1;
-    sd.Windowed = TRUE;
-    sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-
-    hr = D3D10CreateDeviceAndSwapChain(
-        nullptr, D3D10_DRIVER_TYPE_HARDWARE, nullptr, 0,
+    sd.OutputWindow = g_hwnd; sd.SampleDesc.Count = 1;
+    sd.Windowed = TRUE; sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+    hr = D3D10CreateDeviceAndSwapChain(nullptr, D3D10_DRIVER_TYPE_HARDWARE, nullptr, 0,
         D3D10_SDK_VERSION, &sd, &g_sc10, &g_dev10);
     factory->Release();
-    if (FAILED(hr)) {
-        std::fprintf(stderr, "[rsx] D3D10 create failed hr=0x%08X\n", (unsigned)hr);
-        return false;
-    }
+    if (FAILED(hr)) return false;
     ID3D10Texture2D* bb = nullptr;
     hr = g_sc10->GetBuffer(0, IID_ID3D10Texture2D, (void**)&bb);
-    if (SUCCEEDED(hr) && bb) {
-        g_dev10->CreateRenderTargetView(bb, nullptr, &g_rtv10);
-        bb->Release();
-    }
+    if (SUCCEEDED(hr) && bb) { g_dev10->CreateRenderTargetView(bb, nullptr, &g_rtv10); bb->Release(); }
     g_host_ready = true;
     std::fprintf(stderr, "[rsx] D3D10 host present ready %ux%u\n", w, h);
     return true;
@@ -260,11 +247,9 @@ bool rsx_host_init(uint32_t w, uint32_t h) {
     }
     if (g_backend == PS3_GFX_D3D10) {
         if (rsx_host_init_d3d10(w, h)) return true;
-        std::fprintf(stderr, "[rsx] D3D10 failed — falling back to D3D11\n");
         return rsx_host_init_d3d11(w, h);
     }
     if (rsx_host_init_d3d11(w, h)) return true;
-    std::fprintf(stderr, "[rsx] D3D11 failed — trying D3D10\n");
     return rsx_host_init_d3d10(w, h);
 }
 
@@ -311,17 +296,19 @@ PS3RT_API int ps3rt_get_graphics_backend(void) { return g_backend; }
 PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
     std::lock_guard<std::mutex> lk(g_rsx_mu);
     g_rsx.fifo_addr = fifo_addr;
-    g_rsx.fifo_size = fifo_size;
+    g_rsx.fifo_size = fifo_size ? fifo_size : 0x100000;
     g_rsx.put = g_rsx.get = 0;
+    g_rsx.methods_seen = g_rsx.unknown_methods = g_rsx.draws = 0;
     if (g_backend == PS3_GFX_D3D11 || g_backend == PS3_GFX_D3D10)
         rsx_host_init(g_rsx.width, g_rsx.height);
     std::fprintf(stderr, "[rsx] init fifo=0x%llx size=0x%x backend=%d\n",
-        (unsigned long long)fifo_addr, fifo_size, g_backend);
+        (unsigned long long)fifo_addr, g_rsx.fifo_size, g_backend);
 }
 
 PS3RT_API void ps3rt_rsx_set_put(uint32_t put) {
     std::lock_guard<std::mutex> lk(g_rsx_mu);
-    g_rsx.put = put;
+    uint32_t size = g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000;
+    g_rsx.put = put % size;
 }
 
 PS3RT_API uint32_t ps3rt_rsx_get_get(void) {
