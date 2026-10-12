@@ -125,7 +125,7 @@ int run(const std::string& cmd, std::string& log) {
     STARTUPINFOA si{}; si.cb = sizeof(si); si.dwFlags = STARTF_USESTDHANDLES;
     si.hStdOutput = writePipe; si.hStdError = writePipe; si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
     PROCESS_INFORMATION pi{};
-    std::string full = "cmd.exe /S /C \\"" + cmd + " 2>&1\\"";
+    std::string full = "cmd.exe /C " + cmd + " 2>&1";
     std::vector<char> mutableCmd(full.begin(), full.end()); mutableCmd.push_back('\0');
     BOOL created = CreateProcessA(nullptr, mutableCmd.data(), nullptr, nullptr, TRUE,
                                   CREATE_NO_WINDOW | CREATE_SUSPENDED, nullptr, nullptr, &si, &pi);
