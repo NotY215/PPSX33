@@ -6,6 +6,7 @@
 #include <cstring>
 #include <cmath>
 #include <cstdio>
+#include <cstdarg>
 
 #if defined(_MSC_VER)
   #include <stdlib.h>
@@ -98,6 +99,8 @@ static inline uint64_t ps3_rotl32dup(uint32_t v, unsigned s) {
 }
 
 PS3RT_API void ps3rt_touch(uint64_t addr, size_t len);
+// Tee log to stderr + timestamped file next to game EXE
+PS3RT_API void ps3rt_log(const char* fmt, ...);
 
 static constexpr uint64_t kGuestMemSize = 512ull * 1024 * 1024;
 static inline bool guest_ok(const PPUContext& c, uint64_t a, size_t n) {
