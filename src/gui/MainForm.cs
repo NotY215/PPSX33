@@ -21,7 +21,7 @@ public sealed partial class MainForm : Form
     private readonly TextBox _log = new();
     private readonly TextBox _report = new();
     private readonly TextBox _roadmap = new();
-    private readonly Label _project = new();
+    private readonly Ps3HudLabel _project = new();
     private readonly Label _status = new();
     private readonly ProgressBar _progress = new();
     private readonly Ps3Button _btnDecrypt = new();
@@ -72,7 +72,7 @@ public sealed partial class MainForm : Form
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Padding = new Padding(16), BackColor = Color.Transparent };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 266));
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
-        var rail = new Panel { Dock = DockStyle.Fill, BackColor = Panel, Padding = new Padding(14) };
+        var rail = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(10, 17, 37), Padding = new Padding(14) };
         _logo.SizeMode = PictureBoxSizeMode.Zoom; _logo.Height = 70; _logo.Dock = DockStyle.Top; _logo.BackColor = Color.Transparent;
         try {
             string png = Path.Combine(AppContext.BaseDirectory, "ppsx33-logo.png");
@@ -89,12 +89,12 @@ public sealed partial class MainForm : Form
         StyleBtn(_btnCopy, "Copy to game folder", Panel2);
         StyleBtn(_btnCancel, "Stop / Cancel", Danger);
         _btnLift.Enabled = _btnBuild.Enabled = _btnRun.Enabled = _btnCopy.Enabled = _btnCancel.Enabled = false;
-        var btnStack = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, BackColor = Color.Transparent, Padding = new Padding(0, 4, 0, 8) };
+        var btnStack = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, BackColor = Color.FromArgb(10, 17, 37), Padding = new Padding(0, 8, 0, 10) };
         foreach (var b in new[] { _btnDecrypt, _btnLoad, _btnLift, _btnBuild, _btnRun, _btnCopy, _btnCancel })
         { b.Width = 224; b.Height = 38; b.Margin = new Padding(0, 0, 0, 7); btnStack.Controls.Add(b); }
 
         var optsTitle = MakeLbl("OPTIONS", TextSec, true); optsTitle.Dock = DockStyle.Top; optsTitle.Height = 28; optsTitle.Padding = new Padding(0, 8, 0, 0);
-        var opts = new Panel { Dock = DockStyle.Top, Height = 170, BackColor = Color.Transparent };
+        var opts = new Panel { Dock = DockStyle.Top, Height = 170, BackColor = Color.FromArgb(12, 21, 43), Padding = new Padding(6, 0, 0, 0) };
         var gfxLbl = MakeLbl("Graphics backend", TextSec, false); gfxLbl.Location = new Point(0, 4);
         _gfx.DropDownStyle = ComboBoxStyle.DropDownList; _gfx.FlatStyle = FlatStyle.Flat;
         _gfx.BackColor = Panel2; _gfx.ForeColor = TextPri; _gfx.Location = new Point(0, 24); _gfx.Size = new Size(224, 30);
@@ -118,17 +118,17 @@ public sealed partial class MainForm : Form
         UpdateRpcs3Button();
         rail.Controls.Add(opts); rail.Controls.Add(optsTitle); rail.Controls.Add(btnStack); rail.Controls.Add(railTitle); rail.Controls.Add(_logo);
 
-        var right = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Color.Transparent, Padding = new Padding(12, 0, 0, 0) };
+        var right = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Color.Transparent, Padding = new Padding(12, 0, 0, 0), GrowStyle = TableLayoutPanelGrowStyle.FixedSize };
         right.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
         right.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
         right.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-        _project.Text = "No project loaded"; _project.ForeColor = TextPri; _project.BackColor = Color.FromArgb(15, 24, 52);
+        _project.Text = "PROJECT  /  NO PROJECT LOADED"; _project.ForeColor = TextPri; _project.BackColor = Color.FromArgb(12, 22, 47);
         _project.Dock = DockStyle.Fill; _project.TextAlign = ContentAlignment.MiddleLeft; _project.Padding = new Padding(12, 0, 0, 0);
         StyleTextBox(_log); StyleTextBox(_report); StyleTextBox(_roadmap);
         _roadmap.Text = "PPSX33 · Sequential: Load ELF → Decompile → Build → Run\r\n";
         _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(92, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab; _tabs.BackColor = Bg;
         AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap);
-        _status.Text = "READY  ·  XMB SYSTEM"; _status.ForeColor = TextSec; _status.Dock = DockStyle.Fill;
+        _status.Text = "●  SYSTEM READY"; _status.ForeColor = TextSec; _status.Dock = DockStyle.Fill;
         _status.TextAlign = ContentAlignment.MiddleLeft; _status.Padding = new Padding(8, 0, 0, 0);
         _progress.Style = ProgressBarStyle.Continuous; _progress.Minimum = 0; _progress.Maximum = 100; _progress.Value = 0;
         _progress.Dock = DockStyle.Right; _progress.Width = 200; _progress.Visible = false;
