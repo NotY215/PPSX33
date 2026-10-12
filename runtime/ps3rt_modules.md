@@ -1,14 +1,12 @@
-# Runtime module map
+# Runtime modules
 
-| File | Responsibility | Stage tags |
-|------|----------------|------------|
-| ps3rt.cpp | Boot, memory map, LV2, PRX/GCM, progress_hw, SPU HLE | BOOT, MEM, GCM, PPU progress, SPU, EXIT |
-| rsx_stub.cpp | RSX methods, D3D11 window, Present | RSX ready |
-| spu_stub.cpp | SPU tick link stub | - |
-| ppu_runtime_run.h | PPU interpreter loop | PPU run start/end |
-| nid_table.h | NID name table | - |
-| ps3rt_stage.h | PS3RT_STAGE() macro | - |
-| ps3rt_log.cpp | Optional log helpers | - |
-| ps3rt_hw.cpp | Optional HW helpers | - |
+| File | Role |
+|------|------|
+| ps3rt.cpp | Boot, map, LV2, PRX/GCM, progress |
+| rsx_stub.cpp | RSX + D3D present |
+| spu_stub.cpp | SPU tick |
+| ppu_runtime_run.h | PPU loop |
+| nid_table.h | NIDs |
+| ps3rt_stage.h | Stage markers |
 
-If a log stops after a stage tag, the **next** row is the likely fault.
+If log stops after a stage, next subsystem is the suspect.
