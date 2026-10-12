@@ -1,11 +1,11 @@
-// Phase P: reject low stack targets (0x10000); keep Phase O stub-loop break
+// Phase Q+R: allow early boot PCs (>=0x10004); ban only raw segment base 0x10000
 static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, size_t n,
                                          uint64_t exclude_pc = 0,
                                          const uint64_t* ban = nullptr, int nban = 0) {
     auto banned = [&](uint64_t p) -> bool {
         if (!p || p == exclude_pc) return true;
-        // Phase P: never return into image base / early vector area
-        if (p < 0x11000ull) return true;
+        // Only reject below mapped image or the raw segment base (not a real fn)
+        if (p < 0x10000ull || p == 0x10000ull) return true;
         for (int i = 0; i < nban; ++i) if (ban[i] == p) return true;
         return false;
     };
@@ -50,14 +50,17 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     int same_hb = 0;
 
     auto is_banned = [&](uint64_t p) -> bool {
-        if (p < 0x11000ull) return true;
+        // CRITICAL: early boot returns like 0x103ac must NOT be banned
+        if (!p || p < 0x10000ull || p == 0x10000ull) return true;
         for (int i = 0; i < nban; ++i) if (ban_lr[i] == p) return true;
         return false;
     };
     auto add_ban = [&](uint64_t lr) {
         if (!lr || is_banned(lr)) return;
+        // Never ban early-boot code region returns permanently from first stubs
+        if (lr >= 0x10004ull && lr < 0x20000ull) return;
         if (nban < 24) ban_lr[nban++] = lr;
-        std::fprintf(stderr, "[ps3] Phase P ban=0x%llx (nban=%d)\n",
+        std::fprintf(stderr, "[ps3] Phase Q ban=0x%llx (nban=%d)\n",
             (unsigned long long)lr, nban);
     };
 
@@ -112,7 +115,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                     uint64_t alt = recover_return_pc(c, chunks, n, c.lr, ban_lr, nban);
                     if (alt && alt != c.lr && !is_banned(alt)) force = alt;
                     std::fprintf(stderr,
-                        "[ps3] Phase P break stub-loop lr=0x%llx count=%d -> 0x%llx\n",
+                        "[ps3] Phase Q break stub-loop lr=0x%llx count=%d -> 0x%llx\n",
                         (unsigned long long)c.lr, stub_same_lr, (unsigned long long)force);
                     std::fflush(stderr);
                     ps3rt_prx_import_stub(&c, c.pc);
@@ -130,6 +133,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             }
 
             uint64_t ret = 0;
+            // Prefer LR even in early boot (0x103ac etc.)
             if (c.lr && c.lr != c.pc && !is_banned(c.lr) && pc_in_chunks(c.lr, chunks, n))
                 ret = c.lr;
             if (!ret && last_good_ret && !is_banned(last_good_ret)
@@ -143,6 +147,8 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 uint64_t force = c.lr + 4;
                 if (pc_in_chunks(force, chunks, n) && !is_banned(force))
                     ret = force;
+                else if (!is_banned(c.lr) && pc_in_chunks(c.lr, chunks, n))
+                    ret = c.lr;
             }
 
             if (ret && external_escapes < 2000000) {
@@ -151,7 +157,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 else
                     c.gpr[3] = 0;
 
-                if (logged < 40) {
+                if (logged < 48) {
                     std::fprintf(stderr,
                         "[ps3] external/import stub pc=0x%llx -> ret=0x%llx (#%d)%s\n",
                         (unsigned long long)c.pc, (unsigned long long)ret,
@@ -165,7 +171,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
 
                 if (nullish || (c.lr && (c.lr == last_null_lr || is_banned(c.lr)))) {
                     ++soft_breaks;
-                    if (c.lr) add_ban(c.lr);
+                    if (c.lr && c.lr >= 0x20000ull) add_ban(c.lr);
 
                     if (failed_escape && soft_breaks >= 2) {
                         add_ban(failed_escape);
@@ -176,7 +182,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                     uint64_t alt = recover_return_pc(c, chunks, n, ret, ban_lr, nban);
 
                     if (soft_breaks > 4 && alt && alt != ret && !is_banned(alt)) {
-                        std::fprintf(stderr, "[ps3] Phase P stack-escape -> 0x%llx (soft=%d)\n",
+                        std::fprintf(stderr, "[ps3] Phase Q stack-escape -> 0x%llx (soft=%d)\n",
                             (unsigned long long)alt, soft_breaks);
                         ret = alt;
                         soft_breaks = 2;
@@ -236,6 +242,17 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 }
             }
 
+            // Last resort for import: always try lr if it looks valid
+            if (importish && c.lr && (c.lr & 3ull) == 0 && c.lr >= 0x10004ull) {
+                std::fprintf(stderr, "[ps3] Phase Q import last-resort lr=0x%llx\n",
+                    (unsigned long long)c.lr);
+                ps3rt_prx_import_stub(&c, c.pc);
+                c.gpr[3] = 0;
+                c.pc = c.lr;
+                ++external_escapes;
+                continue;
+            }
+
             std::fprintf(stderr,
                 "[ps3] halt: PC left range\n"
                 "  pc=0x%llx lr=0x%llx r1=0x%llx r2=0x%llx escapes=%d last_good=0x%llx soft=%d nban=%d\n",
@@ -256,7 +273,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 uint64_t alt = recover_return_pc(c, chunks, n, c.lr, ban_lr, nban);
                 if (alt) force = alt;
                 if (force && pc_in_chunks(force, chunks, n)) {
-                    std::fprintf(stderr, "[ps3] Phase P hb-break stub -> 0x%llx\n",
+                    std::fprintf(stderr, "[ps3] Phase Q hb-break stub -> 0x%llx\n",
                         (unsigned long long)force);
                     if (c.lr) add_ban(c.lr);
                     ps3rt_prx_import_stub(&c, c.pc);

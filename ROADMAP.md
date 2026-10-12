@@ -1,28 +1,26 @@
 # PPSX33 Roadmap
 
-Last updated: 2026-10-11 (Phase P)
+Last updated: 2026-10-12 (Phase Q+R)
 
 | Phase | Status | Goal |
 |-------|--------|------|
-| A–O | Done | Boot, stub loops, TOC, escapes |
-| **P** | **Done** | RSX flush order, LV2 wait HLE, reject 0x10000 escapes |
-| **Q** | Next | Real GCM command emission + method counts > 0 |
-| R | Planned | Draw path / shaders |
+| A–P | Done | Boot through RSX flush-order fix |
+| **Q** | **Done** | Fix early-boot ban regression (`lr=0x103ac`) |
+| **R** | **Done** | Import last-resort + protect early PC bans |
+| **S** | Next | Real GCM draw methods / non-zero draws |
 
-## Phase P
+## Critical regression (Phase P)
 
-**Progress from O:** Real syscalls, TOC stable, 5000+ flips, heartbeat at real PCs.
+`is_banned(p)` used `p < 0x11000`, which blocked **valid** early returns:
+- entry `0x10230`, first import return `lr=0x103ac`
+- Result: immediate halt at `pc=0x39800000 escapes=0`
 
-**Still wrong:**
-- `draws=0 methods=0` — `progress_hw` synced get=put *before* flush (FIFO never decoded)
-- Stack-escape to `0x10000` (image base) is useless
-- Busy `sc 141` usleep / `sc 144` time / mutex locks need HLE
+## Phase Q+R fixes
 
-**Fixes:**
-1. Flush FIFO **before** setting guest get=put
-2. cellGcmSys stubs advance PUT and write a NOP method into the FIFO
-3. `recover_return_pc` rejects targets `< 0x11000`
-4. New `runtime/lv2_syscalls.inl` for wait/time/mutex syscalls
+1. Only ban `p < 0x10000` or `p == 0x10000` (raw segment base)
+2. Never permanently ban early-boot LRs in `0x10004..0x1FFFF`
+3. Import last-resort: if no ret found, still return to `lr` when aligned and `>= 0x10004`
+4. Prefer `lr` for first cellGcmSys stubs during boot
 
 ## Apply
 
@@ -33,9 +31,10 @@ git pull origin main
 
 Rebuild All → Build → Run.
 
-Expect:
+Expect again:
 ```
-[rsx] flip #N draws=... methods=...   # methods should climb
-[lv2] sc 141 ...   # returns immediately
+[gcm] control @ ...
+[ps3] external/import stub pc=0x39800000 -> ret=0x103ac (#1)
+... continues past boot ...
 ```
-No more `stack-escape -> 0x10000`.
+Not an immediate halt with `escapes=0`.
