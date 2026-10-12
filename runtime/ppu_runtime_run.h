@@ -1,4 +1,4 @@
-// Phase XIV: wild-PC excludes 0x39800000; soft-break faster; region-ban safe
+// Phase XV: import stub before force-out; wild-PC excludes 0x39800000
 static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, size_t n,
                                          uint64_t exclude_pc = 0,
                                          const uint64_t* ban = nullptr, int nban = 0,
@@ -134,12 +134,60 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             spin_pc = c.pc; spin_count = 0;
         }
 
+        // Phase XV: import stub MUST run before force-out (0x39800000 is not in chunks)
+        {
+            bool nullish_early = (c.pc == 0x39800000ull) || ((c.pc & 0xFFFF0000ull) == 0x39800000ull);
+            if (nullish_early) {
+                uint64_t ret = c.lr;
+                if (!ret || is_banned(ret) || !pc_in_chunks(ret, chunks, n))
+                    ret = recover_return_pc(c, chunks, n, c.pc, ban_lr, nban, rban, nrban);
+                if (!ret && last_good_ret && !is_banned(last_good_ret) && pc_in_chunks(last_good_ret, chunks, n))
+                    ret = last_good_ret;
+                if (ret && external_escapes < 262144) {
+                    ps3rt_prx_import_stub(&c, c.pc);
+                    bool same_site = last_null_lr &&
+                        (ret == last_null_lr ||
+                         (ret >= (last_null_lr & ~0xFFull) && ret < (last_null_lr & ~0xFFull) + 0x100));
+                    if (same_site) {
+                        if (++stub_same_lr > 64) {
+                            ++soft_breaks;
+                            stub_same_lr = 0;
+                            uint64_t alt = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
+                            if (alt && alt != ret) ret = alt;
+                            else {
+                                uint64_t stride = (soft_breaks >= 6) ? 0x1000ull : 0x400ull;
+                                uint64_t next = (ret & ~0xFull) + stride;
+                                if (pc_in_chunks(next, chunks, n)) ret = next;
+                                else if (pc_in_chunks(ret + 4, chunks, n)) ret = ret + 4;
+                            }
+                            if (soft_breaks >= 8) {
+                                add_ban(last_null_lr);
+                                last_null_lr = 0;
+                            }
+                        }
+                    } else {
+                        stub_same_lr = 0;
+                        last_null_lr = ret;
+                    }
+                    if (logged < 96) {
+                        ps3rt_log("[ps3] import stub pc=0x%llx -> ret=0x%llx (#%d)\n",
+                            (unsigned long long)c.pc, (unsigned long long)ret, external_escapes + 1);
+                        ++logged;
+                    }
+                    last_good_ret = ret;
+                    c.pc = ret;
+                    ++external_escapes;
+                    continue;
+                }
+            }
+        }
+
         const PPUChunk* hit = nullptr;
         for (size_t i = 0; i < n; ++i) {
             if (c.pc >= chunks[i].start && c.pc < chunks[i].end) { hit = &chunks[i]; break; }
         }
 
-        if (!hit) {
+        if (!hit && !(c.pc == 0x39800000ull || (c.pc & 0xFFFF0000ull) == 0x39800000ull)) {
             uint64_t alt = recover_return_pc(c, chunks, n, c.pc, ban_lr, nban, rban, nrban);
             if (!alt && last_good_ret && !is_banned(last_good_ret)) alt = last_good_ret;
             if (alt && external_escapes < 262144) {
@@ -171,81 +219,11 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             break;
         }
 
-        // Import / null stub zone — MUST run (wild-pc no longer steals 0x39800000)
-        bool nullish = (c.pc == 0x39800000ull) || ((c.pc & 0xFFFF0000ull) == 0x39800000ull);
-        bool importish = nullish;
-        if (nullish || (c.pc < 0x10100ull)) {
-            uint64_t ret = c.lr;
-            if (!ret || is_banned(ret) || !pc_in_chunks(ret, chunks, n))
-                ret = recover_return_pc(c, chunks, n, c.pc, ban_lr, nban, rban, nrban);
-            if (!ret && last_good_ret && !is_banned(last_good_ret)
-                && last_good_ret != failed_escape
-                && pc_in_chunks(last_good_ret, chunks, n))
-                ret = last_good_ret;
-
-            if (ret && external_escapes < 262144) {
-                if (nullish) ps3rt_prx_import_stub(&c, c.pc);
-                else c.gpr[3] = 0;
-
-                bool same_site = nullish && last_null_lr &&
-                    (ret == last_null_lr ||
-                     (ret >= (last_null_lr & ~0xFFull) && ret < (last_null_lr & ~0xFFull) + 0x100));
-                if (same_site) {
-                    if (++stub_same_lr > 64) {
-                        ++soft_breaks;
-                        stub_same_lr = 0;
-                        uint64_t alt = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
-                        if (alt && (alt < (ret & ~0xFFull) || alt >= (ret & ~0xFFull) + 0x100))
-                            ret = alt;
-                        else if (last_good_ret && !is_banned(last_good_ret))
-                            ret = last_good_ret;
-                        else {
-                            uint64_t stride = 0x100;
-                            if (soft_breaks >= 2) stride = 0x400;
-                            if (soft_breaks >= 6) stride = 0x1000;
-                            if (soft_breaks >= 12) stride = 0x4000;
-                            uint64_t next = (ret & ~0xFull) + stride;
-                            if (pc_in_chunks(next, chunks, n)) ret = next;
-                            else if (pc_in_chunks(ret + 4, chunks, n)) ret = ret + 4;
-                        }
-                        if (soft_breaks >= 8) {
-                            add_ban(last_null_lr);
-                            if (ret < 0x200000ull) {
-                                uint64_t prefer = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
-                                if (prefer) ret = prefer;
-                            }
-                            last_null_lr = 0;
-                        }
-                    }
-                } else {
-                    stub_same_lr = 0;
-                    last_null_lr = nullish ? ret : 0;
-                }
-
-                if (logged < 96) {
-                    ps3rt_log("[ps3] external/import stub pc=0x%llx -> ret=0x%llx (#%d)%s\n",
-                        (unsigned long long)c.pc, (unsigned long long)ret,
-                        external_escapes + 1,
-                        (nullish || importish) ? " [null/import]" : "");
-                    ++logged;
-                }
-                if (ret != last_null_lr) last_good_ret = ret;
-                c.pc = ret;
-                ++external_escapes;
-                continue;
-            }
-
-            if (last_good_ret && external_escapes < 262144) {
-                if (nullish) ps3rt_prx_import_stub(&c, c.pc);
-                else c.gpr[3] = 0;
-                c.pc = last_good_ret;
-                ++external_escapes;
-                continue;
-            }
-
-            ps3rt_log("[ps3] halt: PC left range pc=0x%llx lr=0x%llx escapes=%d nrban=%d last_good=0x%llx\n",
-                (unsigned long long)c.pc, (unsigned long long)c.lr,
-                external_escapes, nrban, (unsigned long long)last_good_ret);
+        if (!hit) {
+            // import-only path already tried; nothing else to do
+            if (last_good_ret) { c.pc = last_good_ret; continue; }
+            ps3rt_log("[ps3] halt: import with no return pc=0x%llx lr=0x%llx\n",
+                (unsigned long long)c.pc, (unsigned long long)c.lr);
             c.halted = true;
             break;
         }
