@@ -271,7 +271,6 @@ void cleanup_after_build(const fs::path& project_dir, const fs::path& out, std::
     for (const char* name : { "build.ninja", "build_msvc.bat" }) {
         if (fs::exists(out / name)) fs::remove(out / name, ec);
     }
-    // Keep codebase reports only in output/; clear heavy intermediates
     if (fs::exists(codebase)) {
         for (auto& e : fs::directory_iterator(codebase, ec)) {
             std::string n = e.path().filename().string();
@@ -284,9 +283,8 @@ void cleanup_after_build(const fs::path& project_dir, const fs::path& out, std::
     log += "cleanup: done (exe/dll/guest_image.bin kept)\n";
     live_log("cleanup: done\n");
 }
-}
 
-} // namespace
+} // anonymous helpers
 
 void begin_build() { g_build_cancel_requested.store(false); }
 void cancel_build() { g_build_cancel_requested.store(true); }
@@ -342,7 +340,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         if (std::string(n).find(".cpp") != std::string::npos) rtSrc.push_back(n);
     }
     for (const char* n : {"ppu_runtime_core.h", "ppu_runtime_core_a.h",
-                          "ppu_runtime_core_b.h", "ppu_runtime_run.h"}) {
+                          "ppu_runtime_core_b.h", "ppu_runtime_run.h", "ps3rt_stage.h"}) {
         fs::path from = fs::path(runtime_dir) / n;
         if (fs::exists(from))
             fs::copy_file(from, src / n, ow, ec);
@@ -401,43 +399,26 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             for (auto& n : gameSrc) {
                 std::string o = "obj\\g_" + n + ".obj";
                 f << "echo COMPILE " << n << "\n";
-                f << cl << " /nologo /O2 /EHsc /std:c++17 /bigobj /FS /I src /c src\\" << n << " /Fo" << o << " || exit /b 1\n";
+                f << cl << " " << cflags << " /c src\\" << n << " /Fo" << o << " || exit /b 1\n";
                 game_objs += " " + o;
             }
-            if (fs::exists(src / "game_main.cpp") &&
-                std::find(gameSrc.begin(), gameSrc.end(), "game_main.cpp") == gameSrc.end()) {
-                f << "echo COMPILE game_main.cpp\n";
-                f << cl << " /nologo /O2 /EHsc /std:c++17 /bigobj /FS /I src /c src\\game_main.cpp /Foobj\\g_game_main.obj || exit /b 1\n";
-                game_objs += " obj\\g_game_main.obj";
-            }
-            if (fs::exists(src / "ppu_chunks.cpp") &&
-                std::find(gameSrc.begin(), gameSrc.end(), "ppu_chunks.cpp") == gameSrc.end()) {
-                f << "echo COMPILE ppu_chunks.cpp\n";
-                f << cl << " /nologo /O2 /EHsc /std:c++17 /bigobj /FS /I src /c src\\ppu_chunks.cpp /Foobj\\g_ppu_chunks.obj || exit /b 1\n";
-                game_objs += " obj\\g_ppu_chunks.obj";
-            }
             f << "echo LINK " << out_exe << "\n";
-            f << link_cmd << " /nologo /OUT:" << out_exe << game_objs << " ps3rt.lib || exit /b 1\n"
-              << "echo Build OK\n";
+            f << link_cmd << " /nologo /OUT:" << out_exe << game_objs << " ps3rt.lib || exit /b 1\n";
+            f << "echo Build OK\n";
+            f << "exit /b 0\n";
         }
-        log += "MSVC: vcvars=" + (vcvars.empty() ? "(none)" : vcvars) + "\n";
-        log += "MSVC: cl=" + (bundled_cl.empty() ? "cl(PATH)" : bundled_cl) + "\n";
-        log += "MSVC: gameSrc=" + std::to_string(gameSrc.size()) + " rtSrc=" + std::to_string(rtSrc.size()) + "\n";
-        log += "MSVC: out=" + out.string() + "\n";
-        auto prev = fs::current_path(ec);
-        fs::current_path(out, ec);
-        if (ec) log += "chdir failed: " + ec.message() + "\n";
-        int rc = run("build_msvc.bat", log);
-        fs::current_path(prev, ec);
+        std::error_code ecd;
+        fs::path prev = fs::current_path(ecd);
+        fs::current_path(out, ecd);
+        int rc = run("cmd /c build_msvc.bat", log);
+        fs::current_path(prev, ecd);
+        if (rc == 130 || g_build_cancel_requested.load()) { err = "BUILD_CANCELLED"; live_close(); return false; }
         if (rc != 0) {
-            if (rc == 130 || g_build_cancel_requested.load()) { err = "BUILD_CANCELLED"; return false; }
-            std::string tail = log;
-            if (tail.size() > 3000) tail = tail.substr(tail.size() - 3000);
+            std::string tail = log.size() > 4000 ? log.substr(log.size() - 4000) : log;
             err = "MSVC build failed (exit=" + std::to_string(rc) + "):\n" + tail;
             live_log(err + "\n"); live_close();
             return false;
         }
-        fs::remove(out / "build_msvc.bat", ec);
         log += "Build OK: output/" + out_exe + " + output/ps3rt.dll + output/guest_image.bin (MSVC)\n";
         live_log("Build OK (MSVC)\n");
         cleanup_after_build(project_dir, out, log);
@@ -446,68 +427,40 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     }
 #endif
 
-    fs::path cdir(compilers_dir);
-    std::string cxx = find_tool(cdir, {"g++", "c++"});
-    std::string ninja = find_tool(cdir, {"ninja"});
-    log += "MSVC not found. Falling back to g++.\n";
-
+    std::string cxx = find_tool(compilers_dir, {"g++", "c++", "clang++"});
+    std::string cc = find_tool(compilers_dir, {"gcc", "clang"});
+    (void)cc;
     std::vector<Step> steps;
-    std::string cflags = "-O2 -std=c++17 -I src";
-    std::vector<std::string> gameObjs, rtObjs;
+    std::string rt_objs, game_objs;
     for (auto& n : rtSrc) {
         std::string o = "obj/rt_" + n + ".o";
-        steps.push_back({{ "src/" + n }, o, q(cxx) + " " + cflags + " -DPS3RT_BUILD_DLL=1 -fPIC -c src/" + n + " -o " + o});
-        rtObjs.push_back(o);
+        steps.push_back({{}, o, q(cxx) + " -O2 -std=c++17 -fPIC -I src -DPS3RT_BUILD_DLL=1 -c src/" + n + " -o " + o});
+        rt_objs += " " + o;
     }
-    std::string dll = std::string("ps3rt") + kDll;
-    {
-        std::string objs; for (auto& o : rtObjs) objs += " " + o;
-        steps.push_back({rtObjs, dll, q(cxx) + " -shared" + objs + " -o " + dll});
-    }
+    steps.push_back({{}, "ps3rt" + std::string(kDll),
+        q(cxx) + " -shared -o ps3rt" + std::string(kDll) + rt_objs + " -ld3d11 -ldxgi -ld3d10"});
     for (auto& n : gameSrc) {
         std::string o = "obj/g_" + n + ".o";
-        steps.push_back({{ "src/" + n }, o, q(cxx) + " " + cflags + " -c src/" + n + " -o " + o});
-        gameObjs.push_back(o);
+        steps.push_back({{}, o, q(cxx) + " -O2 -std=c++17 -I src -c src/" + n + " -o " + o});
+        game_objs += " " + o;
     }
-    {
-        std::string objs; for (auto& o : gameObjs) objs += " " + o;
-        std::string rpath;
-#ifndef _WIN32
-        rpath = " -Wl,-rpath,'$ORIGIN'";
-#endif
-        std::vector<std::string> ins = gameObjs; ins.push_back(dll);
-        steps.push_back({ins, out_exe, q(cxx) + objs + " ./" + dll + rpath + " -o " + out_exe});
-    }
+    steps.push_back({{}, out_exe, q(cxx) + " -o " + out_exe + game_objs + " -L. -lps3rt -Wl,-rpath,."});
 
-    {
-        std::ofstream n(out / "build.ninja");
-        n << "# GENERATED (g++ fallback)\nrule run\n  command = $cmd\n  description = $out\n\n";
-        for (auto& s : steps) {
-            std::string c = s.cmd, esc;
-            for (char ch : c) { if (ch == '$') esc += "$$"; else esc += ch; }
-            n << "build " << s.out << ": run";
-            for (auto& i : s.in) n << " " << i;
-            n << "\n  cmd = " << esc << "\n";
-        }
-    }
-
-    auto prev = fs::current_path(ec);
-    fs::current_path(out, ec);
+    std::error_code ecd;
+    fs::path prev = fs::current_path(ecd);
+    fs::current_path(out, ecd);
     int rc = 0;
-    if (fs::exists(ninja)) rc = run(q(ninja), log);
-    else {
-        log += "(ninja not found, compiling sequential)\n";
-        for (auto& s : steps) {
-            rc = run(s.cmd, log);
-            if (rc != 0) break;
-        }
+    for (auto& s : steps) {
+        rc = run(s.cmd, log);
+        if (rc != 0) break;
     }
-    fs::current_path(prev, ec);
+    fs::current_path(prev, ecd);
     if (rc != 0) { err = "g++ build failed. See log."; live_close(); return false; }
     log += "Build OK: output/" + out_exe + " + output/" + std::string("ps3rt") + kDll + " (g++)\n";
     live_log("Build OK (g++)\n");
     cleanup_after_build(project_dir, out, log);
     live_close();
     return true;
-    
+}
+
 } // namespace ps3
