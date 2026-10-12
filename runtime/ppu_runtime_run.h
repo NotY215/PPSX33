@@ -1,5 +1,5 @@
 // Phase XV: import stub before force-out; wild-PC excludes 0x39800000
-// Phase XIV: cycle-break ring for short PC loops (GOW 0/0x331c30/0x3ca524)
+// Phase XIV (safe): sustained dwell assist — no PC thrash storm
 static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, size_t n,
                                          uint64_t exclude_pc = 0,
                                          const uint64_t* ban = nullptr, int nban = 0,
@@ -37,6 +37,7 @@ static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, 
 }
 
 static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
+    ps3rt_log("[stage] PPU run start\n");
     int external_escapes = 0;
     int logged = 0;
     int soft_breaks = 0;
@@ -89,9 +90,10 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             (unsigned long long)b, nrban);
     };
 
-    uint64_t hist[8] = {};
-    int hist_n = 0;
-    int cycle_hits = 0;
+    // Phase XIV (safe): sustained-spin assist only — never thrash PC every step
+    uint64_t xiv_last_pc = 0;
+    uint64_t xiv_same = 0;
+    uint64_t xiv_log = 0;
 
     while (!c.halted) {
         if (ps3rt_should_exit()) {
@@ -100,41 +102,33 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             break;
         }
 
-        if (hist_n == 0 || hist[(hist_n - 1) & 7] != c.pc) {
-            hist[hist_n & 7] = c.pc;
-            ++hist_n;
+        if (c.pc == xiv_last_pc) {
+            ++xiv_same;
+        } else {
+            xiv_last_pc = c.pc;
+            xiv_same = 0;
         }
-        if (hist_n >= 12) {
-            uint64_t a = hist[(hist_n - 1) & 7];
-            uint64_t b = hist[(hist_n - 2) & 7];
-            uint64_t d = hist[(hist_n - 3) & 7];
-            bool cycle2 = (a == hist[(hist_n - 3) & 7] && b == hist[(hist_n - 4) & 7] && a != b);
-            bool cycle3 = (a == hist[(hist_n - 4) & 7] && b == hist[(hist_n - 5) & 7] && d == hist[(hist_n - 6) & 7]
-                           && a != b && b != d);
-            if (cycle2 || cycle3) {
-                ++cycle_hits;
-                ps3rt_progress_hw();
-                ++progress_pokes;
-                if ((cycle_hits % 64) == 1) {
-                    ps3rt_log("[ps3] Phase XIV cycle-break pc=0x%llx hits=%d\n",
-                        (unsigned long long)c.pc, cycle_hits);
-                }
+        if (xiv_same == 4096) {
+            ps3rt_progress_hw();
+            ++progress_pokes;
+        }
+        if (xiv_same > 0 && (xiv_same % 65536) == 0) {
+            if (xiv_log < 16) {
+                ps3rt_log("[ps3] Phase XIV dwell pc=0x%llx n=%llu — HW poke\n",
+                    (unsigned long long)c.pc, (unsigned long long)xiv_same);
+                ++xiv_log;
+            }
+            ps3rt_progress_hw();
+            ++progress_pokes;
+            if (xiv_same >= 262144) {
                 uint64_t alt = recover_return_pc(c, chunks, n, c.pc, ban_lr, nban, rban, nrban);
                 if (!alt && last_good_ret && !is_banned(last_good_ret)) alt = last_good_ret;
-                if (alt && alt != c.pc && alt != a && alt != b) {
-                    c.pc = alt; c.gpr[3] = 0; continue;
+                if (alt && alt != c.pc) {
+                    c.pc = alt;
+                    c.gpr[3] = 0;
+                    xiv_same = 0;
+                    continue;
                 }
-                const PPUChunk* ch = nullptr;
-                for (size_t i = 0; i < n; ++i)
-                    if (c.pc >= chunks[i].start && c.pc < chunks[i].end) { ch = &chunks[i]; break; }
-                if (ch && c.pc + 4 < ch->end) { c.pc += 4; c.gpr[3] = 0; continue; }
-                if (last_good_ret) {
-                    uint64_t stride = (cycle_hits > 256) ? 0x1000ull : 0x100ull;
-                    uint64_t nx = (last_good_ret & ~0xFull) + stride;
-                    if (pc_in_chunks(nx, chunks, n)) { c.pc = nx; c.gpr[3] = 0; continue; }
-                }
-            } else {
-                cycle_hits = 0;
             }
         }
 
@@ -273,4 +267,5 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             } else { last_hb_pc = c.pc; same_hb = 0; }
         }
     }
+    ps3rt_log("[stage] PPU run end\n");
 }
