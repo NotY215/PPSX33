@@ -150,3 +150,31 @@ internal sealed class Ps3Button : Button
         return p;
     }
 }
+
+/// <summary>Compact opaque HUD card used for project and telemetry labels.</summary>
+internal sealed class Ps3HudLabel : Label
+{
+    public Ps3HudLabel()
+    {
+        SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
+                 ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+        BackColor = Color.FromArgb(12, 22, 47);
+        ForeColor = Color.FromArgb(235, 244, 255);
+        Padding = new Padding(12, 0, 8, 0);
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        e.Graphics.Clear(BackColor);
+        var r = ClientRectangle;
+        using var border = new Pen(Color.FromArgb(55, 115, 190), 1f);
+        e.Graphics.DrawRectangle(border, 0, 0, Math.Max(0, r.Width - 1), Math.Max(0, r.Height - 1));
+        using var accent = new Pen(Color.FromArgb(65, 190, 255), 2f);
+        e.Graphics.DrawLine(accent, 1, 1, 22, 1);
+        e.Graphics.DrawLine(accent, 1, 1, 1, Math.Min(14, r.Height - 1));
+        TextRenderer.DrawText(e.Graphics, Text, Font, new Rectangle(Padding.Left, 0,
+            Math.Max(0, r.Width - Padding.Horizontal), r.Height), ForeColor,
+            TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.SingleLine);
+    }
+}
