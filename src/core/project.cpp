@@ -7,6 +7,10 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
+#include <atomic>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 namespace fs = std::filesystem;
 
@@ -93,6 +97,7 @@ bool lift_project(const std::string& project_dir, std::string& log, std::string&
 }
 
 namespace {
+std::atomic<bool> g_build_cancel_requested{false};
 #ifdef _WIN32
 const char* kExe = ".exe"; const char* kDll = ".dll";
 #else
@@ -106,16 +111,67 @@ std::string q(const std::string& s) { return "\"" + s + "\""; }
 int run(const std::string& cmd, std::string& log) {
     log += "> " + cmd + "\n";
 #ifdef _WIN32
-    FILE* p = _popen(("\"" + cmd + " 2>&1\"").c_str(), "r");
+    if (g_build_cancel_requested.load()) { log += "BUILD_CANCELLED\n"; return 130; }
+    SECURITY_ATTRIBUTES sa{}; sa.nLength = sizeof(sa); sa.bInheritHandle = TRUE;
+    HANDLE readPipe = nullptr, writePipe = nullptr;
+    if (!CreatePipe(&readPipe, &writePipe, &sa, 0)) return -1;
+    SetHandleInformation(readPipe, HANDLE_FLAG_INHERIT, 0);
+    HANDLE job = CreateJobObjectA(nullptr, nullptr);
+    if (job) {
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION limits{};
+        limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+        SetInformationJobObject(job, JobObjectExtendedLimitInformation, &limits, sizeof(limits));
+    }
+    STARTUPINFOA si{}; si.cb = sizeof(si); si.dwFlags = STARTF_USESTDHANDLES;
+    si.hStdOutput = writePipe; si.hStdError = writePipe; si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    PROCESS_INFORMATION pi{};
+    std::string full = "cmd.exe /S /C \\"" + cmd + " 2>&1\\"";
+    std::vector<char> mutableCmd(full.begin(), full.end()); mutableCmd.push_back('\0');
+    BOOL created = CreateProcessA(nullptr, mutableCmd.data(), nullptr, nullptr, TRUE,
+                                  CREATE_NO_WINDOW | CREATE_SUSPENDED, nullptr, nullptr, &si, &pi);
+    CloseHandle(writePipe);
+    if (!created) {
+        CloseHandle(readPipe); if (job) CloseHandle(job); return -1;
+    }
+    if (job) AssignProcessToJobObject(job, pi.hProcess);
+    ResumeThread(pi.hThread);
+    char buf[1024];
+    bool cancelled = false;
+    for (;;) {
+        DWORD available = 0;
+        while (PeekNamedPipe(readPipe, nullptr, 0, nullptr, &available, nullptr) && available) {
+            DWORD got = 0;
+            if (!ReadFile(readPipe, buf, (DWORD)std::min<size_t>(sizeof(buf), available), &got, nullptr) || got == 0) break;
+            log.append(buf, got);
+            available = 0;
+            if (!PeekNamedPipe(readPipe, nullptr, 0, nullptr, &available, nullptr)) break;
+        }
+        if (g_build_cancel_requested.load()) {
+            cancelled = true;
+            if (job) TerminateJobObject(job, 130);
+            else TerminateProcess(pi.hProcess, 130);
+        }
+        if (WaitForSingleObject(pi.hProcess, 50) == WAIT_OBJECT_0) {
+            DWORD availableAfter = 0;
+            while (PeekNamedPipe(readPipe, nullptr, 0, nullptr, &availableAfter, nullptr) && availableAfter) {
+                DWORD got = 0;
+                if (!ReadFile(readPipe, buf, (DWORD)std::min<size_t>(sizeof(buf), availableAfter), &got, nullptr) || !got) break;
+                log.append(buf, got);
+            }
+            break;
+        }
+        if (cancelled) WaitForSingleObject(pi.hProcess, 5000);
+    }
+    DWORD exitCode = 1; GetExitCodeProcess(pi.hProcess, &exitCode);
+    CloseHandle(pi.hThread); CloseHandle(pi.hProcess); CloseHandle(readPipe);
+    if (job) CloseHandle(job);
+    if (cancelled || g_build_cancel_requested.load()) { log += "\nBUILD_CANCELLED\n"; return 130; }
+    return (int)exitCode;
 #else
     FILE* p = popen((cmd + " 2>&1").c_str(), "r");
-#endif
     if (!p) return -1;
     char buf[512];
     while (std::fgets(buf, sizeof buf, p)) log += buf;
-#ifdef _WIN32
-    return _pclose(p);
-#else
     return pclose(p);
 #endif
 }
@@ -197,6 +253,7 @@ void cleanup_after_build(const fs::path& project_dir, const fs::path& out, std::
 
 bool build_project(const std::string& project_dir, const std::string& runtime_dir,
                    const std::string& compilers_dir, std::string& log, std::string& err) {
+    g_build_cancel_requested.store(false);
     fs::path out = fs::path(project_dir) / "output";
     fs::path src = out / "src";
     fs::path code = fs::path(project_dir) / "codebase";
@@ -296,7 +353,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         fs::current_path(out, ec);
         int rc = run("cmd /c build_msvc.bat", log);
         fs::current_path(prev, ec);
-        if (rc != 0) { err = "MSVC build failed. See log."; return false; }
+        if (rc != 0) { err = (rc == 130 || g_build_cancel_requested.load()) ? "BUILD_CANCELLED" : "MSVC build failed. See log."; return false; }
         log += "Build OK: output/" + out_exe + " + output/ps3rt.dll + output/guest_image.bin (MSVC)\n";
         cleanup_after_build(project_dir, out, log);
         return true;
@@ -358,7 +415,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         for (auto& s : steps) { rc = run(s.cmd, log); if (rc != 0) break; }
     }
     fs::current_path(prev, ec);
-    if (rc != 0) { err = "Build failed. See log."; return false; }
+    if (rc != 0) { err = (rc == 130 || g_build_cancel_requested.load()) ? "BUILD_CANCELLED" : "Build failed. See log."; return false; }
     log += "Build OK: output/" + out_exe + " + output/" + std::string("ps3rt") + kDll + " (g++)\n";
     cleanup_after_build(project_dir, out, log);
     return true;
