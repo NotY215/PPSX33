@@ -315,11 +315,73 @@ public sealed partial class MainForm : Form
 
     async Task BuildWithProgress() {
         if (_projectDir == null) return;
+
+        // ETA is estimated from source translation units and object files updated during this build.
+        // It is advisory only: incremental builds, linking, and compiler scheduling affect the estimate.
+        string project = _projectDir;
+        string buildRoot = Path.Combine(project, "build");
+        if (!Directory.Exists(buildRoot)) buildRoot = project;
+        int sourceTotal = CountBuildSources(project);
+        var started = DateTime.UtcNow;
+        var seenObjects = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var before = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+        try {
+            foreach (string file in Directory.EnumerateFiles(buildRoot, "*.obj", SearchOption.AllDirectories))
+                before[file] = File.GetLastWriteTimeUtc(file);
+        } catch { }
+
+        using var poll = new System.Threading.Timer(_ => {
+            try {
+                int completed = 0;
+                foreach (string file in Directory.EnumerateFiles(buildRoot, "*.obj", SearchOption.AllDirectories)) {
+                    DateTime modified = File.GetLastWriteTimeUtc(file);
+                    if (!before.TryGetValue(file, out DateTime previous) || modified > previous)
+                        seenObjects.Add(file);
+                }
+                completed = seenObjects.Count;
+                double elapsed = Math.Max(0.5, (DateTime.UtcNow - started).TotalSeconds);
+                double rate = completed / elapsed;
+                int percent = sourceTotal > 0 ? Math.Clamp((int)Math.Round(completed * 100.0 / sourceTotal), 0, 99) : 0;
+                string etaText = rate > 0 && sourceTotal > completed
+                    ? "ETA ~" + FormatDuration(TimeSpan.FromSeconds((sourceTotal - completed) / rate))
+                    : (completed > 0 ? "ETA calculating…" : "ETA warming up…");
+                BeginInvoke(() => SetStatus($"Building… {completed}/{sourceTotal} objects", true, percent, etaText));
+            } catch { /* A transient filesystem/UI race must not interrupt the build. */ }
+        }, null, 0, 750);
+
         await RunStep("Building…", ct => {
-            bool ok = Native.Build(_projectDir!, RuntimeDir, CompilersDir, out var l);
+            bool ok = Native.Build(project, RuntimeDir, CompilersDir, out var l);
             BeginInvoke(() => Append(l));
             return ok;
         }, afterBuild: true);
+        SetStatus("Build finished");
+    }
+
+    static int CountBuildSources(string projectDir) {
+        int count = 0;
+        try {
+            foreach (string file in Directory.EnumerateFiles(projectDir, "*", SearchOption.AllDirectories)) {
+                string rel = Path.GetRelativePath(projectDir, file);
+                if (rel.StartsWith("build" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
+                    rel.StartsWith("output" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
+                    rel.StartsWith(".git" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                string ext = Path.GetExtension(file);
+                if (ext.Equals(".cpp", StringComparison.OrdinalIgnoreCase) ||
+                    ext.Equals(".c", StringComparison.OrdinalIgnoreCase) ||
+                    ext.Equals(".cc", StringComparison.OrdinalIgnoreCase) ||
+                    ext.Equals(".cxx", StringComparison.OrdinalIgnoreCase))
+                    count++;
+            }
+        } catch { }
+        return count;
+    }
+
+    static string FormatDuration(TimeSpan duration) {
+        if (duration.TotalDays >= 1) return $"{(int)duration.TotalDays}d {duration.Hours}h";
+        if (duration.TotalHours >= 1) return $"{(int)duration.TotalHours}h {duration.Minutes}m";
+        if (duration.TotalMinutes >= 1) return $"{(int)duration.TotalMinutes}m {duration.Seconds}s";
+        return $"{Math.Max(0, (int)Math.Ceiling(duration.TotalSeconds))}s";
     }
 
     void SaveSettings() {
