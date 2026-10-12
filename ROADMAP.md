@@ -1,28 +1,24 @@
-# PPSX33 Roadmap — God of War 3 (GOW_3)
+# PPSX33 Roadmap
 
-**Last updated:** 2026-10-12 (Phase T)
-
-## Master phase table
+**Last updated:** 2026-10-12 (Phase U)
 
 | Phase | Status | Focus |
 |-------|--------|-------|
-| A–O | Done | Boot survival through stub ping-pong |
-| P | Partial | RSX flush order (had early-ban regression) |
-| Q–R | Done | Early-boot ban fix |
-| S | Done | GCM method emit (methods > 0) |
-| **T** | **Done** | FIFO put/get modulo (stop method storm); sticky-region bans |
-| **U** | Next | Real NID recovery + recognize known methods |
-| V–W | Planned | Textures + draws |
-| X–Z | Planned | Shaders, SPU, audio |
+| A–T | Done | Boot, GCM, FIFO modulo, sticky LR bans |
+| **U** | **Done** | Region-ban set + hard-leave; no re-leave to same PC; SPU complete path |
+| **V** | Next | Real NID + draw methods |
 
-## Phase T fixes (this commit)
+## Phase U
 
-**Method storm:** `put` grew without modulo while `get` used `% size` → `get != put` forever → millions of unknown methods.
+**Bug:** `leave sticky -> 0x3fe11c` + `ban-region nban=32` repeated forever.
+Ban table was full; leave target was always the same; region was re-entered.
 
-- `rsx_process_fifo`: both put and get `% size`; step cap 4096; count clamp 32
-- `ps3rt_rsx_set_put`: always `% size`
-- Reject stack targets `< 0x10100` (kills `0x10010` escapes)
-- After 6 hits on same 0x100-aligned region (e.g. `0x331c30`), ban the whole window and leave
+**Fix:**
+1. Separate **region ban set** (0x400 windows) from LR ban list
+2. Circular buffers — never stuck at nban=32
+3. If PC is inside a banned region → force-out immediately
+4. Never leave to the same `last_leave` twice; hard-leave to another chunk
+5. Wider stack scan + chunk-start fallback
 
 ## Apply
 
@@ -31,4 +27,4 @@ cd /d E:\PPSX33
 git pull origin main
 ```
 
-Expect: `methods=` stays modest (hundreds–low thousands), not tens of millions; no `stack-escape -> 0x10010`.
+Expect: `Phase U leave sticky` / `hard-leave` at most a few times, then heartbeats on varying PCs — not the same leave target forever.
