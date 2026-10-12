@@ -14,7 +14,7 @@
 | X | Done | Region-ban walk guards + high last_good preference |
 | XI | Done | Timestamped run log next to game EXE (`log_YYYY-MM-DD_HH-MM-SS.txt`) |
 | XII | Done | Honour real guest GCM put; inject only when FIFO stalled |
-| XIII | Pending | Textures / surface management / real draws |
+| XIII | Done | Surfaces / wild-PC recovery / GCM nid=0 useful returns / LV2 event queue |
 | XIV | Pending | Depth / stencil / clear surface fidelity |
 | XV | Pending | Shader translation (VP/FP) or fixed-function path for GOW3 |
 | XVI | Pending | Audio (cellAudio / libaudio HLE) |
@@ -23,27 +23,26 @@
 | XIX | Pending | Performance (JIT hot paths, RSX batching) |
 | XX | Pending | Full playable pass (title screen → in-game) |
 
-## Phase XII (this push)
+## Phase XIII (this push)
 
-- `ps3rt_progress_hw` tracks guest put at GCM control+0.
-- When put advances → drain FIFO via `ps3rt_rsx_set_put` + `flush` (no synthetic spam).
-- Synthetic CLEAR/viewport inject only if put stalls for >64 ticks.
-- cellGcmSys stub inject rate reduced (every 64th call).
-- Log line: `[gcm] Phase XII guest put 0x.. -> 0x..`
-
-## Critical restore
-
-- **project.cpp** restored (full `lift_project` / `build_project`) — Decompile works again.
-- **ps3rt.cpp** restored (was placeholder on main) with log tee + Phase XII.
+- **Wild-PC guard**: PC == 0 or PC >= 0x10000000 snaps back via stack/last_good (stops `0xfffffffffe…` walks).
+- **GCM nid=0**: unknown cellGcmSys calls still return control / labels / flip-status in rotation.
+- **LV2 sc 128**: event-queue create writes id to r3 or r4; more event-queue ops as success.
+- **RSX**: varying clear colour, more frequent flip logs, texture-offset tracking.
+- All run-loop logs go through `ps3rt_log` (file + stderr).
 
 ## Apply
 
 ```bat
-cd /d E:\PPSX33
+cd /d E:\\PPSX33
 git pull origin main
 ```
 
-Rebuild All → Decompile → Build → Run.
+Rebuild All → Build → Run.
 
-Expect on Decompile: real analysis (segments, OPDs, chunks) — **not** the restore message.
-Expect on Run: `[ps3rt] log file: ...` and optionally `[gcm] Phase XII guest put ...`.
+Expect:
+```
+[gcm] Phase XII guest put …
+[ps3] Phase XIII wild-pc 0x… -> 0x…
+[rsx] flip #… draws=… clears=… known=… unknown=0
+```
