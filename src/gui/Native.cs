@@ -23,6 +23,9 @@ internal static class Native
         [MarshalAs(UnmanagedType.LPUTF8Str)] string projectDir, byte[] log, int logLen);
 
     [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+    private static extern void ps3_begin_build();
+
+    [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
     private static extern void ps3_cancel_build();
 
     [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
@@ -55,6 +58,7 @@ internal static class Native
         log = Str(l); return rc == 0;
     }
 
+    public static void BeginBuild() => ps3_begin_build();
     public static void CancelBuild() => ps3_cancel_build();
 
     public static bool Build(string projectDir, string runtimeDir, string compilersDir, out string log)
