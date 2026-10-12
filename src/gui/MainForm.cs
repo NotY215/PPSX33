@@ -7,13 +7,14 @@ namespace PS3Recomp.Gui;
 /// <summary>Static dark WinForms shell. Load ELF → Decompile → Build → Run.</summary>
 public sealed partial class MainForm : Form
 {
-    static readonly Color Bg = Color.FromArgb(18, 18, 22);
-    static readonly Color Panel = Color.FromArgb(28, 28, 34);
-    static readonly Color Panel2 = Color.FromArgb(36, 36, 44);
-    static readonly Color TextPri = Color.FromArgb(230, 232, 240);
-    static readonly Color TextSec = Color.FromArgb(140, 145, 160);
-    static readonly Color Accent = Color.FromArgb(70, 130, 255);
-    static readonly Color Danger = Color.FromArgb(220, 80, 90);
+    // PS3 XMB-inspired midnight glass palette. UI styling only.
+    static readonly Color Bg = Color.FromArgb(6, 8, 18);
+    static readonly Color Panel = Color.FromArgb(14, 20, 44);
+    static readonly Color Panel2 = Color.FromArgb(20, 30, 60);
+    static readonly Color TextPri = Color.FromArgb(238, 242, 255);
+    static readonly Color TextSec = Color.FromArgb(150, 162, 196);
+    static readonly Color Accent = Color.FromArgb(38, 112, 210);
+    static readonly Color Danger = Color.FromArgb(210, 55, 78);
 
     private readonly Settings _settings = Settings.Load();
     private readonly TextBox _log = new();
@@ -54,8 +55,8 @@ public sealed partial class MainForm : Form
     {
         AutoScaleMode = AutoScaleMode.Dpi;
         Text = "PPSX33  ·  PlayStation 3 Recompiler";
-        Width = 1120; Height = 740;
-        MinimumSize = new Size(960, 640);
+        Width = 1180; Height = 760;
+        MinimumSize = new Size(980, 660);
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Bg; ForeColor = TextPri;
         Font = new Font("Segoe UI", 9.25f);
@@ -66,11 +67,11 @@ public sealed partial class MainForm : Form
             if (File.Exists(ico)) Icon = new Icon(ico);
         } catch { }
 
-        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Padding = new Padding(10), BackColor = Bg };
-        root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 250));
+        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Padding = new Padding(14), BackColor = Bg };
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 266));
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
-        var rail = new Panel { Dock = DockStyle.Fill, BackColor = Panel, Padding = new Padding(12) };
-        _logo.SizeMode = PictureBoxSizeMode.Zoom; _logo.Height = 56; _logo.Dock = DockStyle.Top; _logo.BackColor = Color.Transparent;
+        var rail = new Panel { Dock = DockStyle.Fill, BackColor = Panel, Padding = new Padding(14) };
+        _logo.SizeMode = PictureBoxSizeMode.Zoom; _logo.Height = 70; _logo.Dock = DockStyle.Top; _logo.BackColor = Color.Transparent;
         try {
             string png = Path.Combine(AppContext.BaseDirectory, "ppsx33-logo.png");
             if (!File.Exists(png)) png = Path.Combine(AppContext.BaseDirectory, "assets", "ppsx33-logo.png");
@@ -88,44 +89,44 @@ public sealed partial class MainForm : Form
         _btnLift.Enabled = _btnBuild.Enabled = _btnRun.Enabled = _btnCopy.Enabled = _btnCancel.Enabled = false;
         var btnStack = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, BackColor = Color.Transparent, Padding = new Padding(0, 4, 0, 8) };
         foreach (var b in new[] { _btnDecrypt, _btnLoad, _btnLift, _btnBuild, _btnRun, _btnCopy, _btnCancel })
-        { b.Width = 214; b.Height = 34; b.Margin = new Padding(0, 0, 0, 6); btnStack.Controls.Add(b); }
+        { b.Width = 224; b.Height = 38; b.Margin = new Padding(0, 0, 0, 7); btnStack.Controls.Add(b); }
 
         var optsTitle = MakeLbl("OPTIONS", TextSec, true); optsTitle.Dock = DockStyle.Top; optsTitle.Height = 28; optsTitle.Padding = new Padding(0, 8, 0, 0);
         var opts = new Panel { Dock = DockStyle.Top, Height = 170, BackColor = Color.Transparent };
         var gfxLbl = MakeLbl("Graphics backend", TextSec, false); gfxLbl.Location = new Point(0, 4);
         _gfx.DropDownStyle = ComboBoxStyle.DropDownList; _gfx.FlatStyle = FlatStyle.Flat;
-        _gfx.BackColor = Panel2; _gfx.ForeColor = TextPri; _gfx.Location = new Point(0, 24); _gfx.Size = new Size(214, 28);
+        _gfx.BackColor = Panel2; _gfx.ForeColor = TextPri; _gfx.Location = new Point(0, 24); _gfx.Size = new Size(224, 30);
         _gfx.Items.AddRange(new object[] { "D3D10", "D3D11" });
         _gfx.SelectedItem = _settings.GraphicsBackend; if (_gfx.SelectedIndex < 0) _gfx.SelectedIndex = 1;
         _gfx.Enabled = false;
         var thrLbl = MakeLbl("CPU threads", TextSec, false); thrLbl.Location = new Point(0, 58);
         _threads.DropDownStyle = ComboBoxStyle.DropDownList; _threads.FlatStyle = FlatStyle.Flat;
         _threads.BackColor = Panel2; _threads.ForeColor = TextPri;
-        _threads.Location = new Point(0, 78); _threads.Size = new Size(100, 28);
+        _threads.Location = new Point(0, 78); _threads.Size = new Size(108, 30);
         int maxThr = Math.Max(1, Environment.ProcessorCount);
         for (int i = 1; i <= maxThr; i++) _threads.Items.Add(i);
         int want = Math.Clamp(_settings.PpuThreads, 1, maxThr);
         _threads.SelectedItem = want;
         if (_threads.SelectedIndex < 0) _threads.SelectedIndex = Math.Min(want, maxThr) - 1;
         var rpcs3Lbl = MakeLbl("RPCS3 (decrypt)", TextSec, false); rpcs3Lbl.Location = new Point(0, 108);
-        _btnRpcs3 = new Button { Text = "Choose rpcs3.exe…", FlatStyle = FlatStyle.Flat, BackColor = Panel2, ForeColor = TextPri, Location = new Point(0, 128), Size = new Size(214, 28), Cursor = Cursors.Hand };
+        _btnRpcs3 = new Button { Text = "Choose rpcs3.exe…", FlatStyle = FlatStyle.Flat, BackColor = Panel2, ForeColor = TextPri, Location = new Point(0, 128), Size = new Size(224, 30), Cursor = Cursors.Hand };
         _btnRpcs3.FlatAppearance.BorderSize = 0;
         _btnRpcs3.Click += (_, _) => { if (PickRpcs3Exe()) { Append("RPCS3: " + _settings.Rpcs3Path); SaveSettings(); UpdateRpcs3Button(); } };
         opts.Controls.AddRange(new Control[] { gfxLbl, _gfx, thrLbl, _threads, rpcs3Lbl, _btnRpcs3 });
         UpdateRpcs3Button();
         rail.Controls.Add(opts); rail.Controls.Add(optsTitle); rail.Controls.Add(btnStack); rail.Controls.Add(railTitle); rail.Controls.Add(_logo);
 
-        var right = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Bg, Padding = new Padding(8, 0, 0, 0) };
+        var right = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Bg, Padding = new Padding(12, 0, 0, 0) };
         right.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
         right.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
         right.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-        _project.Text = "No project loaded"; _project.ForeColor = TextSec; _project.BackColor = Panel;
+        _project.Text = "No project loaded"; _project.ForeColor = TextPri; _project.BackColor = Panel;
         _project.Dock = DockStyle.Fill; _project.TextAlign = ContentAlignment.MiddleLeft; _project.Padding = new Padding(12, 0, 0, 0);
         StyleTextBox(_log); StyleTextBox(_report); StyleTextBox(_roadmap);
         _roadmap.Text = "PPSX33 · Sequential: Load ELF → Decompile → Build → Run\r\n";
         _tabs.Dock = DockStyle.Fill;
         AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap);
-        _status.Text = "Ready"; _status.ForeColor = TextSec; _status.Dock = DockStyle.Fill;
+        _status.Text = "READY  ·  XMB SYSTEM"; _status.ForeColor = TextSec; _status.Dock = DockStyle.Fill;
         _status.TextAlign = ContentAlignment.MiddleLeft; _status.Padding = new Padding(8, 0, 0, 0);
         _progress.Style = ProgressBarStyle.Continuous; _progress.Minimum = 0; _progress.Maximum = 100; _progress.Value = 0;
         _progress.Dock = DockStyle.Right; _progress.Width = 200; _progress.Visible = false;
@@ -161,8 +162,8 @@ public sealed partial class MainForm : Form
     }
 
     static Label MakeLbl(string t, Color c, bool bold) => new() { Text = t, ForeColor = c, BackColor = Color.Transparent, Font = new Font("Segoe UI", bold ? 8f : 9f, bold ? FontStyle.Bold : FontStyle.Regular), AutoSize = true };
-    void StyleBtn(Button b, string text, Color bg) { b.Text = text; b.FlatStyle = FlatStyle.Flat; b.FlatAppearance.BorderSize = 0; b.BackColor = bg; b.ForeColor = TextPri; b.Cursor = Cursors.Hand; b.UseVisualStyleBackColor = false; }
-    void StyleTextBox(TextBox t) { t.Multiline = true; t.ScrollBars = ScrollBars.Both; t.WordWrap = true; t.ReadOnly = true; t.BackColor = Color.FromArgb(14, 14, 18); t.ForeColor = Color.FromArgb(200, 210, 220); t.BorderStyle = BorderStyle.None; t.Font = new Font("Consolas", 9f); t.Dock = DockStyle.Fill; }
+    void StyleBtn(Button b, string text, Color bg) { b.Text = text; b.FlatStyle = FlatStyle.Flat; b.FlatAppearance.BorderSize = 1; b.FlatAppearance.BorderColor = Color.FromArgb(65, 105, 170); b.FlatAppearance.MouseOverBackColor = Color.FromArgb(35, 65, 115); b.FlatAppearance.MouseDownBackColor = Color.FromArgb(45, 95, 165); b.BackColor = bg; b.ForeColor = TextPri; b.Font = new Font("Segoe UI Semibold", 9.25f); b.Cursor = Cursors.Hand; b.UseVisualStyleBackColor = false; }
+    void StyleTextBox(TextBox t) { t.Multiline = true; t.ScrollBars = ScrollBars.Both; t.WordWrap = true; t.ReadOnly = true; t.BackColor = Color.FromArgb(9, 13, 28); t.ForeColor = Color.FromArgb(205, 222, 255); t.BorderStyle = BorderStyle.None; t.Font = new Font("Consolas", 9.25f); t.Dock = DockStyle.Fill; }
     void AddTab(string title, Control body) { var page = new TabPage(title) { BackColor = Panel, Padding = new Padding(4) }; page.Controls.Add(body); _tabs.TabPages.Add(page); }
     void Append(string s) { if (string.IsNullOrEmpty(s)) return; if (_log.InvokeRequired) { BeginInvoke(() => Append(s)); return; } _log.AppendText(s.TrimEnd() + Environment.NewLine); }
 
