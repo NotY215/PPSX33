@@ -1,13 +1,14 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Drawing.Drawing2D;
 
 namespace PS3Recomp.Gui;
 
 /// <summary>Static dark WinForms shell. Load ELF → Decompile → Build → Run.</summary>
 public sealed partial class MainForm : Form
 {
-    // PS3 XMB-inspired midnight glass palette. UI styling only.
+    // PS3 XMB-inspired midnight palette. Opaque panels only; no glassmorphism.
     static readonly Color Bg = Color.FromArgb(6, 8, 18);
     static readonly Color Panel = Color.FromArgb(14, 20, 44);
     static readonly Color Panel2 = Color.FromArgb(20, 30, 60);
@@ -23,13 +24,13 @@ public sealed partial class MainForm : Form
     private readonly Label _project = new();
     private readonly Label _status = new();
     private readonly ProgressBar _progress = new();
-    private readonly Button _btnDecrypt = new();
-    private readonly Button _btnLoad = new();
-    private readonly Button _btnLift = new();
-    private readonly Button _btnBuild = new();
-    private readonly Button _btnRun = new();
-    private readonly Button _btnCopy = new();
-    private readonly Button _btnCancel = new();
+    private readonly Ps3Button _btnDecrypt = new();
+    private readonly Ps3Button _btnLoad = new();
+    private readonly Ps3Button _btnLift = new();
+    private readonly Ps3Button _btnBuild = new();
+    private readonly Ps3Button _btnRun = new();
+    private readonly Ps3Button _btnCopy = new();
+    private readonly Ps3Button _btnCancel = new();
     private readonly ComboBox _gfx = new();
     private readonly ComboBox _threads = new();
     private readonly TabControl _tabs = new();
@@ -39,7 +40,7 @@ public sealed partial class MainForm : Form
     private Process? _gameProc;
     private bool _canLift, _canBuild, _canCopy, _canRun, _gfxUnlocked, _busy;
     private int _liftChunks;
-    private Button? _btnRpcs3;
+    private Ps3Button? _btnRpcs3;
     private readonly Label _eta = new();
 
     private const int StallQuietMs = 4000;
@@ -67,7 +68,8 @@ public sealed partial class MainForm : Form
             if (File.Exists(ico)) Icon = new Icon(ico);
         } catch { }
 
-        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Padding = new Padding(14), BackColor = Bg };
+        var backdrop = new Ps3BackdropPanel { Dock = DockStyle.Fill };
+        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Padding = new Padding(16), BackColor = Color.Transparent };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 266));
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
         var rail = new Panel { Dock = DockStyle.Fill, BackColor = Panel, Padding = new Padding(14) };
@@ -109,32 +111,32 @@ public sealed partial class MainForm : Form
         _threads.SelectedItem = want;
         if (_threads.SelectedIndex < 0) _threads.SelectedIndex = Math.Min(want, maxThr) - 1;
         var rpcs3Lbl = MakeLbl("RPCS3 (decrypt)", TextSec, false); rpcs3Lbl.Location = new Point(0, 108);
-        _btnRpcs3 = new Button { Text = "Choose rpcs3.exe…", FlatStyle = FlatStyle.Flat, BackColor = Panel2, ForeColor = TextPri, Location = new Point(0, 128), Size = new Size(224, 30), Cursor = Cursors.Hand };
+        _btnRpcs3 = new Ps3Button { Text = "Choose rpcs3.exe…", FlatStyle = FlatStyle.Flat, BackColor = Panel2, ForeColor = TextPri, Location = new Point(0, 128), Size = new Size(224, 30), Cursor = Cursors.Hand };
         _btnRpcs3.FlatAppearance.BorderSize = 0;
         _btnRpcs3.Click += (_, _) => { if (PickRpcs3Exe()) { Append("RPCS3: " + _settings.Rpcs3Path); SaveSettings(); UpdateRpcs3Button(); } };
         opts.Controls.AddRange(new Control[] { gfxLbl, _gfx, thrLbl, _threads, rpcs3Lbl, _btnRpcs3 });
         UpdateRpcs3Button();
         rail.Controls.Add(opts); rail.Controls.Add(optsTitle); rail.Controls.Add(btnStack); rail.Controls.Add(railTitle); rail.Controls.Add(_logo);
 
-        var right = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Bg, Padding = new Padding(12, 0, 0, 0) };
+        var right = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Color.Transparent, Padding = new Padding(12, 0, 0, 0) };
         right.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
         right.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
         right.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-        _project.Text = "No project loaded"; _project.ForeColor = TextPri; _project.BackColor = Panel;
+        _project.Text = "No project loaded"; _project.ForeColor = TextPri; _project.BackColor = Color.FromArgb(15, 24, 52);
         _project.Dock = DockStyle.Fill; _project.TextAlign = ContentAlignment.MiddleLeft; _project.Padding = new Padding(12, 0, 0, 0);
         StyleTextBox(_log); StyleTextBox(_report); StyleTextBox(_roadmap);
         _roadmap.Text = "PPSX33 · Sequential: Load ELF → Decompile → Build → Run\r\n";
-        _tabs.Dock = DockStyle.Fill;
+        _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(92, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab; _tabs.BackColor = Bg;
         AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap);
         _status.Text = "READY  ·  XMB SYSTEM"; _status.ForeColor = TextSec; _status.Dock = DockStyle.Fill;
         _status.TextAlign = ContentAlignment.MiddleLeft; _status.Padding = new Padding(8, 0, 0, 0);
         _progress.Style = ProgressBarStyle.Continuous; _progress.Minimum = 0; _progress.Maximum = 100; _progress.Value = 0;
         _progress.Dock = DockStyle.Right; _progress.Width = 200; _progress.Visible = false;
         _eta.Text = ""; _eta.ForeColor = TextSec; _eta.Dock = DockStyle.Right; _eta.Width = 160; _eta.TextAlign = ContentAlignment.MiddleRight;
-        var statusBar = new Panel { Dock = DockStyle.Fill, BackColor = Panel };
+        var statusBar = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(13, 22, 48) };
         statusBar.Controls.Add(_status); statusBar.Controls.Add(_eta); statusBar.Controls.Add(_progress);
         right.Controls.Add(_project, 0, 0); right.Controls.Add(_tabs, 0, 1); right.Controls.Add(statusBar, 0, 2);
-        root.Controls.Add(rail, 0, 0); root.Controls.Add(right, 1, 0); Controls.Add(root);
+        root.Controls.Add(rail, 0, 0); root.Controls.Add(right, 1, 0); backdrop.Controls.Add(root); Controls.Add(backdrop);
 
         _btnDecrypt.Click += async (_, _) => await DecryptEbootAndLoad();
         _btnLoad.Click += (_, _) => LoadElf(null);
@@ -162,8 +164,22 @@ public sealed partial class MainForm : Form
     }
 
     static Label MakeLbl(string t, Color c, bool bold) => new() { Text = t, ForeColor = c, BackColor = Color.Transparent, Font = new Font("Segoe UI", bold ? 8f : 9f, bold ? FontStyle.Bold : FontStyle.Regular), AutoSize = true };
-    void StyleBtn(Button b, string text, Color bg) { b.Text = text; b.FlatStyle = FlatStyle.Flat; b.FlatAppearance.BorderSize = 1; b.FlatAppearance.BorderColor = Color.FromArgb(65, 105, 170); b.FlatAppearance.MouseOverBackColor = Color.FromArgb(35, 65, 115); b.FlatAppearance.MouseDownBackColor = Color.FromArgb(45, 95, 165); b.BackColor = bg; b.ForeColor = TextPri; b.Font = new Font("Segoe UI Semibold", 9.25f); b.Cursor = Cursors.Hand; b.UseVisualStyleBackColor = false; }
-    void StyleTextBox(TextBox t) { t.Multiline = true; t.ScrollBars = ScrollBars.Both; t.WordWrap = true; t.ReadOnly = true; t.BackColor = Color.FromArgb(9, 13, 28); t.ForeColor = Color.FromArgb(205, 222, 255); t.BorderStyle = BorderStyle.None; t.Font = new Font("Consolas", 9.25f); t.Dock = DockStyle.Fill; }
+    void StyleBtn(Button b, string text, Color bg) { b.Text = text; b.FlatStyle = FlatStyle.Flat; b.FlatAppearance.BorderSize = 1; b.FlatAppearance.BorderColor = Color.FromArgb(65, 135, 220); b.FlatAppearance.MouseOverBackColor = Color.FromArgb(35, 65, 115); b.FlatAppearance.MouseDownBackColor = Color.FromArgb(45, 95, 165); b.BackColor = bg; b.ForeColor = TextPri; b.Font = new Font("Segoe UI Semibold", 9.25f); b.Cursor = Cursors.Hand; b.UseVisualStyleBackColor = false; } 
+
+    void DrawPs3Tab(object? sender, DrawItemEventArgs e) {
+        if (sender is not TabControl tabs || e.Index < 0) return;
+        bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
+        var bounds = e.Bounds;
+        using var fill = new LinearGradientBrush(bounds,
+            selected ? Color.FromArgb(34, 88, 160) : Color.FromArgb(13, 20, 42),
+            selected ? Color.FromArgb(18, 46, 94) : Color.FromArgb(8, 13, 29), 90f);
+        e.Graphics.FillRectangle(fill, bounds);
+        using var edge = new Pen(selected ? Color.FromArgb(75, 180, 255) : Color.FromArgb(40, 64, 106));
+        e.Graphics.DrawRectangle(edge, bounds.X, bounds.Y, bounds.Width - 1, bounds.Height - 1);
+        TextRenderer.DrawText(e.Graphics, tabs.TabPages[e.Index].Text, new Font("Segoe UI Semibold", 9f),
+            bounds, selected ? Color.White : TextSec, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+    }
+    void StyleTextBox(TextBox t) { t.Multiline = true; t.ScrollBars = ScrollBars.Both; t.WordWrap = true; t.ReadOnly = true; t.BackColor = Color.FromArgb(7, 11, 25); t.ForeColor = Color.FromArgb(205, 222, 255); t.BorderStyle = BorderStyle.FixedSingle; t.Font = new Font("Consolas", 9.25f); t.Dock = DockStyle.Fill; }
     void AddTab(string title, Control body) { var page = new TabPage(title) { BackColor = Panel, Padding = new Padding(4) }; page.Controls.Add(body); _tabs.TabPages.Add(page); }
     void Append(string s) { if (string.IsNullOrEmpty(s)) return; if (_log.InvokeRequired) { BeginInvoke(() => Append(s)); return; } _log.AppendText(s.TrimEnd() + Environment.NewLine); }
 
