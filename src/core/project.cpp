@@ -251,6 +251,8 @@ void cleanup_after_build(const fs::path& project_dir, const fs::path& out, std::
 
 } // namespace
 
+void cancel_build() { g_build_cancel_requested.store(true); }
+
 bool build_project(const std::string& project_dir, const std::string& runtime_dir,
                    const std::string& compilers_dir, std::string& log, std::string& err) {
     g_build_cancel_requested.store(false);
