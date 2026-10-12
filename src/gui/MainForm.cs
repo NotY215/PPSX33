@@ -403,7 +403,9 @@ public sealed partial class MainForm : Form
         string codebase = Path.Combine(projectDir, "codebase");
         if (Directory.Exists(codebase)) {
             try {
-                return Directory.EnumerateFiles(codebase, "*.cpp", SearchOption.AllDirectories).Count();
+                int gameSources = Directory.EnumerateFiles(codebase, "*.cpp", SearchOption.AllDirectories).Count();
+                // The build also compiles three runtime translation units into the staged src folder.
+                return gameSources + 3;
             } catch { }
         }
 
