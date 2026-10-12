@@ -225,9 +225,16 @@ public sealed partial class MainForm : Form
             bool ok = await Task.Run(() => work(_cts.Token), _cts.Token);
             if (afterLift && ok) { _canBuild = true; _gfxUnlocked = true; }
             if (afterBuild && ok) { _canCopy = true; _canRun = true; }
-            SetStatus(ok ? "Done" : "Failed");
-            if (ok && afterLift) Append("Decompile OK — Build and Graphics backend unlocked.");
-            if (ok && afterBuild) Append("Build OK — Run and Copy unlocked.");
+            string workName = status.Contains("Decompil", StringComparison.OrdinalIgnoreCase) ? "Decompiling"
+                : status.Contains("Build", StringComparison.OrdinalIgnoreCase) ? "Building"
+                : status.TrimEnd('…', '.', ' ');
+            if (_buildCancelRequested && afterBuild) {
+                SetStatus("Stopping build…", true);
+            } else {
+                SetStatus(ok ? workName + " successful" : workName + " failed");
+            }
+            if (ok && afterLift) Append("Decompiling successful — Build and Graphics backend unlocked.");
+            if (ok && afterBuild) Append("Building successful — Run and Copy unlocked.");
         } catch (OperationCanceledException) { SetStatus("Cancelled"); }
         catch (Exception ex) { Append(ex.Message); SetStatus("Error"); }
         finally { _busy = false; UpdateButtons(); }
@@ -310,8 +317,9 @@ public sealed partial class MainForm : Form
                 }
                 if ((DateTime.UtcNow - start).TotalMilliseconds > MaxRunMs) { Append("[ui] max run time — stopping"); StopGame(); break; }
             }
-            if (_stopGameRequested) { Append(exeName + " stopped by user."); SetStatus("Game stopped"); }
-            else { Append(exeName + " exited code=" + gameProc.ExitCode); SetStatus("Run finished"); }
+            if (_stopGameRequested) { Append(exeName + " stopped."); SetStatus("Game stopped"); }
+            else if (gameProc.ExitCode == 0) { Append(exeName + " exited successfully (code=0)."); SetStatus("Running successful"); }
+            else { Append(exeName + " exited with code=" + gameProc.ExitCode); SetStatus("Running failed"); }
         } catch (Exception ex) { Append(ex.Message); SetStatus("Run error"); }
         finally { _busy = false; _gameProc = null; _stopGameRequested = false; UpdateButtons(); }
     }
@@ -365,6 +373,7 @@ public sealed partial class MainForm : Form
 
         using var poll = new System.Threading.Timer(_ => {
             try {
+                if (!_building || _buildCancelRequested) return;
                 int completed = 0;
                 foreach (string file in Directory.EnumerateFiles(buildRoot, "*.obj", SearchOption.AllDirectories)) {
                     DateTime modified = File.GetLastWriteTimeUtc(file);
@@ -378,7 +387,10 @@ public sealed partial class MainForm : Form
                 string etaText = rate > 0 && sourceTotal > completed
                     ? "ETA ~" + FormatDuration(TimeSpan.FromSeconds((sourceTotal - completed) / rate))
                     : (completed > 0 ? "ETA calculating…" : "ETA warming up…");
-                BeginInvoke(() => SetStatus($"Building… {completed}/{sourceTotal} objects", true, percent, etaText));
+                BeginInvoke(() => {
+                    if (_building && !_buildCancelRequested)
+                        SetStatus($"Building… {completed}/{sourceTotal} objects", true, percent, etaText);
+                });
             } catch { /* A transient filesystem/UI race must not interrupt the build. */ }
         }, null, 0, 750);
 
@@ -408,7 +420,8 @@ public sealed partial class MainForm : Form
             _liftChunks = 0;
             _report.Clear();
             _roadmap.Text = "PPSX33 · Sequential: Load ELF → Decompile → Build → Run\r\n";
-            SetStatus("Build cancelled — reload ELF");
+            Append("Building stopped — generated folders deleted; reload the ELF to continue.");
+            SetStatus("Building stopped — reload ELF");
             UpdateButtons();
             MessageBox.Show(this,
                 "Building has been cancelled. The selected ELF has been unloaded and generated folders were deleted. Please reload the ELF file to continue.",
@@ -418,8 +431,12 @@ public sealed partial class MainForm : Form
 
         // Only remove temporary project inputs after a successful build.
         // Keep output binaries, reports, and staged output/src intact.
-        if (buildSucceeded) CleanupBuildIntermediates(project);
-        SetStatus("Build finished");
+        if (buildSucceeded) {
+            CleanupBuildIntermediates(project);
+            SetStatus("Building successful");
+        } else {
+            SetStatus("Building failed");
+        }
     }
 
     async Task ConfirmCancelBuildAsync() {
