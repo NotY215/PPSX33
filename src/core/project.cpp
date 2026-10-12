@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <algorithm>
 
 namespace fs = std::filesystem;
 
@@ -216,10 +217,13 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         if (n.rfind("ppu_chunk", 0) == 0 || n == "game_main.cpp") {
             fs::copy_file(e.path(), src / n, ow, ec);
             if (e.path().extension() == ".cpp") gameSrc.push_back(n);
-        } else if (n == "ppu_chunks.cpp" || n == "ppu_runtime.h" || n == "nid_table.h") {
+        } else if (n == "ppu_chunks.cpp" || n == "image_info.h" || n == "ppu_runtime.h" || n == "nid_table.h") {
             fs::copy_file(e.path(), src / n, ow, ec);
         }
     }
+    // Always ensure image_info.h is present (required by game_main.cpp)
+    if (fs::exists(code / "image_info.h") && !fs::exists(src / "image_info.h"))
+        fs::copy_file(code / "image_info.h", src / "image_info.h", ow, ec);
     if (fs::exists(code / "lift_report.txt"))
         fs::copy_file(code / "lift_report.txt", out / "lift_report.txt", ow, ec);
     if (fs::exists(code / "analysis_report.txt"))
