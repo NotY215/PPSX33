@@ -22,7 +22,7 @@ The exact set of tools found in the folder can vary by package. Do not assume th
 
 ## Developer setup
 
-For building PPSX33 from source, install Visual Studio 2022 or a compatible version with **Desktop development with C++**, a Windows SDK, CMake, Ninja, and the .NET 8 SDK. From the repository root, run:
+For building PPSX33 from source, install a supported Visual Studio installation with **Desktop development with C++** and a Windows SDK, plus CMake, Ninja, and the .NET 8 SDK. The current native build driver searches common Visual Studio 2019, 2022, and 18 (2026) Community/Professional/Enterprise paths, but other editions and installation paths should be validated locally. From the repository root, run:
 
 ```bat
 scripts\build_all.bat
