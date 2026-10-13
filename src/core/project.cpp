@@ -303,7 +303,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         fs::path bat = out / "build_msvc.bat";
         {
             std::ofstream f(bat);
-            f << "@echo on\nsetlocal EnableExtensions\n";
+            f << "@echo on\nsetlocal EnableExtensions EnableDelayedExpansion\n";
             f << "echo === PPSX33 MSVC build ===\n";
             f << "echo BUILD_TOTAL=" << build_total << "\n";
             f << "echo cwd=%CD%\n";
@@ -311,13 +311,16 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             if (!vcvars.empty()) {
                 f << "echo vcvars=" << vcvars << "\n";
                 f << "call " << q(vcvars) << "\n";
-                f << "if errorlevel 1 (echo vcvars FAILED & exit /b 1)\n";
+                // vcvars often leaves non-zero ERRORLEVEL even on success — do NOT exit on it
+                f << "echo post-vcvars OK\n";
             } else {
                 f << "echo WARNING: vcvars64.bat not found — using PATH/bundled cl\n";
             }
             std::string cl = bundled_cl.empty() ? "cl" : q(bundled_cl);
             f << "echo cl=" << cl << "\n";
             f << "where cl 2>nul\n";
+            f << "where cl >nul 2>&1\n";
+            f << "if errorlevel 1 (echo ERROR: cl.exe not on PATH after vcvars & exit /b 1)\n";
             f << "if not exist src\\ps3rt.cpp (echo MISSING src\\ps3rt.cpp & exit /b 1)\n";
             f << "if not exist obj mkdir obj\n";
             std::string cflags = "/nologo /O2 /EHsc /std:c++17 /bigobj /FS /I src /DPS3RT_BUILD_DLL=1";
@@ -352,7 +355,8 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             log += "chdir failed: " + ec.message() + "\n";
             live_log("chdir failed: " + ec.message() + "\n");
         }
-        int rc = run_cmd("build_msvc.bat", log);
+        // cmd /c handles spaces in project folder names (e.g. "GOW 3")
+        int rc = run_cmd("cmd /c build_msvc.bat", log);
         fs::current_path(prev, ec);
         if (rc != 0) {
             if (rc == 130 || g_build_cancel_requested.load()) {
