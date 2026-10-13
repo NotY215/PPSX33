@@ -16,8 +16,8 @@
 | XII | **Done** | Honour real guest GCM put; inject only when FIFO stalled |
 | XIII | **Done** | Surfaces / wild-PC recovery / GCM nid=0 useful returns / LV2 event queue |
 | XIV | **Done** | Depth / stencil / clear surface fidelity (DSV, mask, no pure-blue clear) |
-| XV | **Next** | Shader translation (VP/FP) or fixed-function path for GOW3 |
-| XVI | Pending | Audio (cellAudio / libaudio HLE) |
+| XV | **Done** | Fixed-function draw path + shader/tex method tracking (visible tint on draw) |
+| XVI | **Next** | Audio (cellAudio / libaudio HLE) |
 | XVII | Pending | Pad / input full mapping |
 | XVIII | Pending | Save data / trophy stubs |
 | XIX | Pending | Performance (JIT hot paths, RSX batching) |
@@ -34,13 +34,13 @@
 | GUI cancel unlock after first cancel | **Done** |
 | Clean window close (force_exit) | **Done** |
 
-## Phase XIV (current)
+## Phase XV (this push)
 
-- **Clear colour**: cycle dark slate (`0x101828`…`0x283848`) — removed pure-blue `0xF1` inject.
-- **Depth/stencil**: D24S8 DSV, clear depth+stencil each present; resize recreates DSV.
-- **Clear surface mask**: `0x01D4` / small `0x01D8` args treated as color/depth/stencil bits.
-- **Draw inject**: `0x1800` so log `draws=` rises with clears.
-- **Log line**: `flip #N draws=… clears=… depth=… stencil=… methods=…`
+- **Fixed-function draw**: when FIFO draw methods fire, host presents a tinted overlay (proves draw path is live).
+- **Shader / texture method tracking**: VP/FP bind and tex methods counted (`shaders=` / `tex=` in log).
+- **Viewport / scissor** method accept.
+- **Depth/stencil inject**: CLEAR_SURFACE + depth/stencil values so `depth=` / `stencil=` rise.
+- Real VP/FP ISA translation still deferred to a later pass under XV/XIX.
 
 ## Apply
 
@@ -53,11 +53,10 @@ Rebuild All → Build (game) → Run from `projects/<name>/output/`.
 
 Expect:
 ```
-[stage] BOOT … MEM … RSX … GCM … PPU … RUNNING
 [rsx] D3D11 host present ready … (depth+stencil)
-[rsx] flip #… draws=… clears=… depth=… stencil=… known=…
+[rsx] flip #… draws=… clears=… depth=… stencil=… shaders=… tex=…
 ```
 
-Window should be **dark slate** (not pure blue). Close the window for a clean exit.
+Window: dark slate with shifting warm tint when draws run. Close window for clean exit.
 
 See also: [docs/games/GOW3/GOW3.md](docs/games/GOW3/GOW3.md).
