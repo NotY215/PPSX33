@@ -337,7 +337,8 @@ public sealed partial class MainForm : Form
         }
     }
 
-    async Task DecryptEbootAndLoad() { await Task.CompletedTask; /* MainForm.Decrypt.cs */ }
+    // DecryptEbootAndLoad + PickRpcs3Exe live in MainForm.Decrypt.cs (do not redefine here)
+
     async Task PickAndLoadElf() {
         using var ofd = new OpenFileDialog { Filter = "ELF|*.elf;*.bin;*.self|All|*.*" };
         if (ofd.ShowDialog() != DialogResult.OK) return;
@@ -375,10 +376,5 @@ public sealed partial class MainForm : Form
         Native.CancelBuild();
         Append("Stop requested.");
         UpdateButtons();
-    }
-    bool PickRpcs3Exe() {
-        using var ofd = new OpenFileDialog { Filter = "RPCS3|rpcs3.exe|EXE|*.exe" };
-        if (ofd.ShowDialog() != DialogResult.OK) return false;
-        _settings.Rpcs3Path = ofd.FileName; return true;
     }
 }
