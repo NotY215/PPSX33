@@ -1,30 +1,46 @@
 #include "project.h"
 #include "elf_loader.h"
 #include "ppu_lifter.h"
-#include "ps3_util.h"
-
+#include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <string>
+#include <vector>
 #include <algorithm>
 #include <cctype>
-#include <cstdio>
 #include <cstdlib>
-#include <filesystem>
+#include <atomic>
 #include <system_error>
-#include <vector>
-#include <string>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 namespace fs = std::filesystem;
-
 namespace ps3 {
+
+static std::atomic<bool> g_build_cancel_requested{false};
+static FILE* g_live = nullptr;
+
+static void live_open(const fs::path& out) {
+    if (g_live) { fclose(g_live); g_live = nullptr; }
+    fs::path p = out / "build_live.log";
+    g_live = fopen(p.string().c_str(), "w");
+}
+static void live_log(const std::string& s) {
+    if (g_live) { fputs(s.c_str(), g_live); fflush(g_live); }
+}
+static void live_close() {
+    if (g_live) { fclose(g_live); g_live = nullptr; }
+}
 
 std::string sanitize_game_name(const std::string& n) {
     std::string o; o.reserve(n.size());
-    for (char c : n) {
-        if (std::isalnum((unsigned char)c) || c == '_' || c == '-' || c == ' ') o.push_back(c);
+    for (unsigned char c : n) {
+        if (std::isalnum(c) || c == '_' || c == '-' || c == ' ') o.push_back((char)c);
     }
     while (!o.empty() && o.back() == ' ') o.pop_back();
-    return o;
+    return o.empty() ? "project" : o;
 }
 
 bool create_project(const std::string& root, const std::string& game, const std::string& elf,
@@ -37,60 +53,77 @@ bool create_project(const std::string& root, const std::string& game, const std:
     fs::create_directories(p / "codebase", ec);
     fs::create_directories(p / "output", ec);
     fs::copy_file(elf, p / "input" / "EBOOT.elf", fs::copy_options::overwrite_existing, ec);
-    if (ec) { err = ec.message(); return false; }
+    if (ec) { err = "Failed to copy ELF: " + ec.message(); return false; }
     project_dir = p.string();
     err.clear();
     return true;
 }
 
 bool lift_project(const std::string& project_dir, std::string& log, std::string& err) {
-    log.clear();
+    ElfImage img;
     fs::path in = fs::path(project_dir) / "input" / "EBOOT.elf";
-    if (!fs::exists(in)) { err = "Missing input/EBOOT.elf"; return false; }
+    if (!load_elf(in.string(), img, err)) return false;
+    analyze_elf(img);
+    LiftStats st;
     fs::path code = fs::path(project_dir) / "codebase";
     fs::create_directories(code);
-    ElfImage img;
-    if (!load_elf(in.string(), img, err)) return false;
-    LiftResult lr;
-    if (!lift_ppu(img, code.string(), lr, err)) return false;
+    if (!lift_elf(img, code.string(), st, err)) return false;
+
     {
         std::ofstream ar(code / "analysis_report.txt");
-        ar << "ELF segments: " << img.segments.size() << "\n";
-        ar << "entry OPD: 0x" << std::hex << img.entry_opd << std::dec << "\n";
-        ar << "symbols=" << img.symbols.size()
-           << " opds=" << img.opds.size()
-           << " prx_hits=" << img.prx_imports.size()
-           << " spu_images=" << img.spu_images.size() << "\n";
+        ar << "entry_opd: 0x" << std::hex << img.entry << std::dec << "\n";
+        ar << "segments: " << img.segments.size() << "\n";
+        ar << "symbols: " << img.symbols.size() << "\n";
+        ar << "opd_entries: " << img.opds.size() << "\n";
+        ar << "prx_string_hits: " << img.prx_imports.size() << "\n";
+        ar << "embedded_spu_images: " << img.spu_images.size() << "\n";
+        ar << "\nOPD samples (up to 32):\n";
+        for (size_t i = 0; i < img.opds.size() && i < 32; ++i) {
+            ar << "  [" << i << "] desc=0x" << std::hex << img.opds[i].addr
+               << " entry=0x" << img.opds[i].entry
+               << " toc=0x" << img.opds[i].toc << std::dec << "\n";
+        }
+        ar << "\nPRX/module string samples (up to 64):\n";
         for (size_t i = 0; i < img.prx_imports.size() && i < 64; ++i) {
             ar << "  " << img.prx_imports[i].name
-               << " nid=0x" << std::hex << img.prx_imports[i].nid << std::dec << "\n";
+               << "  nid=0x" << std::hex << img.prx_imports[i].nid << std::dec
+               << "  @0x" << std::hex << img.prx_imports[i].stub_addr << std::dec << "\n";
         }
+        ar << "\nEmbedded SPU images:\n";
         for (size_t i = 0; i < img.spu_images.size(); ++i) {
+            ar << "  [" << i << "] host_va=0x" << std::hex << img.spu_images[i].host_addr
+               << std::dec << " size=" << img.spu_images[i].data.size() << "\n";
             char name[64];
             std::snprintf(name, sizeof name, "spu_image_%02zu.bin", i);
             std::ofstream sf(code / name, std::ios::binary);
-            auto& blob = img.spu_images[i];
-            sf.write(reinterpret_cast<const char*>(blob.data()), (std::streamsize)blob.size());
+            sf.write((const char*)img.spu_images[i].data.data(),
+                     (std::streamsize)img.spu_images[i].data.size());
         }
+        size_t funcs = 0;
+        for (const auto& s : img.symbols) if (s.is_func()) ++funcs;
+        ar << "\nsymbol_functions: " << funcs << "\n";
     }
+
     {
         std::ofstream lrpt(code / "lift_report.txt");
-        lrpt << "Instructions: " << lr.instructions
-             << "  translated: " << lr.translated
-             << "  unimplemented: " << lr.unimplemented
-             << "  chunks: " << lr.chunks << "\n";
+        lrpt << "Instructions: " << st.instructions
+             << "  translated: " << st.implemented
+             << "  unimplemented: " << st.unimplemented
+             << "  chunks: " << st.chunks << "\n";
     }
-    log = "ELF loaded: " + std::to_string(img.segments.size()) + " segments, entry OPD 0x" +
-          ([&]{ char b[32]; std::snprintf(b,sizeof b,"%x", (unsigned)img.entry_opd); return std::string(b); })() +
-          "\nAnalysis: symbols=" + std::to_string(img.symbols.size()) +
-          " opds=" + std::to_string(img.opds.size()) +
-          " prx_hits=" + std::to_string(img.prx_imports.size()) +
-          " spu_images=" + std::to_string(img.spu_images.size()) +
-          "\nInstructions: " + std::to_string(lr.instructions) +
-          "  translated: " + std::to_string(lr.translated) +
-          "  unimplemented: " + std::to_string(lr.unimplemented) +
-          "  chunks: " + std::to_string(lr.chunks) +
-          "\nSee codebase/lift_report.txt and codebase/analysis_report.txt.\n";
+
+    std::ostringstream o;
+    o << "ELF loaded: " << img.segments.size() << " segments, entry OPD 0x" << std::hex << img.entry << std::dec << "\n"
+      << "Analysis: symbols=" << img.symbols.size()
+      << " opds=" << img.opds.size()
+      << " prx_hits=" << img.prx_imports.size()
+      << " spu_images=" << img.spu_images.size() << "\n"
+      << "Instructions: " << st.instructions
+      << "  translated: " << st.implemented
+      << "  unimplemented: " << st.unimplemented
+      << "  chunks: " << st.chunks << "\n"
+      << "See codebase/lift_report.txt and codebase/analysis_report.txt.\n";
+    log = o.str();
     err.clear();
     return true;
 }
@@ -98,14 +131,7 @@ bool lift_project(const std::string& project_dir, std::string& log, std::string&
 namespace {
 
 std::string q(const std::string& s) { return "\"" + s + "\""; }
-
-const char* kExe = ".exe"; const char* kDll = ".dll";
-
-void live_log(const char* msg) {
-    // best-effort: write to build_live.log if cwd is output
-    std::ofstream f("build_live.log", std::ios::app);
-    if (f) { f << msg; f.flush(); }
-}
+const char* kExe = ".exe";
 
 std::string find_vcvars64() {
     const char* roots[] = {
@@ -127,10 +153,31 @@ std::string find_bundled_cl(const std::string& compilers_dir) {
     return {};
 }
 
-void cleanup_after_build(const fs::path& project_dir, const fs::path& out, std::string& log) {
+int run_cmd(const std::string& cmd, std::string& log) {
+#ifdef _WIN32
+    FILE* pipe = _popen(cmd.c_str(), "r");
+#else
+    FILE* pipe = popen(cmd.c_str(), "r");
+#endif
+    if (!pipe) { log += "failed to start: " + cmd + "\n"; return -1; }
+    char buf[512];
+    while (fgets(buf, sizeof buf, pipe)) {
+        log += buf;
+        live_log(buf);
+        if (g_build_cancel_requested.load()) break;
+    }
+#ifdef _WIN32
+    int rc = _pclose(pipe);
+#else
+    int rc = pclose(pipe);
+#endif
+    return rc;
+}
+
+void cleanup_after_build(const std::string& project_dir, const fs::path& out, std::string& log) {
     std::error_code ec;
-    fs::path codebase = project_dir / "codebase";
-    fs::path input = project_dir / "input";
+    fs::path codebase = fs::path(project_dir) / "codebase";
+    fs::path input = fs::path(project_dir) / "input";
     for (const char* name : { "lift_report.txt", "analysis_report.txt" }) {
         fs::path src = codebase / name;
         if (fs::exists(src))
@@ -163,23 +210,27 @@ void cleanup_after_build(const fs::path& project_dir, const fs::path& out, std::
             fs::remove_all(e.path(), ec);
         }
     }
-    log += "cleanup: done (exe/dll/guest_image.bin kept)\n";
+    log += "cleanup: done (exe/dll kept)\n";
     live_log("cleanup: done\n");
 }
 
 } // namespace
 
+void begin_build() { g_build_cancel_requested.store(false); }
+void cancel_build() { g_build_cancel_requested.store(true); }
+
 bool build_project(const std::string& project_dir, const std::string& runtime_dir,
-                   const std::string& compilers_dir, std::string& log) {
+                   const std::string& compilers_dir, std::string& log, std::string& err) {
     log.clear();
+    err.clear();
     fs::path out = fs::path(project_dir) / "output";
     fs::path src = out / "src";
     fs::path code = fs::path(project_dir) / "codebase";
     std::error_code ec;
     fs::create_directories(out, ec);
     fs::create_directories(src, ec);
+    live_open(out);
 
-    // copy runtime + generated sources into output/src
     if (fs::exists(runtime_dir)) {
         for (auto& e : fs::recursive_directory_iterator(runtime_dir, ec)) {
             if (!e.is_regular_file()) continue;
@@ -207,7 +258,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         std::string n = e.path().filename().string();
         if (n.size() < 5 || n.substr(n.size()-4) != ".cpp") continue;
         if (n.rfind("ps3rt", 0) == 0 || n == "rsx_stub.cpp" || n == "spu_stub.cpp" ||
-            n == "audio_save.cpp" || n == "ps3rt_hw.cpp" || n == "ps3rt_log.cpp")
+            n == "audio_save.cpp")
             rtSrc.push_back(n);
         else
             gameSrc.push_back(n);
@@ -215,7 +266,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     std::sort(rtSrc.begin(), rtSrc.end());
     std::sort(gameSrc.begin(), gameSrc.end());
 
-    int build_total = (int)rtSrc.size() + (int)gameSrc.size() + 2; // +2 link steps
+    int build_total = (int)rtSrc.size() + (int)gameSrc.size() + 2;
     {
         char buf[64];
         std::snprintf(buf, sizeof(buf), "BUILD_TOTAL=%d\n", build_total);
@@ -223,7 +274,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         log += buf;
     }
 
-    // Always brand the host binary as PPSX33.exe (tool identity, not a retail game title).
+    // Host binary always branded PPSX33.exe (tool identity, not a retail game title).
     std::string out_exe = std::string("PPSX33") + kExe;
 
 #ifdef _WIN32
@@ -293,22 +344,37 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             f << "exit /b 0\n";
         }
 
-        // run bat from output dir
-        std::string cmd = "cmd /C \"cd /D " + out.string() + " && build_msvc.bat\"";
-        live_log(("> build_msvc.bat\n"));
-        int rc = std::system(cmd.c_str());
+        log += "MSVC: out=" + out.string() + "\n";
+        live_log("MSVC: out=" + out.string() + "\n");
+        auto prev = fs::current_path(ec);
+        fs::current_path(out, ec);
+        if (ec) {
+            log += "chdir failed: " + ec.message() + "\n";
+            live_log("chdir failed: " + ec.message() + "\n");
+        }
+        int rc = run_cmd("build_msvc.bat", log);
+        fs::current_path(prev, ec);
         if (rc != 0) {
-            log += "MSVC build failed (exit=" + std::to_string(rc) + ")\n";
-            live_log(log.c_str());
+            if (rc == 130 || g_build_cancel_requested.load()) {
+                err = "BUILD_CANCELLED";
+                live_close();
+                return false;
+            }
+            std::string tail = log;
+            if (tail.size() > 4000) tail = tail.substr(tail.size() - 4000);
+            err = "MSVC build failed (exit=" + std::to_string(rc) + "):\n" + tail;
+            live_log(err + "\n"); live_close();
             return false;
         }
-        log += "MSVC build OK → " + out_exe + "\n";
-        live_log("MSVC build OK\n");
-        cleanup_after_build(fs::path(project_dir), out, log);
+        fs::remove(out / "build_msvc.bat", ec);
+        cleanup_after_build(project_dir, out, log);
+        live_log("Build OK (MSVC)\n");
+        live_close();
         return true;
     }
 #endif
-    log += "No MSVC toolchain found.\n";
+    err = "No MSVC toolchain found";
+    live_close();
     return false;
 }
 
