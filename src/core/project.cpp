@@ -181,7 +181,7 @@ void cleanup_after_build(const fs::path& project_dir, const fs::path& out, std::
         log += "cleanup: removed output/src\n";
         live_log("cleanup: removed output/src\n");
     }
-    for (const char* name : { "build.ninja", "build_msvc.bat" }) {
+    for (const char* name : { "build.ninja", "build_msvc.bat", "link_rt.rsp", "link_game.rsp" }) {
         if (fs::exists(out / name)) fs::remove(out / name, ec);
     }
     if (fs::exists(codebase)) {
@@ -268,10 +268,8 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             fs::copy_file(from, src / n, ow, ec);
     }
     fs::create_directories(out / "obj", ec);
-    log += "src files:";
-    for (auto& e : fs::directory_iterator(src, ec))
-        log += " " + e.path().filename().string();
-    log += "\n";
+    log += "src files: " + std::to_string(gameSrc.size()) + " game + "
+         + std::to_string(rtSrc.size()) + " runtime cpp\n";
     if (gameSrc.empty()) {
         err = "No game sources (game_main/ppu_chunks) copied — re-run Decompile.";
         return false;
@@ -297,6 +295,24 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     bool use_msvc = !vcvars.empty() || !bundled_cl.empty();
 
     if (use_msvc) {
+        // Response files avoid Windows 8191-char command-line limit (150+ objs)
+        {
+            std::ofstream rt_rsp(out / "link_rt.rsp");
+            rt_rsp << "/nologo\n/DLL\n/OUT:ps3rt.dll\n";
+            for (auto& n : rtSrc) rt_rsp << "obj\\rt_" << n << ".obj\n";
+            rt_rsp << "d3d11.lib\nd3d10.lib\ndxgi.lib\nuser32.lib\ngdi32.lib\n";
+        }
+        {
+            std::ofstream g_rsp(out / "link_game.rsp");
+            g_rsp << "/nologo\n/OUT:\"" << out_exe << "\"\n";
+            for (auto& n : gameSrc) g_rsp << "obj\\g_" << n << ".obj\n";
+            if (fs::exists(src / "game_main.cpp") &&
+                std::find(gameSrc.begin(), gameSrc.end(), "game_main.cpp") == gameSrc.end()) {
+                g_rsp << "obj\\g_game_main.obj\n";
+            }
+            g_rsp << "ps3rt.lib\n";
+        }
+
         fs::path bat = out / "build_msvc.bat";
         {
             std::ofstream f(bat);
@@ -304,6 +320,8 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             f << "echo === PPSX33 MSVC build ===\n";
             f << "echo BUILD_TOTAL=" << build_total << "\n";
             f << "echo cwd=%CD%\n";
+            // Shrink PATH before vcvars — prevents "The input line is too long"
+            f << "set \"PATH=C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem\"\n";
             if (!vcvars.empty()) {
                 f << "echo vcvars=" << vcvars << "\n";
                 f << "call " << q(vcvars) << "\n";
@@ -312,7 +330,6 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
                 f << "echo WARNING: vcvars64.bat not found — using PATH/bundled cl\n";
             }
             std::string cl = bundled_cl.empty() ? "cl" : q(bundled_cl);
-            std::string link_cmd = "link";
             f << "echo cl=" << cl << "\n";
             f << "where cl 2>nul\n";
             f << "if not exist src\\ps3rt.cpp (echo MISSING src\\ps3rt.cpp & exit /b 1)\n";
@@ -321,30 +338,25 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             f << "if not exist src\\image_info.h (echo MISSING src\\image_info.h & exit /b 1)\n";
             f << "if not exist obj mkdir obj\n";
             std::string cflags = "/nologo /O2 /EHsc /std:c++17 /bigobj /FS /I src /DPS3RT_BUILD_DLL=1";
-            std::string rt_objs, game_objs;
             for (auto& n : rtSrc) {
                 std::string o = "obj\\rt_" + n + ".obj";
                 f << "echo COMPILE " << n << "\n";
                 f << cl << " " << cflags << " /c src\\" << n << " /Fo" << o << " || exit /b 1\n";
-                rt_objs += " " + o;
             }
             f << "echo LINK ps3rt.dll\n";
-            f << link_cmd << " /nologo /DLL /OUT:ps3rt.dll" << rt_objs
-              << " d3d11.lib d3d10.lib dxgi.lib user32.lib gdi32.lib || exit /b 1\n";
+            f << "link @link_rt.rsp || exit /b 1\n";
             for (auto& n : gameSrc) {
                 std::string o = "obj\\g_" + n + ".obj";
                 f << "echo COMPILE " << n << "\n";
                 f << cl << " /nologo /O2 /EHsc /std:c++17 /bigobj /FS /I src /c src\\" << n << " /Fo" << o << " || exit /b 1\n";
-                game_objs += " " + o;
             }
             if (fs::exists(src / "game_main.cpp") &&
                 std::find(gameSrc.begin(), gameSrc.end(), "game_main.cpp") == gameSrc.end()) {
                 f << "echo COMPILE game_main.cpp\n";
                 f << cl << " /nologo /O2 /EHsc /std:c++17 /bigobj /FS /I src /c src\\game_main.cpp /Foobj\\g_game_main.obj || exit /b 1\n";
-                game_objs += " obj\\g_game_main.obj";
             }
             f << "echo LINK " << out_exe << "\n";
-            f << link_cmd << " /nologo /OUT:" << out_exe << game_objs << " ps3rt.lib || exit /b 1\n";
+            f << "link @link_game.rsp || exit /b 1\n";
             f << "echo BUILD_OK\n";
             f << "exit /b 0\n";
         }
