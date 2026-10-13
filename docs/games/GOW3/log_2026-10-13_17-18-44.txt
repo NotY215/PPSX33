@@ -1,6 +1,6 @@
 PPSX33 run log
-file=E:\PPSX33\build\dist\projects\GOW 3\output\log_2026-10-13_16-07-55.txt
-[ps3rt] log file: E:\PPSX33\build\dist\projects\GOW 3\output\log_2026-10-13_16-07-55.txt
+file=E:\PPSX33\build\dist\projects\GOW 3\output\log_2026-10-13_17-18-44.txt
+[ps3rt] log file: E:\PPSX33\build\dist\projects\GOW 3\output\log_2026-10-13_17-18-44.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -70,10 +70,15 @@ file=E:\PPSX33\build\dist\projects\GOW 3\output\log_2026-10-13_16-07-55.txt
 [ps3] import stub pc=0x39800000 -> ret=0x1033c (#22)
 [stage] PPU progress start
 [stage] SPU progress end
+[pad] XInput loaded from xinput1_4.dll
+[pad] poll#1 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
 [gcm] Phase XII guest put 0x0 -> 0x48
 [ps3] Phase M touch-progress n=8192
+[pad] poll#2 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
 [ps3] Phase M touch-progress n=16384
+[pad] poll#3 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
 [ps3] Phase M touch-progress n=24576
+[pad] poll#4 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
 [ps3] Phase M touch-progress n=32768
 [ps3] Phase M touch-progress n=40960
 [ps3] Phase M touch-progress n=49152
@@ -123,10 +128,13 @@ file=E:\PPSX33\build\dist\projects\GOW 3\output\log_2026-10-13_16-07-55.txt
 [rsx] flip #1281 draws=641 clears=1282 depth=641 stencil=641 shaders=0 tex=0 methods=5769 known=5769 unknown=0 1264x681
 [rsx] flip #1537 draws=769 clears=1538 depth=769 stencil=769 shaders=0 tex=0 methods=6921 known=6921 unknown=0 1264x681
 [rsx] flip #1793 draws=897 clears=1794 depth=897 stencil=897 shaders=0 tex=0 methods=8073 known=8073 unknown=0 1264x681
-[rsx] flip #2049 draws=1025 clears=2050 depth=1025 stencil=1025 shaders=0 tex=0 methods=9225 known=9225 unknown=0 1280x729
-[rsx] flip #2305 draws=1153 clears=2306 depth=1153 stencil=1153 shaders=0 tex=0 methods=10377 known=10377 unknown=0 1280x729
-[rsx] flip #2561 draws=1281 clears=2562 depth=1281 stencil=1281 shaders=0 tex=0 methods=11529 known=11529 unknown=0 1280x729
-[rsx] flip #2817 draws=1409 clears=2818 depth=1409 stencil=1409 shaders=0 tex=0 methods=12681 known=12681 unknown=0 1280x729
+[pad] poll#16385 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
+[rsx] flip #2049 draws=1025 clears=2050 depth=1025 stencil=1025 shaders=0 tex=0 methods=9225 known=9225 unknown=0 1264x681
+[rsx] flip #2305 draws=1153 clears=2306 depth=1153 stencil=1153 shaders=0 tex=0 methods=10377 known=10377 unknown=0 1264x681
+[pad] poll#19457 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
+[rsx] flip #2561 draws=1281 clears=2562 depth=1281 stencil=1281 shaders=0 tex=0 methods=11529 known=11529 unknown=0 1264x681
+[pad] poll#21505 btn=0x0100 sticks=0,0,0,0 L2=255 R2=0
+[rsx] flip #2817 draws=1409 clears=2818 depth=1409 stencil=1409 shaders=0 tex=0 methods=12681 known=12681 unknown=0 1264x681
 [rsx] flip #3073 draws=1537 clears=3074 depth=1537 stencil=1537 shaders=0 tex=0 methods=13833 known=13833 unknown=0 1280x729
 [rsx] flip #3329 draws=1665 clears=3330 depth=1665 stencil=1665 shaders=0 tex=0 methods=14985 known=14985 unknown=0 1280x729
 [rsx] flip #3585 draws=1793 clears=3586 depth=1793 stencil=1793 shaders=0 tex=0 methods=16137 known=16137 unknown=0 1280x729
@@ -164,12 +172,54 @@ file=E:\PPSX33\build\dist\projects\GOW 3\output\log_2026-10-13_16-07-55.txt
 [rsx] flip #11777 draws=5889 clears=11778 depth=5889 stencil=5889 shaders=0 tex=0 methods=53001 known=53001 unknown=0 1280x729
 [rsx] flip #12033 draws=6017 clears=12034 depth=6017 stencil=6017 shaders=0 tex=0 methods=54153 known=54153 unknown=0 1280x729
 [rsx] flip #12289 draws=6145 clears=12290 depth=6145 stencil=6145 shaders=0 tex=0 methods=55305 known=55305 unknown=0 1280x729
+[pad] poll#99329 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
+[pad] poll#100353 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
 [rsx] flip #12545 draws=6273 clears=12546 depth=6273 stencil=6273 shaders=0 tex=0 methods=56457 known=56457 unknown=0 1280x729
+[pad] poll#101377 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
 [rsx] flip #12801 draws=6401 clears=12802 depth=6401 stencil=6401 shaders=0 tex=0 methods=57609 known=57609 unknown=0 1280x729
+[pad] poll#103425 btn=0x0100 sticks=0,0,0,0 L2=255 R2=0
 [rsx] flip #13057 draws=6529 clears=13058 depth=6529 stencil=6529 shaders=0 tex=0 methods=58761 known=58761 unknown=0 1280x729
+[pad] poll#105473 btn=0x0100 sticks=0,0,0,0 L2=255 R2=0
 [rsx] flip #13313 draws=6657 clears=13314 depth=6657 stencil=6657 shaders=0 tex=0 methods=59913 known=59913 unknown=0 1280x729
+[pad] poll#108545 btn=0x00C0 sticks=-127,127,0,0 L2=0 R2=0
 [rsx] flip #13569 draws=6785 clears=13570 depth=6785 stencil=6785 shaders=0 tex=0 methods=61065 known=61065 unknown=0 1280x729
+[pad] poll#109569 btn=0x00C0 sticks=-127,127,0,0 L2=0 R2=0
+[pad] poll#110593 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
 [rsx] flip #13825 draws=6913 clears=13826 depth=6913 stencil=6913 shaders=0 tex=0 methods=62217 known=62217 unknown=0 1280x729
+[pad] poll#111617 btn=0x0180 sticks=-127,0,0,0 L2=255 R2=0
+[pad] poll#112641 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
+[rsx] flip #14081 draws=7041 clears=14082 depth=7041 stencil=7041 shaders=0 tex=0 methods=63369 known=63369 unknown=0 1280x729
+[pad] poll#113665 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
+[pad] poll#114689 btn=0x00C0 sticks=-127,127,0,0 L2=0 R2=0
+[rsx] flip #14337 draws=7169 clears=14338 depth=7169 stencil=7169 shaders=0 tex=0 methods=64521 known=64521 unknown=0 1280x729
+[pad] poll#115713 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
+[pad] poll#116737 btn=0x0100 sticks=0,0,0,0 L2=255 R2=0
+[rsx] flip #14593 draws=7297 clears=14594 depth=7297 stencil=7297 shaders=0 tex=0 methods=65673 known=65673 unknown=0 1280x729
+[pad] poll#118785 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
+[rsx] flip #14849 draws=7425 clears=14850 depth=7425 stencil=7425 shaders=0 tex=0 methods=66825 known=66825 unknown=0 1280x729
+[pad] poll#119809 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
+[pad] poll#120833 btn=0x0080 sticks=0,0,0,0 L2=0 R2=0
+[rsx] flip #15105 draws=7553 clears=15106 depth=7553 stencil=7553 shaders=0 tex=0 methods=67977 known=67977 unknown=0 1280x729
+[pad] poll#122881 btn=0x0050 sticks=0,0,0,0 L2=0 R2=0
+[rsx] flip #15361 draws=7681 clears=15362 depth=7681 stencil=7681 shaders=0 tex=0 methods=69129 known=69129 unknown=0 1280x729
+[pad] poll#123905 btn=0x0080 sticks=0,0,0,0 L2=0 R2=0
+[pad] poll#124929 btn=0x00B0 sticks=-127,-127,0,0 L2=0 R2=0
+[rsx] flip #15617 draws=7809 clears=15618 depth=7809 stencil=7809 shaders=0 tex=0 methods=70281 known=70281 unknown=0 1280x729
+[pad] poll#125953 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
+[pad] poll#126977 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
+[rsx] flip #15873 draws=7937 clears=15874 depth=7937 stencil=7937 shaders=0 tex=0 methods=71433 known=71433 unknown=0 1280x729
+[rsx] flip #16129 draws=8065 clears=16130 depth=8065 stencil=8065 shaders=0 tex=0 methods=72585 known=72585 unknown=0 1280x729
+[rsx] flip #16385 draws=8193 clears=16386 depth=8193 stencil=8193 shaders=0 tex=0 methods=73737 known=73737 unknown=0 1280x729
+[rsx] flip #16641 draws=8321 clears=16642 depth=8321 stencil=8321 shaders=0 tex=0 methods=74889 known=74889 unknown=0 1280x729
+[rsx] flip #16897 draws=8449 clears=16898 depth=8449 stencil=8449 shaders=0 tex=0 methods=76041 known=76041 unknown=0 1280x729
+[rsx] flip #17153 draws=8577 clears=17154 depth=8577 stencil=8577 shaders=0 tex=0 methods=77193 known=77193 unknown=0 1280x729
+[rsx] flip #17409 draws=8705 clears=17410 depth=8705 stencil=8705 shaders=0 tex=0 methods=78345 known=78345 unknown=0 1280x729
+[rsx] flip #17665 draws=8833 clears=17666 depth=8833 stencil=8833 shaders=0 tex=0 methods=79497 known=79497 unknown=0 1280x729
+[pad] poll#142337 btn=0xC000 sticks=0,0,0,0 L2=0 R2=0
+[pad] poll#143361 btn=0x4000 sticks=0,0,0,0 L2=0 R2=0
+[rsx] flip #17921 draws=8961 clears=17922 depth=8961 stencil=8961 shaders=0 tex=0 methods=80649 known=80649 unknown=0 1280x729
+[rsx] flip #18177 draws=9089 clears=18178 depth=9089 stencil=9089 shaders=0 tex=0 methods=81801 known=81801 unknown=0 1280x729
+[rsx] flip #18433 draws=9217 clears=18434 depth=9217 stencil=9217 shaders=0 tex=0 methods=82953 known=82953 unknown=0 1280x729
 [rsx] window closed by user — exiting
 [stage] EXIT requested
 [ps3rt] exit requested
