@@ -1,4 +1,4 @@
-// ps3rt Phase XV — FF draw path + depth/stencil clear surface inject
+// ps3rt Phase XVII — pad/input full mapping (XInput + keyboard)
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include "nid_table.h"
@@ -225,12 +225,162 @@ static void spu_tick_all() {
     if (!s_spu_once) { PS3RT_STAGE("SPU progress end"); s_spu_once = 1; }
 }
 
+// ---- Phase XVII: full pad / input mapping ----
+enum : uint16_t {
+    CELL_PAD_SELECT   = 0x0001,
+    CELL_PAD_L3       = 0x0002,
+    CELL_PAD_R3       = 0x0004,
+    CELL_PAD_START    = 0x0008,
+    CELL_PAD_UP       = 0x0010,
+    CELL_PAD_RIGHT    = 0x0020,
+    CELL_PAD_DOWN     = 0x0040,
+    CELL_PAD_LEFT     = 0x0080,
+    CELL_PAD_L2       = 0x0100,
+    CELL_PAD_R2       = 0x0200,
+    CELL_PAD_L1       = 0x0400,
+    CELL_PAD_R1       = 0x0800,
+    CELL_PAD_TRIANGLE = 0x1000,
+    CELL_PAD_CIRCLE   = 0x2000,
+    CELL_PAD_CROSS    = 0x4000,
+    CELL_PAD_SQUARE   = 0x8000,
+};
 static uint16_t g_pad_buttons = 0;
 static int8_t g_pad_lx = 0, g_pad_ly = 0, g_pad_rx = 0, g_pad_ry = 0;
+static uint8_t g_pad_l2 = 0, g_pad_r2 = 0;
+static int g_pad_inited = 0;
+static int g_pad_connected = 1;
+static uint32_t g_pad_poll_count = 0;
+
 PS3RT_API void ps3rt_pad_set(uint16_t buttons, int16_t lx, int16_t ly, int16_t rx, int16_t ry) {
     g_pad_buttons = buttons;
     g_pad_lx = (int8_t)(lx >> 8); g_pad_ly = (int8_t)(ly >> 8);
     g_pad_rx = (int8_t)(rx >> 8); g_pad_ry = (int8_t)(ry >> 8);
+}
+
+#if defined(_WIN32)
+typedef struct _XINPUT_GAMEPAD {
+    WORD wButtons; BYTE bLeftTrigger; BYTE bRightTrigger;
+    SHORT sThumbLX; SHORT sThumbLY; SHORT sThumbRX; SHORT sThumbRY;
+} XINPUT_GAMEPAD;
+typedef struct _XINPUT_STATE { DWORD dwPacketNumber; XINPUT_GAMEPAD Gamepad; } XINPUT_STATE;
+typedef DWORD (WINAPI *PFN_XInputGetState)(DWORD, XINPUT_STATE*);
+static PFN_XInputGetState s_XInputGetState = nullptr;
+static int s_xinput_tried = 0;
+static void pad_load_xinput() {
+    if (s_xinput_tried) return;
+    s_xinput_tried = 1;
+    const char* dlls[] = { "xinput1_4.dll", "xinput1_3.dll", "xinput9_1_0.dll", nullptr };
+    for (int i = 0; dlls[i]; ++i) {
+        HMODULE m = LoadLibraryA(dlls[i]);
+        if (!m) continue;
+        s_XInputGetState = (PFN_XInputGetState)GetProcAddress(m, "XInputGetState");
+        if (s_XInputGetState) {
+            ps3rt_log("[pad] XInput loaded from %s\n", dlls[i]);
+            return;
+        }
+    }
+    ps3rt_log("[pad] XInput not found — keyboard only\n");
+}
+static int16_t stick_from_xinput(SHORT v) {
+    if (v > -8000 && v < 8000) return 0;
+    int scaled = (int)v * 127 / 32767;
+    if (scaled > 127) scaled = 127;
+    if (scaled < -128) scaled = -128;
+    return (int16_t)scaled;
+}
+#endif
+
+static void pad_poll_host() {
+    ++g_pad_poll_count;
+    uint16_t btn = 0;
+    int8_t lx = 0, ly = 0, rx = 0, ry = 0;
+    uint8_t l2 = 0, r2 = 0;
+
+#if defined(_WIN32)
+    pad_load_xinput();
+    if (s_XInputGetState) {
+        XINPUT_STATE st{};
+        if (s_XInputGetState(0, &st) == 0) {
+            WORD xb = st.Gamepad.wButtons;
+            if (xb & 0x0001) btn |= CELL_PAD_UP;
+            if (xb & 0x0002) btn |= CELL_PAD_DOWN;
+            if (xb & 0x0004) btn |= CELL_PAD_LEFT;
+            if (xb & 0x0008) btn |= CELL_PAD_RIGHT;
+            if (xb & 0x0010) btn |= CELL_PAD_START;
+            if (xb & 0x0020) btn |= CELL_PAD_SELECT;
+            if (xb & 0x0040) btn |= CELL_PAD_L3;
+            if (xb & 0x0080) btn |= CELL_PAD_R3;
+            if (xb & 0x0100) btn |= CELL_PAD_L1;
+            if (xb & 0x0200) btn |= CELL_PAD_R1;
+            if (xb & 0x1000) btn |= CELL_PAD_CROSS;
+            if (xb & 0x2000) btn |= CELL_PAD_CIRCLE;
+            if (xb & 0x4000) btn |= CELL_PAD_SQUARE;
+            if (xb & 0x8000) btn |= CELL_PAD_TRIANGLE;
+            l2 = st.Gamepad.bLeftTrigger;
+            r2 = st.Gamepad.bRightTrigger;
+            if (l2 > 30) btn |= CELL_PAD_L2;
+            if (r2 > 30) btn |= CELL_PAD_R2;
+            lx = (int8_t)stick_from_xinput(st.Gamepad.sThumbLX);
+            ly = (int8_t)(-stick_from_xinput(st.Gamepad.sThumbLY));
+            rx = (int8_t)stick_from_xinput(st.Gamepad.sThumbRX);
+            ry = (int8_t)(-stick_from_xinput(st.Gamepad.sThumbRY));
+            g_pad_connected = 1;
+        }
+    }
+    #define PAD_KEY(vk) ((GetAsyncKeyState(vk) & 0x8000) != 0)
+    if (PAD_KEY(VK_UP)    || PAD_KEY('W')) btn |= CELL_PAD_UP;
+    if (PAD_KEY(VK_DOWN)  || PAD_KEY('S')) btn |= CELL_PAD_DOWN;
+    if (PAD_KEY(VK_LEFT)  || PAD_KEY('A')) btn |= CELL_PAD_LEFT;
+    if (PAD_KEY(VK_RIGHT) || PAD_KEY('D')) btn |= CELL_PAD_RIGHT;
+    if (PAD_KEY(VK_RETURN) || PAD_KEY('K')) btn |= CELL_PAD_CROSS;
+    if (PAD_KEY(VK_ESCAPE) || PAD_KEY('L')) btn |= CELL_PAD_CIRCLE;
+    if (PAD_KEY(VK_SPACE)  || PAD_KEY('I')) btn |= CELL_PAD_TRIANGLE;
+    if (PAD_KEY(VK_BACK)   || PAD_KEY('J')) btn |= CELL_PAD_SQUARE;
+    if (PAD_KEY('Q')) btn |= CELL_PAD_L1;
+    if (PAD_KEY('E')) btn |= CELL_PAD_R1;
+    if (PAD_KEY('Z')) { btn |= CELL_PAD_L2; l2 = 255; }
+    if (PAD_KEY('C')) { btn |= CELL_PAD_R2; r2 = 255; }
+    if (PAD_KEY(VK_TAB))   btn |= CELL_PAD_START;
+    if (PAD_KEY(VK_SHIFT)) btn |= CELL_PAD_SELECT;
+    if (!(lx|ly)) {
+        if (PAD_KEY('W')) ly = -127;
+        if (PAD_KEY('S')) ly =  127;
+        if (PAD_KEY('A')) lx = -127;
+        if (PAD_KEY('D')) lx =  127;
+    }
+    #undef PAD_KEY
+#endif
+
+    g_pad_buttons = btn;
+    g_pad_lx = lx; g_pad_ly = ly; g_pad_rx = rx; g_pad_ry = ry;
+    g_pad_l2 = l2; g_pad_r2 = r2;
+    if ((g_pad_poll_count <= 4) || ((g_pad_poll_count & 0x3FF) == 1 && btn)) {
+        ps3rt_log("[pad] poll#%u btn=0x%04X sticks=%d,%d,%d,%d L2=%u R2=%u\n",
+            g_pad_poll_count, (unsigned)btn, (int)lx, (int)ly, (int)rx, (int)ry, (unsigned)l2, (unsigned)r2);
+    }
+}
+
+static void pad_write_data(uint64_t out) {
+    if (!out || out + 24 > g_mem_size) return;
+    wr_be32_guest(out, 24);
+    g_mem[out+4] = (uint8_t)(g_pad_buttons >> 8);
+    g_mem[out+5] = (uint8_t)(g_pad_buttons & 0xFF);
+    g_mem[out+6] = (uint8_t)g_pad_lx;
+    g_mem[out+7] = (uint8_t)g_pad_ly;
+    g_mem[out+8] = (uint8_t)g_pad_rx;
+    g_mem[out+9] = (uint8_t)g_pad_ry;
+    for (int i = 10; i < 24; ++i) g_mem[out + i] = 0;
+    g_mem[out+10] = g_pad_l2;
+    g_mem[out+11] = g_pad_r2;
+}
+
+static void pad_write_info2(uint64_t out) {
+    if (!out || out + 0x50 > g_mem_size) return;
+    std::memset(g_mem + out, 0, 0x50);
+    wr_be32_guest(out + 0, 7);
+    wr_be32_guest(out + 4, g_pad_connected);
+    wr_be32_guest(out + 8, 0);
+    wr_be32_guest(out + 12, g_pad_connected ? 0x00000001u : 0);
 }
 
 PS3RT_API void ps3rt_syscall(PPUContext* c) {
@@ -309,7 +459,6 @@ static void gcm_fifo_emit(uint32_t method, uint32_t arg) {
     }
 }
 static void gcm_inject_clear_draw() {
-    // Phase XV: color + depth/stencil clear surface + draw
     static const uint32_t kCols[] = { 0x101828u, 0x182030u, 0x203040u, 0x283848u };
     gcm_fifo_emit(0x01D8, kCols[(g_gcm_frame_id / 45) % 4]);
     gcm_fifo_emit(0x01D4, 0xF1u);
@@ -379,13 +528,34 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
         if (e->nid == 0xA547ADDE) { c->gpr[3] = g_gcm_flip_status; return 0; }
         if (e->nid == 0xB2E761D4 || e->nid == 0xF80196C0) { g_gcm_flip_status = 0; c->gpr[3] = 0; return 0; }
         if (e->nid == 0x3AAAD464) {
-            uint64_t out = c->gpr[4];
-            if (out && out + 24 <= g_mem_size) {
-                wr_be32_guest(out, 24);
-                g_mem[out+4] = (uint8_t)(g_pad_buttons >> 8); g_mem[out+5] = (uint8_t)g_pad_buttons;
-                g_mem[out+6] = (uint8_t)g_pad_lx; g_mem[out+7] = (uint8_t)g_pad_ly;
-                g_mem[out+8] = (uint8_t)g_pad_rx; g_mem[out+9] = (uint8_t)g_pad_ry;
-            }
+            pad_poll_host();
+            pad_write_data(c->gpr[4]);
+            c->gpr[3] = 0; return 0;
+        }
+        if (e->nid == 0x1C936E6D) {
+            g_pad_inited = 1;
+            ps3rt_log("[pad] cellPadInit max=%u\n", (unsigned)c->gpr[3]);
+            c->gpr[3] = 0; return 0;
+        }
+        if (e->nid == 0x0D5F2C14) {
+            g_pad_inited = 0;
+            c->gpr[3] = 0; return 0;
+        }
+        if (e->nid == 0xA703A51D) {
+            pad_write_info2(c->gpr[3] ? c->gpr[3] : c->gpr[4]);
+            c->gpr[3] = 0; return 0;
+        }
+        if (e->nid == 0x3F797DFF) {
+            g_pad_buttons = 0; g_pad_lx = g_pad_ly = g_pad_rx = g_pad_ry = 0;
+            g_pad_l2 = g_pad_r2 = 0;
+            c->gpr[3] = 0; return 0;
+        }
+        if (e->nid == 0x0B1535CA || e->nid == 0x578E3C98 ||
+            e->nid == 0x6BC09C61 || e->nid == 0x8B72CDA1 || e->nid == 0xF54172E0) {
+            c->gpr[3] = 0; return 0;
+        }
+        if (kind == 8) {
+            pad_poll_host();
             c->gpr[3] = 0; return 0;
         }
         if (kind == 1 || (kind >= 2 && kind <= 10)) { c->gpr[3] = 0; return 0; }
@@ -407,6 +577,7 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
         if ((seq & 0x7) == 5) { c->gpr[3] = g_gcm_flip_status; return 0; }
         c->gpr[3] = 0; return 0;
     }
+    if (kind == 8) { pad_poll_host(); c->gpr[3] = 0; return 0; }
     c->gpr[3] = 0; return 0;
 }
 PS3RT_API void ps3rt_progress_hw(void) {
@@ -420,6 +591,7 @@ PS3RT_API void ps3rt_progress_hw(void) {
         return;
     }
     spu_tick_all();
+    pad_poll_host();
     if (!g_gcm_inited) gcm_ensure_state();
     static uint32_t s_last_put = 0;
     static uint32_t s_stall = 0;
