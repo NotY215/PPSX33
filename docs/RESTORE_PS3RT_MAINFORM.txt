@@ -1,0 +1,52 @@
+# CRITICAL RESTORE (run on your machine)
+
+## 1) Restore ps3rt.cpp (currently broken stub on main)
+
+```bat
+cd /d E:\PPSX33
+git fetch origin
+git checkout c26362e99f7b63c8c948a2df07b1883005acd225 -- runtime/ps3rt.cpp
+```
+
+Then add near top (after ps3rt_stage.h include):
+
+```cpp
+extern "C" {
+PS3RT_API int  ps3rt_audio_dispatch(PPUContext* c, uint32_t nid);
+PS3RT_API void ps3rt_audio_tick(void);
+PS3RT_API int  ps3rt_save_dispatch(PPUContext* c, uint32_t nid);
+PS3RT_API void ps3rt_save_boot_notice(void);
+}
+```
+
+In ps3rt_init before BOOT end: `ps3rt_save_boot_notice();`
+In progress_hw after pad_poll_host: `ps3rt_audio_tick();`
+In prx_dispatch for kind==4: `return ps3rt_audio_dispatch(c, e->nid);`
+For kind==11: `return ps3rt_save_dispatch(c, e->nid);`
+
+## 2) Restore MainForm.cs
+
+```bat
+git checkout 7080c49fa7bf -- src/gui/MainForm.cs
+```
+
+Hooks:
+- field: `private bool _controllerHiddenAfterBuild;`
+- after Roadmap tab: `BuildControllerTab();`
+- BuildWithProgress start: `HideControllerAfterBuild(); WritePadMapForRuntime();`
+
+MainForm.Controller.cs and runtime/audio_save.cpp are already on main.
+
+## 3) Commit
+
+```bat
+git add runtime/ps3rt.cpp src/gui/MainForm.cs
+git commit -m "restore ps3rt + MainForm; wire audio/save"
+git push origin main
+```
+
+## Already on main (keep)
+- runtime/audio_save.cpp (XVI audio + XVIII PS3 Documents save)
+- runtime/nid_table.h (cellSaveData + cellAudio)
+- src/gui/MainForm.Controller.cs
+- ROADMAP.md updated
