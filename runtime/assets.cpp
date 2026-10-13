@@ -1,4 +1,4 @@
-// Game asset host I/O: cellFs path mapping + PSARC (PS3 archive) TOC/read
+// Game asset host I/O: cellFs path mapping + PSARC (PS3 archive) TOC/read + .rpf presence
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include <cstdio>
@@ -167,29 +167,59 @@ static bool psarc_load_toc(const char* path, PsarcArchive& out) {
     return true;
 }
 
+static void scan_one_pattern(const char* pattern) {
+#ifdef _WIN32
+    WIN32_FIND_DATAA fd;
+    HANDLE h = FindFirstFileA(pattern, &fd);
+    if (h == INVALID_HANDLE_VALUE) return;
+    char dir[520] = {};
+    const char* slash = strrchr(pattern, '\\');
+    if (slash) {
+        size_t n = (size_t)(slash - pattern);
+        if (n >= sizeof(dir)) n = sizeof(dir) - 1;
+        std::memcpy(dir, pattern, n);
+        dir[n] = 0;
+    } else {
+        std::snprintf(dir, sizeof(dir), "%s", g_game_root);
+    }
+    do {
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
+        char full[560];
+        std::snprintf(full, sizeof(full), "%s\\%s", dir, fd.cFileName);
+        const char* name = fd.cFileName;
+        size_t len = std::strlen(name);
+        if (len >= 6 && _stricmp(name + len - 6, ".psarc") == 0) {
+            PsarcArchive a;
+            psarc_load_toc(full, a);
+        } else if (len >= 4 && _stricmp(name + len - 4, ".rpf") == 0) {
+            ps3rt_log("[rpf] found %s (container present; open via cellFs host path)\n", full);
+        } else {
+            ps3rt_log("[asset] found %s\n", full);
+        }
+    } while (FindNextFileA(h, &fd));
+    FindClose(h);
+#else
+    (void)pattern;
+#endif
+}
+
 static void psarc_scan_game_root() {
     ensure_game_root();
 #ifdef _WIN32
     char pattern[560];
-    std::snprintf(pattern, sizeof(pattern), "%s\\*.psarc", g_game_root);
-    WIN32_FIND_DATAA fd;
-    HANDLE h = FindFirstFileA(pattern, &fd);
-    if (h == INVALID_HANDLE_VALUE) {
-        std::snprintf(pattern, sizeof(pattern), "%s\\USRDIR\\*.psarc", g_game_root);
-        h = FindFirstFileA(pattern, &fd);
+    const char* globs[] = {
+        "%s\\*.psarc",
+        "%s\\USRDIR\\*.psarc",
+        "%s\\*.rpf",
+        "%s\\USRDIR\\*.rpf",
+        "%s\\PS3_GAME\\USRDIR\\*.psarc",
+        nullptr
+    };
+    for (int i = 0; globs[i]; ++i) {
+        std::snprintf(pattern, sizeof(pattern), globs[i], g_game_root);
+        scan_one_pattern(pattern);
     }
-    if (h == INVALID_HANDLE_VALUE) return;
-    do {
-        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
-        char full[560];
-        std::snprintf(full, sizeof(full), "%s\\%s", g_game_root, fd.cFileName);
-        PsarcArchive a;
-        if (!psarc_load_toc(full, a)) {
-            std::snprintf(full, sizeof(full), "%s\\USRDIR\\%s", g_game_root, fd.cFileName);
-            psarc_load_toc(full, a);
-        }
-    } while (FindNextFileA(h, &fd));
-    FindClose(h);
+    ps3rt_log("[fs] asset scan done root=%s\n", g_game_root);
 #endif
 }
 
@@ -287,10 +317,10 @@ PS3RT_API int ps3rt_fs_dispatch(PPUContext* c, uint32_t nid) {
     if (!scanned) { scanned = true; psarc_scan_game_root(); }
 
     switch (nid) {
-    case 0x718BF5F8: return fs_open(c);
-    case 0x4D5B9EF2: return fs_read(c);
-    case 0xECDCF2AB: return fs_write(c);
-    case 0x2CB51F0F: return fs_close(c);
+    case 0x718BF5F8: return fs_open(c);   // cellFsOpen
+    case 0x4D5B9EF2: return fs_read(c);   // cellFsRead
+    case 0xECDCF2AB: return fs_write(c);  // cellFsWrite
+    case 0x2CB51F0F: return fs_close(c);  // cellFsClose
     default:
         c->gpr[3] = 0;
         return 0;
