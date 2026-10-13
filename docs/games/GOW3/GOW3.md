@@ -20,41 +20,36 @@
 
 | Phase | Name | Status | Notes |
 | --- | --- | --- | --- |
-| **I** | BOOT | **Done** | ps3rt_init, log file next to EXE |
-| **II** | MEM | **Done** | PS3IMG1 segment map, guest_alloc |
-| **III** | PPU | **Done** | Lifter 100%, OPD/stub at 0x39800000, progress_hw |
-| **IV** | SPU | **Partial** | create/load/run stubs, mailbox; ISA interpreter later |
-| **V** | GCM | **Done** | control/labels/FIFO emit, flip NIDs |
-| **VI** | RSX present | **Done** | D3D11 window, Present, message pump, force_exit |
-| **VII** | RUNNING | **Done** | Stage marker after ~30 flips; throttled log |
-| **VIII** | EXIT | **Done** | WM_CLOSE → force_exit / ExitProcess(0) |
-| **IX** | Build pipeline | **Done** | BUILD_TOTAL, rsp link files, PATH fix for vcvars |
-| **X** | GUI progress | **Done** | N/total, ETA, cancel unlock, live console |
-| **XI** | Cleanup | **Done** | Trim codebase/ + input/ post-build |
-| **XII** | GCM inject | **Done** | Stall inject clear/scissor when guest put idle |
-| **XIII** | Clear surface | **Done** | Color/depth/stencil mask + DSV clear |
-| **XIV** | Draw fidelity | **Done** | draws counter, depth/stencil state, no pure-blue clear |
-| **XV** | Fixed-function | **Done** | Tint overlay on draw, shader/tex tracking |
-| **XVI** | Audio | **Next** | cellAudio / libaudio HLE |
-| **XVII** | Game assets | **Later** | Run from game folder, FS HLE for USRDIR |
+| **I–XIII** | Boot→Clear | **Done** | See root ROADMAP.md |
+| **XIV** | Draw fidelity | **Done** | depth/stencil, no pure-blue |
+| **XV** | Fixed-function | **Done** | Tint on draw, shader/tex counters |
+| **XVI** | Audio | Pending | cellAudio HLE |
+| **XVII** | Pad / input | **Done** | XInput + keyboard → cellPad |
+| **XVIII+** | Save / perf / playable | Pending | |
 
-## Runtime diagnostics (2026-10-13)
+## Runtime diagnostics (2026-10-13 16:07)
 
-From `log_2026-10-13_15-49-19.txt` (Phase XIV):
+From `log_2026-10-13_16-07-55.txt` (Phase XV):
 
-- Stages: BOOT → MEM → RSX → GCM → PPU → SPU → RUNNING
-- Flips > 20k, **draws rising with clears**, unknown=0
-- Depth+stencil present path active
+- Stages complete; RUNNING after flip ~32
+- draws / clears / depth / stencil all rising together
+- unknown methods = 0
 - Clean EXIT on window close
 
-## Where to run the EXE
+## Input map (Phase XVII)
 
-**Now:** `build/dist/projects/<name>/output/` (needs `guest_image.bin` + `ps3rt.dll` beside EXE).
+| Host | CELL_PAD |
+|------|----------|
+| WASD / Arrows | D-pad + left stick |
+| Enter / K | Cross |
+| Esc / L | Circle |
+| Space / I | Triangle |
+| Backspace / J | Square |
+| Q / E | L1 / R1 |
+| Z / C | L2 / R2 |
+| Tab / Shift | Start / Select |
+| Xbox pad | Full XInput → PS3 map |
 
-**Later (assets):** copy EXE + `ps3rt.dll` into the game folder next to `EBOOT.BIN`.
+## Where to run
 
-## Reproduction
-
-1. Decrypt EBOOT / Load ELF → Decompile → Build → Run from `output/`.
-2. After XV: log shows `draws=` + `depth=` + `shaders=`; window tint shifts.
-3. Do not commit ELF, EBOOT, assets, or keys.
+`build/dist/projects/<name>/output/` (guest_image.bin + ps3rt.dll beside EXE).
