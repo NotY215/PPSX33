@@ -136,7 +136,8 @@ public sealed partial class MainForm : Form
         _project.Text = "PROJECT  /  NO PROJECT LOADED"; _project.ForeColor = TextPri; _project.BackColor = Color.FromArgb(12, 22, 47);
         _project.Dock = DockStyle.Fill; _project.TextAlign = ContentAlignment.MiddleLeft; _project.Padding = new Padding(12, 0, 0, 0);
         StyleTextBox(_log); StyleTextBox(_report); StyleTextBox(_roadmap);
-        _roadmap.Text = "PPSX33 · Sequential: Load ELF → Decompile → Build → Run\r\n";
+        _roadmap.Text = "PPSX33 · Phase XV · Load ELF → Decompile → Build → Run\r\n" +
+            "I BOOT  II MEM  III PPU  IV SPU  V GCM  VI RSX  VII RUNNING  VIII EXIT\r\n";
         _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(92, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab; _tabs.BackColor = Bg;
         AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap);
         _status.Text = "●  SYSTEM READY"; _status.ForeColor = TextSec; _status.Dock = DockStyle.Fill;
@@ -382,16 +383,7 @@ public sealed partial class MainForm : Form
         } catch (Exception ex) { Append(ex.Message); }
     }
 
-    async Task DecryptEbootAndLoad() {
-        Append("Use RPCS3 to decrypt EBOOT.BIN then Load ELF.");
-        await Task.CompletedTask;
-    }
-
-    bool PickRpcs3Exe() {
-        using var ofd = new OpenFileDialog { Title = "Select rpcs3.exe", Filter = "rpcs3.exe|rpcs3.exe|All|*.*" };
-        if (ofd.ShowDialog(this) != DialogResult.OK) return false;
-        _settings.Rpcs3Path = ofd.FileName; return true;
-    }
+    // DecryptEbootAndLoad + PickRpcs3Exe live in MainForm.Decrypt.cs (partial)
 
     void SaveSettings() {
         _settings.GraphicsBackend = _gfx.SelectedItem?.ToString() ?? "D3D11";
