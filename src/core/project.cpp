@@ -303,24 +303,37 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         fs::path bat = out / "build_msvc.bat";
         {
             std::ofstream f(bat);
-            f << "@echo on\nsetlocal EnableExtensions EnableDelayedExpansion\n";
+            // Do NOT setlocal before vcvars — setlocal/endlocal inside vcvars can discard PATH.
+            f << "@echo on\n";
             f << "echo === PPSX33 MSVC build ===\n";
             f << "echo BUILD_TOTAL=" << build_total << "\n";
             f << "echo cwd=%CD%\n";
-            f << "set \"PATH=C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem\"\n";
+            // Prefer vswhere → installationPath → vcvars (VS 2019–2026)
+            f << "set \"VSWHERE=%ProgramFiles(x86)%\\Microsoft Visual Studio\\Installer\\vswhere.exe\"\n";
+            f << "set \"VSINSTALL=\"\n";
+            f << "if exist \"%VSWHERE%\" for /f \"usebackq delims=\" %%i in (`\"%VSWHERE%\" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set \"VSINSTALL=%%i\"\n";
             if (!vcvars.empty()) {
-                f << "echo vcvars=" << vcvars << "\n";
-                f << "call " << q(vcvars) << "\n";
-                // vcvars often leaves non-zero ERRORLEVEL even on success — do NOT exit on it
-                f << "echo post-vcvars OK\n";
+                f << "if defined VSINSTALL (\n";
+                f << "  echo vswhere install=%VSINSTALL%\n";
+                f << "  call \"%VSINSTALL%\\VC\\Auxiliary\\Build\\vcvars64.bat\"\n";
+                f << ") else (\n";
+                f << "  echo vcvars=" << vcvars << "\n";
+                f << "  call " << q(vcvars) << "\n";
+                f << ")\n";
             } else {
-                f << "echo WARNING: vcvars64.bat not found — using PATH/bundled cl\n";
+                f << "if defined VSINSTALL call \"%VSINSTALL%\\VC\\Auxiliary\\Build\\vcvars64.bat\"\n";
+                f << "if not defined VSINSTALL echo WARNING: no vswhere/vcvars — using PATH/bundled cl\n";
             }
+            f << "echo post-vcvars OK\n";
             std::string cl = bundled_cl.empty() ? "cl" : q(bundled_cl);
             f << "echo cl=" << cl << "\n";
             f << "where cl 2>nul\n";
             f << "where cl >nul 2>&1\n";
-            f << "if errorlevel 1 (echo ERROR: cl.exe not on PATH after vcvars & exit /b 1)\n";
+            f << "if errorlevel 1 (\n";
+            f << "  echo ERROR: cl.exe not on PATH after vcvars\n";
+            f << "  echo Try opening x64 Native Tools Command Prompt and run this bat manually.\n";
+            f << "  exit /b 1\n";
+            f << ")\n";
             f << "if not exist src\\ps3rt.cpp (echo MISSING src\\ps3rt.cpp & exit /b 1)\n";
             f << "if not exist obj mkdir obj\n";
             std::string cflags = "/nologo /O2 /EHsc /std:c++17 /bigobj /FS /I src /DPS3RT_BUILD_DLL=1";
@@ -355,8 +368,8 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             log += "chdir failed: " + ec.message() + "\n";
             live_log("chdir failed: " + ec.message() + "\n");
         }
-        // cmd /c handles spaces in project folder names (e.g. "GOW 3")
-        int rc = run_cmd("cmd /c build_msvc.bat", log);
+        // Merge stderr so vcvars/cl errors appear in the live log
+        int rc = run_cmd("cmd /c \"build_msvc.bat 2>&1\"", log);
         fs::current_path(prev, ec);
         if (rc != 0) {
             if (rc == 130 || g_build_cancel_requested.load()) {
