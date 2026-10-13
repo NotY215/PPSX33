@@ -38,6 +38,9 @@ public sealed partial class MainForm
 
     async Task DecryptEbootAndLoad()
     {
+        if (!ShowLegalNotice("Decrypt EBOOT (external tool only)"))
+            return;
+
         if (!EnsureRpcs3Path())
         {
             SetStatus("RPCS3 not selected");
