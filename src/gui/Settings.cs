@@ -4,7 +4,7 @@ namespace PS3Recomp.Gui;
 
 /// <summary>
 /// Persisted under %APPDATA%/PPSX33/settings.json
-/// Holds RPCS3 path, last ELF/BIN, graphics, threads, and DualShock key map.
+/// Holds RPCS3 path, last ELF/BIN, graphics, threads, DualShock key map, terms acceptance.
 /// </summary>
 public sealed class Settings
 {
@@ -14,6 +14,11 @@ public sealed class Settings
     public string LastElfPath { get; set; } = "";
     public string LastBinPath { get; set; } = "";
     public KeyMap KeyMap { get; set; } = KeyMap.Defaults();
+    /// <summary>True after first-run Terms dialog is accepted.</summary>
+    public bool TermsAccepted { get; set; } = false;
+    /// <summary>Windows username recorded at acceptance (informational).</summary>
+    public string TermsAcceptedBy { get; set; } = "";
+    public string TermsVersion { get; set; } = "2026-10-13";
 
     public static string DataDir
     {

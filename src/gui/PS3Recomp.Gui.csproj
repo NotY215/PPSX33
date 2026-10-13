@@ -1,10 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!--
-    Phase 1 UI – WinForms front-end.
-    Built automatically by CMake (target PS3Recomp) into build/dist/
-    so it sits next to ps3core.dll and runtime/.
-    Icons: repo root assets/ppsx33-logo.ico and .png
-  -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -14,23 +8,27 @@
     <AssemblyName>PS3Recomp</AssemblyName>
     <RootNamespace>PS3Recomp.Gui</RootNamespace>
     <LangVersion>latest</LangVersion>
-
-    <!-- Icons are in the repository root assets/ folder -->
     <ApplicationIcon>$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico</ApplicationIcon>
-
     <OutputPath>$(MSBuildThisFileDirectory)..\..\build\dist\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Copy logo files next to the published exe for runtime UI load -->
     <None Include="$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico" Condition="Exists('$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico')">
       <Link>ppsx33-logo.ico</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.png" Condition="Exists('$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.png')">
       <Link>ppsx33-logo.png</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\TERMS.md" Condition="Exists('$(MSBuildThisFileDirectory)..\..\TERMS.md')">
+      <Link>TERMS.md</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\LEGAL.md" Condition="Exists('$(MSBuildThisFileDirectory)..\..\LEGAL.md')">
+      <Link>LEGAL.md</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
