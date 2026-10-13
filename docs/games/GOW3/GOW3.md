@@ -32,19 +32,20 @@
 | **X** | GUI progress | **Done** | N/total, ETA, cancel unlock, live console |
 | **XI** | Cleanup | **Done** | Trim codebase/ + input/ post-build |
 | **XII** | GCM inject | **Done** | Stall inject clear/scissor when guest put idle |
-| **XIII** | Clear surface | **In progress** | Color/depth/stencil mask + DSV clear |
-| **XIV** | Draw fidelity | **In progress** | draws counter, depth/stencil state, no pure-blue clear |
-| **XV** | Real geometry | **Next** | Vertex/index from FIFO, shaders, textures |
-| **XVI** | Game assets | **Later** | Run from game folder, FS HLE for USRDIR |
+| **XIII** | Clear surface | **Done** | Color/depth/stencil mask + DSV clear |
+| **XIV** | Draw fidelity | **Done** | draws counter, depth/stencil state, no pure-blue clear |
+| **XV** | Fixed-function | **Done** | Tint overlay on draw, shader/tex tracking |
+| **XVI** | Audio | **Next** | cellAudio / libaudio HLE |
+| **XVII** | Game assets | **Later** | Run from game folder, FS HLE for USRDIR |
 
 ## Runtime diagnostics (2026-10-13)
 
-From `log_2026-10-13_15-30-09.txt`:
+From `log_2026-10-13_15-49-19.txt` (Phase XIV):
 
 - Stages: BOOT → MEM → RSX → GCM → PPU → SPU → RUNNING
-- Flips > 60k, clears > 30k, **draws still 0** until XIV rebuild (inject was pure-blue `0xF1`)
-- Window: solid blue was from inject `0xF1` — fixed to cycle dark slate colors
-- Close path: force_exit present
+- Flips > 20k, **draws rising with clears**, unknown=0
+- Depth+stencil present path active
+- Clean EXIT on window close
 
 ## Where to run the EXE
 
@@ -55,5 +56,5 @@ From `log_2026-10-13_15-30-09.txt`:
 ## Reproduction
 
 1. Decrypt EBOOT / Load ELF → Decompile → Build → Run from `output/`.
-2. Expect dark slate window (not pure blue) after XIV rebuild; log `draws=` should rise.
+2. After XV: log shows `draws=` + `depth=` + `shaders=`; window tint shifts.
 3. Do not commit ELF, EBOOT, assets, or keys.
