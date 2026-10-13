@@ -58,3 +58,16 @@ git pull origin main
 ```
 
 Rebuild All → Decompile → Build → Run from `projects/<name>/output/`.
+
+## Current GUI workflow behavior
+
+The WinForms GUI follows **Load ELF / Decrypt EBOOT → Decompile → Build → Run**, with output copying available after a successful build. The current UI also provides controller-key configuration before build, graphics-backend and PPU-thread options, Console/Report/Roadmap tabs, and an object-file-based build progress/ETA estimate.
+
+- **Progress/ETA:** inferred from `.obj` file changes; estimates are advisory and can be inaccurate for incremental builds, linking, or compiler scheduling.
+- **Status messages:** operation-specific success, failure, and stop states are intended to remain distinct.
+- **Stop Game:** terminates the active game process tree.
+- **Cancel Build:** asks for confirmation, calls the native cancellation API, and then clears the selected project and removes generated `input/`, `codebase/`, and `output/` folders. The ELF must be loaded again to continue.
+- **Decompile:** does not currently expose cooperative cancellation.
+- **Cleanup:** a successful build preserves output binaries and report copies; the GUI and native build driver perform different cleanup steps, so test cancellation and successful-build cleanup on disposable projects before relying on their effects.
+
+These are code-path descriptions, not a claim that every cancellation race or toolchain configuration has been runtime-tested. See [the developer guide](docs/DEVELOPER_GUIDE.md) for implementation details.
