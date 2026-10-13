@@ -1,13 +1,15 @@
-# Run log files
+# Runtime log files
 
-When the game EXE starts, `ps3rt_log.cpp` creates:
+PPSX33 includes runtime logging in `runtime/ps3rt_log.cpp`. The runtime log helper is part of the runtime sources copied into a project's staged build. When a generated game executable starts, the log destination is associated with the executable's directory and uses a timestamped filename of the form:
 
+```text
+<game-executable-directory>/log_YYYY-MM-DD_HH-MM-SS.txt
 ```
-<dir-of-GOW_3.exe>/log_YYYY-MM-DD_HH-MM-SS.txt
-```
 
-Example: `E:\PPSX33\build\dist\projects\GOW_3\output\log_2026-10-12_14-30-45.txt`
+For example, a run from `build/dist/projects/<name>/output/` should place its log alongside that executable when the runtime logging path is enabled. Exact log contents depend on which runtime paths emit messages. Keep the Console output and generated log together when reporting a runtime failure.
 
-All `ps3rt_log(...)` lines (and after wiring, former stderr runtime logs) are written to both the console and this file.
+## Troubleshooting
 
-**If build is broken:** `src/core/project.cpp` and `runtime/ps3rt.cpp` must be restored from commit `a5b2b6e` / `cc9b09d` and the copy list must include `ps3rt_log.cpp`.
+- Confirm that `runtime/ps3rt_log.cpp` is present in the runtime source tree and included by the current build/staging logic.
+- Preserve the exact PPSX33 commit, game executable revision, selected graphics backend, and log when reproducing a failure.
+- Do not use a successful build or the existence of a log file as evidence that a commercial game is playable.
