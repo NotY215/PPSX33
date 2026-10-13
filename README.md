@@ -146,7 +146,7 @@ The smoke test creates a synthetic PPC64 ELF, runs the lift/build pipeline, and 
 1. Use an ELF file you are authorized to analyze. PPSX33 does not include game files or decryption keys.
 2. Launch `build\dist\PS3Recomp.exe`. Choose **Load ELF** for a decrypted `.elf`/`.self`, or **Decrypt EBOOT** to invoke the separately installed RPCS3 executable for an `EBOOT.BIN`.
 3. When prompted, choose a project name. The GUI creates `build\dist\projects/<name>/{input,codebase,output}`.
-4. Optionally edit the Controller tab before building. The key map is saved under `%APPDATA%\PPSX33\settings.json`; the Controller tab is removed after the build begins/completes according to the GUI workflow.
+4. Optionally edit the Controller tab before building. The key map is saved under `%APPDATA%\PPSX33\settings.json`; the Controller tab is hidden when Build starts.
 5. Select **Decompile** and inspect the Console/Report output plus `codebase\lift_report.txt` and `codebase\analysis_report.txt`.
 6. Select **Build**. The GUI estimates progress by observing changed `.obj` files and displays an advisory ETA. This is an estimate, not a compiler-provided percentage.
 7. On successful build, the GUI reports `Building successful`; outputs may include a project-named `.exe`, `ps3rt.dll`, and `guest_image.bin` under `output\`. The build driver also retains report copies there.
