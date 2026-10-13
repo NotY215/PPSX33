@@ -1,4 +1,4 @@
-# <img src="https://commons.wikimedia.org/wiki/Special:FilePath/God_of_War_Logo.png" width="150" alt="God of War logo" /> God of War III (GOW3): Lift and runtime record
+# God of War III (GOW3): Lift and runtime record
 
 ## Static lift statistics
 
@@ -11,54 +11,49 @@
 | Segments | 5 |
 | Entry OPD | 0x50ddc0 |
 | Symbols | 0 |
-| OPD entries (heuristic) | 3 |
-| PRX string hits | 47 |
+| OPD entries (heuristic) | 4097 |
+| PRX string hits | 23–47 |
 | Embedded SPU images | 8 |
-| Reported static coverage | 100% (this snapshot) |
+| Reported static coverage | 100% |
 
-Raw totals: [GOW3_lift_report.txt](GOW3_lift_report.txt) when archived.
+## Roadmap (Roman phases)
 
-## Analysis notes
+| Phase | Name | Status | Notes |
+| --- | --- | --- | --- |
+| **I** | BOOT | **Done** | ps3rt_init, log file next to EXE |
+| **II** | MEM | **Done** | PS3IMG1 segment map, guest_alloc |
+| **III** | PPU | **Done** | Lifter 100%, OPD/stub at 0x39800000, progress_hw |
+| **IV** | SPU | **Partial** | create/load/run stubs, mailbox; ISA interpreter later |
+| **V** | GCM | **Done** | control/labels/FIFO emit, flip NIDs |
+| **VI** | RSX present | **Done** | D3D11 window, Present, message pump, force_exit |
+| **VII** | RUNNING | **Done** | Stage marker after ~30 flips; throttled log |
+| **VIII** | EXIT | **Done** | WM_CLOSE → force_exit / ExitProcess(0) |
+| **IX** | Build pipeline | **Done** | BUILD_TOTAL, rsp link files, PATH fix for vcvars |
+| **X** | GUI progress | **Done** | N/total, ETA, cancel unlock, live console |
+| **XI** | Cleanup | **Done** | Trim codebase/ + input/ post-build |
+| **XII** | GCM inject | **Done** | Stall inject clear/scissor when guest put idle |
+| **XIII** | Clear surface | **In progress** | Color/depth/stencil mask + DSV clear |
+| **XIV** | Draw fidelity | **In progress** | draws counter, depth/stencil state, no pure-blue clear |
+| **XV** | Real geometry | **Next** | Vertex/index from FIFO, shaders, textures |
+| **XVI** | Game assets | **Later** | Run from game folder, FS HLE for USRDIR |
 
-From the project decompile log (same metrics as analysis_report.txt):
+## Runtime diagnostics (2026-10-13)
 
-- No symbol table on this commercial ELF (expected).
-- Few OPD discoveries (3) vs large code size: function discovery is incomplete; control flow relies on branch targets inside lifted chunks.
-- 47 PRX/module string hits: game links many system modules; imports are not fully resolved at lift time.
-- 8 embedded SPU images: useful for Phase 4 SPU interpreter testing.
+From `log_2026-10-13_15-30-09.txt`:
 
-There is no separate `docs/games/GOW3/analysis_report.txt` checked into the repo by default (reports are generated per project under the game folder). Prefer copying a redacted analysis_report.txt here when you want a permanent archive.
+- Stages: BOOT → MEM → RSX → GCM → PPU → SPU → RUNNING
+- Flips > 60k, clears > 30k, **draws still 0** until XIV rebuild (inject was pure-blue `0xF1`)
+- Window: solid blue was from inject `0xF1` — fixed to cycle dark slate colors
+- Close path: force_exit present
 
-## Runtime diagnostics (current)
+## Where to run the EXE
 
-Entry after OPD resolve:
+**Now:** `build/dist/projects/<name>/output/` (needs `guest_image.bin` + `ps3rt.dll` beside EXE).
 
-```text
-entry pc=0x10230 toc=0x52d6c8
-```
-
-Soon after start, execution repeatedly hits non-translated PCs:
-
-| Observation | Meaning |
-| --- | --- |
-| `pc=0x39800000` | Not valid guest code in the lifted image; treated as external/import stub |
-| Return via `lr` (e.g. 0x103ac, 0x33aec8, 0x336660) | Stub path returns CELL_OK and continues |
-| `pc=0` with `lr=0x199c78` | Null call target; same stub path |
-| `r2=0x658c0050` | TOC often stable; sometimes cleared on bad paths |
-
-Conclusion: the bottleneck is **missing PRX / function-pointer resolution**, not missing PPU opcode decode. Static coverage is already 100% for this ELF.
-
-## Next runtime steps
-
-1. Resolve or HLE the callees that produce `0x39800000` / null (module imports, init tables). Partial: external stub returns CELL_OK via LR (rate-limited).
-2. Expand LV2 syscalls used during CRT/startup. Done for common set from analysis_report: FS (cellFs*), ppu_thread, lwmutex/lwcond, timers, memory, sysmodule/prx, SPU thread group, GCM-ish hooks.
-3. Exercise the 8 SPU images under the SPU interpreter (major ISA families present; full vector/FP still partial).
-4. GCM FIFO core + flip path present in rsx_stub; next is host draw backend.
+**Later (assets):** copy EXE + `ps3rt.dll` into the game folder next to `EBOOT.BIN`.
 
 ## Reproduction
 
-1. Decrypt EBOOT with PPSX33 (RPCS3 `--decrypt`) or load EBOOT.ELF.
-2. Decompile + Build.
-3. Use **Run game.exe** in the UI (streams console; auto-stops after 4s without output).
-
-Do not commit the ELF, EBOOT, assets, or keys.
+1. Decrypt EBOOT / Load ELF → Decompile → Build → Run from `output/`.
+2. Expect dark slate window (not pure blue) after XIV rebuild; log `draws=` should rise.
+3. Do not commit ELF, EBOOT, assets, or keys.
