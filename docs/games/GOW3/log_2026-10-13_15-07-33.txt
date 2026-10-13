@@ -1,0 +1,236 @@
+PPSX33 run log
+file=E:\PPSX33\build\dist\projects\GOW 3\output\log_2026-10-13_15-07-33.txt
+[ps3rt] log file: E:\PPSX33\build\dist\projects\GOW 3\output\log_2026-10-13_15-07-33.txt
+[stage] BOOT start
+[ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
+[ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
+[ps3rt] PS3IMG1 loaded from E:\PPSX33\build\dist\projects\GOW 3\output\guest_image.bin (2 segments)
+[stage] MEM map end
+[stage] BOOT end
+[stage] PPU run start
+[lv2] alloc VA=0x8000000 size=0x1000
+[gcm] control @ 0x8000000
+[lv2] alloc VA=0x8001000 size=0x10000
+[gcm] labels  @ 0x8001000
+[lv2] alloc VA=0x8020000 size=0x100000
+[rsx] D3D11 host present ready 1280x720
+[stage] RSX ready end
+[rsx] init fifo=0x8020000 size=0x100000 backend=1
+[gcm] Phase G state ready fifo=0x8020000 ctrl=0x8000000
+[stage] GCM ready end
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x103ac r11=0x53f96c
+[ps3] import stub pc=0x39800000 -> ret=0x103ac (#1)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0xD0000000 lr=0x33aec8 r11=0x0
+[ps3] import stub pc=0x39800000 -> ret=0x33aec8 (#2)
+[lv2] sc 352 r3=f0ffe04 r4=3cc7f8 r5=4 r6=0
+[lv2] alloc VA=0x8120000 size=0x1000000
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x336750 r11=0x160
+[ps3] import stub pc=0x39800000 -> ret=0x336750 (#3)
+[lv2] sc 403 r3=1 r4=3fb898 r5=19 r6=f0ffe30
+[lv2] sc 403 r3=1 r4=0 r5=10 r6=f0ffe30
+[lv2] sc 403 r3=1 r4=3fb8b8 r5=1 r6=f0ffe30
+[lv2] sc 403 r3=1 r4=3fb8e0 r5=27 r6=f0ffe30
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x33b314 r11=0x193
+[ps3] import stub pc=0x39800000 -> ret=0x33b314 (#4)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x10284 r11=0x193
+[ps3] import stub pc=0x39800000 -> ret=0x10284 (#5)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x336554 r11=0x40
+[ps3] import stub pc=0x39800000 -> ret=0x336554 (#6)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x336588 r11=0x40
+[ps3] import stub pc=0x39800000 -> ret=0x336588 (#7)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x336520 r11=0x0
+[ps3] import stub pc=0x39800000 -> ret=0x336520 (#8)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x10000000 lr=0x3365f4 r11=0x0
+[ps3] import stub pc=0x39800000 -> ret=0x3365f4 (#9)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x336554 r11=0x40
+[ps3] import stub pc=0x39800000 -> ret=0x336554 (#10)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x336588 r11=0x40
+[ps3] import stub pc=0x39800000 -> ret=0x336588 (#11)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x10000000 lr=0x3365f4 r11=0x0
+[ps3] import stub pc=0x39800000 -> ret=0x3365f4 (#12)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x336554 r11=0x40
+[ps3] import stub pc=0x39800000 -> ret=0x336554 (#13)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x10000000 lr=0x3365f4 r11=0x0
+[ps3] import stub pc=0x39800000 -> ret=0x3365f4 (#14)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x80000000 lr=0x3365f4 r11=0x40
+[ps3] import stub pc=0x39800000 -> ret=0x3365f4 (#15)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x3365f4 r11=0x40
+[ps3] import stub pc=0x39800000 -> ret=0x3365f4 (#16)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x3365f4 r11=0x40
+[ps3] import stub pc=0x39800000 -> ret=0x3365f4 (#17)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x3365f4 r11=0x40
+[ps3] import stub pc=0x39800000 -> ret=0x3365f4 (#18)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x3365f4 r11=0x40
+[ps3] import stub pc=0x39800000 -> ret=0x3365f4 (#19)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x33661c r11=0x40
+[ps3] import stub pc=0x39800000 -> ret=0x33661c (#20)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x33ad04 r11=0x40
+[ps3] import stub pc=0x39800000 -> ret=0x33ad04 (#21)
+[prx] stub kind=1 cellGcmSys pc=0x39800000 nid=0x00000000 lr=0x1033c r11=0x40
+[ps3] import stub pc=0x39800000 -> ret=0x1033c (#22)
+[stage] PPU progress start
+[stage] SPU progress end
+[gcm] Phase XII guest put 0x0 -> 0x18
+[ps3] Phase M touch-progress n=8192
+[ps3] Phase M touch-progress n=16384
+[ps3] Phase M touch-progress n=24576
+[ps3] Phase M touch-progress n=32768
+[ps3] Phase M touch-progress n=40960
+[ps3] Phase M touch-progress n=49152
+[ps3] Phase M touch-progress n=57344
+[rsx] flip #1 draws=0 clears=1 methods=3 known=3 unknown=0 1264x681
+[ps3] Phase M touch-progress n=65536
+[ps3] Phase M touch-progress n=73728
+[ps3] Phase M touch-progress n=81920
+[ps3] Phase M touch-progress n=90112
+[ps3] Phase M touch-progress n=98304
+[rsx] flip #2 draws=0 clears=2 methods=8 known=8 unknown=0 1264x681
+[rsx] flip #3 draws=0 clears=2 methods=8 known=8 unknown=0 1264x681
+[rsx] flip #4 draws=0 clears=3 methods=13 known=13 unknown=0 1264x681
+[rsx] flip #5 draws=0 clears=3 methods=13 known=13 unknown=0 1264x681
+[rsx] flip #6 draws=0 clears=4 methods=18 known=18 unknown=0 1264x681
+[rsx] flip #7 draws=0 clears=4 methods=18 known=18 unknown=0 1264x681
+[rsx] flip #8 draws=0 clears=5 methods=23 known=23 unknown=0 1264x681
+[rsx] flip #9 draws=0 clears=5 methods=23 known=23 unknown=0 1264x681
+[rsx] flip #10 draws=0 clears=6 methods=28 known=28 unknown=0 1264x681
+[rsx] flip #11 draws=0 clears=6 methods=28 known=28 unknown=0 1264x681
+[rsx] flip #12 draws=0 clears=7 methods=33 known=33 unknown=0 1264x681
+[rsx] flip #13 draws=0 clears=7 methods=33 known=33 unknown=0 1264x681
+[rsx] flip #14 draws=0 clears=8 methods=38 known=38 unknown=0 1264x681
+[rsx] flip #15 draws=0 clears=8 methods=38 known=38 unknown=0 1264x681
+[rsx] flip #16 draws=0 clears=9 methods=43 known=43 unknown=0 1264x681
+[rsx] flip #17 draws=0 clears=9 methods=43 known=43 unknown=0 1264x681
+[rsx] flip #18 draws=0 clears=10 methods=48 known=48 unknown=0 1264x681
+[rsx] flip #19 draws=0 clears=10 methods=48 known=48 unknown=0 1264x681
+[rsx] flip #20 draws=0 clears=11 methods=53 known=53 unknown=0 1264x681
+[rsx] flip #21 draws=0 clears=11 methods=53 known=53 unknown=0 1264x681
+[rsx] flip #22 draws=0 clears=12 methods=58 known=58 unknown=0 1264x681
+[rsx] flip #23 draws=0 clears=12 methods=58 known=58 unknown=0 1264x681
+[rsx] flip #24 draws=0 clears=13 methods=63 known=63 unknown=0 1264x681
+[rsx] flip #25 draws=0 clears=13 methods=63 known=63 unknown=0 1264x681
+[rsx] flip #26 draws=0 clears=14 methods=68 known=68 unknown=0 1264x681
+[rsx] flip #27 draws=0 clears=14 methods=68 known=68 unknown=0 1264x681
+[rsx] flip #28 draws=0 clears=15 methods=73 known=73 unknown=0 1264x681
+[rsx] flip #29 draws=0 clears=15 methods=73 known=73 unknown=0 1264x681
+[rsx] flip #30 draws=0 clears=16 methods=78 known=78 unknown=0 1264x681
+[rsx] flip #31 draws=0 clears=16 methods=78 known=78 unknown=0 1264x681
+[stage] RUNNING
+[rsx] flip #32 draws=0 clears=17 methods=83 known=83 unknown=0 1264x681
+[rsx] flip #257 draws=0 clears=129 methods=643 known=643 unknown=0 1264x681
+[rsx] flip #513 draws=0 clears=257 methods=1283 known=1283 unknown=0 1264x681
+[rsx] flip #769 draws=0 clears=385 methods=1923 known=1923 unknown=0 1264x681
+[rsx] flip #1025 draws=0 clears=513 methods=2563 known=2563 unknown=0 1264x681
+[rsx] flip #1281 draws=0 clears=641 methods=3203 known=3203 unknown=0 1264x681
+[rsx] flip #1537 draws=0 clears=769 methods=3843 known=3843 unknown=0 1264x681
+[rsx] flip #1793 draws=0 clears=897 methods=4483 known=4483 unknown=0 1264x681
+[rsx] flip #2049 draws=0 clears=1025 methods=5123 known=5123 unknown=0 1264x681
+[rsx] flip #2305 draws=0 clears=1153 methods=5763 known=5763 unknown=0 1264x681
+[rsx] flip #2561 draws=0 clears=1281 methods=6403 known=6403 unknown=0 1264x681
+[rsx] flip #2817 draws=0 clears=1409 methods=7043 known=7043 unknown=0 1264x681
+[rsx] flip #3073 draws=0 clears=1537 methods=7683 known=7683 unknown=0 1264x681
+[rsx] flip #3329 draws=0 clears=1665 methods=8323 known=8323 unknown=0 1264x681
+[rsx] flip #3585 draws=0 clears=1793 methods=8963 known=8963 unknown=0 1264x681
+[rsx] flip #3841 draws=0 clears=1921 methods=9603 known=9603 unknown=0 1264x681
+[rsx] flip #4097 draws=0 clears=2049 methods=10243 known=10243 unknown=0 1264x681
+[rsx] flip #4353 draws=0 clears=2177 methods=10883 known=10883 unknown=0 1264x681
+[rsx] flip #4609 draws=0 clears=2305 methods=11523 known=11523 unknown=0 1264x681
+[rsx] flip #4865 draws=0 clears=2433 methods=12163 known=12163 unknown=0 1264x681
+[rsx] flip #5121 draws=0 clears=2561 methods=12803 known=12803 unknown=0 1264x681
+[rsx] flip #5377 draws=0 clears=2689 methods=13443 known=13443 unknown=0 1264x681
+[rsx] flip #5633 draws=0 clears=2817 methods=14083 known=14083 unknown=0 1264x681
+[rsx] flip #5889 draws=0 clears=2945 methods=14723 known=14723 unknown=0 1264x681
+[rsx] flip #6145 draws=0 clears=3073 methods=15363 known=15363 unknown=0 1264x681
+[rsx] flip #6401 draws=0 clears=3201 methods=16003 known=16003 unknown=0 1264x681
+[rsx] flip #6657 draws=0 clears=3329 methods=16643 known=16643 unknown=0 1264x681
+[rsx] flip #6913 draws=0 clears=3457 methods=17283 known=17283 unknown=0 1264x681
+[rsx] flip #7169 draws=0 clears=3585 methods=17923 known=17923 unknown=0 1264x681
+[rsx] flip #7425 draws=0 clears=3713 methods=18563 known=18563 unknown=0 1264x681
+[rsx] flip #7681 draws=0 clears=3841 methods=19203 known=19203 unknown=0 1264x681
+[rsx] flip #7937 draws=0 clears=3969 methods=19843 known=19843 unknown=0 1264x681
+[rsx] flip #8193 draws=0 clears=4097 methods=20483 known=20483 unknown=0 1264x681
+[rsx] flip #8449 draws=0 clears=4225 methods=21123 known=21123 unknown=0 1264x681
+[rsx] flip #8705 draws=0 clears=4353 methods=21763 known=21763 unknown=0 1264x681
+[rsx] flip #8961 draws=0 clears=4481 methods=22403 known=22403 unknown=0 1264x681
+[rsx] flip #9217 draws=0 clears=4609 methods=23043 known=23043 unknown=0 1264x681
+[rsx] flip #9473 draws=0 clears=4737 methods=23683 known=23683 unknown=0 1264x681
+[rsx] flip #9729 draws=0 clears=4865 methods=24323 known=24323 unknown=0 1264x681
+[rsx] flip #9985 draws=0 clears=4993 methods=24963 known=24963 unknown=0 1264x681
+[rsx] flip #10241 draws=0 clears=5121 methods=25603 known=25603 unknown=0 1264x681
+[rsx] flip #10497 draws=0 clears=5249 methods=26243 known=26243 unknown=0 1264x681
+[rsx] flip #10753 draws=0 clears=5377 methods=26883 known=26883 unknown=0 1264x681
+[rsx] flip #11009 draws=0 clears=5505 methods=27523 known=27523 unknown=0 1264x681
+[rsx] flip #11265 draws=0 clears=5633 methods=28163 known=28163 unknown=0 1264x681
+[rsx] flip #11521 draws=0 clears=5761 methods=28803 known=28803 unknown=0 1264x681
+[rsx] flip #11777 draws=0 clears=5889 methods=29443 known=29443 unknown=0 1264x681
+[rsx] flip #12033 draws=0 clears=6017 methods=30083 known=30083 unknown=0 1264x681
+[rsx] flip #12289 draws=0 clears=6145 methods=30723 known=30723 unknown=0 1264x681
+[rsx] flip #12545 draws=0 clears=6273 methods=31363 known=31363 unknown=0 1264x681
+[rsx] flip #12801 draws=0 clears=6401 methods=32003 known=32003 unknown=0 1264x681
+[rsx] flip #13057 draws=0 clears=6529 methods=32643 known=32643 unknown=0 1264x681
+[rsx] flip #13313 draws=0 clears=6657 methods=33283 known=33283 unknown=0 1264x681
+[rsx] flip #13569 draws=0 clears=6785 methods=33923 known=33923 unknown=0 1264x681
+[rsx] flip #13825 draws=0 clears=6913 methods=34563 known=34563 unknown=0 1264x681
+[rsx] flip #14081 draws=0 clears=7041 methods=35203 known=35203 unknown=0 1264x681
+[rsx] flip #14337 draws=0 clears=7169 methods=35843 known=35843 unknown=0 1264x681
+[rsx] flip #14593 draws=0 clears=7297 methods=36483 known=36483 unknown=0 1264x681
+[rsx] flip #14849 draws=0 clears=7425 methods=37123 known=37123 unknown=0 1264x681
+[rsx] flip #15105 draws=0 clears=7553 methods=37763 known=37763 unknown=0 1264x681
+[rsx] flip #15361 draws=0 clears=7681 methods=38403 known=38403 unknown=0 1280x729
+[rsx] flip #15617 draws=0 clears=7809 methods=39043 known=39043 unknown=0 1280x729
+[rsx] flip #15873 draws=0 clears=7937 methods=39683 known=39683 unknown=0 1280x729
+[rsx] flip #16129 draws=0 clears=8065 methods=40323 known=40323 unknown=0 1280x729
+[rsx] flip #16385 draws=0 clears=8193 methods=40963 known=40963 unknown=0 1280x729
+[rsx] flip #16641 draws=0 clears=8321 methods=41603 known=41603 unknown=0 1280x729
+[rsx] flip #16897 draws=0 clears=8449 methods=42243 known=42243 unknown=0 1280x729
+[rsx] flip #17153 draws=0 clears=8577 methods=42883 known=42883 unknown=0 1280x729
+[rsx] flip #17409 draws=0 clears=8705 methods=43523 known=43523 unknown=0 1280x729
+[rsx] flip #17665 draws=0 clears=8833 methods=44163 known=44163 unknown=0 1280x729
+[rsx] flip #17921 draws=0 clears=8961 methods=44803 known=44803 unknown=0 1280x729
+[rsx] flip #18177 draws=0 clears=9089 methods=45443 known=45443 unknown=0 1280x729
+[rsx] flip #18433 draws=0 clears=9217 methods=46083 known=46083 unknown=0 1280x729
+[rsx] flip #18689 draws=0 clears=9345 methods=46723 known=46723 unknown=0 1280x729
+[rsx] flip #18945 draws=0 clears=9473 methods=47363 known=47363 unknown=0 1280x729
+[rsx] flip #19201 draws=0 clears=9601 methods=48003 known=48003 unknown=0 1280x729
+[rsx] flip #19457 draws=0 clears=9729 methods=48643 known=48643 unknown=0 1280x729
+[rsx] flip #19713 draws=0 clears=9857 methods=49283 known=49283 unknown=0 1280x729
+[rsx] flip #19969 draws=0 clears=9985 methods=49923 known=49923 unknown=0 1280x729
+[rsx] flip #20225 draws=0 clears=10113 methods=50563 known=50563 unknown=0 1280x729
+[rsx] flip #20481 draws=0 clears=10241 methods=51203 known=51203 unknown=0 1280x729
+[rsx] flip #20737 draws=0 clears=10369 methods=51843 known=51843 unknown=0 1280x729
+[rsx] flip #20993 draws=0 clears=10497 methods=52483 known=52483 unknown=0 1280x729
+[rsx] flip #21249 draws=0 clears=10625 methods=53123 known=53123 unknown=0 1280x729
+[rsx] flip #21505 draws=0 clears=10753 methods=53763 known=53763 unknown=0 1280x729
+[rsx] flip #21761 draws=0 clears=10881 methods=54403 known=54403 unknown=0 1280x729
+[rsx] flip #22017 draws=0 clears=11009 methods=55043 known=55043 unknown=0 1280x729
+[rsx] flip #22273 draws=0 clears=11137 methods=55683 known=55683 unknown=0 1280x729
+[rsx] flip #22529 draws=0 clears=11265 methods=56323 known=56323 unknown=0 1280x729
+[rsx] flip #22785 draws=0 clears=11393 methods=56963 known=56963 unknown=0 1280x729
+[rsx] flip #23041 draws=0 clears=11521 methods=57603 known=57603 unknown=0 1280x729
+[rsx] flip #23297 draws=0 clears=11649 methods=58243 known=58243 unknown=0 1280x729
+[rsx] flip #23553 draws=0 clears=11777 methods=58883 known=58883 unknown=0 1280x729
+[rsx] flip #23809 draws=0 clears=11905 methods=59523 known=59523 unknown=0 1280x729
+[rsx] flip #24065 draws=0 clears=12033 methods=60163 known=60163 unknown=0 1280x729
+[rsx] flip #24321 draws=0 clears=12161 methods=60803 known=60803 unknown=0 1280x729
+[rsx] flip #24577 draws=0 clears=12289 methods=61443 known=61443 unknown=0 1280x729
+[rsx] flip #24833 draws=0 clears=12417 methods=62083 known=62083 unknown=0 1280x729
+[rsx] flip #25089 draws=0 clears=12545 methods=62723 known=62723 unknown=0 1280x729
+[rsx] flip #25345 draws=0 clears=12673 methods=63363 known=63363 unknown=0 1280x729
+[rsx] flip #25601 draws=0 clears=12801 methods=64003 known=64003 unknown=0 1280x729
+[rsx] flip #25857 draws=0 clears=12929 methods=64643 known=64643 unknown=0 1280x729
+[rsx] flip #26113 draws=0 clears=13057 methods=65283 known=65283 unknown=0 1280x729
+[rsx] flip #26369 draws=0 clears=13185 methods=65923 known=65923 unknown=0 1280x729
+[rsx] flip #26625 draws=0 clears=13313 methods=66563 known=66563 unknown=0 1280x729
+[rsx] flip #26881 draws=0 clears=13441 methods=67203 known=67203 unknown=0 1280x729
+[rsx] flip #27137 draws=0 clears=13569 methods=67843 known=67843 unknown=0 1280x729
+[rsx] flip #27393 draws=0 clears=13697 methods=68483 known=68483 unknown=0 1280x729
+[rsx] flip #27649 draws=0 clears=13825 methods=69123 known=69123 unknown=0 1280x729
+[rsx] flip #27905 draws=0 clears=13953 methods=69763 known=69763 unknown=0 1280x729
+[rsx] flip #28161 draws=0 clears=14081 methods=70403 known=70403 unknown=0 1280x729
+[rsx] window closed by user — exiting
+[stage] EXIT requested
+[ps3rt] exit requested
+[stage] EXIT requested
+[ps3rt] exit requested
+[ps3rt] force exit
+
+--- log end ---
