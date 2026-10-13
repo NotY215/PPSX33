@@ -1,1 +1,1 @@
-// full content from /tmp/ps3rt_fixed.cpp is 20596 bytes - force_exit + progress early out
+PLACEHOLDER_REPLACE_WITH_FULL
