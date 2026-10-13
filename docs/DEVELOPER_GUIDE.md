@@ -31,7 +31,7 @@ Build from the repository root in a Visual Studio developer command prompt:
 scripts\build_all.bat
 ```
 
-The output is placed in `build\dist\`. The GUI is published when the .NET SDK is available.
+The output is placed in `build\dist\`. The GUI is published when the .NET SDK is available. The current WinForms frontend includes ELF loading, an RPCS3-backed EBOOT decrypt launcher, project decompilation, object-file-based build progress/ETA, run/stop, output copying, persisted graphics/thread/controller settings, and build-cancellation UI.
 
 ## Alpha packaging and release validation
 
@@ -78,9 +78,20 @@ Do not restore the older single-header runtime as a routine fix. If a header is 
 
 ## Runtime milestone status
 
-The current [roadmap](../ROADMAP.md) marks Phase G complete. The GCM HLE path allocates guest control-register and label state and exposes basic control-register, label-address, initialization, flip-status, and main-memory mapping handlers. The PPU execution loop also tracks exhausted link-register return targets and searches deeper stack ranges during recovery. These mechanisms are experimental recovery behavior and can skip or redirect control flow; logs and tests are required before interpreting them as correct guest behavior.
+Use the current [roadmap](../ROADMAP.md) as the source of truth for runtime and playability milestones. It currently records phases I–XIX as done and Phase XX, the full playable pass, as pending. The roadmap also tracks tooling/UI items such as progress/ETA, build cancellation, post-build cleanup, and controller-tab behavior.
 
-Phase H is the next milestone and targets SPU and RSX command draining. Existing SPU context, load/run, mailbox, and MFC paths do not imply full SPU instruction or SPURS compatibility. Existing RSX control/FIFO work does not imply a complete renderer.
+The runtime contains experimental GCM/HLE, PPU recovery, SPU mailbox/MFC, and RSX FIFO/rendering paths. These are incomplete compatibility layers. Recovery logic may redirect control flow, and a translated instruction count does not establish semantic correctness or playability. Record exact logs and tests when making claims about guest behavior.
+
+
+## GUI workflow, status, and cancellation
+
+The GUI creates projects beneath `build/dist/projects/<name>/` with `input/`, `codebase/`, and `output/` directories. **Load ELF** accepts a decrypted ELF/SELF; **Decrypt EBOOT** delegates decryption to the selected RPCS3 executable. Decompilation writes generated C++ plus `lift_report.txt` and `analysis_report.txt` into `codebase/`. The build driver stages runtime and game sources under `output/src/`, invokes the configured host toolchain, and writes output binaries and reports beneath `output/`.
+
+Build progress in the GUI is inferred by comparing object-file timestamps while the build is running. It is an advisory estimate, not authoritative compiler progress. A successful operation should display an operation-specific success state; failed and stopped operations should remain distinct in the log/status.
+
+The Stop/Cancel control has context-sensitive behavior: it stops the launched game while a game process is active, and during a build it asks for confirmation before calling the native build-cancel API. The GUI's cancelled-build path removes generated `input/`, `codebase/`, and `output/` folders and clears the active project, so the user must reload the ELF. Do not describe Decompile as cancellable: the current GUI calls the native lift API synchronously and has no matching cancellation API for it. The native build cancellation flag is cooperative and should be tested against actual compiler subprocess behavior before claiming immediate termination.
+
+The settings model is in `src/gui/Settings.cs`; its file is `%APPDATA%/PPSX33/settings.json`. `src/gui/KeyMap.cs` defines defaults, `MainForm.Controller.cs` edits and writes the runtime pad map, and `MainForm.Decrypt.cs` integrates the external RPCS3 launcher. Keep GUI behavior descriptions synchronized with these files and `MainForm.cs`.
 
 ## Implementing a PPU opcode
 
