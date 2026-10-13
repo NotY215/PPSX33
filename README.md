@@ -168,14 +168,15 @@ The final arguments identify runtime sources and compiler tools. The CLI perform
 ## Repository map
 
 ```text
-Compilers-files/  Compiler setup and local tool staging
-docs/             PPU coverage and game lift records
-runtime/          Guest memory, split PPU helpers, SPU/RSX support; see [runtime guide](runtime/README.md)
-src/core/         ELF loader, PPU lifter, project/build driver, C API
-src/cli/          Command-line frontend
-src/gui/          C# WinForms frontend
-scripts/          Build, smoke-test, and Pong pipeline scripts
+Compilers-files/  Compiler discovery and local tool staging guidance
+docs/             Developer guide, key map, PPU coverage, game lift records
+runtime/          Guest memory, split PPU helpers, logging, audio/save, SPU/RSX support
+src/core/         ELF loader, PPU lifter, project/build driver, native cancellation API
+src/cli/          Command-line frontend using the native C API
+src/gui/          C# WinForms GUI, controller mapping, RPCS3 launcher, native interop, UI components
+scripts/          Build, compiler staging, smoke-test, restore, and Pong pipeline scripts
 tests/            Synthetic ELF generator and PS3 Pong sample
+releases/         Alpha package notes and release documentation
 ```
 
 ## Developer documentation and policies
