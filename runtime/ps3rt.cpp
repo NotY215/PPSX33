@@ -1,4 +1,4 @@
-// ps3rt Phase XIV (GCM early + import stub fixed in run.h)
+// ps3rt Phase XIV — no pure-blue 0xF1 clear; cycle dark slate + draw inject
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include "nid_table.h"
@@ -241,24 +241,19 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     if (sys_log < 80) { ps3rt_log("[lv2] sc %llu r3=%llx r4=%llx r5=%llx r6=%llx\n", (unsigned long long)num, (unsigned long long)r3, (unsigned long long)r4, (unsigned long long)r5, (unsigned long long)r6); ++sys_log; }
     switch ((uint32_t)num) {
     case 1: c->halted = true; c->gpr[3] = 0; break;
-    case 141: case 142: c->gpr[3] = 0; break;
-    case 144: case 145: c->gpr[3] = 0; break;
-    case 48: case 49: case 50: c->gpr[3] = 0; break;
-    case 52: case 53: case 54: c->gpr[3] = 0; break;
-    case 70: case 71: case 72: c->gpr[3] = 0; break;
-    case 90: case 91: c->gpr[3] = 0; break;
-    case 120: case 121: c->gpr[3] = 0; break;
+    case 141: case 142: case 144: case 145: case 48: case 49: case 50:
+    case 52: case 53: case 54: case 70: case 71: case 72: case 90: case 91:
+    case 120: case 121: case 129: case 130: case 131: case 132: case 133: case 134:
+    case 114: case 115: case 116: case 169: case 348: case 349: case 350: case 351:
+    case 353: case 354: case 355: case 403: case 801: case 802: case 803:
+    case 871: case 872: case 25602: c->gpr[3] = 0; break;
     case 128: {
         static uint32_t eid = 0x7000; ++eid;
         uint64_t out = r3 ? r3 : r4;
         if (out && out + 4 <= g_mem_size) wr_be32_guest(out, eid);
         c->gpr[3] = 0; break;
     }
-    case 129: case 130: case 131: case 132: case 133: case 134: c->gpr[3] = 0; break;
     case 143: { static uint32_t fid = 0x8000; if (r3 && r3+4 <= g_mem_size) wr_be32_guest(r3, ++fid); c->gpr[3] = 0; break; }
-    case 114: case 115: case 116: c->gpr[3] = 0; break;
-    case 169: c->gpr[3] = 0; break;
-    case 348: case 349: case 350: case 351: c->gpr[3] = 0; break;
     case 352: {
         uint64_t size = r3 ? r3 : 0x100000;
         if (size > 0x1000000) size = 0x1000000;
@@ -266,11 +261,6 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
         if (r4 && r4 + 8 <= g_mem_size) wr_be64_guest(r4, a);
         c->gpr[3] = a ? 0 : (uint64_t)-1; break;
     }
-    case 353: case 354: case 355: c->gpr[3] = 0; break;
-    case 403: c->gpr[3] = 0; break;
-    case 801: case 802: case 803: c->gpr[3] = 0; break;
-    case 871: case 872: c->gpr[3] = 0; break;
-    case 25602: c->gpr[3] = 0; break;
     default: c->gpr[3] = 0; break;
     }
 }
@@ -317,6 +307,15 @@ static void gcm_fifo_emit(uint32_t method, uint32_t arg) {
         wr_be32_guest(g_gcm_control + 4, put);
         ps3rt_rsx_set_put(put);
     }
+}
+static void gcm_inject_clear_draw() {
+    static const uint32_t kCols[] = { 0x101828u, 0x182030u, 0x203040u, 0x283848u };
+    gcm_fifo_emit(0x01D8, kCols[(g_gcm_frame_id / 45) % 4]);
+    gcm_fifo_emit(0x0208, (1280u << 16));
+    gcm_fifo_emit(0x020C, (720u << 16));
+    gcm_fifo_emit(0x0A00, (1280u << 16));
+    gcm_fifo_emit(0x0A04, (720u << 16));
+    gcm_fifo_emit(0x1800, 0x3u);
 }
 static bool looks_like_nid(uint32_t n) {
     if (n < 0x10000u) return false;
@@ -397,11 +396,7 @@ static int prx_dispatch(PPUContext* c, int kind, const char* name) {
         uint32_t seq = ++s_gcm_seq;
         if ((seq & 0x7) == 1 && g_gcm_control) {
             c->gpr[3] = g_gcm_control;
-            if ((seq & 0x3F) == 1) {
-                gcm_fifo_emit(0x01D8, 0xF1);
-                gcm_fifo_emit(0x0208, (1280u << 16));
-                gcm_fifo_emit(0x020C, (720u << 16));
-            }
+            if ((seq & 0x3F) == 1) gcm_inject_clear_draw();
             return 0;
         }
         if ((seq & 0x7) == 3 && g_gcm_labels) { c->gpr[3] = g_gcm_labels; return 0; }
@@ -437,11 +432,7 @@ PS3RT_API void ps3rt_progress_hw(void) {
             s_last_put = put; s_stall = 0;
         } else ++s_stall;
         if (g_gcm_inited && s_stall > 8 && (++s_inject & 0xF) == 1) {
-            gcm_fifo_emit(0x01D8, 0xF1);
-            gcm_fifo_emit(0x0208, (1280u << 16));
-            gcm_fifo_emit(0x020C, (720u << 16));
-            gcm_fifo_emit(0x0A00, (1280u << 16));
-            gcm_fifo_emit(0x0A04, (720u << 16));
+            gcm_inject_clear_draw();
             put = rd_be32_guest(g_gcm_control + 0) % fsz;
             s_last_put = put;
         }
@@ -451,11 +442,7 @@ PS3RT_API void ps3rt_progress_hw(void) {
         wr_be32_guest(g_gcm_control + 4, get_now);
         wr_be32_guest(g_gcm_control + 8, get_now);
     } else if (g_gcm_inited && (++s_inject & 0x1F) == 1) {
-        gcm_fifo_emit(0x01D8, 0xF1);
-        gcm_fifo_emit(0x0208, (1280u << 16));
-        gcm_fifo_emit(0x020C, (720u << 16));
-        gcm_fifo_emit(0x0A00, (1280u << 16));
-        gcm_fifo_emit(0x0A04, (720u << 16));
+        gcm_inject_clear_draw();
     }
     g_gcm_flip_status = 0;
     static uint32_t s_flip_div = 0;
