@@ -10,7 +10,7 @@
 
 PPSX33 Alpha 01 is an early evaluation build of the PPSX33 PlayStation 3 static recompiler. It packages the WinForms GUI, native core library, command-line frontend, .NET application metadata, runtime source components, and build-tool staging directory in one folder.
 
-This release is an early, limited preview of only the features implemented in the distributed build. The current workflow can analyze and decompile/lift supported input files, but building the generated files into a working executable is not fully implemented yet. Do not assume that generated C/C++ files or included build tools mean the complete build-and-run pipeline is functional. It is not a complete PlayStation 3 emulator and does not claim reliable commercial-game execution.
+This is a historical early preview. Its capabilities are limited to the exact binaries distributed in the Alpha 01 archive and may lag behind the current `main` branch. The repository now contains a host build driver and GUI Build/Run workflow, but that does not retroactively change the Alpha 01 package. Neither a successful build nor a launch proves reliable commercial-game execution. PPSX33 is not a complete PlayStation 3 emulator.
 
 **Project page:** [PPSX33](https://notyvos.gt.tc/PPSX3/).
 
@@ -45,7 +45,7 @@ PPSX33-Alpha-01/
 
 ## Current Alpha scope
 
-Alpha 01 should be treated as a decompilation/lifting preview. It provides only the features implemented in this build. Building generated output into a working executable is not fully implemented, and successful analysis or decompilation does not prove that generated files can be compiled, linked, launched, or run correctly.
+Alpha 01 should be evaluated according to the exact distributed binaries. Do not infer current `main` branch features from this historical package. Successful analysis or decompilation does not prove that generated files can be compiled, linked, launched, or run correctly.
 
 ## Included capabilities
 
@@ -73,7 +73,7 @@ Alpha 01 should be treated as a decompilation/lifting preview. It provides only 
 2. Start `PS3Recomp.exe`. The patched package is intended to include everything required by its built UI, so users should not need a separate .NET installation. If startup fails, record the exact error and verify the release packaging.
 3. Use an ELF file you are legally authorized to analyze. The tool expects a supported decrypted ELF64 big-endian PowerPC64 input.
 4. Create a project, run the lift workflow, and inspect `lift_report.txt` and `analysis_report.txt`.
-5. Treat generated-file building as incomplete in Alpha 01. The complete build-to-working-executable workflow is not yet implemented. See [Redist.md](../Redist.md) for package prerequisites.
+5. Check the archive-specific capabilities before using Build or Run; the current source tree may contain changes not included in Alpha 01. See [Redist.md](../Redist.md) for package prerequisites.
 6. Keep logs and the exact steps for any issue you report.
 
 For command-line usage, run:
