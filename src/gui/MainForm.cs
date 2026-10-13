@@ -324,7 +324,7 @@ public sealed partial class MainForm : Form
         try { ok = await Task.Run(() => work(_cts.Token)); }
         catch (Exception ex) { Append(ex.Message); }
         finally {
-            if (afterLift && ok) { _canBuild = true; _gfxUnlocked = true; }
+            if (afterLift && ok) { _canBuild = true; _gfxUnlocked = true; _liftChunks = Math.Max(1, _liftChunks); Append("Lift chunks tracked: " + _liftChunks); }
             if (afterBuild && ok) { _canCopy = true; _canRun = true; }
             string workName = status.Contains("Decompil", StringComparison.OrdinalIgnoreCase) ? "Decompiling" : status.Contains("Build", StringComparison.OrdinalIgnoreCase) ? "Building" : status.TrimEnd('…', '.', ' ');
             Append(ok ? workName + " successful." : workName + " failed.");
@@ -337,7 +337,44 @@ public sealed partial class MainForm : Form
 
     // DecryptEbootAndLoad + PickRpcs3Exe live in MainForm.Decrypt.cs
 
+    /// <summary>Shows LEGAL.md summary. User must Accept to continue. No accept = cancel.</summary>
+    bool ShowLegalNotice(string action)
+    {
+        string body =
+            "PPSX33 — LEGAL NOTICE (required before " + action + ")\r\n\r\n" +
+            "• Use only with software and game data you lawfully own or are licensed to use.\r\n" +
+            "• PPSX33 does NOT contain, use, or distribute proprietary decryption keys.\r\n" +
+            "• PPSX33 does NOT bypass DRM or encryption frameworks by itself.\r\n" +
+            "• We do NOT promote piracy, unauthorized copies, or redistribution of game assets.\r\n" +
+            "• Optional EBOOT handling uses tools YOU provide (e.g. your own RPCS3 install); " +
+            "PPSX33 does not ship decrypt keys or a built-in DRM crack.\r\n" +
+            "• Do NOT distribute generated binaries, dumps, or game data.\r\n" +
+            "• Output EXE / window / branding is \"PPSX33\" — a research/recompiler tool, " +
+            "not a claim of an official Sony port or retail product.\r\n" +
+            "• You are solely responsible for complying with applicable law and Sony/PlayStation terms.\r\n" +
+            "• Use at your own risk. See LEGAL.md in the repository root.\r\n\r\n" +
+            "Click Yes only if you understand and accept these terms.";
+
+        var r = MessageBox.Show(
+            this,
+            body,
+            "PPSX33 — Legal acknowledgment",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning,
+            MessageBoxDefaultButton.Button2);
+        if (r != DialogResult.Yes)
+        {
+            Append("Legal notice declined — " + action + " cancelled.");
+            SetStatus("Cancelled (legal notice)");
+            return false;
+        }
+        Append("Legal notice accepted for: " + action);
+        return true;
+    }
+
     void LoadElf(string? path) {
+        if (!ShowLegalNotice(path == null ? "Load ELF" : "Load decrypted ELF"))
+            return;
         if (path == null) {
             using var ofd = new OpenFileDialog {
                 Title = "Select decrypted ELF or SELF",
@@ -377,7 +414,10 @@ public sealed partial class MainForm : Form
     async Task RunGame() {
         if (_projectDir == null) return;
         string outDir = Path.Combine(_projectDir, "output");
-        string exe = Directory.GetFiles(outDir, "*.exe").FirstOrDefault() ?? "";
+        // Prefer PPSX33.exe branding
+        string exe = Path.Combine(outDir, "PPSX33.exe");
+        if (!File.Exists(exe))
+            exe = Directory.GetFiles(outDir, "*.exe").FirstOrDefault() ?? "";
         if (string.IsNullOrEmpty(exe) || !File.Exists(exe)) { Append("No game EXE in output/"); return; }
         _gameProc = Process.Start(new ProcessStartInfo { FileName = exe, WorkingDirectory = outDir, UseShellExecute = false });
         Append("Running: " + exe);
