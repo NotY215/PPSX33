@@ -30,7 +30,7 @@ struct RsxState {
     int unknown_methods = 0;
     uint32_t width = 1280;
     uint32_t height = 720;
-    uint32_t clear_color = 0x000000;
+    uint32_t clear_color = 0x101828; // dark slate (Phase XIV)
 };
 
 static RsxState g_rsx;
