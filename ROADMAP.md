@@ -20,7 +20,7 @@
 | XVI | **Done** | Audio (cellAudio / libaudio HLE — waveOut 48 kHz host) |
 | XVII | **Done** | Pad / input full mapping (XInput + keyboard → cellPad) |
 | XVIII | **Done** | PS3-native save/load only (game checkpoints / in-game save; no savestates) |
-| XIX | Pending | Performance (JIT hot paths, RSX batching) |
+| XIX | **Done** | Performance: RSX FIFO batch (16k steps), coalesced Present, progress batch + flush |
 | XX | Pending | Full playable pass (title screen → in-game) |
 
 ## Parallel track (tooling)
@@ -35,27 +35,20 @@
 | Clean window close (force_exit) | **Done** |
 | Controller tab (hide after Build) | **Done** |
 
+## Phase XIX notes
+
+- FIFO drain budget raised 4096 → 16384 methods per pass.
+- Present skipped on empty frames (no draws); forced every 8th tick to keep window alive.
+- `progress_hw` batches every 128 ticks: guest FIFO flush + one flip.
+
 ## Save policy (port, not emulator)
 
-- **No** savestates, **no** freeze/thaw, **no** extra save UI.
-- Saves only when the **game** calls `cellSaveData*` (checkpoint / in-game save menu).
-- Path: `Documents\\<GameName>\\PS3_SAVEDATA\\<dir>\\` (PARAM.SFO + game files).
-
-## Audio (XVI)
-
-- `cellAudioInit` / ports / start-stop HLE via `runtime/audio_save.cpp`.
-- Host: WinMM waveOut 48 kHz stereo (silence feed so ports do not stall).
+- **No** savestates. Saves only when the game calls `cellSaveData*`.
+- Path: `Documents\\<GameName>\\PS3_SAVEDATA\\<dir>\\`
 
 ## When to copy binaries into the game folder
 
-Use **Copy to game folder** (or copy manually) only after:
-
-1. **Decompile** succeeds (lift report OK).
-2. **Build** succeeds (MSVC exit 0, EXE under `projects/<name>/output/`).
-3. A **Run from output/** test shows the window, flips, and clean exit.
-
-Copy `<GameName>.exe` (and any needed DLLs from `output/`) next to the game's `EBOOT.BIN`.
-You can keep developing from `output/` without copying. Copy to the game folder when you want the port to load USRDIR / game data like a retail install.
+After Decompile + Build succeed and Run-from-`output/` looks good: use **Copy to game folder** (EXE next to `EBOOT.BIN`).
 
 ## Apply
 
