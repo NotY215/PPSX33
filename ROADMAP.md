@@ -17,8 +17,8 @@
 | XIII | **Done** | Surfaces / wild-PC recovery / GCM nid=0 useful returns / LV2 event queue |
 | XIV | **Done** | Depth / stencil / clear surface fidelity (DSV, mask, no pure-blue clear) |
 | XV | **Done** | Fixed-function draw path + shader/tex method tracking (visible tint on draw) |
-| XVI | **Next** | Audio (cellAudio / libaudio HLE) |
-| XVII | Pending | Pad / input full mapping |
+| XVI | Pending | Audio (cellAudio / libaudio HLE) |
+| XVII | **Done** | Pad / input full mapping (XInput + keyboard → cellPad) |
 | XVIII | Pending | Save data / trophy stubs |
 | XIX | Pending | Performance (JIT hot paths, RSX batching) |
 | XX | Pending | Full playable pass (title screen → in-game) |
@@ -34,13 +34,12 @@
 | GUI cancel unlock after first cancel | **Done** |
 | Clean window close (force_exit) | **Done** |
 
-## Phase XV (this push)
+## Phase XVII (this push)
 
-- **Fixed-function draw**: when FIFO draw methods fire, host presents a tinted overlay (proves draw path is live).
-- **Shader / texture method tracking**: VP/FP bind and tex methods counted (`shaders=` / `tex=` in log).
-- **Viewport / scissor** method accept.
-- **Depth/stencil inject**: CLEAR_SURFACE + depth/stencil values so `depth=` / `stencil=` rise.
-- Real VP/FP ISA translation still deferred to a later pass under XV/XIX.
+- **XInput**: dynamic load `xinput1_4` / `1_3` / `9_1_0`; player 0 → CELL_PAD bits + sticks + L2/R2.
+- **Keyboard**: WASD/arrows, K/Enter Cross, L/Esc Circle, I/Space Triangle, J/Back Square, Q/E L1/R1, Z/C L2/R2, Tab Start, Shift Select.
+- **cellPad NIDs**: Init, End, GetData, GetInfo2, ClearBuf + kind-8 family stubs.
+- **Poll**: every `progress_hw`; rate-limited `[pad] poll#…` log.
 
 ## Apply
 
@@ -53,10 +52,9 @@ Rebuild All → Build (game) → Run from `projects/<name>/output/`.
 
 Expect:
 ```
-[rsx] D3D11 host present ready … (depth+stencil)
-[rsx] flip #… draws=… clears=… depth=… stencil=… shaders=… tex=…
+[pad] XInput loaded from xinput1_4.dll
+[pad] poll#… btn=0x… sticks=…
+[rsx] flip #… draws=… depth=… stencil=…
 ```
-
-Window: dark slate with shifting warm tint when draws run. Close window for clean exit.
 
 See also: [docs/games/GOW3/GOW3.md](docs/games/GOW3/GOW3.md).
