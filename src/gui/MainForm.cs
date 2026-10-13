@@ -59,7 +59,7 @@ public sealed partial class MainForm : Form
         get
         {
             var cp = base.CreateParams;
-            cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED
+            cp.ExStyle |= 0x02000000;
             return cp;
         }
     }
@@ -142,8 +142,8 @@ public sealed partial class MainForm : Form
         _project.Text = "PROJECT  /  NO PROJECT LOADED"; _project.ForeColor = TextPri; _project.BackColor = Color.FromArgb(12, 22, 47);
         _project.Dock = DockStyle.Fill; _project.TextAlign = ContentAlignment.MiddleLeft; _project.Padding = new Padding(12, 0, 0, 0);
         StyleTextBox(_log); StyleTextBox(_report); StyleTextBox(_roadmap);
-        _roadmap.Text = "PPSX33 · Phase XVIII · Load ELF → Decompile → Build → Run\r\n" +
-            "I–XV Done  XVI Audio  XVII Pad  XVIII Save(PS3)  XIX Perf  XX Playable\r\n" +
+        _roadmap.Text = "PPSX33 · Phase XIX · Load ELF → Decompile → Build → Run\r\n" +
+            "I–XVIII Done  XIX Perf/batch  XX Playable\r\n" +
             "Controller tab — set keys before Build; hides after Build.\r\n";
         _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(100, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab;
         AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap);
@@ -165,7 +165,7 @@ public sealed partial class MainForm : Form
         Controls.Add(backdrop);
 
         _btnDecrypt.Click += async (_, _) => await DecryptEbootAndLoad();
-        _btnLoad.Click += async (_, _) => await PickAndLoadElf();
+        _btnLoad.Click += (_, _) => LoadElf(null);
         _btnLift.Click += async (_, _) => await RunStep("Decompiling…", ct => Native.Lift(_projectDir!, out _), afterLift: true);
         _btnBuild.Click += async (_, _) => await BuildWithProgress();
         _btnRun.Click += async (_, _) => await RunGame();
@@ -213,6 +213,7 @@ public sealed partial class MainForm : Form
         _btnCopy.Enabled = _canCopy && !_busy;
         _btnCancel.Enabled = _busy || _building || _gameProc != null;
         _btnCancel.Text = _building ? "Stop / Cancel Build" : "Stop Game";
+        if (_gfxUnlocked) { /* graphics backend unlocked after decompile */ }
     }
     void SaveSettings() { try { _settings.Save(); } catch { } }
     void UpdateRpcs3Button() {
@@ -238,10 +239,7 @@ public sealed partial class MainForm : Form
         long readPos = 0;
         int stepsDone = 0;
         int totalSteps = 0;
-        var buildTask = Task.Run(() => {
-            bool ok = Native.Build(_projectDir!, RuntimeDir, CompilersDir, out var l);
-            return ok;
-        });
+        var buildTask = Task.Run(() => Native.Build(_projectDir!, RuntimeDir, CompilersDir, out var l));
 
         while (!buildTask.IsCompleted) {
             await Task.Delay(400);
@@ -337,20 +335,45 @@ public sealed partial class MainForm : Form
         }
     }
 
-    // DecryptEbootAndLoad + PickRpcs3Exe live in MainForm.Decrypt.cs (do not redefine here)
+    // DecryptEbootAndLoad + PickRpcs3Exe live in MainForm.Decrypt.cs
+
+    void LoadElf(string? path) {
+        if (path == null) {
+            using var ofd = new OpenFileDialog {
+                Title = "Select decrypted ELF or SELF",
+                Filter = "ELF / SELF|*.elf;*.ELF;*.self;*.SELF|All files|*.*",
+                CheckFileExists = true
+            };
+            if (ofd.ShowDialog(this) != DialogResult.OK) return;
+            path = ofd.FileName;
+            _settings.LastElfPath = path;
+            SaveSettings();
+        }
+        using var dlg = new PromptDialog("Project name", Path.GetFileNameWithoutExtension(path) ?? "project");
+        if (dlg.ShowDialog(this) != DialogResult.OK) return;
+        Directory.CreateDirectory(ProjectsRoot);
+        if (!Native.CreateProject(ProjectsRoot, dlg.Value, path, out var proj, out var log)) {
+            Append(log);
+            SetStatus("Project create failed");
+            return;
+        }
+        _projectDir = proj;
+        _project.Text = proj;
+        _canLift = true;
+        _canBuild = _canCopy = _canRun = false;
+        _gfxUnlocked = false;
+        _liftChunks = 0;
+        Append(log);
+        Append("ELF loaded — Decompile is now available.");
+        SetStatus("Project ready — Decompile next");
+        UpdateButtons();
+    }
 
     async Task PickAndLoadElf() {
-        using var ofd = new OpenFileDialog { Filter = "ELF|*.elf;*.bin;*.self|All|*.*" };
-        if (ofd.ShowDialog() != DialogResult.OK) return;
-        string path = ofd.FileName; _settings.LastElfPath = path; SaveSettings();
-        string name = Path.GetFileNameWithoutExtension(path);
-        string proj = Path.Combine(ProjectsRoot, name);
-        Directory.CreateDirectory(proj);
-        _projectDir = proj; _project.Text = proj; _canLift = true; _canBuild = _canCopy = _canRun = false; _gfxUnlocked = false;
-        Append("ELF loaded: " + path);
-        UpdateButtons();
+        LoadElf(null);
         await Task.CompletedTask;
     }
+
     async Task RunGame() {
         if (_projectDir == null) return;
         string outDir = Path.Combine(_projectDir, "output");
