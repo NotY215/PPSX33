@@ -1,4 +1,4 @@
-// ps3rt Phase XIV — no pure-blue 0xF1 clear; cycle dark slate + draw inject
+// ps3rt Phase XV — FF draw path + depth/stencil clear surface inject
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include "nid_table.h"
@@ -309,8 +309,12 @@ static void gcm_fifo_emit(uint32_t method, uint32_t arg) {
     }
 }
 static void gcm_inject_clear_draw() {
+    // Phase XV: color + depth/stencil clear surface + draw
     static const uint32_t kCols[] = { 0x101828u, 0x182030u, 0x203040u, 0x283848u };
     gcm_fifo_emit(0x01D8, kCols[(g_gcm_frame_id / 45) % 4]);
+    gcm_fifo_emit(0x01D4, 0xF1u);
+    gcm_fifo_emit(0x01DC, 0x3F800000u);
+    gcm_fifo_emit(0x01E0, 0u);
     gcm_fifo_emit(0x0208, (1280u << 16));
     gcm_fifo_emit(0x020C, (720u << 16));
     gcm_fifo_emit(0x0A00, (1280u << 16));
