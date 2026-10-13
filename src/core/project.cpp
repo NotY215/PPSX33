@@ -1,53 +1,123 @@
-/*
- * project.cpp - full restored source with:
- * - build_total hoisted out of local scope (fixes C2065)
- * - BUILD_TOTAL=N written to live log and bat
- * - cleanup trims codebase/ (keeps reports) and input/ (keeps EBOOT)
- * Size: 24107 bytes
- */
 #include "project.h"
-#include "ps3core.h"
+#include "elf_loader.h"
+#include "ppu_lifter.h"
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
-#include <string>
 #include <vector>
-#include <atomic>
-#include <cstdio>
-#include <cstring>
 #include <algorithm>
-#include <cstdlib>
+#include <atomic>
+#include <string>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 namespace fs = std::filesystem;
+
 namespace ps3 {
 
-static const char* kExe =
-#if defined(_WIN32)
-    ".exe"
-#else
-    ""
-#endif
-;
+std::string sanitize_game_name(const std::string& n) {
+    std::string r;
+    for (char ch : n) r += (std::string("<>:\"/\\|?*").find(ch) != std::string::npos || (unsigned char)ch < 32) ? '_' : ch;
+    while (!r.empty() && (r.back() == ' ' || r.back() == '.')) r.pop_back();
+    return r;
+}
 
-std::atomic<bool> g_build_cancel_requested{false};
-static FILE* g_build_live = nullptr;
+bool create_project(const std::string& root, const std::string& game, const std::string& elf,
+                    std::string& project_dir, std::string& err) {
+    std::string name = sanitize_game_name(game);
+    if (name.empty()) { err = "Game name is empty."; return false; }
+    if (!fs::exists(elf)) { err = "ELF file does not exist: " + elf; return false; }
+    std::error_code ec;
+    fs::path p = fs::path(root) / name;
+    fs::create_directories(p / "input", ec);
+    fs::create_directories(p / "codebase", ec);
+    fs::create_directories(p / "output", ec);
+    if (ec) { err = "Cannot create folders: " + ec.message(); return false; }
+    fs::copy_file(elf, p / "input" / "EBOOT.elf", fs::copy_options::overwrite_existing, ec);
+    if (ec) { err = "Cannot copy ELF: " + ec.message(); return false; }
+    project_dir = p.string();
+    return true;
+}
 
-void live_log(const std::string& s) {
-    if (g_build_live) {
-        std::fwrite(s.data(), 1, s.size(), g_build_live);
-        std::fflush(g_build_live);
+bool lift_project(const std::string& project_dir, std::string& log, std::string& err) {
+    ElfImage img;
+    fs::path in = fs::path(project_dir) / "input" / "EBOOT.elf";
+    if (!load_elf(in.string(), img, err)) return false;
+    LiftStats st;
+    fs::path code = fs::path(project_dir) / "codebase";
+    if (!lift_elf(img, code.string(), st, err)) return false;
+
+    {
+        std::ofstream ar(code / "analysis_report.txt");
+        ar << "entry_opd: 0x" << std::hex << img.entry << std::dec << "\n";
+        ar << "segments: " << img.segments.size() << "\n";
+        ar << "symbols: " << img.symbols.size() << "\n";
+        ar << "opd_entries: " << img.opds.size() << "\n";
+        ar << "prx_string_hits: " << img.prx_imports.size() << "\n";
+        ar << "embedded_spu_images: " << img.spu_images.size() << "\n";
+        ar << "\nOPD samples (up to 32):\n";
+        for (size_t i = 0; i < img.opds.size() && i < 32; ++i) {
+            ar << "  [" << i << "] desc=0x" << std::hex << img.opds[i].addr
+               << " entry=0x" << img.opds[i].entry
+               << " toc=0x" << img.opds[i].toc << std::dec << "\n";
+        }
+        ar << "\nPRX/module string samples (up to 64):\n";
+        for (size_t i = 0; i < img.prx_imports.size() && i < 64; ++i) {
+            ar << "  " << img.prx_imports[i].name
+               << "  nid=0x" << std::hex << img.prx_imports[i].nid << std::dec
+               << "  @0x" << std::hex << img.prx_imports[i].stub_addr << std::dec << "\n";
+        }
+        ar << "\nEmbedded SPU images:\n";
+        for (size_t i = 0; i < img.spu_images.size(); ++i) {
+            ar << "  [" << i << "] host_va=0x" << std::hex << img.spu_images[i].host_addr
+               << std::dec << " size=" << img.spu_images[i].data.size() << "\n";
+            char name[64];
+            std::snprintf(name, sizeof name, "spu_image_%02zu.bin", i);
+            std::ofstream sf(code / name, std::ios::binary);
+            sf.write((const char*)img.spu_images[i].data.data(),
+                     (std::streamsize)img.spu_images[i].data.size());
+        }
+        size_t funcs = 0;
+        for (const auto& s : img.symbols) if (s.is_func()) ++funcs;
+        ar << "\nsymbol_functions: " << funcs << "\n";
     }
+
+    std::ostringstream o;
+    o << "ELF loaded: " << img.segments.size() << " segments, entry OPD 0x" << std::hex << img.entry << std::dec << "\n"
+      << "Analysis: symbols=" << img.symbols.size()
+      << " opds=" << img.opds.size()
+      << " prx_hits=" << img.prx_imports.size()
+      << " spu_images=" << img.spu_images.size() << "\n"
+      << "Instructions: " << st.instructions << "  translated: " << st.implemented
+      << "  unimplemented: " << st.unimplemented << "  chunks: " << st.chunks << "\n"
+      << "See codebase/lift_report.txt and codebase/analysis_report.txt.\n";
+    log = o.str();
+    return true;
+}
+
+namespace {
+std::atomic<bool> g_build_cancel_requested{false};
+FILE* g_build_live = nullptr;
+void live_log(const std::string& s) {
+    if (!g_build_live || s.empty()) return;
+    std::fwrite(s.data(), 1, s.size(), g_build_live);
+    std::fflush(g_build_live);
 }
 void live_close() {
     if (g_build_live) { std::fclose(g_build_live); g_build_live = nullptr; }
 }
+#ifdef _WIN32
+const char* kExe = ".exe"; const char* kDll = ".dll";
+#else
+const char* kExe = "";     const char* kDll = ".so";
+#endif
 
-static std::string q(const std::string& s) {
-    return "\"" + s + "\"";
-}
+std::string q(const std::string& s) { return "\"" + s + "\""; }
 
-static std::string find_vcvars64() {
-#if defined(_WIN32)
+std::string find_vcvars64() {
+#ifdef _WIN32
     const char* candidates[] = {
         "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat",
         "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat",
@@ -59,8 +129,8 @@ static std::string find_vcvars64() {
     return {};
 }
 
-static std::string find_bundled_cl(const std::string& compilers_dir) {
-#if defined(_WIN32)
+std::string find_bundled_cl(const std::string& compilers_dir) {
+#ifdef _WIN32
     fs::path p = fs::path(compilers_dir) / "MSCV" / "cl.exe";
     if (fs::exists(p)) return p.string();
 #endif
@@ -69,7 +139,7 @@ static std::string find_bundled_cl(const std::string& compilers_dir) {
 
 int run_cmd(const std::string& cmd, std::string& log) {
     log += "> " + cmd + "\n"; live_log("> " + cmd + "\n");
-#if defined(_WIN32)
+#ifdef _WIN32
     if (g_build_cancel_requested.load()) { log += "BUILD_CANCELLED\n"; return 130; }
     FILE* pipe = _popen(cmd.c_str(), "r");
 #else
@@ -82,7 +152,7 @@ int run_cmd(const std::string& cmd, std::string& log) {
         log.append(buf, got); live_log(std::string(buf, got));
         if (g_build_cancel_requested.load()) break;
     }
-#if defined(_WIN32)
+#ifdef _WIN32
     int rc = _pclose(pipe);
 #else
     int rc = pclose(pipe);
@@ -134,6 +204,7 @@ void cleanup_after_build(const fs::path& project_dir, const fs::path& out, std::
     log += "cleanup: done (exe/dll/guest_image.bin kept)\n";
     live_log("cleanup: done\n");
 }
+} // anon
 
 void begin_build() { g_build_cancel_requested.store(false); }
 void cancel_build() { g_build_cancel_requested.store(true); }
