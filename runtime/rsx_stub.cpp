@@ -1,4 +1,4 @@
-// Phase XIV: RSX + depth/stencil surface fidelity
+// Phase XV: RSX + depth/stencil + fixed-function draw path
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include "ps3rt_stage.h"
@@ -39,6 +39,13 @@ struct RsxState {
     bool depth_enable = true;
     bool depth_write = true;
     bool stencil_enable = false;
+    // Phase XV fixed-function
+    int draws_this_frame = 0;
+    int shader_binds = 0;
+    int tex_binds = 0;
+    uint32_t viewport_w = 1280, viewport_h = 720;
+    uint32_t scissor_x = 0, scissor_y = 0, scissor_w = 1280, scissor_h = 720;
+    uint32_t prim_color = 0xC0A060;
 };
 
 static RsxState g_rsx;
@@ -192,6 +199,24 @@ static void rsx_host_present_clear() {
             if (!df) df = D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL;
             g_ctx11->ClearDepthStencilView(g_dsv, df, g_rsx.clear_depth, g_rsx.clear_stencil);
         }
+        // Phase XV fixed-function: tinted overlay when draws occurred this frame
+        if (g_rsx.draws_this_frame > 0) {
+            float pr = ((g_rsx.prim_color >> 16) & 0xFF) / 255.f;
+            float pg = ((g_rsx.prim_color >> 8) & 0xFF) / 255.f;
+            float pb = (g_rsx.prim_color & 0xFF) / 255.f;
+            float ov[4] = {
+                col[0] * 0.55f + pr * 0.45f,
+                col[1] * 0.55f + pg * 0.45f,
+                col[2] * 0.55f + pb * 0.45f,
+                1.f
+            };
+            g_ctx11->ClearRenderTargetView(g_rtv, ov);
+            uint32_t pc = g_rsx.prim_color;
+            uint32_t r8 = (pc >> 16) & 0xFF, g8 = (pc >> 8) & 0xFF, b8 = pc & 0xFF;
+            r8 = (r8 + 1) & 0xFF; g8 = (g8 + 2) & 0xFF; b8 = (b8 + 3) & 0xFF;
+            g_rsx.prim_color = (r8 << 16) | (g8 << 8) | b8;
+        }
+        g_rsx.draws_this_frame = 0;
         g_swap->Present(0, 0);
     } catch (...) {
         ps3rt_log("[rsx] present exception — switching headless\n");
@@ -237,7 +262,27 @@ static void rsx_process_fifo(uint8_t* mem) {
         }
         else if (method == 0x0B00 || method == 0x0B04 || method == 0x0B08) {}
         else if (method == 0x0208 || method == 0x020C || method == 0x0A00 || method == 0x0A04) {}
-        else if (method == 0x1800 || method == 0x1810 || method == 0x1818) { ++g_rsx.draws; }
+        else if (method == 0x1800 || method == 0x1810 || method == 0x1818 ||
+                 method == 0x1808 || method == 0x1820) {
+            ++g_rsx.draws;
+            ++g_rsx.draws_this_frame;
+        }
+        else if (method == 0x1D60 || method == 0x1D64 || method == 0x1D6C ||
+                 method == 0x09B0 || method == 0x09B4) {
+            ++g_rsx.shader_binds;
+        }
+        else if (method == 0x1A00 || method == 0x1A04 || method == 0x1A0C ||
+                 method == 0x1840 || method == 0x1844) {
+            ++g_rsx.tex_binds;
+        }
+        else if (method == 0x08C0 || method == 0x08C4 || method == 0x08C8 || method == 0x08CC) {
+            if (method == 0x08C0) g_rsx.viewport_w = (arg >> 16) ? (arg >> 16) : g_rsx.viewport_w;
+            if (method == 0x08C4) g_rsx.viewport_h = (arg >> 16) ? (arg >> 16) : g_rsx.viewport_h;
+        }
+        else if (method == 0x08D0 || method == 0x08D4 || method == 0x08D8 || method == 0x08DC) {
+            if (method == 0x08D0) { g_rsx.scissor_x = arg & 0xFFFF; g_rsx.scissor_w = (arg >> 16) & 0xFFFF; }
+            if (method == 0x08D4) { g_rsx.scissor_y = arg & 0xFFFF; g_rsx.scissor_h = (arg >> 16) & 0xFFFF; }
+        }
         else { ++g_rsx.unknown_methods; --g_rsx.known_methods; }
         get = (get + 8) % g_rsx.fifo_size;
         ++steps;
@@ -283,9 +328,10 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] flip #%llu draws=%d clears=%d depth=%d stencil=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
+            g_rsx.shader_binds, g_rsx.tex_binds,
             g_rsx.methods_seen, g_rsx.known_methods, g_rsx.unknown_methods,
             g_rsx.width, g_rsx.height);
     }
