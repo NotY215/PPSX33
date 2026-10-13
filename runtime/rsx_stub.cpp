@@ -1,19 +1,20 @@
-// Phase XV: RSX + depth/stencil + fixed-function draw path
+// Phase XV+XIX: RSX + depth/stencil + draw path + FIFO batching / coalesced Present
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
-#include "ps3rt_stage.h"
-#include <cstdio>
-#include <cstring>
 #include <mutex>
-#include <cstdlib>
+#include <cstring>
+#include <cstdio>
+#include <cstdint>
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <initguid.h>
 #include <d3d11.h>
-#include <d3d10.h>
-#include <dxgi.h>
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "dxgi.lib")
 #endif
+
+static std::mutex g_rsx_mu;
+static int g_backend = 1;
 
 struct RsxState {
     uint64_t fifo_addr = 0;
@@ -30,153 +31,121 @@ struct RsxState {
     int methods_seen = 0;
     int known_methods = 0;
     int unknown_methods = 0;
+    int shader_binds = 0;
+    int tex_binds = 0;
     uint32_t width = 1280;
     uint32_t height = 720;
     uint32_t clear_color = 0x101828;
     uint32_t clear_mask = 0xF1;
-    float clear_depth = 1.0f;
+    float clear_depth = 1.f;
     uint8_t clear_stencil = 0;
-    bool depth_enable = true;
-    bool depth_write = true;
-    bool stencil_enable = false;
-    // Phase XV fixed-function
+    uint32_t prim_color = 0x4060A0;
     int draws_this_frame = 0;
-    int shader_binds = 0;
-    int tex_binds = 0;
-    uint32_t viewport_w = 1280, viewport_h = 720;
+    uint32_t viewport_w = 1280;
+    uint32_t viewport_h = 720;
     uint32_t scissor_x = 0, scissor_y = 0, scissor_w = 1280, scissor_h = 720;
-    uint32_t prim_color = 0xC0A060;
 };
-
 static RsxState g_rsx;
-static std::mutex g_rsx_mu;
-static int g_backend = 1;
-static HWND g_hwnd = nullptr;
 static bool g_user_closed = false;
-static bool g_resize_pending = false;
-static UINT g_resize_w = 1280, g_resize_h = 720;
+
 #if defined(_WIN32)
-static ID3D11Device* g_dev11 = nullptr;
+static HWND g_hwnd = nullptr;
+static ID3D11Device* g_dev = nullptr;
 static ID3D11DeviceContext* g_ctx11 = nullptr;
 static IDXGISwapChain* g_swap = nullptr;
 static ID3D11RenderTargetView* g_rtv = nullptr;
-static ID3D11Texture2D* g_depth_tex = nullptr;
 static ID3D11DepthStencilView* g_dsv = nullptr;
+static ID3D11Texture2D* g_depth_tex = nullptr;
 static ID3D11DepthStencilState* g_dss = nullptr;
 
+extern "C" PS3RT_API void ps3rt_force_exit(void);
+extern "C" PS3RT_API int ps3rt_should_exit(void);
+
+static LRESULT CALLBACK RsxWndProc(HWND hwnd, UINT m, WPARAM w, LPARAM l) {
+    if (m == WM_CLOSE || m == WM_DESTROY) {
+        g_user_closed = true;
+        ps3rt_log("[rsx] window closed by user — exiting\n");
+        ps3rt_force_exit();
+        return 0;
+    }
+    return DefWindowProcA(hwnd, m, w, l);
+}
+
 static void rsx_release_depth() {
-    if (g_dss) { g_dss->Release(); g_dss = nullptr; }
     if (g_dsv) { g_dsv->Release(); g_dsv = nullptr; }
     if (g_depth_tex) { g_depth_tex->Release(); g_depth_tex = nullptr; }
 }
 
-static bool rsx_ensure_depth(uint32_t w, uint32_t h) {
-    if (!g_dev11) return false;
-    if (g_dsv && g_depth_tex) return true;
-    rsx_release_depth();
+static void rsx_ensure_depth(uint32_t w, uint32_t h) {
+    if (!g_dev || !g_ctx11) return;
+    if (g_dsv && g_depth_tex) return;
     D3D11_TEXTURE2D_DESC td{};
     td.Width = w; td.Height = h; td.MipLevels = 1; td.ArraySize = 1;
     td.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
     td.SampleDesc.Count = 1; td.Usage = D3D11_USAGE_DEFAULT;
     td.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    if (FAILED(g_dev11->CreateTexture2D(&td, nullptr, &g_depth_tex))) return false;
-    D3D11_DEPTH_STENCIL_VIEW_DESC vd{};
-    vd.Format = td.Format; vd.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-    if (FAILED(g_dev11->CreateDepthStencilView(g_depth_tex, &vd, &g_dsv))) return false;
-    D3D11_DEPTH_STENCIL_DESC dd{};
-    dd.DepthEnable = TRUE; dd.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-    dd.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-    dd.StencilEnable = FALSE;
-    g_dev11->CreateDepthStencilState(&dd, &g_dss);
-    return g_dsv != nullptr;
-}
-
-static LRESULT CALLBACK RsxWndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
-    if (m == WM_CLOSE || (m == WM_SYSCOMMAND && (w & 0xFFF0) == SC_CLOSE)) {
-        g_user_closed = true;
-        ps3rt_log("[rsx] window closed by user — exiting\n");
-        ps3rt_request_exit();
-        DestroyWindow(h);
-        PostQuitMessage(0);
-        ps3rt_force_exit();
-        return 0;
+    if (FAILED(g_dev->CreateTexture2D(&td, nullptr, &g_depth_tex))) return;
+    D3D11_DEPTH_STENCIL_VIEW_DESC dvd{};
+    dvd.Format = td.Format; dvd.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    if (FAILED(g_dev->CreateDepthStencilView(g_depth_tex, &dvd, &g_dsv))) {
+        rsx_release_depth(); return;
     }
-    if (m == WM_DESTROY) {
-        if (h == g_hwnd) g_hwnd = nullptr;
-        g_user_closed = true;
-        ps3rt_request_exit();
-        PostQuitMessage(0);
-        ps3rt_force_exit();
-        return 0;
+    if (!g_dss) {
+        D3D11_DEPTH_STENCIL_DESC dsd{};
+        dsd.DepthEnable = TRUE; dsd.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+        dsd.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+        dsd.StencilEnable = TRUE; dsd.StencilReadMask = 0xFF; dsd.StencilWriteMask = 0xFF;
+        dsd.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+        dsd.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+        dsd.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+        dsd.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+        dsd.BackFace = dsd.FrontFace;
+        g_dev->CreateDepthStencilState(&dsd, &g_dss);
     }
-    if (m == WM_SIZE) {
-        UINT nw = (UINT)LOWORD(l), nh = (UINT)HIWORD(l);
-        if (nw >= 64 && nh >= 64) { g_resize_w = nw; g_resize_h = nh; g_resize_pending = true; }
-        return 0;
-    }
-    if (m == WM_ENTERSIZEMOVE || m == WM_EXITSIZEMOVE) return 0;
-    return DefWindowProcW(h, m, w, l);
-}
-
-static bool rsx_create_window(uint32_t w, uint32_t h) {
-    if (g_hwnd) return true;
-    WNDCLASSW wc{};
-    wc.lpfnWndProc = RsxWndProc;
-    wc.hInstance = GetModuleHandleW(nullptr);
-    wc.lpszClassName = L"PPSX33_RSX";
-    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    RegisterClassW(&wc);
-    g_hwnd = CreateWindowExW(0, L"PPSX33_RSX", L"PPSX33", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        CW_USEDEFAULT, CW_USEDEFAULT, (int)w, (int)h, nullptr, nullptr, wc.hInstance, nullptr);
-    return g_hwnd != nullptr;
 }
 
 static void rsx_host_init(uint32_t w, uint32_t h) {
-    if (!rsx_create_window(w, h)) return;
+    if (g_hwnd) return;
+    g_rsx.width = w ? w : 1280; g_rsx.height = h ? h : 720;
+    WNDCLASSA wc{}; wc.lpfnWndProc = RsxWndProc; wc.hInstance = GetModuleHandleA(nullptr);
+    wc.lpszClassName = "PPSX33_RSX"; wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    RegisterClassA(&wc);
+    g_hwnd = CreateWindowExA(0, "PPSX33_RSX", "PPSX33", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        80, 80, (int)g_rsx.width + 16, (int)g_rsx.height + 39, nullptr, nullptr, wc.hInstance, nullptr);
+    if (!g_hwnd) return;
     DXGI_SWAP_CHAIN_DESC sd{};
-    sd.BufferCount = 2;
-    sd.BufferDesc.Width = w; sd.BufferDesc.Height = h;
-    sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    sd.OutputWindow = g_hwnd;
-    sd.SampleDesc.Count = 1;
-    sd.Windowed = TRUE;
+    sd.BufferCount = 2; sd.BufferDesc.Width = g_rsx.width; sd.BufferDesc.Height = g_rsx.height;
+    sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    sd.OutputWindow = g_hwnd; sd.SampleDesc.Count = 1; sd.Windowed = TRUE; sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
     D3D_FEATURE_LEVEL fl;
-    HRESULT hr = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0,
-        nullptr, 0, D3D11_SDK_VERSION, &sd, &g_swap, &g_dev11, &fl, &g_ctx11);
-    if (FAILED(hr)) { ps3rt_log("[rsx] D3D11 create failed\n"); return; }
-    ID3D11Texture2D* back = nullptr;
-    g_swap->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&back);
-    if (back) { g_dev11->CreateRenderTargetView(back, nullptr, &g_rtv); back->Release(); }
-    g_rsx.width = w; g_rsx.height = h;
-    rsx_ensure_depth(w, h);
-    ps3rt_log("[rsx] D3D11 host present ready %ux%u (depth+stencil)\n", w, h);
-    PS3RT_STAGE("RSX ready end");
+    if (FAILED(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0,
+            D3D11_SDK_VERSION, &sd, &g_swap, &g_dev, &fl, &g_ctx11))) {
+        ps3rt_log("[rsx] D3D11 create failed\n"); return;
+    }
+    ID3D11Texture2D* bb = nullptr;
+    g_swap->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&bb);
+    if (bb) { g_dev->CreateRenderTargetView(bb, nullptr, &g_rtv); bb->Release(); }
+    rsx_ensure_depth(g_rsx.width, g_rsx.height);
+    ps3rt_log("[rsx] D3D11 host present ready %ux%u (depth+stencil)\n", g_rsx.width, g_rsx.height);
 }
 
 static void rsx_host_present_clear() {
+    if (ps3rt_should_exit() || g_user_closed) { ps3rt_force_exit(); return; }
     MSG msg;
-    while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
-        if (msg.message == WM_QUIT) continue;
-        TranslateMessage(&msg);
-        DispatchMessageW(&msg);
+    while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
+        if (msg.message == WM_QUIT) { g_user_closed = true; ps3rt_force_exit(); return; }
+        TranslateMessage(&msg); DispatchMessageA(&msg);
     }
-    if (ps3rt_should_exit() || g_user_closed) {
-        ps3rt_log("[rsx] exit after message pump\n");
-        ps3rt_force_exit();
-        return;
-    }
-    if (!g_hwnd || !g_ctx11 || !g_swap) return;
-    if (g_resize_pending && g_resize_w >= 64 && g_resize_h >= 64) {
-        g_resize_pending = false;
-        g_ctx11->OMSetRenderTargets(0, nullptr, nullptr);
-        if (g_rtv) { g_rtv->Release(); g_rtv = nullptr; }
-        HRESULT hr = g_swap->ResizeBuffers(0, g_resize_w, g_resize_h, DXGI_FORMAT_UNKNOWN, 0);
-        if (SUCCEEDED(hr)) {
-            ID3D11Texture2D* back = nullptr;
-            g_swap->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&back);
-            if (back) { g_dev11->CreateRenderTargetView(back, nullptr, &g_rtv); back->Release(); }
-            g_rsx.width = g_resize_w; g_rsx.height = g_resize_h;
+    if (!g_hwnd) rsx_host_init(g_rsx.width, g_rsx.height);
+    RECT rc; if (g_hwnd && GetClientRect(g_hwnd, &rc)) {
+        uint32_t nw = (uint32_t)(rc.right - rc.left), nh = (uint32_t)(rc.bottom - rc.top);
+        if (nw > 0 && nh > 0 && (nw != g_rsx.width || nh != g_rsx.height)) {
+            g_rsx.width = nw; g_rsx.height = nh;
+            if (g_rtv) { g_rtv->Release(); g_rtv = nullptr; }
+            if (g_swap) g_swap->ResizeBuffers(0, nw, nh, DXGI_FORMAT_UNKNOWN, 0);
+            ID3D11Texture2D* bb = nullptr;
+            if (g_swap) g_swap->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&bb);
+            if (bb && g_dev) { g_dev->CreateRenderTargetView(bb, nullptr, &g_rtv); bb->Release(); }
             rsx_release_depth();
             rsx_ensure_depth(g_rsx.width, g_rsx.height);
         }
@@ -199,25 +168,23 @@ static void rsx_host_present_clear() {
             if (!df) df = D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL;
             g_ctx11->ClearDepthStencilView(g_dsv, df, g_rsx.clear_depth, g_rsx.clear_stencil);
         }
-        // Phase XV fixed-function: tinted overlay when draws occurred this frame
         if (g_rsx.draws_this_frame > 0) {
             float pr = ((g_rsx.prim_color >> 16) & 0xFF) / 255.f;
             float pg = ((g_rsx.prim_color >> 8) & 0xFF) / 255.f;
             float pb = (g_rsx.prim_color & 0xFF) / 255.f;
-            float ov[4] = {
-                col[0] * 0.55f + pr * 0.45f,
-                col[1] * 0.55f + pg * 0.45f,
-                col[2] * 0.55f + pb * 0.45f,
-                1.f
-            };
+            float ov[4] = { col[0] * 0.55f + pr * 0.45f, col[1] * 0.55f + pg * 0.45f, col[2] * 0.55f + pb * 0.45f, 1.f };
             g_ctx11->ClearRenderTargetView(g_rtv, ov);
             uint32_t pc = g_rsx.prim_color;
             uint32_t r8 = (pc >> 16) & 0xFF, g8 = (pc >> 8) & 0xFF, b8 = pc & 0xFF;
             r8 = (r8 + 1) & 0xFF; g8 = (g8 + 2) & 0xFF; b8 = (b8 + 3) & 0xFF;
             g_rsx.prim_color = (r8 << 16) | (g8 << 8) | b8;
         }
+        // Phase XIX: coalesce Present — skip empty frames
+        static uint32_t s_present_skip = 0;
+        bool need_present = (g_rsx.draws_this_frame > 0) || ((s_present_skip++ & 7) == 0);
         g_rsx.draws_this_frame = 0;
-        g_swap->Present(0, 0);
+        if (need_present && g_swap)
+            g_swap->Present(0, 0);
     } catch (...) {
         ps3rt_log("[rsx] present exception — switching headless\n");
         g_user_closed = true;
@@ -226,6 +193,7 @@ static void rsx_host_present_clear() {
 #else
 static void rsx_host_init(uint32_t, uint32_t) {}
 static void rsx_host_present_clear() {}
+static HWND g_hwnd = nullptr;
 #endif
 
 static void rsx_process_fifo(uint8_t* mem) {
@@ -233,7 +201,7 @@ static void rsx_process_fifo(uint8_t* mem) {
     uint32_t put = g_rsx.put % g_rsx.fifo_size;
     uint32_t get = g_rsx.get % g_rsx.fifo_size;
     int steps = 0;
-    while (get != put && steps < 4096) {
+    while (get != put && steps < 16384) {
         uint64_t fa = g_rsx.fifo_addr + get;
         if (fa + 8 > 512ull * 1024 * 1024) break;
         uint32_t hdr = (mem[fa] << 24) | (mem[fa+1] << 16) | (mem[fa+2] << 8) | mem[fa+3];
@@ -242,18 +210,17 @@ static void rsx_process_fifo(uint8_t* mem) {
         ++g_rsx.methods_seen;
         ++g_rsx.known_methods;
         if (method == 0x01D8 || method == 0x1D8) {
+            g_rsx.clear_color = arg & 0xFFFFFF;
             ++g_rsx.clears;
-            if (arg > 0xFF) g_rsx.clear_color = arg;
-            else g_rsx.clear_mask = arg;
         }
         else if (method == 0x01D4 || method == 0x1D4) {
             g_rsx.clear_mask = arg;
-            if (arg & 0x01) ++g_rsx.clears;
             if (arg & 0x02) ++g_rsx.depth_clears;
             if (arg & 0x04) ++g_rsx.stencil_clears;
+            ++g_rsx.clears;
         }
         else if (method == 0x01DC || method == 0x1DC) {
-            g_rsx.clear_depth = (arg == 0) ? 0.f : 1.f;
+            g_rsx.clear_depth = (float)(arg & 0xFFFF) / 65535.f;
             ++g_rsx.depth_clears;
         }
         else if (method == 0x01E0 || method == 0x1E0) {
@@ -338,11 +305,5 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
 }
 
 PS3RT_API uint64_t ps3rt_rsx_flip_count(void) {
-    std::lock_guard<std::mutex> lk(g_rsx_mu);
     return g_rsx.flip_count;
-}
-
-PS3RT_API int ps3rt_rsx_cell_gcm_syscall(PPUContext* c, uint64_t) {
-    if (c) c->gpr[3] = 0;
-    return 0;
 }
