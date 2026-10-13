@@ -1,0 +1,20 @@
+# Restore MainForm.cs (required after accidental stub push)
+
+git fetch origin
+git checkout 7080c49fa7bf -- src/gui/MainForm.cs
+
+# Apply these 3 hooks (MainForm.Controller.cs is already on main):
+#
+# 1) After field _eta, add:
+#    private bool _controllerHiddenAfterBuild;
+#
+# 2) After AddTab(...Roadmap...), add:
+#    BuildControllerTab();
+#
+# 3) At start of BuildWithProgress after UpdateButtons(), add:
+#    HideControllerAfterBuild();
+#    WritePadMapForRuntime();
+#
+# Then commit and push MainForm.cs.
+#
+# Full hooked MainForm (24KB) is also under conversation artifacts if available.
