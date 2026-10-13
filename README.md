@@ -43,9 +43,9 @@ All six game counts describe individual static-lift snapshots. They are not proo
 
 ## Current runtime development status
 
-The latest roadmap records **Phase G as complete** and **Phase H as next**. Phase G adds guest-side `cellGcmSys` state initialization for the control-register and label areas, basic GCM control/label/flip handlers, filtering for pointer-like values mistaken for NIDs, and PPU return-recovery improvements that blacklist exhausted link-register targets after repeated null-loop escapes. These are runtime-recovery and HLE foundations, not proof of correct game execution.
+The current `ROADMAP.md` tracks the runtime/playability work and a separate tooling track. It marks phases I–XIX complete and Phase XX (a full playable pass) pending. These milestone labels describe project work, not verified compatibility with any commercial title.
 
-The PPU runtime is split across `runtime/ppu_runtime.h`, `runtime/ppu_runtime_core.h`, `runtime/ppu_runtime_core_a.h`, `runtime/ppu_runtime_core_b.h`, and `runtime/ppu_runtime_run.h`. Keep all split headers together when building or packaging the runtime. `ppu_runtime.h` is the include wrapper; `ppu_runtime_run.h` contains the PPU dispatch/recovery loop, while the core headers provide context, memory, register, and helper definitions. The current roadmap's next milestone is Phase H: SPU and RSX command draining.
+The PPU runtime is split across `runtime/ppu_runtime.h`, `runtime/ppu_runtime_core.h`, `runtime/ppu_runtime_core_a.h`, `runtime/ppu_runtime_core_b.h`, and `runtime/ppu_runtime_run.h`. Keep all split headers together when building or packaging the runtime. `ppu_runtime.h` is the include wrapper; `ppu_runtime_run.h` contains the PPU dispatch/recovery loop, while the core headers provide context, memory, register, and helper definitions.
 
 ## Project website and releases
 
@@ -90,6 +90,13 @@ PPSX33-Alpha-01/
 The patched release is distributed with its built UI and should not require users to install .NET separately. The packaged build workflow may require the Windows SDK. Check [Redist.md](Redist.md) for release prerequisites and validate the exact archive on a clean Windows environment before publishing. The presence of compiler files does not imply that all Microsoft build tools can legally be redistributed; include MSVC binaries only when their applicable license permits redistribution. Do not include game executables, decrypted ELFs, keys, or other copyrighted game data.
 
 See the [Alpha 01 release notes](releases/PPSX33-Alpha-01.md) for scope, known limitations, and validation guidance. End-user prerequisites are documented in [Redist.md](Redist.md).
+
+
+## GUI status and settings
+
+The GUI workflow is **Decrypt EBOOT / Load ELF → Decompile → Build → Run**, with **Copy to game folder** available after a successful build. The Console, Report, and Roadmap tabs expose logs and reports. Build progress is inferred from object-file updates and should be treated as approximate. Status messages distinguish successful, failed, and stopped operations. Build cancellation is requested through the native API; the GUI's cancellation path unloads the selected project and removes generated `input/`, `codebase/`, and `output/` folders, so reload the ELF before continuing. Decompilation is a separate synchronous native operation and is not cancellable through this button.
+
+Settings are stored in `%APPDATA%/PPSX33/settings.json` and include the graphics backend, PPU thread count, RPCS3 path, last selected input paths, and keyboard-to-controller map. The exact options shown may depend on the current build.
 
 ## Requirements
 
@@ -136,13 +143,15 @@ The smoke test creates a synthetic PPC64 ELF, runs the lift/build pipeline, and 
 
 ## Recompile workflow
 
-1. Use an ELF file that is legally authorized for analysis.
-2. Launch `build\dist\PS3Recomp.exe` and select **Load ELF**, or use **Find decrypted ELF** with a configured RPCS3 installation.
-3. Create a project. The expected layout is `<root>/<game>/{input,codebase,output}`.
-4. Run **Decompile / Recompile to C++**.
-5. Inspect `codebase\lift_report.txt` and `codebase\analysis_report.txt`.
-6. Run **Build exe + dll** and inspect artifacts in `output\`.
-7. Validate runtime behavior separately from successful compilation. Preserve logs and exact reproduction steps for failures.
+1. Use an ELF file you are authorized to analyze. PPSX33 does not include game files or decryption keys.
+2. Launch `build\dist\PS3Recomp.exe`. Choose **Load ELF** for a decrypted `.elf`/`.self`, or **Decrypt EBOOT** to invoke the separately installed RPCS3 executable for an `EBOOT.BIN`.
+3. When prompted, choose a project name. The GUI creates `build\dist\projects/<name>/{input,codebase,output}`.
+4. Optionally edit the Controller tab before building. The key map is saved under `%APPDATA%\PPSX33\settings.json`; the Controller tab is removed after the build begins/completes according to the GUI workflow.
+5. Select **Decompile** and inspect the Console/Report output plus `codebase\lift_report.txt` and `codebase\analysis_report.txt`.
+6. Select **Build**. The GUI estimates progress by observing changed `.obj` files and displays an advisory ETA. This is an estimate, not a compiler-provided percentage.
+7. On successful build, the GUI reports `Building successful`; outputs may include a project-named `.exe`, `ps3rt.dll`, and `guest_image.bin` under `output\`. The build driver also retains report copies there.
+8. Select **Run** to launch the generated executable. The Stop button stops the running game; during a build it offers a confirmation to request build cancellation. A cancelled build may delete generated project folders and unload the selected ELF, requiring the ELF to be loaded again.
+9. Use **Copy to game folder** only after checking the generated output. Successful compilation is not proof of runtime correctness or game compatibility.
 
 CLI syntax:
 
