@@ -130,7 +130,7 @@ static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
             if (e->nid == 0xB2E761D4) { g_gcm_flip_status = 0; c->gpr[3] = 0; return 0; }
             if (e->nid == 0xD81D0D2D || e->nid == 0x05E548B9) {
                 gcm_inject_clear_draw();
-                ps3rt_rsx_flip();
+                ps3rt_rsx_flip(0);
                 g_gcm_flip_status = 0; ++g_gcm_frame_id; c->gpr[3] = 0; return 0;
             }
             if (e->nid == 0xF80196C0) { c->gpr[3] = 0; return 0; }
@@ -149,6 +149,7 @@ static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
             pad_write_info2(out); c->gpr[3] = 0; return 0;
         }
         if (e->nid == 0x3F797DFF) { c->gpr[3] = 0; return 0; }
+        if (kind == 2) { return ps3rt_fs_dispatch(c, e->nid); }
         if (kind == 4) { return ps3rt_audio_dispatch(c, e->nid); }
         if (kind == 11) { return ps3rt_save_dispatch(c, e->nid); }
         if (kind == 8) {
@@ -157,6 +158,7 @@ static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
         }
         c->gpr[3] = 0; return 0;
     }
+    if (kind == 2) { return ps3rt_fs_dispatch(c, maybe_nid); }
     if (kind == 4) { return ps3rt_audio_dispatch(c, maybe_nid); }
     if (kind == 11) { return ps3rt_save_dispatch(c, maybe_nid); }
     if (kind == 8) { pad_poll_host(); c->gpr[3] = 0; return 0; }
@@ -186,7 +188,6 @@ PS3RT_API void ps3rt_progress_hw(void) {
     ps3rt_audio_tick();
     if (!g_gcm_inited) gcm_ensure_state();
     if (g_gcm_inited) {
-        // Phase XIX: batch RSX work — process FIFO less often, one flip per batch
         static uint32_t s_n = 0;
         if ((++s_n & 0x7F) == 0) {
             uint32_t put = g_gcm_control ? rd_be32_guest(g_gcm_control + 0) : 0;
@@ -196,7 +197,7 @@ PS3RT_API void ps3rt_progress_hw(void) {
                 if (s_guest < 3) { ps3rt_log("[gcm] Phase XII guest put 0x0 -> 0x%x\n", put); ++s_guest; }
                 if (g_mem) ps3rt_rsx_flush(g_mem);
             }
-            ps3rt_rsx_flip();
+            ps3rt_rsx_flip(0);
         }
     }
     static int s_run = 0;
