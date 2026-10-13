@@ -141,9 +141,10 @@ int run_cmd(const std::string& cmd, std::string& log) {
     log += "> " + cmd + "\n"; live_log("> " + cmd + "\n");
 #ifdef _WIN32
     if (g_build_cancel_requested.load()) { log += "BUILD_CANCELLED\n"; return 130; }
-    FILE* pipe = _popen(cmd.c_str(), "r");
+    std::string full = cmd + " 2>&1";
+    FILE* pipe = _popen(full.c_str(), "r");
 #else
-    FILE* pipe = popen(cmd.c_str(), "r");
+    FILE* pipe = popen((cmd + " 2>&1").c_str(), "r");
 #endif
     if (!pipe) { log += "failed to start command\n"; return -1; }
     char buf[4096];
@@ -276,7 +277,6 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         return false;
     }
 
-    // BUILD_TOTAL = number of .cpp files actually present in build src/
     int build_total = 0;
     {
         std::error_code ec2;
@@ -348,12 +348,29 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             f << "echo BUILD_OK\n";
             f << "exit /b 0\n";
         }
+        log += "MSVC: out=" + out.string() + "\n";
+        live_log("MSVC: out=" + out.string() + "\n");
+        auto prev = fs::current_path(ec);
+        fs::current_path(out, ec);
+        if (ec) {
+            log += "chdir failed: " + ec.message() + "\n";
+            live_log("chdir failed: " + ec.message() + "\n");
+        }
         int rc = run_cmd("build_msvc.bat", log);
+        fs::current_path(prev, ec);
         if (rc != 0) {
-            err = "MSVC build failed (exit=" + std::to_string(rc) + ")";
+            if (rc == 130 || g_build_cancel_requested.load()) {
+                err = "BUILD_CANCELLED";
+                live_close();
+                return false;
+            }
+            std::string tail = log;
+            if (tail.size() > 4000) tail = tail.substr(tail.size() - 4000);
+            err = "MSVC build failed (exit=" + std::to_string(rc) + "):\n" + tail;
             live_log(err + "\n"); live_close();
             return false;
         }
+        fs::remove(out / "build_msvc.bat", ec);
         cleanup_after_build(project_dir, out, log);
         live_log("Build OK (MSVC)\n");
         live_close();
