@@ -1,9 +1,9 @@
 # PPSX33 — Terms and Conditions
 
 **Effective date:** 2026-10-13  
-**Related documents:** [LEGAL.md](LEGAL.md)
+**Related documents:** [LEGAL.md](https://github.com/NotY215/PPSX33/blob/main/LEGAL.md) · [LICENSE](https://github.com/NotY215/PPSX33/blob/main/LICENSE) · [Repository](https://github.com/NotY215/PPSX33)
 
-By cloning, building, installing, or using PPSX33 (the “Software”), including the GUI, core library, runtime, and any generated host binary branded **PPSX33** / **PPSX33.exe**, you (“you”, “User”) agree to these Terms and Conditions. If you do not agree, do not use the Software.
+By cloning, building, installing, or using PPSX33 (the "Software"), including the GUI, core library, runtime, and any generated host binary branded **PPSX33** / **PPSX33.exe**, you ("you", "User") agree to these Terms and Conditions. If you do not agree, do not use the Software.
 
 ---
 
@@ -13,15 +13,15 @@ By cloning, building, installing, or using PPSX33 (the “Software”), includin
 
 1.2. The Software is **not** affiliated with, endorsed by, or sponsored by Sony Interactive Entertainment or any PlayStation brand owner.
 
-1.3. Generated host executables, window titles, and logos are branded **PPSX33** so that output is clearly **tooling**, not a retail PlayStation product and not an “official port” of any commercial game.
+1.3. Generated host executables, window titles, and logos are branded **PPSX33** so that output is clearly **tooling**, not a retail PlayStation product and not an "official port" of any commercial game.
 
 ---
 
 ## 2. License to the PPSX33 code
 
-2.1. Use of the **source code and original assets in this repository** is subject to the project license file (`LICENSE`) if present; otherwise, all rights not expressly granted are reserved by the authors.
+2.1. Use of the **source code and original assets in this repository** is subject to the project license file ([LICENSE](https://github.com/NotY215/PPSX33/blob/main/LICENSE)) if present; otherwise, all rights not expressly granted are reserved by the authors.
 
-2.2. You may study, modify, and build the Software for lawful personal or research use, subject to these Terms and LEGAL.md.
+2.2. You may study, modify, and build the Software for lawful personal or research use, subject to these Terms and [LEGAL.md](https://github.com/NotY215/PPSX33/blob/main/LEGAL.md).
 
 2.3. You may **not** remove or obscure PPSX33 branding on the host window or `PPSX33.exe` in a way intended to present the result as an official Sony or third-party commercial product.
 
@@ -45,67 +45,73 @@ By cloning, building, installing, or using PPSX33 (the “Software”), includin
 
 4.3. You must **not**:
 
-- Request, upload, or share copyrighted game binaries, ISOs, packages, RAP/RIF, or keys in issues, PRs, or public channels related to this project  
-- Redistribute generated executables **bundled with** game assets, USRDIR data, or decrypted retail images  
-- Use the Software to facilitate piracy or unauthorized access to online services  
+- Request, upload, or share copyrighted game binaries, ISOs, packages, RAP/RIF, or keys in issues, PRs, or public channels related to this project
+- Redistribute generated executables **bundled with** game assets, USRDIR data, or decrypted retail images
+- Use the Software to facilitate piracy or unauthorized access to online services
 
-4.4. In-app legal acknowledgments (e.g. before Load ELF / Decrypt) are part of these Terms; declining them cancels the related action.
+4.4. In-app legal notices (ELF load / BIN workflows) restate these rules. Accepting them does not transfer any game rights to you.
 
 ---
 
 ## 5. No distribution of game data
 
-5.1. Permission to use PPSX33 does **not** grant any license to copy, sell, or host commercial game content.
+5.1. PPSX33 is a **tool**. It does not ship commercial game content.
 
-5.2. `PPSX33.exe` is a **local host binary for your experiments**. It is not a license to redistribute the underlying game.
+5.2. You must **not** publish, sell, or share packages that combine PPSX33 output with copyrighted game files obtained without authorization.
 
----
-
-## 6. Disclaimer of warranties
-
-6.1. THE SOFTWARE IS PROVIDED **“AS IS”** AND **“AS AVAILABLE”**, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
-
-6.2. The authors do not warrant that the Software will be error-free, uninterrupted, or suitable for any specific title or purpose.
+5.3. Saves created by the runtime (when implemented) are intended for **your** lawfully owned play sessions under Documents / game-named folders in a PS3-like layout — not for trafficking copyrighted save packages as a substitute for owning the game.
 
 ---
 
-## 7. Limitation of liability
+## 6. Branding of host output
 
-7.1. TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE AUTHORS AND CONTRIBUTORS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF DATA, PROFITS, OR BUSINESS, ARISING FROM USE OF THE SOFTWARE.
+6.1. The host window title, executable name, and logos are **PPSX33**.
 
-7.2. Your sole remedy for dissatisfaction with the Software is to stop using it.
+6.2. This branding exists so no reasonable user confuses a research build with an official Sony product or a commercial "port" sold as a finished game.
 
----
-
-## 8. Indemnity
-
-You agree to indemnify and hold harmless the authors and contributors from claims arising out of your misuse of the Software, including use with unlawfully obtained materials or redistribution of copyrighted game content.
+6.3. You may not strip or replace that branding for the purpose of misrepresentation.
 
 ---
 
-## 9. No legal advice; no immunity
+## 7. Warranty disclaimer
 
-9.1. LEGAL.md and these Terms describe the project’s **intended positioning**. They are **not** legal advice and **do not** guarantee that any third party (including rights holders) will never assert claims.
+7.1. THE SOFTWARE IS PROVIDED **"AS IS"**, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
 
-9.2. Only a qualified attorney in your jurisdiction can advise on your specific facts.
+7.2. The authors do not warrant that any commercial title will run, that graphics/audio/input will be correct, or that the tool is free of defects.
+
+---
+
+## 8. Limitation of liability
+
+8.1. To the maximum extent permitted by law, the authors and contributors are **not** liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of data, profits, or business, arising from use of the Software.
+
+8.2. Your sole remedy for dissatisfaction is to stop using the Software.
+
+---
+
+## 9. Not legal advice
+
+9.1. [LEGAL.md](https://github.com/NotY215/PPSX33/blob/main/LEGAL.md) and these Terms describe the project's **intended positioning**. They are **not** legal advice and **do not** guarantee that any third party (including rights holders) will never assert claims.
+
+9.2. If you need advice about your specific use, consult a qualified attorney in your jurisdiction.
 
 ---
 
 ## 10. Project governance
 
-Maintainers may refuse support, close contributions, or update these Terms when users request piracy assistance, attach copyrighted game files, or otherwise abuse the project.
+Maintainers may refuse support, close contributions, or update these Terms when users request piracy assistance, attach copyrighted game files, or otherwise abuse the project. See the public repository: [https://github.com/NotY215/PPSX33](https://github.com/NotY215/PPSX33).
 
 ---
 
 ## 11. Changes
 
-Terms may be updated in the repository. Continued use after changes constitutes acceptance of the updated Terms.
+Terms may be updated in the repository. Continued use after changes constitutes acceptance of the updated Terms. Canonical copy: [TERMS.md on GitHub](https://github.com/NotY215/PPSX33/blob/main/TERMS.md).
 
 ---
 
 ## 12. Acceptance
 
-By using PPSX33 you confirm that you have read **LEGAL.md** and these **Terms and Conditions**, that you will use only lawfully obtained materials, that you will not distribute game data, and that you understand host output is branded **PPSX33**.
+By using PPSX33 you confirm that you have read [LEGAL.md](https://github.com/NotY215/PPSX33/blob/main/LEGAL.md) and these **Terms and Conditions**, that you will use only lawfully obtained materials, that you will not distribute game data, and that you understand host output is branded **PPSX33**.
 
 ---
 
