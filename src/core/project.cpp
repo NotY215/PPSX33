@@ -257,7 +257,9 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         if (!e.is_regular_file()) continue;
         std::string n = e.path().filename().string();
         if (n.size() < 5 || n.substr(n.size()-4) != ".cpp") continue;
-        if (n.rfind("ps3rt", 0) == 0 || n == "rsx_stub.cpp" || n == "spu_stub.cpp" ||
+        // Only the canonical runtime TUs — do NOT compile ps3rt_hw.cpp / ps3rt_log.cpp
+        // (symbols already live in ps3rt.cpp via ps3rt_b.inl and in-file log).
+        if (n == "ps3rt.cpp" || n == "rsx_stub.cpp" || n == "spu_stub.cpp" ||
             n == "audio_save.cpp" || n == "assets.cpp")
             rtSrc.push_back(n);
         else
@@ -286,7 +288,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             std::ofstream rt_rsp(out / "link_rt.rsp");
             rt_rsp << "/nologo\n/DLL\n/OUT:ps3rt.dll\n";
             for (auto& n : rtSrc) rt_rsp << "obj\\rt_" << n << ".obj\n";
-            rt_rsp << "d3d11.lib\nd3d10.lib\ndxgi.lib\nuser32.lib\ngdi32.lib\nwinmm.lib\n";
+            rt_rsp << "d3d11.lib\nd3d10.lib\ndxgi.lib\nuser32.lib\ngdi32.lib\nwinmm.lib\nshell32.lib\n";
         }
         {
             std::ofstream g_rsp(out / "link_game.rsp");
