@@ -14,7 +14,7 @@ This directory contains guest execution support used by generated host builds. T
 
 All split headers are required together. The project build driver in `src/core/project.cpp` stages runtime files into generated project output. Update that copy list whenever a required runtime file is added, removed, or renamed.
 
-The execution loop includes experimental recovery behavior for calls that leave known translated chunks. Phase G adds a bounded list of exhausted link-register targets and deeper stack scanning to help escape repeated null-call loops. These heuristics may redirect execution and must not be treated as proof of correct control flow.
+The execution loop includes experimental recovery behavior for calls that leave known translated chunks, including tracking exhausted link-register targets and deeper stack scanning to help escape repeated null-call loops. These heuristics may redirect execution and must not be treated as proof of correct control flow.
 
 ## Guest system runtime
 
@@ -29,7 +29,7 @@ The GCM state and handlers are partial HLE implementations. They do not establis
 
 SPU context allocation, image loading, run/stop entry points, mailbox operations, and related MFC paths exist, but this does not imply complete SPU ISA, vector/floating-point, scheduling, or SPURS support. RSX code provides partial FIFO/method and surface/draw/control handling with D3D10/D3D11 integration. It is not a complete RSX command processor or renderer.
 
-The current [roadmap](../ROADMAP.md) marks Phase G complete and Phase H as the next milestone for SPU execution and RSX command draining.
+The current [roadmap](../ROADMAP.md) tracks runtime/playability phases I–XX. It currently marks phases I–XIX complete and Phase XX, a full playable pass, pending. Refer to that roadmap rather than older phase labels when describing current project status.
 
 ## Validation
 
