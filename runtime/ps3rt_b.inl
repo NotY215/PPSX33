@@ -186,13 +186,15 @@ PS3RT_API void ps3rt_progress_hw(void) {
     ps3rt_audio_tick();
     if (!g_gcm_inited) gcm_ensure_state();
     if (g_gcm_inited) {
+        // Phase XIX: batch RSX work — process FIFO less often, one flip per batch
         static uint32_t s_n = 0;
-        if ((++s_n & 0x3F) == 0) {
+        if ((++s_n & 0x7F) == 0) {
             uint32_t put = g_gcm_control ? rd_be32_guest(g_gcm_control + 0) : 0;
             if (put == 0) gcm_inject_clear_draw();
             else {
                 static int s_guest = 0;
                 if (s_guest < 3) { ps3rt_log("[gcm] Phase XII guest put 0x0 -> 0x%x\n", put); ++s_guest; }
+                if (g_mem) ps3rt_rsx_flush(g_mem);
             }
             ps3rt_rsx_flip();
         }
