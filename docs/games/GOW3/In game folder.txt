@@ -1,0 +1,234 @@
+PPSX33 run log
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\log_2026-10-14_14-26-40.txt
+[ps3rt] log file: E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\log_2026-10-14_14-26-40.txt
+[stage] BOOT start
+[ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
+[ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
+[ps3rt] PS3IMG1 loaded from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\guest_image.bin (2 segments)
+[stage] MEM map end
+[save] root=C:\Users\shrey\OneDrive\Documents\GOW3\PS3_SAVEDATA (PS3-native only; no savestates)
+[stage] BOOT end
+[stage] PPU run start
+[ps3] prx_import_stub pc=0x39800000 nid=0x0053F96C kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x103ac (#1)
+[ps3] prx_import_stub pc=0x39800000 nid=0x39800000 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x33aec8 (#2)
+[lv2] sc 352 r3=f0ffe04 r4=3cc7f8 r5=4 r6=0
+[lv2] alloc VA=0x8000000 size=0x3cc7f8
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000160 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336750 (#3)
+[ps3] prx_import_stub pc=0x39800000 nid=0xF1500000 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#4)
+[ps3] prx_import_stub pc=0x39800000 nid=0x39800000 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#5)
+[ps3] prx_import_stub pc=0x39800000 nid=0x39800000 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#6)
+[ps3] prx_import_stub pc=0x39800000 nid=0x0065F088 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#7)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000065 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#8)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000065 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#9)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000065 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#10)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000065 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#11)
+[ps3] prx_import_stub pc=0x39800000 nid=0x0065F9C8 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x10464 (#12)
+[ps3] Phase XIV wild-pc 0x0 -> 0x331c30
+[ps3] prx_import_stub pc=0x39800000 nid=0x00500234 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#13)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000050 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#14)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000050 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#15)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000050 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#16)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000050 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#17)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000050 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#18)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000050 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#19)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000050 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#20)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000050 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#21)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000050 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#22)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000050 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#23)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000050 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#24)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#25)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#26)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#27)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#28)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#29)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#30)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#31)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#32)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#33)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#34)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#35)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#36)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#37)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#38)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#39)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#40)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#41)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#42)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#43)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#44)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#45)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#46)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#47)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#48)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#49)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#50)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#51)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#52)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#53)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#54)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#55)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#56)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#57)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#58)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#59)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#60)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#61)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#62)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#63)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#64)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#65)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#66)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#67)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#68)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#69)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#70)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#71)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#72)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#73)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#74)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#75)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#76)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#77)
+[ps3] import stub pc=0x39800000 -> ret=0x345228 (#78)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#79)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#80)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#81)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#82)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#83)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#84)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#85)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#86)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#87)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#88)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#89)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#90)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#91)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#92)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#93)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#94)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#95)
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#96)
+[stage] PPU progress start
+[stage] SPU progress end
+[pad] XInput loaded from xinput1_4.dll
+[pad] poll#1 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
+[lv2] alloc VA=0x83cd000 size=0x1000
+[gcm] control @ 0x83cd000
+[lv2] alloc VA=0x83ce000 size=0x10000
+[gcm] labels  @ 0x83ce000
+[lv2] alloc VA=0x83e0000 size=0x100000
+[rsx] D3D11 host present ready 1280x720 (depth+stencil)
+[rsx] init fifo=0x83e0000 size=0x100000 backend=1
+[gcm] Phase G state ready fifo=0x83e0000 ctrl=0x83cd000
+[stage] GCM ready end
+[stage] RUNNING
+[ps3] Phase M touch-progress n=8192
+[pad] poll#2 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
+[ps3] Phase M touch-progress n=16384
+[pad] poll#3 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
+[ps3] Phase M touch-progress n=24576
+[pad] poll#4 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
+[ps3] Phase M touch-progress n=32768
+[ps3] Phase M touch-progress n=40960
+[ps3] Phase M touch-progress n=49152
+[ps3] Phase M touch-progress n=57344
+[ps3] Phase M touch-progress n=65536
+[ps3] Phase M touch-progress n=73728
+[ps3] Phase M touch-progress n=81920
+[ps3] Phase M touch-progress n=90112
+[ps3] Phase M touch-progress n=98304
+[gcm] inject clear+draw col=0x101828
+[rsx] flip #1 draws=0 clears=0 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=0 unknown=0 1280x720
+[gcm] Phase XII guest put 0x0 -> 0x20
+[rsx] flip #2 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[gcm] Phase XII guest put 0x0 -> 0x20
+[rsx] flip #3 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[gcm] Phase XII guest put 0x0 -> 0x20
+[rsx] flip #4 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #5 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #6 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #7 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #8 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #9 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #10 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #11 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #12 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #13 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #14 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #15 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #16 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #17 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #18 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #19 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #20 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #21 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #22 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #23 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #24 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #25 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #26 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #27 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #28 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #29 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #30 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #31 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #32 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=262144 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #257 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=524288 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #513 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=786432 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
+[rsx] flip #769 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=1048576 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #1025 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=1310720 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #1281 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=1572864 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
+[ps3] heartbeat steps=1835008 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #1537 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[pad] poll#212993 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
+[pad] poll#217089 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
+[pad] poll#218113 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
+[pad] poll#220161 btn=0x0100 sticks=0,0,0,0 L2=255 R2=0
+[ps3] heartbeat steps=2097152 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #1793 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=2359296 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
+[rsx] flip #2049 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[pad] poll#268289 btn=0x2000 sticks=0,0,0,0 L2=0 R2=0
+[pad] poll#274433 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
+[ps3] heartbeat steps=2621440 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[pad] poll#278529 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
+[pad] poll#279553 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
+[pad] poll#290817 btn=0x0090 sticks=0,0,0,0 L2=0 R2=0
+[pad] poll#291841 btn=0x0040 sticks=0,0,0,0 L2=0 R2=0
+[pad] poll#292865 btn=0x0020 sticks=0,0,0,0 L2=0 R2=0
+[rsx] flip #2305 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=2883584 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[pad] poll#307201 btn=0xC000 sticks=0,0,0,0 L2=0 R2=0
+[pad] poll#311297 btn=0x0008 sticks=0,0,0,0 L2=0 R2=0
+[rsx] flip #2561 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=3145728 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
