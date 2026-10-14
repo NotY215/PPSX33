@@ -1,10 +1,11 @@
 PPSX33 run log
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\log_2026-10-14_14-26-40.txt
-[ps3rt] log file: E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\log_2026-10-14_14-26-40.txt
+mode=launch_outside_game
+file=E:\PPSX33\build\dist\projects\GOW 3\output\ppsx33_log_outside_game_2026-10-14_15-02-54.txt
+[ps3rt] log file (outside_game): E:\PPSX33\build\dist\projects\GOW 3\output\ppsx33_log_outside_game_2026-10-14_15-02-54.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
-[ps3rt] PS3IMG1 loaded from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\guest_image.bin (2 segments)
+[ps3rt] PS3IMG1 loaded from E:\PPSX33\build\dist\projects\GOW 3\output\guest_image.bin (2 segments)
 [stage] MEM map end
 [save] root=C:\Users\shrey\OneDrive\Documents\GOW3\PS3_SAVEDATA (PS3-native only; no savestates)
 [stage] BOOT end
@@ -197,38 +198,7 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\log_2026-10-14_14-26-40.txt
 [rsx] flip #30 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
 [rsx] flip #31 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
 [rsx] flip #32 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
-[ps3] heartbeat steps=262144 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[rsx] flip #257 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=524288 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[rsx] flip #513 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=786432 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[rsx] flip #769 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=1048576 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[rsx] flip #1025 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=1310720 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[rsx] flip #1281 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=1572864 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[ps3] heartbeat steps=1835008 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[rsx] flip #1537 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#212993 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#217089 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#218113 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
-[pad] poll#220161 btn=0x0100 sticks=0,0,0,0 L2=255 R2=0
-[ps3] heartbeat steps=2097152 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[rsx] flip #1793 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=2359296 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[rsx] flip #2049 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#268289 btn=0x2000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#274433 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[ps3] heartbeat steps=2621440 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#278529 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#279553 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#290817 btn=0x0090 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#291841 btn=0x0040 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#292865 btn=0x0020 sticks=0,0,0,0 L2=0 R2=0
-[rsx] flip #2305 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=2883584 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#307201 btn=0xC000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#311297 btn=0x0008 sticks=0,0,0,0 L2=0 R2=0
-[rsx] flip #2561 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=3145728 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
+[rsx] window closed by user — exiting
+[ps3rt] force exit
+
+--- log end ---
