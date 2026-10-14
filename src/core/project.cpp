@@ -153,12 +153,82 @@ std::string find_bundled_cl(const std::string& compilers_dir) {
     return {};
 }
 
+static std::string g_build_out_dir;
+static unsigned long g_build_pid = 0;
+
+#ifdef _WIN32
+static void kill_build_tree() {
+    if (g_build_pid == 0) return;
+    std::string k = "taskkill /PID " + std::to_string(g_build_pid) + " /T /F >nul 2>&1";
+    system(k.c_str());
+    g_build_pid = 0;
+}
+#endif
+
 int run_cmd(const std::string& cmd, std::string& log) {
 #ifdef _WIN32
-    FILE* pipe = _popen(cmd.c_str(), "r");
+    SECURITY_ATTRIBUTES sa{};
+    sa.nLength = sizeof(sa);
+    sa.bInheritHandle = TRUE;
+    HANDLE rd = nullptr, wr = nullptr;
+    if (!CreatePipe(&rd, &wr, &sa, 0)) {
+        log += "CreatePipe failed\n";
+        return -1;
+    }
+    SetHandleInformation(rd, HANDLE_FLAG_INHERIT, 0);
+
+    STARTUPINFOA si{};
+    si.cb = sizeof(si);
+    si.dwFlags = STARTF_USESTDHANDLES;
+    si.hStdOutput = wr;
+    si.hStdError = wr;
+    si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+
+    PROCESS_INFORMATION pi{};
+    std::string mutable_cmd = cmd;
+    BOOL ok = CreateProcessA(
+        nullptr, mutable_cmd.data(),
+        nullptr, nullptr, TRUE,
+        CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW,
+        nullptr, nullptr, &si, &pi);
+    CloseHandle(wr);
+    if (!ok) {
+        CloseHandle(rd);
+        log += "CreateProcess failed: " + cmd + "\n";
+        return -1;
+    }
+    g_build_pid = pi.dwProcessId;
+
+    char buf[512];
+    DWORD n = 0;
+    while (ReadFile(rd, buf, sizeof(buf) - 1, &n, nullptr) && n > 0) {
+        buf[n] = 0;
+        log.append(buf, n);
+        live_log(std::string(buf, n));
+        if (g_build_cancel_requested.load()) {
+            kill_build_tree();
+            break;
+        }
+    }
+    CloseHandle(rd);
+
+    if (g_build_cancel_requested.load()) {
+        kill_build_tree();
+        CloseHandle(pi.hThread);
+        CloseHandle(pi.hProcess);
+        g_build_pid = 0;
+        return 130;
+    }
+
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    DWORD code = 1;
+    GetExitCodeProcess(pi.hProcess, &code);
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+    g_build_pid = 0;
+    return (int)code;
 #else
     FILE* pipe = popen(cmd.c_str(), "r");
-#endif
     if (!pipe) { log += "failed to start: " + cmd + "\n"; return -1; }
     char buf[512];
     while (fgets(buf, sizeof buf, pipe)) {
@@ -166,12 +236,8 @@ int run_cmd(const std::string& cmd, std::string& log) {
         live_log(buf);
         if (g_build_cancel_requested.load()) break;
     }
-#ifdef _WIN32
-    int rc = _pclose(pipe);
-#else
-    int rc = pclose(pipe);
+    return pclose(pipe);
 #endif
-    return rc;
 }
 
 void cleanup_after_build(const std::string& project_dir, const fs::path& out, std::string& log) {
@@ -193,7 +259,7 @@ void cleanup_after_build(const std::string& project_dir, const fs::path& out, st
         log += "cleanup: removed output/src\n";
         live_log("cleanup: removed output/src\n");
     }
-    for (const char* name : { "build.ninja", "build_msvc.bat", "link_rt.rsp", "link_game.rsp" }) {
+    for (const char* name : { "build.ninja", "build_msvc.bat", "link_rt.rsp", "link_game.rsp", "build_cancel.flag" }) {
         if (fs::exists(out / name)) fs::remove(out / name, ec);
     }
     if (fs::exists(codebase)) {
@@ -216,8 +282,24 @@ void cleanup_after_build(const std::string& project_dir, const fs::path& out, st
 
 } // namespace
 
-void begin_build() { g_build_cancel_requested.store(false); }
-void cancel_build() { g_build_cancel_requested.store(true); }
+void begin_build() {
+    g_build_cancel_requested.store(false);
+    g_build_pid = 0;
+    if (!g_build_out_dir.empty()) {
+        std::error_code ec;
+        fs::remove(fs::path(g_build_out_dir) / "build_cancel.flag", ec);
+    }
+}
+void cancel_build() {
+    g_build_cancel_requested.store(true);
+    if (!g_build_out_dir.empty()) {
+        std::ofstream f(fs::path(g_build_out_dir) / "build_cancel.flag");
+        f << "1\n";
+    }
+#ifdef _WIN32
+    kill_build_tree();
+#endif
+}
 
 bool build_project(const std::string& project_dir, const std::string& runtime_dir,
                    const std::string& compilers_dir, std::string& log, std::string& err) {
@@ -230,6 +312,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     fs::create_directories(out, ec);
     fs::create_directories(src, ec);
     live_open(out);
+    g_build_out_dir = out.string();
 
     if (fs::exists(runtime_dir)) {
         for (auto& e : fs::recursive_directory_iterator(runtime_dir, ec)) {
@@ -337,33 +420,34 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             f << ")\n";
             f << "if not exist src\\ps3rt.cpp (echo MISSING src\\ps3rt.cpp & exit /b 1)\n";
             f << "if not exist obj mkdir obj\n";
-            std::string cflags = "/nologo /O2 /EHsc /std:c++17 /bigobj /FS /MP /I src";
-            f << "echo COMPILE runtime (parallel /MP)\n";
-            f << cl << " " << cflags << " /DPS3RT_BUILD_DLL=1 /c";
-            for (auto& n : rtSrc) f << " src\\" << n;
-            f << " /Foobj\\ || exit /b 1\n";
+            f << "if exist build_cancel.flag del /f /q build_cancel.flag\n";
+            std::string cflags = "/nologo /O2 /EHsc /std:c++17 /bigobj /FS /I src /DPS3RT_BUILD_DLL=1";
+            std::string gflags = "/nologo /O2 /EHsc /std:c++17 /bigobj /FS /I src";
+            auto cancel_chk = [&]() {
+                f << "if exist build_cancel.flag (echo BUILD_CANCELLED & exit /b 130)\n";
+            };
             for (auto& n : rtSrc) {
-                std::string base = n.substr(0, n.size() - 4);
-                f << "if exist obj\\" << base << ".obj move /Y obj\\" << base << ".obj obj\\rt_" << n << ".obj >nul\n";
+                cancel_chk();
+                std::string o = "obj\\rt_" + n + ".obj";
+                f << "echo COMPILE " << n << "\n";
+                f << cl << " " << cflags << " /c src\\" << n << " /Fo" << o << " || exit /b 1\n";
             }
+            cancel_chk();
             f << "echo LINK ps3rt.dll\n";
             f << "link @link_rt.rsp || exit /b 1\n";
-            f << "echo COMPILE game chunks (parallel /MP)\n";
-            f << cl << " " << cflags << " /c";
-            for (auto& n : gameSrc) f << " src\\" << n;
-            if (fs::exists(src / "game_main.cpp") &&
-                std::find(gameSrc.begin(), gameSrc.end(), "game_main.cpp") == gameSrc.end()) {
-                f << " src\\game_main.cpp";
-            }
-            f << " /Foobj\\ || exit /b 1\n";
             for (auto& n : gameSrc) {
-                std::string base = n.substr(0, n.size() - 4);
-                f << "if exist obj\\" << base << ".obj move /Y obj\\" << base << ".obj obj\\g_" << n << ".obj >nul\n";
+                cancel_chk();
+                std::string o = "obj\\g_" + n + ".obj";
+                f << "echo COMPILE " << n << "\n";
+                f << cl << " " << gflags << " /c src\\" << n << " /Fo" << o << " || exit /b 1\n";
             }
             if (fs::exists(src / "game_main.cpp") &&
                 std::find(gameSrc.begin(), gameSrc.end(), "game_main.cpp") == gameSrc.end()) {
-                f << "if exist obj\\game_main.obj move /Y obj\\game_main.obj obj\\g_game_main.obj >nul\n";
+                cancel_chk();
+                f << "echo COMPILE game_main.cpp\n";
+                f << cl << " " << gflags << " /c src\\game_main.cpp /Foobj\\g_game_main.obj || exit /b 1\n";
             }
+            cancel_chk();
             f << "echo LINK " << out_exe << "\n";
             f << "link @link_game.rsp || exit /b 1\n";
             f << "echo BUILD_OK\n";
@@ -379,6 +463,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         if (rc != 0) {
             if (rc == 130 || g_build_cancel_requested.load()) {
                 err = "BUILD_CANCELLED";
+                live_log("BUILD_CANCELLED\n");
                 live_close();
                 return false;
             }
