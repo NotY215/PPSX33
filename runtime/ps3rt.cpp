@@ -45,6 +45,25 @@ PS3RT_API void ps3rt_force_exit(void) {
 static void ps3rt_log_close(void) {
     if (g_logf) { std::fprintf(g_logf, "\n--- log end ---\n"); std::fflush(g_logf); std::fclose(g_logf); g_logf = nullptr; }
 }
+#if defined(_WIN32)
+static int path_looks_like_game_folder(const char* dir) {
+    if (!dir || !dir[0]) return 0;
+    char probe[640];
+    const char* checks[] = {
+        "USRDIR", "PS3_GAME", "EBOOT.BIN", "PARAM.SFO", "PS3_DISC.SFB",
+        "USRDIR\\EBOOT.BIN", "PS3_GAME\\USRDIR", nullptr
+    };
+    for (int i = 0; checks[i]; ++i) {
+        std::snprintf(probe, sizeof(probe), "%s%s", dir, checks[i]);
+        DWORD a = GetFileAttributesA(probe);
+        if (a != INVALID_FILE_ATTRIBUTES) return 1;
+    }
+    return 0;
+}
+#else
+static int path_looks_like_game_folder(const char*) { return 0; }
+#endif
+
 static void ps3rt_log_open(void) {
     if (g_logf) return;
     char dir[512]; dir[0] = 0;
@@ -65,17 +84,32 @@ static void ps3rt_log_open(void) {
 #else
     localtime_r(&t, &tm_buf);
 #endif
-    char name[64];
-    std::snprintf(name, sizeof(name), "log_%04d-%02d-%02d_%02d-%02d-%02d.txt",
-        tm_buf.tm_year + 1900, tm_buf.tm_mon + 1, tm_buf.tm_mday,
-        tm_buf.tm_hour, tm_buf.tm_min, tm_buf.tm_sec);
+    int in_game = path_looks_like_game_folder(dir);
+    char name[96];
+    if (in_game) {
+        std::snprintf(name, sizeof(name),
+            "ppsx33_log_in_game_folder_%04d-%02d-%02d_%02d-%02d-%02d.txt",
+            tm_buf.tm_year + 1900, tm_buf.tm_mon + 1, tm_buf.tm_mday,
+            tm_buf.tm_hour, tm_buf.tm_min, tm_buf.tm_sec);
+    } else {
+        std::snprintf(name, sizeof(name),
+            "ppsx33_log_outside_game_%04d-%02d-%02d_%02d-%02d-%02d.txt",
+            tm_buf.tm_year + 1900, tm_buf.tm_mon + 1, tm_buf.tm_mday,
+            tm_buf.tm_hour, tm_buf.tm_min, tm_buf.tm_sec);
+    }
     char full[600];
     std::snprintf(full, sizeof(full), "%s%s", dir, name);
     g_logf = std::fopen(full, "w");
     if (g_logf) {
-        std::fprintf(g_logf, "PPSX33 run log\nfile=%s\n", full);
+        std::fprintf(g_logf,
+            "PPSX33 run log\n"
+            "mode=%s\n"
+            "file=%s\n",
+            in_game ? "launch_in_game_folder" : "launch_outside_game",
+            full);
         std::fflush(g_logf);
-        ps3rt_log("[ps3rt] log file: %s\n", full);
+        ps3rt_log("[ps3rt] log file (%s): %s\n",
+            in_game ? "in_game_folder" : "outside_game", full);
     }
 }
 PS3RT_API void ps3rt_log(const char* fmt, ...) {
