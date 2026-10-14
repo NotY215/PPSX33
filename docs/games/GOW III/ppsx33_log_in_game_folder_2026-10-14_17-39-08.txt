@@ -1,13 +1,45 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-14_16-13-50.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-14_16-13-50.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-14_17-39-08.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-14_17-39-08.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
 [ps3rt] PS3IMG1 loaded from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\guest_image.bin (2 segments)
 [stage] MEM map end
 [save] root=C:\Users\shrey\OneDrive\Documents\GOW3\PS3_SAVEDATA (PS3-native only; no savestates)
+[fs] game_root=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\BAS.PSARC toc_entries_hdr=76 names_found=11 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CAV.PSARC toc_entries_hdr=43 names_found=23 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CHALLENGE.PSARC toc_entries_hdr=43 names_found=0 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CRN.PSARC toc_entries_hdr=22 names_found=3 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ENGLISH.PSARC toc_entries_hdr=2012 names_found=14 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAME.PSARC toc_entries_hdr=122 names_found=4 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAME_SUB.PSARC toc_entries_hdr=33 names_found=5 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAZ.PSARC toc_entries_hdr=34 names_found=11 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\HDS.PSARC toc_entries_hdr=112 names_found=38 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ICA.PSARC toc_entries_hdr=46 names_found=14 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\LAB.PSARC toc_entries_hdr=28 names_found=7 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\MUSIC.PSARC toc_entries_hdr=375 names_found=2 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\OLY.PSARC toc_entries_hdr=123 names_found=54 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\POS.PSARC toc_entries_hdr=52 names_found=11 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\RES.PSARC toc_entries_hdr=368 names_found=22 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\BAS.PSARC toc_entries_hdr=76 names_found=11 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CAV.PSARC toc_entries_hdr=43 names_found=23 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CHALLENGE.PSARC toc_entries_hdr=43 names_found=0 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CRN.PSARC toc_entries_hdr=22 names_found=3 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ENGLISH.PSARC toc_entries_hdr=2012 names_found=14 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAME.PSARC toc_entries_hdr=122 names_found=4 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAME_SUB.PSARC toc_entries_hdr=33 names_found=5 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAZ.PSARC toc_entries_hdr=34 names_found=11 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\HDS.PSARC toc_entries_hdr=112 names_found=38 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ICA.PSARC toc_entries_hdr=46 names_found=14 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\LAB.PSARC toc_entries_hdr=28 names_found=7 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\MUSIC.PSARC toc_entries_hdr=375 names_found=2 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\OLY.PSARC toc_entries_hdr=123 names_found=54 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\POS.PSARC toc_entries_hdr=52 names_found=11 zlib=1
+[psarc] E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\RES.PSARC toc_entries_hdr=368 names_found=22 zlib=1
+[fs] asset scan done root=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR  psarcs=30
 [stage] BOOT end
 [stage] PPU run start
 [ps3] prx_import_stub pc=0x39800000 nid=0x0053F96C kind=0
@@ -136,7 +168,6 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [stage] PPU progress start
 [stage] SPU progress end
 [pad] XInput loaded from xinput1_4.dll
-[pad] poll#1 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
 [lv2] alloc VA=0x83cd000 size=0x1000
 [gcm] control @ 0x83cd000
 [lv2] alloc VA=0x83ce000 size=0x10000
@@ -231,32 +262,19 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] heartbeat steps=4456448 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] flip #3841 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=4718592 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[pad] poll#510977 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#512001 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#513025 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#514049 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#516097 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#517121 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#520193 btn=0x0010 sticks=0,-127,0,0 L2=0 R2=0
 [ps3] heartbeat steps=4980736 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] flip #4097 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#531457 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
-[pad] poll#533505 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#535553 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
-[pad] poll#537601 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#547841 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#548865 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#549889 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=5242880 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#550913 btn=0x0011 sticks=0,-127,0,0 L2=0 R2=0
 [rsx] flip #4353 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=5505024 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
 [rsx] flip #4609 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[pad] poll#594945 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
+[pad] poll#595969 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
+[pad] poll#596993 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
+[pad] poll#598017 btn=0x0041 sticks=0,127,0,0 L2=0 R2=0
+[pad] poll#599041 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=5767168 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] flip #4865 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#625665 btn=0x0010 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#626689 btn=0x0080 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#627713 btn=0x0040 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=6029312 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] flip #5121 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=6291456 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
@@ -265,73 +283,27 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] heartbeat steps=6815744 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] flip #5633 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=7077888 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[pad] poll#749569 btn=0x0080 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#753665 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
 [rsx] flip #5889 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#754689 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#769025 btn=0x0880 sticks=-127,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=7340032 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#771073 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#774145 btn=0x4000 sticks=0,0,0,0 L2=0 R2=0
 [rsx] flip #6145 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=7602176 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] flip #6401 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=7864320 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[pad] poll#842753 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#843777 btn=0x0081 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#844801 btn=0x2000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#847873 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
 [rsx] flip #6657 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=8126464 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#859137 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#864257 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#871425 btn=0x0020 sticks=127,0,0,0 L2=0 R2=0
-[pad] poll#876545 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=8388608 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#880641 btn=0x2000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#881665 btn=0x2000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#884737 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
 [rsx] flip #6913 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#885761 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#888833 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#903169 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#905217 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=8650752 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
 [rsx] flip #7169 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#924673 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#930817 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#932865 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=8912896 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#939009 btn=0x8000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#940033 btn=0x8000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#941057 btn=0x8000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#950273 btn=0x8000 sticks=0,0,0,0 L2=0 R2=0
 [rsx] flip #7425 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#961537 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=9175040 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#963585 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#966657 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#971777 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#972801 btn=0x0020 sticks=127,0,0,0 L2=0 R2=0
-[pad] poll#977921 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#983041 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
 [rsx] flip #7681 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=9437184 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[pad] poll#997377 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1002497 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1009665 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
 [rsx] flip #7937 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=9699328 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#1017857 btn=0x0020 sticks=127,0,0,0 L2=0 R2=0
-[pad] poll#1019905 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1025025 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1027073 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1029121 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=9961472 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#1047553 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
 [rsx] flip #8193 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#1053697 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1054721 btn=0x0020 sticks=127,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=10223616 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
 [rsx] flip #8449 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=10485760 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
@@ -343,8 +315,6 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] heartbeat steps=11272192 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
 [ps3] heartbeat steps=11534336 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] flip #9473 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#1219585 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1220609 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=11796480 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
 [rsx] flip #9729 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=12058624 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
@@ -363,84 +333,15 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] heartbeat steps=13893632 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] flip #11521 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=14155776 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[pad] poll#1491969 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1492993 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1494017 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1495041 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1496065 btn=0x0011 sticks=0,-127,0,0 L2=0 R2=0
-[pad] poll#1498113 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#1500161 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1502209 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1505281 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1506305 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1507329 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
 [rsx] flip #11777 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#1508353 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1509377 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1510401 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=14417920 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#1511425 btn=0x0201 sticks=0,0,0,0 L2=0 R2=255
-[pad] poll#1512449 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1516545 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1523713 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
-[pad] poll#1524737 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1525761 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
-[pad] poll#1526785 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1529857 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=14680064 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] flip #12033 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#1556481 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
-[pad] poll#1558529 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1560577 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#1562625 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=14942208 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[pad] poll#1572865 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
 [rsx] flip #12289 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#1576961 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1577985 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1579009 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1580033 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1581057 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1582081 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1583105 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1584129 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1585153 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1586177 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1587201 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1588225 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1589249 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1590273 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1593345 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=15204352 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#1594369 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1595393 btn=0x0041 sticks=0,127,0,0 L2=0 R2=0
-[pad] poll#1599489 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1603585 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#1605633 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
 [rsx] flip #12545 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#1610753 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1611777 btn=0x4000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1614849 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1615873 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1616897 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1617921 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1618945 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1619969 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1620993 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=15466496 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#1622017 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1623041 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1624065 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1625089 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1626113 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1627137 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1628161 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1629185 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1630209 btn=0x00C0 sticks=-127,127,0,0 L2=0 R2=0
-[pad] poll#1631233 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1632257 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1633281 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#1634305 btn=0x0201 sticks=0,0,0,0 L2=0 R2=255
 [rsx] flip #12801 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=15728640 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
 [rsx] flip #13057 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
@@ -465,44 +366,14 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] heartbeat steps=18612224 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] flip #15361 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=18874368 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[pad] poll#1998849 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
 [rsx] flip #15617 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#1999873 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2000897 btn=0x0201 sticks=0,0,0,0 L2=0 R2=255
-[pad] poll#2003969 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=19136512 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#2009089 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2013185 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#2014209 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2016257 btn=0x0010 sticks=0,-127,0,0 L2=0 R2=0
-[pad] poll#2019329 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2024449 btn=0x0200 sticks=0,0,0,0 L2=0 R2=255
-[pad] poll#2028545 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
 [rsx] flip #15873 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=19398656 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#2034689 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2036737 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2055169 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2056193 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2060289 btn=0x0020 sticks=127,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=19660800 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[pad] poll#2061313 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2062337 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2063361 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2064385 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
 [rsx] flip #16129 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#2065409 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2066433 btn=0x0081 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#2067457 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2068481 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2069505 btn=0x0201 sticks=0,0,0,0 L2=0 R2=255
-[pad] poll#2074625 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2078721 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
-[pad] poll#2085889 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=19922944 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#2095105 btn=0x8000 sticks=0,0,0,0 L2=0 R2=0
 [rsx] flip #16385 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#2099201 btn=0x4000 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=20185088 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] flip #16641 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=20447232 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
@@ -515,63 +386,14 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] heartbeat steps=21495808 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] flip #17665 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=21757952 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#2282497 btn=0x0081 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#2284545 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
-[pad] poll#2287617 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2292737 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2293761 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
 [rsx] flip #17921 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#2294785 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2298881 btn=0x2000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2299905 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2302977 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2304001 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2305025 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2306049 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2307073 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=22020096 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[pad] poll#2308097 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2309121 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#2311169 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
-[pad] poll#2313217 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2314241 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
-[pad] poll#2316289 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2318337 btn=0x2000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2321409 btn=0x0020 sticks=127,0,0,0 L2=0 R2=0
-[pad] poll#2324481 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
 [rsx] flip #18177 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=22282240 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#2347009 btn=0x0800 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2348033 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2349057 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2350081 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2351105 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2352129 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2353153 btn=0x0041 sticks=0,127,0,0 L2=0 R2=0
-[pad] poll#2354177 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2355201 btn=0x0081 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#2356225 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2357249 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2358273 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
 [rsx] flip #18433 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#2361345 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=22544384 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#2365441 btn=0x0020 sticks=127,0,0,0 L2=0 R2=0
-[pad] poll#2366465 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2372609 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2379777 btn=0x2000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2382849 btn=0x4000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2387969 btn=0x1000 sticks=0,0,0,0 L2=0 R2=0
 [ps3] heartbeat steps=22806528 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
 [rsx] flip #18689 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#2402305 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2403329 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2404353 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2405377 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2406401 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2407425 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2408449 btn=0x0201 sticks=0,0,0,0 L2=0 R2=255
-[pad] poll#2409473 btn=0x0041 sticks=0,127,0,0 L2=0 R2=0
 [ps3] heartbeat steps=23068672 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] flip #18945 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=23330816 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
@@ -581,53 +403,6 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] heartbeat steps=23855104 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] flip #19713 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [ps3] heartbeat steps=24117248 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[ps3] heartbeat steps=24379392 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[rsx] flip #19969 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#2572289 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[ps3] heartbeat steps=24641536 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[rsx] flip #20225 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#2595841 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2596865 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2597889 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[ps3] heartbeat steps=24903680 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[rsx] flip #20481 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#2631681 btn=0x0010 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2632705 btn=0x00C0 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2633729 btn=0x0020 sticks=0,0,0,0 L2=0 R2=0
-[ps3] heartbeat steps=25165824 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[pad] poll#2643969 btn=0x0080 sticks=-127,0,0,0 L2=0 R2=0
-[pad] poll#2646017 btn=0x0040 sticks=0,127,0,0 L2=0 R2=0
-[pad] poll#2649089 btn=0x0100 sticks=0,0,0,0 L2=255 R2=0
-[rsx] flip #20737 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#2663425 btn=0x8000 sticks=0,0,0,0 L2=0 R2=0
-[ps3] heartbeat steps=25427968 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#2682881 btn=0x8000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2683905 btn=0x4000 sticks=0,0,0,0 L2=0 R2=0
-[rsx] flip #20993 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=25690112 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[pad] poll#2699265 btn=0x2000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2700289 btn=0x2000 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2712577 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2713601 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[ps3] heartbeat steps=25952256 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[rsx] flip #21249 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#2720769 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2721793 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2734081 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2742273 btn=0x2000 sticks=0,0,0,0 L2=0 R2=0
-[ps3] heartbeat steps=26214400 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[rsx] flip #21505 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[pad] poll#2770945 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2771969 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2772993 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[pad] poll#2774017 btn=0x0001 sticks=0,0,0,0 L2=0 R2=0
-[ps3] heartbeat steps=26476544 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
-[rsx] flip #21761 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=26738688 pc=0x39800000 lr=0x336660 r2=0x658c0050 pokes=0 nrban=0
-[rsx] flip #22017 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=27000832 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[rsx] flip #22273 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=27262976 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] window closed by user — exiting
 [ps3rt] force exit
 
