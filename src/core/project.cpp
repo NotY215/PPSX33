@@ -199,7 +199,7 @@ void cleanup_after_build(const std::string& project_dir, const fs::path& out, st
     if (fs::exists(codebase)) {
         for (auto& e : fs::directory_iterator(codebase, ec)) {
             std::string n = e.path().filename().string();
-            if (n == "lift_report.txt" || n == "analysis_report.txt") continue;
+            if (n == "lift_report.txt" || n == "analysis_report.txt" || n == "guest_image.bin") continue;
             fs::remove_all(e.path(), ec);
         }
     }
@@ -247,6 +247,8 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             if (n.size() > 4 && (n.substr(n.size()-4) == ".cpp" || n.substr(n.size()-2) == ".h" ||
                                  n.substr(n.size()-4) == ".hpp"))
                 fs::copy_file(e.path(), src / n, fs::copy_options::overwrite_existing, ec);
+            if (n == "guest_image.bin")
+                fs::copy_file(e.path(), out / n, fs::copy_options::overwrite_existing, ec);
         }
     }
 
@@ -257,12 +259,10 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         if (!e.is_regular_file()) continue;
         std::string n = e.path().filename().string();
         if (n.size() < 5 || n.substr(n.size()-4) != ".cpp") continue;
-        // Canonical runtime TUs only (DLL). Orphan split files must NOT go into the EXE.
         if (n == "ps3rt.cpp" || n == "rsx_stub.cpp" || n == "spu_stub.cpp" ||
             n == "audio_save.cpp" || n == "assets.cpp") {
             rtSrc.push_back(n);
         } else if (n == "ps3rt_hw.cpp" || n == "ps3rt_log.cpp") {
-            // symbols already in ps3rt.cpp / ps3rt_b.inl — skip both rt and game
             continue;
         } else {
             gameSrc.push_back(n);
@@ -337,23 +337,32 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             f << ")\n";
             f << "if not exist src\\ps3rt.cpp (echo MISSING src\\ps3rt.cpp & exit /b 1)\n";
             f << "if not exist obj mkdir obj\n";
-            std::string cflags = "/nologo /O2 /EHsc /std:c++17 /bigobj /FS /I src /DPS3RT_BUILD_DLL=1";
+            std::string cflags = "/nologo /O2 /EHsc /std:c++17 /bigobj /FS /MP /I src";
+            f << "echo COMPILE runtime (parallel /MP)\n";
+            f << cl << " " << cflags << " /DPS3RT_BUILD_DLL=1 /c";
+            for (auto& n : rtSrc) f << " src\\" << n;
+            f << " /Foobj\\ || exit /b 1\n";
             for (auto& n : rtSrc) {
-                std::string o = "obj\\rt_" + n + ".obj";
-                f << "echo COMPILE " << n << "\n";
-                f << cl << " " << cflags << " /c src\\" << n << " /Fo" << o << " || exit /b 1\n";
+                std::string base = n.substr(0, n.size() - 4);
+                f << "if exist obj\\" << base << ".obj move /Y obj\\" << base << ".obj obj\\rt_" << n << ".obj >nul\n";
             }
             f << "echo LINK ps3rt.dll\n";
             f << "link @link_rt.rsp || exit /b 1\n";
+            f << "echo COMPILE game chunks (parallel /MP)\n";
+            f << cl << " " << cflags << " /c";
+            for (auto& n : gameSrc) f << " src\\" << n;
+            if (fs::exists(src / "game_main.cpp") &&
+                std::find(gameSrc.begin(), gameSrc.end(), "game_main.cpp") == gameSrc.end()) {
+                f << " src\\game_main.cpp";
+            }
+            f << " /Foobj\\ || exit /b 1\n";
             for (auto& n : gameSrc) {
-                std::string o = "obj\\g_" + n + ".obj";
-                f << "echo COMPILE " << n << "\n";
-                f << cl << " /nologo /O2 /EHsc /std:c++17 /bigobj /FS /I src /c src\\" << n << " /Fo" << o << " || exit /b 1\n";
+                std::string base = n.substr(0, n.size() - 4);
+                f << "if exist obj\\" << base << ".obj move /Y obj\\" << base << ".obj obj\\g_" << n << ".obj >nul\n";
             }
             if (fs::exists(src / "game_main.cpp") &&
                 std::find(gameSrc.begin(), gameSrc.end(), "game_main.cpp") == gameSrc.end()) {
-                f << "echo COMPILE game_main.cpp\n";
-                f << cl << " /nologo /O2 /EHsc /std:c++17 /bigobj /FS /I src /c src\\game_main.cpp /Foobj\\g_game_main.obj || exit /b 1\n";
+                f << "if exist obj\\game_main.obj move /Y obj\\game_main.obj obj\\g_game_main.obj >nul\n";
             }
             f << "echo LINK " << out_exe << "\n";
             f << "link @link_game.rsp || exit /b 1\n";
