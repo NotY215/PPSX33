@@ -242,13 +242,28 @@ int run_cmd(const std::string& cmd, std::string& log) {
 
 void cleanup_after_build(const std::string& project_dir, const fs::path& out, std::string& log) {
     std::error_code ec;
-    fs::path codebase = fs::path(project_dir) / "codebase";
-    fs::path input = fs::path(project_dir) / "input";
+    fs::path root = fs::path(project_dir);
+    fs::path codebase = root / "codebase";
+    fs::path input = root / "input";
+
     for (const char* name : { "lift_report.txt", "analysis_report.txt" }) {
         fs::path src = codebase / name;
+        if (!fs::exists(src)) src = out / name;
         if (fs::exists(src))
-            fs::copy_file(src, out / name, fs::copy_options::overwrite_existing, ec);
+            fs::copy_file(src, root / name, fs::copy_options::overwrite_existing, ec);
+        if (fs::exists(out / name)) fs::remove(out / name, ec);
     }
+    if (fs::exists(out / "build_live.log")) {
+        fs::copy_file(out / "build_live.log", root / "build_log.txt",
+                      fs::copy_options::overwrite_existing, ec);
+        fs::remove(out / "build_live.log", ec);
+        log += "cleanup: build_log.txt at project root\n";
+        live_log("cleanup: build_log.txt at project root\n");
+    }
+    if (fs::exists(codebase / "guest_image.bin") && !fs::exists(out / "guest_image.bin"))
+        fs::copy_file(codebase / "guest_image.bin", out / "guest_image.bin",
+                      fs::copy_options::overwrite_existing, ec);
+
     if (fs::exists(out / "obj")) {
         fs::remove_all(out / "obj", ec);
         log += "cleanup: removed output/obj\n";
@@ -259,24 +274,26 @@ void cleanup_after_build(const std::string& project_dir, const fs::path& out, st
         log += "cleanup: removed output/src\n";
         live_log("cleanup: removed output/src\n");
     }
-    for (const char* name : { "build.ninja", "build_msvc.bat", "link_rt.rsp", "link_game.rsp", "build_cancel.flag" }) {
+    for (const char* name : {
+        "build.ninja", "build_msvc.bat", "link_rt.rsp", "link_game.rsp",
+        "build_cancel.flag", "ps3rt.exp", "ps3rt.lib", "PPSX33.exp", "PPSX33.lib",
+        "PPSX33.ilk", "PPSX33.pdb", "ps3rt.pdb"
+    }) {
         if (fs::exists(out / name)) fs::remove(out / name, ec);
     }
+
     if (fs::exists(codebase)) {
-        for (auto& e : fs::directory_iterator(codebase, ec)) {
-            std::string n = e.path().filename().string();
-            if (n == "lift_report.txt" || n == "analysis_report.txt" || n == "guest_image.bin") continue;
-            fs::remove_all(e.path(), ec);
-        }
+        fs::remove_all(codebase, ec);
+        log += "cleanup: removed codebase/\n";
+        live_log("cleanup: removed codebase/\n");
     }
     if (fs::exists(input)) {
-        for (auto& e : fs::directory_iterator(input, ec)) {
-            std::string n = e.path().filename().string();
-            if (n == "EBOOT.elf") continue;
-            fs::remove_all(e.path(), ec);
-        }
+        fs::remove_all(input, ec);
+        log += "cleanup: removed input/\n";
+        live_log("cleanup: removed input/\n");
     }
-    log += "cleanup: done (exe/dll kept)\n";
+
+    log += "cleanup: done — layout: reports+build_log at root, runtime package in output/\n";
     live_log("cleanup: done\n");
 }
 
