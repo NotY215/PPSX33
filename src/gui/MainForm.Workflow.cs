@@ -8,23 +8,23 @@ public sealed partial class MainForm
     bool ShowLegalNotice(string action)
     {
         string body =
-            "PPSX33 — LEGAL NOTICE (required before " + action + ")\r\n\r\n" +
-            "• Use only with software and game data you lawfully own or are licensed to use.\r\n" +
-            "• PPSX33 does NOT contain, use, or distribute proprietary decryption keys.\r\n" +
-            "• PPSX33 does NOT bypass DRM or encryption frameworks by itself.\r\n" +
-            "• We do NOT promote piracy, unauthorized copies, or redistribution of game assets.\r\n" +
-            "• Optional EBOOT handling uses tools YOU provide; PPSX33 does not ship decrypt keys.\r\n" +
-            "• Do NOT distribute generated binaries, dumps, or game data.\r\n" +
-            "• Output EXE / window / branding is \"PPSX33\" — research tool, not an official port.\r\n" +
-            "• You are solely responsible for complying with applicable law.\r\n" +
-            "• Use at your own risk. See LEGAL.md.\r\n\r\n" +
+            "PPSX33 \u2014 LEGAL NOTICE (required before " + action + ")\r\n\r\n" +
+            "\u2022 Use only with software and game data you lawfully own or are licensed to use.\r\n" +
+            "\u2022 PPSX33 does NOT contain, use, or distribute proprietary decryption keys.\r\n" +
+            "\u2022 PPSX33 does NOT bypass DRM or encryption frameworks by itself.\r\n" +
+            "\u2022 We do NOT promote piracy, unauthorized copies, or redistribution of game assets.\r\n" +
+            "\u2022 Optional EBOOT handling uses tools YOU provide; PPSX33 does not ship decrypt keys.\r\n" +
+            "\u2022 Do NOT distribute generated binaries, dumps, or game data.\r\n" +
+            "\u2022 Output EXE / window / branding is \"PPSX33\" \u2014 research tool, not an official port.\r\n" +
+            "\u2022 You are solely responsible for complying with applicable law.\r\n" +
+            "\u2022 Use at your own risk. See LEGAL.md.\r\n\r\n" +
             "Click Yes only if you understand and accept these terms.";
 
-        var r = MessageBox.Show(this, body, "PPSX33 — Legal acknowledgment",
+        var r = MessageBox.Show(this, body, "PPSX33 \u2014 Legal acknowledgment",
             MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
         if (r != DialogResult.Yes)
         {
-            Append("Legal notice declined — " + action + " cancelled.");
+            Append("Legal notice declined \u2014 " + action + " cancelled.");
             SetStatus("Cancelled (legal notice)");
             return false;
         }
@@ -64,8 +64,8 @@ public sealed partial class MainForm
         _gfxUnlocked = false;
         _liftChunks = 0;
         Append(log);
-        Append("ELF loaded — Decompile is now available.");
-        SetStatus("Project ready — Decompile next");
+        Append("ELF loaded \u2014 Decompile is now available.");
+        SetStatus("Project ready \u2014 Decompile next");
         UpdateButtons();
     }
 
@@ -115,20 +115,20 @@ public sealed partial class MainForm
 
     void CopyToGameFolder() {
         if (_projectDir == null) return;
-        Append("Copy to game folder — select the game folder (EBOOT.BIN is found automatically)");
+        Append("Copy to game folder \u2014 select the game folder (EBOOT.BIN is found automatically)");
         using var fbd = new FolderBrowserDialog {
-            Description = "Select game folder (EBOOT.BIN will be located automatically)",
+            Description = "Select game folder (files go next to EBOOT.BIN, e.g. PS3_GAME\\USRDIR)",
             UseDescriptionForTitle = true
         };
-        if (!string.IsNullOrWhiteSpace(_settings.LastGameFolderPath) &&
-            Directory.Exists(_settings.LastGameFolderPath))
-        {
-            try { fbd.InitialDirectory = _settings.LastGameFolderPath; } catch { }
-        }
-        else if (!string.IsNullOrWhiteSpace(_settings.LastGamesRootPath) &&
-                 Directory.Exists(_settings.LastGamesRootPath))
+        if (!string.IsNullOrWhiteSpace(_settings.LastGamesRootPath) &&
+            Directory.Exists(_settings.LastGamesRootPath))
         {
             try { fbd.InitialDirectory = _settings.LastGamesRootPath; } catch { }
+        }
+        else if (!string.IsNullOrWhiteSpace(_settings.LastGameFolderPath) &&
+                 Directory.Exists(_settings.LastGameFolderPath))
+        {
+            try { fbd.InitialDirectory = _settings.LastGameFolderPath; } catch { }
         }
         if (fbd.ShowDialog() != DialogResult.OK) return;
 
@@ -139,41 +139,49 @@ public sealed partial class MainForm
             Append("No EBOOT.BIN found under: " + selected);
             MessageBox.Show(this,
                 "Could not find EBOOT.BIN in the selected folder.\n\n" +
-                "Select the folder that contains your PS3 game dump (or USRDIR).",
+                "Select the folder that contains your PS3 game dump\n" +
+                "(e.g. E:\\GAMES_PS3\\God of War III).",
                 "PPSX33", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
-        string gameFolder = Path.GetDirectoryName(eboot) ?? selected;
-        string name = Path.GetFileName(gameFolder);
-        if (name.Equals("USRDIR", StringComparison.OrdinalIgnoreCase))
+        // ALWAYS copy next to EBOOT.BIN (typically ...\\PS3_GAME\\USRDIR)
+        string ebootDir = Path.GetDirectoryName(eboot) ?? selected;
+
+        // Settings: remember USRDIR as LastGameFolderPath, parent game title folder as root
+        string displayRoot = ebootDir;
+        string? parent = Path.GetDirectoryName(ebootDir);
+        if (parent != null)
         {
-            string? up = Path.GetDirectoryName(gameFolder);
-            if (up != null)
+            string parentName = Path.GetFileName(parent);
+            if (parentName.Equals("PS3_GAME", StringComparison.OrdinalIgnoreCase))
             {
-                string upName = Path.GetFileName(up);
-                if (upName.Equals("PS3_GAME", StringComparison.OrdinalIgnoreCase))
-                    gameFolder = Path.GetDirectoryName(up) ?? up;
-                else
-                    gameFolder = up;
+                string? titleRoot = Path.GetDirectoryName(parent);
+                if (!string.IsNullOrEmpty(titleRoot))
+                    displayRoot = titleRoot; // e.g. E:\GAMES_PS3\God of War III
+            }
+            else if (Path.GetFileName(ebootDir).Equals("USRDIR", StringComparison.OrdinalIgnoreCase))
+            {
+                displayRoot = parent;
             }
         }
-        string? gamesRoot = Path.GetDirectoryName(gameFolder);
-        if (string.IsNullOrEmpty(gamesRoot)) gamesRoot = gameFolder;
+        string? gamesRoot = Path.GetDirectoryName(displayRoot);
+        if (string.IsNullOrEmpty(gamesRoot)) gamesRoot = displayRoot;
 
-        _settings.LastGameFolderPath = gameFolder;
-        _settings.LastGamesRootPath = gamesRoot;
+        _settings.LastGameFolderPath = ebootDir;   // actual run/copy dir (USRDIR)
+        _settings.LastGamesRootPath = gamesRoot;   // e.g. E:\GAMES_PS3
         _settings.LastEbootPath = eboot;
         _settings.LastBinPath = eboot;
         _settings.LastOutputFolderPath = Path.Combine(_projectDir, "output");
         SaveSettings();
 
         Append("EBOOT.BIN: " + eboot);
-        Append("Game folder: " + gameFolder);
+        Append("Copy destination (next to EBOOT): " + ebootDir);
+        Append("Game title folder: " + displayRoot);
         Append("Games root saved: " + gamesRoot);
 
         string outDir = Path.Combine(_projectDir, "output");
-        string dest = gameFolder;
+        string dest = ebootDir; // MUST be USRDIR / folder containing EBOOT.BIN
         string[] required = {
             "PPSX33.exe", "ps3rt.dll", "guest_image.bin", "pad_map.json"
         };
@@ -192,8 +200,8 @@ public sealed partial class MainForm
             Append("  + " + bn);
             n++;
         }
-        if (n == 0) Append("Nothing to copy — build first.");
-        else Append("Copied " + n + " file(s) to " + dest + " — run PPSX33.exe from that folder.");
+        if (n == 0) Append("Nothing to copy \u2014 build first.");
+        else Append("Copied " + n + " file(s) to " + dest + " \u2014 run PPSX33.exe from that folder (next to EBOOT.BIN).");
     }
 
     void StopGame() {

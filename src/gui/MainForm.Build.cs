@@ -26,7 +26,7 @@ public sealed partial class MainForm
     }
     void SetStatus(string s, bool busy = false, int? percent = null, string? eta = null) {
         if (InvokeRequired) { BeginInvoke(() => SetStatus(s, busy, percent, eta)); return; }
-        _status.Text = string.IsNullOrEmpty(eta) ? s : s + "  ·  " + eta;
+        _status.Text = string.IsNullOrEmpty(eta) ? s : s + "  \u00b7  " + eta;
         if (percent.HasValue) { _progress.Style = ProgressBarStyle.Continuous; _progress.Value = Math.Clamp(percent.Value, 0, 100); }
         else if (busy) _progress.Style = ProgressBarStyle.Marquee;
         else { _progress.Style = ProgressBarStyle.Continuous; _progress.Value = 0; }
@@ -42,15 +42,15 @@ public sealed partial class MainForm
         _btnCopy.Enabled = _canCopy && !locked;
         _btnCancel.Enabled = locked || _gameProc != null;
         _btnCancel.Text = _building ? "Stop / Cancel Build" : "Stop Game";
-        // Options: graphics + PPU threads also locked while building
-        _gfx.Enabled = !locked;
+        // Graphics unlocked only after successful Decompile; locked during build
+        _gfx.Enabled = _gfxUnlocked && !locked;
         _threads.Enabled = !locked;
         if (_btnRpcs3 != null) _btnRpcs3.Enabled = !locked;
     }
     void SaveSettings() { try { _settings.Save(); } catch { } }
     void UpdateRpcs3Button() {
         if (_btnRpcs3 == null) return;
-        _btnRpcs3.Text = string.IsNullOrEmpty(_settings.Rpcs3Path) ? "RPCS3 path…" : "RPCS3 set";
+        _btnRpcs3.Text = string.IsNullOrEmpty(_settings.Rpcs3Path) ? "RPCS3 path\u2026" : "RPCS3 set";
     }
 
     void NotifyBuildComplete(bool success)
@@ -64,8 +64,9 @@ public sealed partial class MainForm
                 MessageBox.Show(this,
                     "Build completed successfully.\n\n" +
                     "Run and Copy to game folder are now unlocked.\n" +
-                    "Copy places PPSX33.exe + required runtime files next to EBOOT.BIN.",
-                    "PPSX33 — Build complete",
+                    "Copy places PPSX33.exe + required files next to EBOOT.BIN\n" +
+                    "(typically ...\\PS3_GAME\\USRDIR).",
+                    "PPSX33 \u2014 Build complete",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
             }
@@ -73,7 +74,7 @@ public sealed partial class MainForm
             {
                 MessageBox.Show(this,
                     "Build failed. Check the Console tab and build_log for details.",
-                    "PPSX33 — Build failed",
+                    "PPSX33 \u2014 Build failed",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -92,8 +93,8 @@ public sealed partial class MainForm
         try { if (File.Exists(livePath)) File.Delete(livePath); } catch { }
 
         Native.BeginBuild();
-        Append("Build started — live console follows:");
-        SetStatus("Building…", true, 0, "ETA —");
+        Append("Build started \u2014 live console follows:");
+        SetStatus("Building\u2026", true, 0, "ETA \u2014");
 
         var start = DateTime.UtcNow;
         long readPos = 0;
@@ -130,13 +131,13 @@ public sealed partial class MainForm
             double elapsed = (DateTime.UtcNow - start).TotalSeconds;
             int denom = totalSteps > 0 ? totalSteps : Math.Max(stepsDone + 1, 1);
             int pct = Math.Clamp((int)(100.0 * stepsDone / denom), 0, 99);
-            string eta = "ETA —";
+            string eta = "ETA \u2014";
             if (stepsDone >= 2 && elapsed > 1.5) {
                 int remain = (int)Math.Max(0, (totalSteps - stepsDone) * (elapsed / stepsDone));
                 eta = remain >= 60 ? $"ETA {remain / 60}m {remain % 60}s" : $"ETA {remain}s";
             }
             string totLabel = totalSteps > 0 ? totalSteps.ToString() : "?";
-            SetStatus($"Building… {stepsDone}/{totLabel}", true, pct, eta);
+            SetStatus($"Building\u2026 {stepsDone}/{totLabel}", true, pct, eta);
             if (_buildCancelRequested) Native.CancelBuild();
         }
 
@@ -158,7 +159,7 @@ public sealed partial class MainForm
         if (ok) {
             _canCopy = true; _canRun = true;
             SetStatus("Building successful", false, 100, "");
-            Append("Building successful — Run and Copy unlocked.");
+            Append("Building successful \u2014 Run and Copy unlocked.");
         } else if (_buildCancelRequested) {
             SetStatus("Build cancelled");
             Append("Build cancelled.");
@@ -173,8 +174,8 @@ public sealed partial class MainForm
         _buildCancelRequested = true;
         _cts?.Cancel();
         Native.CancelBuild(); // writes flag + taskkill process tree
-        Append("Build cancel requested — stopping compiler…");
-        SetStatus("Cancelling build…", true);
+        Append("Build cancel requested \u2014 stopping compiler\u2026");
+        SetStatus("Cancelling build\u2026", true);
         await Task.Delay(500);
         _building = false; _busy = false; UpdateButtons();
         Append("Build cancelled.");
@@ -191,10 +192,10 @@ public sealed partial class MainForm
         finally {
             if (afterLift && ok) { _canBuild = true; _gfxUnlocked = true; _liftChunks = Math.Max(1, _liftChunks); Append("Lift chunks tracked: " + _liftChunks); }
             if (afterBuild && ok) { _canCopy = true; _canRun = true; }
-            string workName = status.Contains("Decompil", StringComparison.OrdinalIgnoreCase) ? "Decompiling" : status.Contains("Build", StringComparison.OrdinalIgnoreCase) ? "Building" : status.TrimEnd('…', '.', ' ');
+            string workName = status.Contains("Decompil", StringComparison.OrdinalIgnoreCase) ? "Decompiling" : status.Contains("Build", StringComparison.OrdinalIgnoreCase) ? "Building" : status.TrimEnd('\u2026', '.', ' ');
             Append(ok ? workName + " successful." : workName + " failed.");
-            if (ok && afterLift) Append("Decompiling successful — Build and Graphics backend unlocked.");
-            if (ok && afterBuild) Append("Building successful — Run and Copy unlocked.");
+            if (ok && afterLift) Append("Decompiling successful \u2014 Build and Graphics backend unlocked.");
+            if (ok && afterBuild) Append("Building successful \u2014 Run and Copy unlocked.");
             _busy = false; UpdateButtons();
             SetStatus(ok ? workName + " done" : workName + " failed");
         }

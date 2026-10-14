@@ -214,24 +214,82 @@ static void scan_one_pattern(const char* pattern) {
 #endif
 }
 
+// Recursive shallow scan for .psarc under a root (max depth 3)
+static void scan_psarc_recursive(const char* root, int depth) {
+#ifdef _WIN32
+    if (!root || !*root || depth > 3) return;
+    char pattern[560];
+    std::snprintf(pattern, sizeof(pattern), "%s\\*", root);
+    WIN32_FIND_DATAA fd;
+    HANDLE h = FindFirstFileA(pattern, &fd);
+    if (h == INVALID_HANDLE_VALUE) return;
+    do {
+        if (fd.cFileName[0] == '.' && (fd.cFileName[1] == 0 || (fd.cFileName[1] == '.' && fd.cFileName[2] == 0)))
+            continue;
+        char full[560];
+        std::snprintf(full, sizeof(full), "%s\\%s", root, fd.cFileName);
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            scan_psarc_recursive(full, depth + 1);
+        } else {
+            size_t len = std::strlen(fd.cFileName);
+            if (len >= 6 && _stricmp(fd.cFileName + len - 6, ".psarc") == 0) {
+                PsarcArchive a;
+                if (psarc_load_toc(full, a))
+                    g_psarcs.push_back(std::move(a));
+            } else if (len >= 4 && _stricmp(fd.cFileName + len - 4, ".rpf") == 0) {
+                ps3rt_log("[rpf] found %s\n", full);
+            }
+        }
+    } while (FindNextFileA(h, &fd));
+    FindClose(h);
+#else
+    (void)root; (void)depth;
+#endif
+}
+
 static void psarc_scan_game_root() {
     ensure_game_root();
     g_psarcs.clear();
 #ifdef _WIN32
     char pattern[560];
+    // When EXE is in USRDIR (next to EBOOT.BIN), scan here first
     const char* globs[] = {
         "%s\\*.psarc",
-        "%s\\USRDIR\\*.psarc",
         "%s\\*.rpf",
-        "%s\\USRDIR\\*.rpf",
-        "%s\\PS3_GAME\\USRDIR\\*.psarc",
         "%s\\data\\*.psarc",
+        "%s\\DATA\\*.psarc",
+        "%s\\USRDIR\\*.psarc",
+        "%s\\PS3_GAME\\USRDIR\\*.psarc",
         nullptr
     };
     for (int i = 0; globs[i]; ++i) {
         std::snprintf(pattern, sizeof(pattern), globs[i], g_game_root);
         scan_one_pattern(pattern);
     }
+    // Shallow recursive scan under game_root (finds nested packs)
+    scan_psarc_recursive(g_game_root, 0);
+
+    // If game_root is USRDIR, also scan parent PS3_GAME and title root lightly
+    char parent[520] = {};
+    std::snprintf(parent, sizeof(parent), "%s", g_game_root);
+    char* slash = strrchr(parent, '\\');
+    if (slash) {
+        *slash = 0;
+        scan_one_pattern((std::snprintf(pattern, sizeof(pattern), "%s\\*.psarc", parent), pattern));
+        // If parent is PS3_GAME, go one more level up for title root assets
+        const char* base = strrchr(parent, '\\');
+        const char* leaf = base ? base + 1 : parent;
+        if (leaf && _stricmp(leaf, "PS3_GAME") == 0) {
+            char title[520];
+            std::snprintf(title, sizeof(title), "%s", parent);
+            char* s2 = strrchr(title, '\\');
+            if (s2) {
+                *s2 = 0;
+                scan_one_pattern((std::snprintf(pattern, sizeof(pattern), "%s\\*.psarc", title), pattern));
+            }
+        }
+    }
+
     ps3rt_log("[fs] asset scan done root=%s  psarcs=%zu\n", g_game_root, g_psarcs.size());
 #endif
 }
@@ -381,4 +439,10 @@ PS3RT_API int ps3rt_fs_dispatch(PPUContext* c, uint32_t nid) {
         c->gpr[3] = 0;
         return 0;
     }
+}
+
+// Boot-time asset scan export (call early so log shows packs before first open)
+PS3RT_API void ps3rt_assets_boot_scan(void) {
+    std::lock_guard<std::mutex> lk(g_fs_mu);
+    psarc_scan_game_root();
 }
