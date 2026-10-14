@@ -104,22 +104,6 @@ static void gcm_inject_clear_draw() {
     if (s_log < 3) { ps3rt_log("[gcm] inject clear+draw col=0x%06X\n", col); ++s_log; }
 }
 
-static int prx_module_kind(const char* mod) {
-    if (!mod) return 0;
-    if (std::strstr(mod, "cellGcm") || std::strstr(mod, "cellRsx") || std::strstr(mod, "sys_rsx")) return 1;
-    if (std::strstr(mod, "cellFs") || std::strstr(mod, "sys_fs")) return 2;
-    if (std::strstr(mod, "cellSpurs") || std::strstr(mod, "sys_spu")) return 3;
-    if (std::strstr(mod, "cellAudio")) return 4;
-    if (std::strstr(mod, "cellNet") || std::strstr(mod, "sys_net")) return 5;
-    if (std::strstr(mod, "cellSysutil") || std::strstr(mod, "cellMsgDialog")) return 6;
-    if (std::strstr(mod, "cellSysmodule")) return 7;
-    if (std::strstr(mod, "cellPad") || std::strstr(mod, "cellKb") || std::strstr(mod, "cellMouse")) return 8;
-    if (std::strstr(mod, "cellSsl") || std::strstr(mod, "cellHttp")) return 9;
-    if (std::strstr(mod, "cellRtc") || std::strstr(mod, "sys_time")) return 10;
-    if (std::strstr(mod, "cellSaveData") || std::strstr(mod, "cellGame")) return 11;
-    return 0;
-}
-
 static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
     if (!c) return -1;
     const NidEntry* e = nid_lookup(maybe_nid);
