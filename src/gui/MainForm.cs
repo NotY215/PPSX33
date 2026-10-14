@@ -145,25 +145,27 @@ public sealed partial class MainForm : Form
             "PPSX33 — Roadmap (Final package phase)\r\n" +
             "========================================\r\n\r\n" +
             "DONE\r\n" +
-            "  I–XVIII   Core recompiler, HLE stubs, GUI workflow\r\n" +
-            "  XIX       Build pipeline (MSVC, live log, cancel)\r\n" +
+            "  I–XIX     Core recompiler, HLE, RSX host, audio/pad, pipeline\r\n" +
             "  XX-A      Runtime package: EXE + ps3rt.dll + guest_image\r\n" +
-            "  XX-B      cellFs + full PSARC TOC / virtual file streaming\r\n" +
-            "  XX-C      Copy to game folder (full runtime set)\r\n" +
+            "  XX-B      cellFs + PSARC TOC / zlib blocks\r\n" +
+            "  XX-C      Copy to game folder (auto-find EBOOT.BIN)\r\n" +
             "  XX-D      Controller map → pad_map.json\r\n" +
-            "  XX-E      Legal / TERMS first-run gate\r\n\r\n" +
+            "  XX-E      Legal / TERMS first-run (links in system browser)\r\n" +
+            "  XX-F      Post-build layout (reports at root; output/ runtime only)\r\n" +
+            "  XX-G      Named run logs (in_game_folder / outside_game)\r\n\r\n" +
+            "PENDING\r\n" +
+            "  XX-H      Full playable pass (title → in-game UI / assets / audio)\r\n\r\n" +
             "WORKFLOW\r\n" +
-            "  1. Load decrypted ELF\r\n" +
+            "  1. Load decrypted ELF (or Decrypt EBOOT via your RPCS3)\r\n" +
             "  2. Decompile (lift chunks)\r\n" +
             "  3. Set controller keys (before Build)\r\n" +
             "  4. Build → PPSX33.exe + ps3rt.dll in output/\r\n" +
             "  5. Copy to game folder (next to EBOOT.BIN)\r\n" +
             "  6. Run from that folder\r\n\r\n" +
-            "NEXT (research)\r\n" +
-            "  · RSX fidelity / more GCM methods\r\n" +
-            "  · SPU coverage\r\n" +
-            "  · Full PSARC zlib block decompress\r\n" +
-            "  · Save / trophy HLE depth\r\n\r\n" +
+            "KNOWN RESEARCH GAPS\r\n" +
+            "  · SPU: mailbox HLE only — no full ISA / MFC / SPURS\r\n" +
+            "  · Solid blue screen = guest never reached real draws / cellFs\r\n" +
+            "  · Report SPU stalls via GitHub issue template + attach log\r\n\r\n" +
             "PPSX33 is a research toolkit — not a retail port.\r\n";
         _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(100, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab;
         AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap);

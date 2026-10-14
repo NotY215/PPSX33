@@ -13,7 +13,7 @@ Research PS3 static recompiler / HLE runtime. Not a retail port.
 | XX-E | **Done** | Legal / TERMS first-run; links open in system browser |
 | XX-F | **Done** | Post-build layout: reports + build_log at project root; output/ = runtime only; no input/codebase |
 | XX-G | **Done** | Named run logs: ppsx33_log_in_game_folder_* / ppsx33_log_outside_game_* |
-| XX-H | Pending | Full playable pass (title to in-game UI / audio / assets) |
+| XX-H | **Pending** | Full playable pass (title to in-game UI / audio / assets) |
 
 ## Earlier phases (I-XIX)
 
@@ -63,11 +63,17 @@ projects/<GameName>/
 - LastOutputFolderPath
 - Graphics, threads, key map, terms flags
 
-**Copy to game folder:** user selects a game dump folder; PPSX33 finds EBOOT.BIN automatically and stores the game folder + parent games root (e.g. E:/Games).
+**Copy to game folder:** user selects a game dump folder; PPSX33 finds EBOOT.BIN automatically and copies runtime files into the directory that contains EBOOT.BIN (or its parent game root). Paths are stored in AppData.
 
-## Why UI / assets / sound may be missing
+## SPU status (research)
 
-Logs that show only GCM null-import stubs, null-loop soft_breaks, and PC=0 halt mean the guest never reached cellFs / cellAudio / real draw submission. Fixing that requires deeper PRX/OPD fidelity — tracked under XX-H.
+- Implemented: mailbox HLE / auto-complete, basic SPUContext array.
+- Not implemented: full SPU ISA interpreter/JIT, vector/FP ops, MFC DMA semantics, SPURS scheduling, stop/exception model.
+- App shows a permanent launch notice. Report missing SPU behaviour with the **SPU coverage** issue template and attach the latest run log.
+
+## Why UI / assets / sound may be missing (XX-H)
+
+A solid blue window with only GCM null-import stubs, null-loop soft_breaks, and PC=0 halt means the guest never reached cellFs / cellAudio / real draw submission. Deeper PRX/OPD fidelity and control-flow past the null-loop are required — tracked under XX-H.
 
 ## Apply
 

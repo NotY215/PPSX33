@@ -32,18 +32,53 @@ public sealed partial class MainForm
         else { _progress.Style = ProgressBarStyle.Continuous; _progress.Value = 0; }
     }
     void UpdateButtons() {
-        _btnLift.Enabled = _canLift && !_busy;
-        _btnBuild.Enabled = _canBuild && !_busy;
-        _btnRun.Enabled = _canRun && !_busy;
-        _btnCopy.Enabled = _canCopy && !_busy;
-        _btnCancel.Enabled = _busy || _building || _gameProc != null;
+        bool locked = _busy || _building;
+        // Workflow buttons
+        _btnDecrypt.Enabled = !locked;
+        _btnLoad.Enabled = !locked;
+        _btnLift.Enabled = _canLift && !locked;
+        _btnBuild.Enabled = _canBuild && !locked;
+        _btnRun.Enabled = _canRun && !locked;
+        _btnCopy.Enabled = _canCopy && !locked;
+        _btnCancel.Enabled = locked || _gameProc != null;
         _btnCancel.Text = _building ? "Stop / Cancel Build" : "Stop Game";
-        if (_gfxUnlocked) { }
+        // Options: graphics + PPU threads also locked while building
+        _gfx.Enabled = !locked;
+        _threads.Enabled = !locked;
+        if (_btnRpcs3 != null) _btnRpcs3.Enabled = !locked;
     }
     void SaveSettings() { try { _settings.Save(); } catch { } }
     void UpdateRpcs3Button() {
         if (_btnRpcs3 == null) return;
         _btnRpcs3.Text = string.IsNullOrEmpty(_settings.Rpcs3Path) ? "RPCS3 path…" : "RPCS3 set";
+    }
+
+    void NotifyBuildComplete(bool success)
+    {
+        if (IsDisposed) return;
+        if (InvokeRequired) { BeginInvoke(() => NotifyBuildComplete(success)); return; }
+        try
+        {
+            if (success)
+            {
+                MessageBox.Show(this,
+                    "Build completed successfully.\n\n" +
+                    "Run and Copy to game folder are now unlocked.\n" +
+                    "Copy places PPSX33.exe + required runtime files next to EBOOT.BIN.",
+                    "PPSX33 — Build complete",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            else if (!_buildCancelRequested)
+            {
+                MessageBox.Show(this,
+                    "Build failed. Check the Console tab and build_log for details.",
+                    "PPSX33 — Build failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+        catch { }
     }
 
     async Task BuildWithProgress() {
@@ -131,6 +166,7 @@ public sealed partial class MainForm
             SetStatus("Building failed");
         }
         _building = false; _busy = false; UpdateButtons();
+        NotifyBuildComplete(ok);
     }
 
     async Task ConfirmCancelBuildAsync() {

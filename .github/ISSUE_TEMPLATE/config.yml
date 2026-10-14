@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: PPSX33 documentation
+    url: https://github.com/NotY215/PPSX33/blob/main/README.md
+    about: Read the README, ROADMAP, and LEGAL notes before opening an issue.
+  - name: Project website
+    url: https://notyvos.gt.tc/PPSX3/
+    about: Project page and release notes.

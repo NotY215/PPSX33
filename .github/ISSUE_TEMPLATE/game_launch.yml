@@ -1,0 +1,59 @@
+name: Game launching / boot
+description: Report boot failures, early halt, solid blue, or missing title screen
+title: "[Launch] "
+labels: ["launch", "runtime"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For boot / early runtime issues (null-loop, PC=0, solid blue, no assets).
+        **Attach the latest run log.** No game dumps or keys.
+  - type: dropdown
+    id: stage
+    attributes:
+      label: How far does it get?
+      options:
+        - EXE starts, solid blue only
+        - Window opens then closes / crash
+        - Title / logo appears briefly
+        - Stuck in null-loop / soft_breaks (see log)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: game
+    attributes:
+      label: Game / title
+    validations:
+      required: true
+  - type: input
+    id: ppsx33-version
+    attributes:
+      label: PPSX33 version / commit
+      placeholder: e.g. main @ abc1234 or Alpha-01
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1. Load ELF / Decrypt EBOOT
+        2. Decompile
+        3. Build
+        4. Copy to game folder / Run
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Run log (required)
+      description: Paste or attach ppsx33_log_in_game_folder_* / ppsx33_log_outside_game_*
+      render: text
+    validations:
+      required: true
+  - type: checkboxes
+    id: legal
+    attributes:
+      label: Legal confirmation
+      options:
+        - label: I only use software and data I lawfully own. No dumps/keys uploaded.
+          required: true

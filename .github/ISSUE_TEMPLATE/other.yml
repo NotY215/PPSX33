@@ -1,0 +1,40 @@
+name: Other issue
+description: GUI, documentation, packaging, or anything not covered above
+title: "[Other] "
+labels: ["other"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Prefer a more specific template when possible (SPU, Launch, Perf, Build).
+        Attach the latest log if the issue is runtime-related.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - GUI / UX
+        - Settings / paths / Copy to game folder
+        - Documentation / ROADMAP / LEGAL
+        - Packaging / release
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log (if applicable)
+      render: text
+  - type: checkboxes
+    id: legal
+    attributes:
+      label: Legal confirmation
+      options:
+        - label: I will not upload game dumps, decrypted ELFs, keys, or copyrighted assets.
+          required: true

@@ -1,0 +1,57 @@
+name: SPU coverage
+description: Report missing or incorrect SPU behaviour (ISA, MFC, mailbox, SPURS, etc.)
+title: "[SPU] "
+labels: ["spu", "research"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template when the game needs SPU features that PPSX33 does not fully implement yet.
+        **Attach your latest run log** (`ppsx33_log_in_game_folder_*` or `ppsx33_log_outside_game_*`).
+        Do **not** attach game dumps, ELFs, keys, or copyrighted assets.
+  - type: dropdown
+    id: spu-area
+    attributes:
+      label: SPU area
+      description: Which subsystem is involved?
+      multiple: true
+      options:
+        - Instruction execution / interpreter / JIT
+        - Vector / floating-point ops
+        - MFC / DMA
+        - Mailbox / signal
+        - SPURS / scheduling
+        - Stop / exception / interrupt
+        - Other (describe below)
+    validations:
+      required: true
+  - type: input
+    id: game
+    attributes:
+      label: Game / title (authorized dump only)
+      placeholder: e.g. God of War III (your own dump)
+    validations:
+      required: true
+  - type: textarea
+    id: symptoms
+    attributes:
+      label: Symptoms
+      description: What do you see? (hang, missing audio, solid blue, log lines, etc.)
+      placeholder: e.g. Solid blue screen; log shows soft_breaks at PC=0x...
+    validations:
+      required: true
+  - type: textarea
+    id: log-excerpt
+    attributes:
+      label: Relevant log excerpt
+      description: Paste key lines (or attach the full log file).
+      render: text
+    validations:
+      required: true
+  - type: checkboxes
+    id: legal
+    attributes:
+      label: Legal confirmation
+      options:
+        - label: I only use software and data I lawfully own or am authorized to process. I will not upload dumps, keys, or copyrighted game files.
+          required: true

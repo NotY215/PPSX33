@@ -1,0 +1,26 @@
+name: Build / compile error
+description: MSVC link errors, compile failures, missing symbols
+title: "[Build] "
+labels: ["build"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Paste the **full** console / build_log section with the error (LNK / Cxxxx).
+        Do not attach game files.
+  - type: input
+    id: vs-version
+    attributes:
+      label: Visual Studio / MSVC version
+      placeholder: e.g. VS 2026 Community 18.x / MSVC 14.51
+  - type: textarea
+    id: error
+    attributes:
+      label: Exact error output
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Project name / what you changed before the error

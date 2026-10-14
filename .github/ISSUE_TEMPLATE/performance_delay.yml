@@ -1,0 +1,39 @@
+name: Performance / delays
+description: Slow build, long ETA, stalls, or runtime performance issues
+title: "[Perf] "
+labels: ["performance"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report build times, ETA inaccuracy, runtime stalls, or slowdowns.
+        Attach build_log and/or run log when possible.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type
+      options:
+        - Build too slow / ETA wrong
+        - Build cancel leaves process running
+        - Runtime stall / freeze
+        - Frame rate / present lag
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: machine
+    attributes:
+      label: CPU / cores / RAM (approx)
+      placeholder: e.g. Ryzen 7 5800X, 32 GB
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Observed time, step where it stalls, console messages.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log excerpt or attachment note
+      render: text
