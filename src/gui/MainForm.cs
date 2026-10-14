@@ -141,9 +141,30 @@ public sealed partial class MainForm : Form
         _project.Text = "PROJECT  /  NO PROJECT LOADED"; _project.ForeColor = TextPri; _project.BackColor = Color.FromArgb(12, 22, 47);
         _project.Dock = DockStyle.Fill; _project.TextAlign = ContentAlignment.MiddleLeft; _project.Padding = new Padding(12, 0, 0, 0);
         StyleTextBox(_log); StyleTextBox(_report); StyleTextBox(_roadmap);
-        _roadmap.Text = "PPSX33 · Phase XIX · Load ELF → Decompile → Build → Run\r\n" +
-            "I–XVIII Done  XIX Perf/batch  XX Playable\r\n" +
-            "Controller tab — set keys before Build; hides after Build.\r\n";
+        _roadmap.Text =
+            "PPSX33 — Roadmap (Final package phase)\r\n" +
+            "========================================\r\n\r\n" +
+            "DONE\r\n" +
+            "  I–XVIII   Core recompiler, HLE stubs, GUI workflow\r\n" +
+            "  XIX       Build pipeline (MSVC, live log, cancel)\r\n" +
+            "  XX-A      Runtime package: EXE + ps3rt.dll + guest_image\r\n" +
+            "  XX-B      cellFs / PSARC asset mapping (game folder)\r\n" +
+            "  XX-C      Copy to game folder (full runtime set)\r\n" +
+            "  XX-D      Controller map → pad_map.json\r\n" +
+            "  XX-E      Legal / TERMS first-run gate\r\n\r\n" +
+            "WORKFLOW\r\n" +
+            "  1. Load decrypted ELF\r\n" +
+            "  2. Decompile (lift chunks)\r\n" +
+            "  3. Set controller keys (before Build)\r\n" +
+            "  4. Build → PPSX33.exe + ps3rt.dll in output/\r\n" +
+            "  5. Copy to game folder (next to EBOOT.BIN)\r\n" +
+            "  6. Run from that folder\r\n\r\n" +
+            "NEXT (research)\r\n" +
+            "  · RSX fidelity / more GCM methods\r\n" +
+            "  · SPU coverage\r\n" +
+            "  · Full PSARC block decompress streaming\r\n" +
+            "  · Save / trophy HLE depth\r\n\r\n" +
+            "PPSX33 is a research toolkit — not a retail port.\r\n";
         _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(100, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab;
         AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap);
         BuildControllerTab();

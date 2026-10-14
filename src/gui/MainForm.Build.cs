@@ -126,6 +126,7 @@ public sealed partial class MainForm
             Append("Building successful — Run and Copy unlocked.");
         } else if (_buildCancelRequested) {
             SetStatus("Build cancelled");
+            Append("Build cancelled.");
         } else {
             SetStatus("Building failed");
         }
@@ -135,10 +136,13 @@ public sealed partial class MainForm
     async Task ConfirmCancelBuildAsync() {
         _buildCancelRequested = true;
         _cts?.Cancel();
-        Native.CancelBuild();
+        Native.CancelBuild(); // writes flag + taskkill process tree
+        Append("Build cancel requested — stopping compiler…");
+        SetStatus("Cancelling build…", true);
+        await Task.Delay(500);
         _building = false; _busy = false; UpdateButtons();
-        Append("Build cancel requested…");
-        await Task.CompletedTask;
+        Append("Build cancelled.");
+        SetStatus("Build cancelled");
     }
 
     async Task RunStep(string status, Func<CancellationToken, bool> work, bool afterLift = false, bool afterBuild = false) {
