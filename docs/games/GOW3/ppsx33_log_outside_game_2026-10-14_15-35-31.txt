@@ -1,11 +1,11 @@
 PPSX33 run log
-mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-14_15-03-30.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-14_15-03-30.txt
+mode=launch_outside_game
+file=E:\PPSX33\build\dist\projects\GOW 3\output\ppsx33_log_outside_game_2026-10-14_15-35-31.txt
+[ps3rt] log file (outside_game): E:\PPSX33\build\dist\projects\GOW 3\output\ppsx33_log_outside_game_2026-10-14_15-35-31.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
-[ps3rt] PS3IMG1 loaded from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\guest_image.bin (2 segments)
+[ps3rt] PS3IMG1 loaded from E:\PPSX33\build\dist\projects\GOW 3\output\guest_image.bin (2 segments)
 [stage] MEM map end
 [save] root=C:\Users\shrey\OneDrive\Documents\GOW3\PS3_SAVEDATA (PS3-native only; no savestates)
 [stage] BOOT end
@@ -198,9 +198,6 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] flip #30 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
 [rsx] flip #31 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
 [rsx] flip #32 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
-[ps3] heartbeat steps=262144 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
-[rsx] flip #257 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=524288 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
 [rsx] window closed by user — exiting
 [ps3rt] force exit
 
