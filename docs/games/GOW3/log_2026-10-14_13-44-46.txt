@@ -1,0 +1,198 @@
+PPSX33 run log
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\log_2026-10-14_13-44-46.txt
+[ps3rt] log file: E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\log_2026-10-14_13-44-46.txt
+[stage] BOOT start
+[ps3rt] warning: no guest_image.bin mapped
+[save] root=C:\Users\shrey\OneDrive\Documents\GOW3\PS3_SAVEDATA (PS3-native only; no savestates)
+[stage] BOOT end
+[stage] PPU run start
+[ps3] Phase XIV wild-pc 0x0 -> 0x10250
+[ps3] Phase XIV wild-pc 0x0 -> 0x33b1a0
+[ps3] Phase XIV wild-pc 0x0 -> 0x33b1a0
+[ps3] Phase XI force-out pc=0xf0ffef0 -> 0x33b1a0
+[ps3] Phase XI force-out pc=0xf0fff90 -> 0x33b1a0
+[ps3] Phase XIV wild-pc 0x0 -> 0x33b1a0
+[stage] PPU progress start
+[stage] SPU progress end
+[pad] XInput loaded from xinput1_4.dll
+[pad] poll#1 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
+[lv2] alloc VA=0x8000000 size=0x1000
+[gcm] control @ 0x8000000
+[lv2] alloc VA=0x8001000 size=0x10000
+[gcm] labels  @ 0x8001000
+[lv2] alloc VA=0x8020000 size=0x100000
+[rsx] D3D11 host present ready 1280x720 (depth+stencil)
+[rsx] init fifo=0x8020000 size=0x100000 backend=1
+[gcm] Phase G state ready fifo=0x8020000 ctrl=0x8000000
+[stage] GCM ready end
+[stage] RUNNING
+[ps3] Phase M touch-progress n=8192
+[ps3] Phase XIV wild-pc 0x0 -> 0x33b1a0
+[ps3] Phase XIV wild-pc 0x0 -> 0x33b1a0
+[ps3] Phase XIV wild-pc 0x0 -> 0x33b1a0
+[pad] poll#2 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
+[ps3] Phase M touch-progress n=16384
+[ps3] Phase XIV wild-pc 0x0 -> 0x33b1a0
+[ps3] Phase XIV wild-pc 0x0 -> 0x33b1a0
+[ps3] Phase XIV wild-pc 0x0 -> 0x33b1a0
+[pad] poll#3 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
+[ps3] Phase M touch-progress n=24576
+[ps3] Phase XIV wild-pc 0x0 -> 0x33b1a0
+[ps3] Phase XIV wild-pc 0x0 -> 0x33b1a0
+[pad] poll#4 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
+[ps3] Phase M touch-progress n=32768
+[ps3] Phase M touch-progress n=40960
+[ps3] Phase M touch-progress n=49152
+[ps3] Phase M touch-progress n=57344
+[ps3] Phase M touch-progress n=65536
+[ps3] Phase M touch-progress n=73728
+[ps3] Phase M touch-progress n=81920
+[ps3] Phase M touch-progress n=90112
+[ps3] Phase M touch-progress n=98304
+[gcm] inject clear+draw col=0x101828
+[rsx] flip #1 draws=0 clears=0 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=0 unknown=0 1280x720
+[ps3] heartbeat steps=262144 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[gcm] Phase XII guest put 0x0 -> 0x20
+[rsx] flip #2 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=524288 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[gcm] Phase XII guest put 0x0 -> 0x20
+[rsx] flip #3 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=786432 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[gcm] Phase XII guest put 0x0 -> 0x20
+[rsx] flip #4 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #5 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=1048576 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[rsx] flip #6 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=1310720 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #7 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=1572864 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #8 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=1835008 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[rsx] flip #9 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #10 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=2097152 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #11 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=2359296 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #12 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=2621440 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[rsx] flip #13 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=2883584 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #14 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #15 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=3145728 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #16 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=3407872 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[rsx] flip #17 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=3670016 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #18 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=3932160 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #19 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] flip #20 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=4194304 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[rsx] flip #21 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[ps3] heartbeat steps=4456448 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #22 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=4718592 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #23 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=4980736 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[rsx] flip #24 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[rsx] flip #25 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=5242880 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #26 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=5505024 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #27 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=5767168 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[rsx] flip #28 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=6029312 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #29 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[rsx] flip #30 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=6291456 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] flip #31 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=6553600 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[rsx] flip #32 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] heartbeat steps=6815744 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=7077888 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=7340032 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=7602176 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=7864320 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=8126464 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=8388608 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=8650752 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=8912896 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=9175040 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=9437184 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=9699328 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=9961472 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=10223616 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=10485760 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=10747904 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=11010048 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=11272192 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=11534336 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=11796480 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=12058624 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=12320768 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=12582912 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=12845056 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=13107200 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=13369344 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=13631488 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=13893632 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=14155776 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=14417920 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=14680064 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=14942208 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=15204352 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=15466496 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=15728640 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=15990784 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=16252928 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=16515072 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=16777216 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=17039360 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=17301504 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=17563648 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=17825792 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=18087936 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=18350080 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=18612224 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=18874368 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=19136512 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=19398656 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=19660800 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=19922944 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=20185088 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=20447232 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=20709376 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=20971520 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=21233664 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=21495808 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=21757952 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=22020096 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=22282240 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=22544384 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=22806528 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=23068672 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=23330816 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=23592960 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=23855104 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=24117248 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=24379392 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=24641536 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=24903680 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=25165824 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=25427968 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=25690112 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=25952256 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=26214400 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=26476544 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=26738688 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=27000832 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=27262976 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=27525120 pc=0x3ca524 lr=0x336660 r2=0x52d6c8 pokes=0 nrban=0
+[ps3] heartbeat steps=27787264 pc=0x0 lr=0x336660 r2=0x0 pokes=0 nrban=0
+[ps3] heartbeat steps=28049408 pc=0x331c30 lr=0x331c30 r2=0x52d6c8 pokes=0 nrban=0
+[rsx] window closed by user — exiting
+[ps3rt] force exit
+
+--- log end ---
