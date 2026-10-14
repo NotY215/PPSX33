@@ -148,7 +148,7 @@ public sealed partial class MainForm : Form
             "  I–XVIII   Core recompiler, HLE stubs, GUI workflow\r\n" +
             "  XIX       Build pipeline (MSVC, live log, cancel)\r\n" +
             "  XX-A      Runtime package: EXE + ps3rt.dll + guest_image\r\n" +
-            "  XX-B      cellFs / PSARC asset mapping (game folder)\r\n" +
+            "  XX-B      cellFs + full PSARC TOC / virtual file streaming\r\n" +
             "  XX-C      Copy to game folder (full runtime set)\r\n" +
             "  XX-D      Controller map → pad_map.json\r\n" +
             "  XX-E      Legal / TERMS first-run gate\r\n\r\n" +
@@ -162,7 +162,7 @@ public sealed partial class MainForm : Form
             "NEXT (research)\r\n" +
             "  · RSX fidelity / more GCM methods\r\n" +
             "  · SPU coverage\r\n" +
-            "  · Full PSARC block decompress streaming\r\n" +
+            "  · Full PSARC zlib block decompress\r\n" +
             "  · Save / trophy HLE depth\r\n\r\n" +
             "PPSX33 is a research toolkit — not a retail port.\r\n";
         _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(100, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab;
