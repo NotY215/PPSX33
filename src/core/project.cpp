@@ -257,13 +257,16 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         if (!e.is_regular_file()) continue;
         std::string n = e.path().filename().string();
         if (n.size() < 5 || n.substr(n.size()-4) != ".cpp") continue;
-        // Only the canonical runtime TUs — do NOT compile ps3rt_hw.cpp / ps3rt_log.cpp
-        // (symbols already live in ps3rt.cpp via ps3rt_b.inl and in-file log).
+        // Canonical runtime TUs only (DLL). Orphan split files must NOT go into the EXE.
         if (n == "ps3rt.cpp" || n == "rsx_stub.cpp" || n == "spu_stub.cpp" ||
-            n == "audio_save.cpp" || n == "assets.cpp")
+            n == "audio_save.cpp" || n == "assets.cpp") {
             rtSrc.push_back(n);
-        else
+        } else if (n == "ps3rt_hw.cpp" || n == "ps3rt_log.cpp") {
+            // symbols already in ps3rt.cpp / ps3rt_b.inl — skip both rt and game
+            continue;
+        } else {
             gameSrc.push_back(n);
+        }
     }
     std::sort(rtSrc.begin(), rtSrc.end());
     std::sort(gameSrc.begin(), gameSrc.end());
