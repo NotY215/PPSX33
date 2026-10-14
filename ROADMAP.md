@@ -1,91 +1,47 @@
 # PPSX33 Roadmap
 
-Research PS3 static recompiler / HLE runtime. Not a retail port.
+## Earlier phases (I–XIX) — testing
+Core recompiler, HLE stubs, RSX host present, audio/pad hooks, build pipeline.
+These are **testing** quality — not final. Regressions can still appear.
 
-## Final package phase (current)
+## Package phase (XX-A … XX-G+) — done
+| ID | Item |
+|----|------|
+| XX-A | Game-named EXE + `ps3rt.dll` + `guest_image.bin` + `pad_map.json` |
+| XX-B | cellFs + PSARC TOC / zlib blocks (partial) |
+| XX-C | Copy into `PS3_GAME/USRDIR` (auto-find EBOOT.BIN) |
+| XX-D | Controller map → `pad_map.json` |
+| XX-E | Legal / TERMS first-run (links open in system browser) |
+| XX-F | Post-build layout (reports at project root; runtime in `output/`) |
+| XX-G | Named run logs; pad log only when game window focused |
 
-| ID | Status | Item |
-|----|--------|------|
-| XX-A | **Done** | Runtime package: game-named EXE + ps3rt.dll + guest_image + pad_map.json |
-| XX-B | **Done** | cellFs + PSARC TOC / virtual open + zlib blocks (via zlib1.dll when present) |
-| XX-C | **Done** | Copy into `PS3_GAME\USRDIR` next to EBOOT.BIN (auto-find; AppData paths) |
-| XX-D | **Done** | Controller map to pad_map.json |
-| XX-E | **Done** | Legal / TERMS first-run; links open in system browser |
-| XX-F | **Done** | Post-build layout: reports + build_log at project root; output/ = runtime only |
-| XX-G | **Done** | Named run logs: `ppsx33_log_in_game_folder_*` / `ppsx33_log_outside_game_*` |
-| XX-H | **Pending** | Full playable pass (title → in-game UI / audio / assets) |
+## Remaining to implement
+| ID | Item |
+|----|------|
+| **XX-H** | Break null-loop / soft GCM — guest past ~`0x33723c` into real cellFs + draws |
+| XX-I | Full `cellGcmSys` HLE (not null import stubs) |
+| XX-J | Asset streaming: PSARC zlib blocks end-to-end |
+| XX-K | SPU ISA interpreter / JIT (today: mailbox completion stub only) |
+| XX-L | MFC / DMA transfers + tags |
+| XX-M | SPURS-like SPU scheduling / concurrency |
+| XX-N | Audio path + title / UI / text on screen |
+| XX-O | ICON0.PNG as window + taskbar icon when run from USRDIR |
 
-## Packaging notes (current)
+## Solid blue screen (current symptom)
+Log shows RSX flips / clears while PPU hits null-loop soft_breaks at ~`0x33723c`, then halt `pc=0x0`.
+Typical causes in this codebase:
+1. Incomplete GCM / import stubs → guest waits forever  
+2. Thread / flip timing vs logic  
+3. Assets not reached (`[fs]` / `[psarc]` absent until cellFs is really called)
 
-- **Output EXE name** = project/game folder name (e.g. `God of War III.exe`), not always `PPSX33.exe`.
-- **Copy to game folder** destination is always the directory that contains `EBOOT.BIN` (typically `PS3_GAME\USRDIR`).
-- **Pad / XInput log** is written only while the game window is focused.
-- **Boot** runs `ps3rt_assets_boot_scan()` after guest image map (PSARC/cellFs readiness).
-- **Window/taskbar icon** can use `PS3_GAME\ICON0.PNG` when present (host `WM_SETICON`).
+**Full SPU ISA + MFC + SPURS is multi-week work**, not a single patch. Track stalls via GitHub issue templates + attach the latest run log.
 
-## Earlier phases (I–XIX)
+## Workflow
+1. Load decrypted ELF (or Decrypt EBOOT via your RPCS3)  
+2. Decompile (lift chunks)  
+3. Set controller keys (before Build)  
+4. Build → `<GameName>.exe` + `ps3rt.dll` in `output/`  
+5. Copy to game folder (into USRDIR next to EBOOT.BIN)  
+6. Run the game-named EXE from USRDIR  
 
-| Phase | Status | Focus |
-|-------|--------|-------|
-| I | **Done** | UI, project pipeline, progress/ETA |
-| II | **Done** | Halt recovery (sticky last_good, wide stack walk) |
-| III | **Done** | LV2 expansion + PRX/NID filter |
-| IV | **Done** | Never hard-halt while last_good exists |
-| V | **Done** | Break null-call loops + restore TOC + real GCM state |
-| VI | **Done** | Import table / OPD resolution + cellGcmSys stub expansion |
-| VII | **Done** | SPU bring-up (mailbox HLE, auto-complete) |
-| VIII | **Done** | RSX command-buffer drain + FIFO method decode |
-| IX | **Done** | D3D11/D3D10 host backend + Present |
-| X | **Done** | Region-ban walk guards + high last_good preference |
-| XI | **Done** | Timestamped run log next to game EXE |
-| XII | **Done** | Honour real guest GCM put; inject only when FIFO stalled |
-| XIII | **Done** | Surfaces / wild-PC recovery / GCM nid=0 / LV2 event queue |
-| XIV | **Done** | Depth / stencil / clear surface fidelity |
-| XV | **Done** | Fixed-function draw path + shader/tex method tracking |
-| XVI | **Done** | Audio (cellAudio / libaudio HLE — waveOut 48 kHz host) |
-| XVII | **Done** | Pad / input full mapping (XInput + keyboard → cellPad) |
-| XVIII | **Done** | PS3-native save/load only (no savestates) |
-| XIX | **Done** | Performance: RSX FIFO batch, coalesced Present |
-
-## Project folder after successful Build
-
-```
-projects/<GameName>/
-  analysis_report.txt
-  lift_report.txt
-  build_log.txt
-  output/
-    <GameName>.exe
-    ps3rt.dll
-    guest_image.bin
-    pad_map.json
-```
-
-`input/` and `codebase/` are removed after Build succeeds.
-
-## Settings (`%APPDATA%/PPSX33/settings.json`)
-
-- Rpcs3Path
-- LastElfPath / LastBinPath
-- LastGameFolderPath / LastGamesRootPath / LastEbootPath
-- LastOutputFolderPath
-- Graphics, threads, key map, terms flags
-
-## SPU status (research)
-
-- Implemented: mailbox HLE / auto-complete, basic `SPUContext` array.
-- Not implemented: full SPU ISA interpreter/JIT, vector/FP ops, MFC DMA, SPURS, stop/exception model.
-- App shows a permanent launch notice. Report missing SPU behaviour with the **SPU coverage** issue template and attach the latest run log.
-
-## Why UI / assets / sound may be missing (XX-H)
-
-A solid blue window with only GCM null-import stubs, null-loop soft_breaks, and PC=0 halt means the guest never reached cellFs / cellAudio / real draw submission. Deeper PRX/OPD fidelity and control-flow past the null-loop are required — tracked under **XX-H**.
-
-## Apply
-
-```bat
-cd /d E:\PPSX33
-git pull origin main
-```
-
-Rebuild All → Decompile → Build → Copy to game folder → run the game-named EXE from `USRDIR`.
+PPSX33 is a research toolkit — not a retail port.

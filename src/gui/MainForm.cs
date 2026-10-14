@@ -142,31 +142,39 @@ public sealed partial class MainForm : Form
         _project.Dock = DockStyle.Fill; _project.TextAlign = ContentAlignment.MiddleLeft; _project.Padding = new Padding(12, 0, 0, 0);
         StyleTextBox(_log); StyleTextBox(_report); StyleTextBox(_roadmap);
         _roadmap.Text =
-            "PPSX33 — Roadmap (Final package phase)\r\n" +
+            "PPSX33 — Roadmap\r\n" +
             "========================================\r\n\r\n" +
-            "DONE\r\n" +
-            "  I–XIX     Core recompiler, HLE, RSX host, audio/pad, pipeline\r\n" +
+            "EARLIER PHASES (I–XIX → testing)\r\n" +
+            "  Core recompiler, HLE stubs, RSX host, audio/pad, pipeline\r\n" +
+            "  Marked TESTING — not final; regressions still possible\r\n\r\n" +
+            "PACKAGE PHASE (XX-A … XX-G+) — done\r\n" +
             "  XX-A      Game-named EXE + ps3rt.dll + guest_image + pad_map.json\r\n" +
-            "  XX-B      cellFs + PSARC TOC / zlib blocks\r\n" +
+            "  XX-B      cellFs + PSARC TOC / zlib blocks (partial)\r\n" +
             "  XX-C      Copy into PS3_GAME\\USRDIR (auto-find EBOOT.BIN)\r\n" +
             "  XX-D      Controller map → pad_map.json\r\n" +
-            "  XX-E      Legal / TERMS first-run (links in system browser)\r\n" +
-            "  XX-F      Post-build layout (reports at root; output/ runtime only)\r\n" +
-            "  XX-G      Named run logs (in_game_folder / outside_game)\r\n" +
-            "  XX-G+     Pad log only when game window focused; asset boot scan\r\n\r\n" +
-            "PENDING\r\n" +
-            "  XX-H      Full playable pass (title → in-game UI / assets / audio)\r\n\r\n" +
+            "  XX-E      Legal / TERMS first-run (system browser links)\r\n" +
+            "  XX-F      Post-build layout (reports at root; output/ runtime)\r\n" +
+            "  XX-G      Named run logs + pad log only when window focused\r\n\r\n" +
+            "REMAINING TO IMPLEMENT\r\n" +
+            "  XX-H      Break null-loop / soft GCM — reach real cellFs + draws\r\n" +
+            "  XX-I      Full cellGcmSys HLE (not null import stubs)\r\n" +
+            "  XX-J      Asset streaming: PSARC zlib blocks end-to-end\r\n" +
+            "  XX-K      SPU ISA interpreter / JIT (currently mailbox stub only)\r\n" +
+            "  XX-L      MFC / DMA transfers + tags\r\n" +
+            "  XX-M      SPURS-like SPU scheduling\r\n" +
+            "  XX-N      Audio path + title/UI/text on screen\r\n" +
+            "  XX-O      ICON0 window/taskbar icon when run from USRDIR\r\n\r\n" +
             "WORKFLOW\r\n" +
             "  1. Load decrypted ELF (or Decrypt EBOOT via your RPCS3)\r\n" +
             "  2. Decompile (lift chunks)\r\n" +
             "  3. Set controller keys (before Build)\r\n" +
             "  4. Build → <GameName>.exe + ps3rt.dll in output/\r\n" +
-            "  5. Copy to game folder (into USRDIR next to EBOOT.BIN)\r\n" +
+            "  5. Copy to game folder (USRDIR next to EBOOT.BIN)\r\n" +
             "  6. Run the game-named EXE from USRDIR\r\n\r\n" +
-            "KNOWN RESEARCH GAPS\r\n" +
-            "  · SPU: mailbox HLE only — no full ISA / MFC / SPURS\r\n" +
-            "  · Solid blue screen = guest never reached real draws / cellFs\r\n" +
-            "  · Report SPU stalls via GitHub issue template + attach log\r\n\r\n" +
+            "KNOWN GAPS (solid blue / null-loop)\r\n" +
+            "  · Guest stuck ~pc=0x33723c soft_breaks — GCM stubs incomplete\r\n" +
+            "  · No [fs]/[psarc] in log until cellFs is really used\r\n" +
+            "  · SPU: mailbox only — report stalls via GitHub issue + log\r\n\r\n" +
             "PPSX33 is a research toolkit — not a retail port.\r\n";
         _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(100, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab;
         AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap);
@@ -201,5 +209,7 @@ public sealed partial class MainForm : Form
         Append("PPSX33 ready · core v1.0.0");
         Append("Settings: " + Settings.DataDir);
         UpdateButtons();
+        // After UI is up: validate RPCS3 path; show button + popup if missing
+        Shown += (_, _) => CheckRpcs3OnStartup();
     }
 }

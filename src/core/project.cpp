@@ -282,19 +282,11 @@ void cleanup_after_build(const std::string& project_dir, const fs::path& out, st
         if (fs::exists(out / name)) fs::remove(out / name, ec);
     }
 
-    if (fs::exists(codebase)) {
-        fs::remove_all(codebase, ec);
-        log += "cleanup: removed codebase/\n";
-        live_log("cleanup: removed codebase/\n");
-    }
-    if (fs::exists(input)) {
-        fs::remove_all(input, ec);
-        log += "cleanup: removed input/\n";
-        live_log("cleanup: removed input/\n");
-    }
+    // Keep input/ and codebase/ so Cancel or rebuild never loses the project.
+    // Only intermediate build junk under output/ is removed above.
 
-    log += "cleanup: done — layout: reports+build_log at root, runtime package in output/\n";
-    live_log("cleanup: done\n");
+    log += "cleanup: done — reports at root; runtime package in output/; input+codebase kept\n";
+    live_log("cleanup: done (project preserved)\n");
 }
 
 } // namespace
@@ -488,7 +480,8 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         if (rc != 0) {
             if (rc == 130 || g_build_cancel_requested.load()) {
                 err = "BUILD_CANCELLED";
-                live_log("BUILD_CANCELLED\n");
+                live_log("BUILD_CANCELLED — project folder preserved (no cleanup)\n");
+                // Do NOT call cleanup_after_build on cancel — leave input/, codebase/, partial output/
                 live_close();
                 return false;
             }

@@ -50,7 +50,32 @@ public sealed partial class MainForm
     void SaveSettings() { try { _settings.Save(); } catch { } }
     void UpdateRpcs3Button() {
         if (_btnRpcs3 == null) return;
-        _btnRpcs3.Text = string.IsNullOrEmpty(_settings.Rpcs3Path) ? "RPCS3 path\u2026" : "RPCS3 set";
+        bool have = !string.IsNullOrWhiteSpace(_settings.Rpcs3Path) && File.Exists(_settings.Rpcs3Path);
+        // Hide when a valid RPCS3.exe is set; show again if missing so user can re-locate
+        _btnRpcs3.Visible = !have;
+        _btnRpcs3.Text = have ? "RPCS3 set" : "RPCS3 path\u2026";
+    }
+
+    /// <summary>On startup: if saved RPCS3 path is missing, warn and show the locate button.</summary>
+    void CheckRpcs3OnStartup() {
+        if (string.IsNullOrWhiteSpace(_settings.Rpcs3Path)) {
+            UpdateRpcs3Button();
+            return;
+        }
+        if (File.Exists(_settings.Rpcs3Path)) {
+            UpdateRpcs3Button();
+            return;
+        }
+        Append("RPCS3 path missing: " + _settings.Rpcs3Path);
+        MessageBox.Show(this,
+            "RPCS3 was previously set but the file is missing:\n\n" +
+            _settings.Rpcs3Path + "\n\n" +
+            "Please locate RPCS3.exe again (Decrypt EBOOT needs it).",
+            "PPSX33 — RPCS3 not found",
+            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        _settings.Rpcs3Path = "";
+        SaveSettings();
+        UpdateRpcs3Button();
     }
 
     void NotifyBuildComplete(bool success)
@@ -171,14 +196,18 @@ public sealed partial class MainForm
     }
 
     async Task ConfirmCancelBuildAsync() {
+        if (!_building) return;
         _buildCancelRequested = true;
-        _cts?.Cancel();
-        Native.CancelBuild(); // writes flag + taskkill process tree
-        Append("Build cancel requested \u2014 stopping compiler\u2026");
+        try { _cts?.Cancel(); } catch { }
+        try { Native.CancelBuild(); } catch (Exception ex) { Append("Cancel signal: " + ex.Message); }
+        Append("Build cancel requested \u2014 stopping compiler (project folder kept)\u2026");
         SetStatus("Cancelling build\u2026", true);
-        await Task.Delay(500);
-        _building = false; _busy = false; UpdateButtons();
-        Append("Build cancelled.");
+        await Task.Delay(800);
+        // Keep the form open — never Exit / Close here
+        _building = false;
+        _busy = false;
+        UpdateButtons();
+        Append("Build cancelled. Project folder preserved — you can Build again.");
         SetStatus("Build cancelled");
     }
 

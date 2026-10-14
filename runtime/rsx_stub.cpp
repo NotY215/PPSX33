@@ -4,13 +4,17 @@
 #include <mutex>
 #include <cstring>
 #include <cstdio>
+#include <vector>
 #include <cstdint>
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <d3d11.h>
+#include <wincodec.h>
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "windowscodecs.lib")
+#pragma comment(lib, "ole32.lib")
 #endif
 
 static std::mutex g_rsx_mu;
@@ -104,6 +108,87 @@ static void rsx_ensure_depth(uint32_t w, uint32_t h) {
     }
 }
 
+
+#if defined(_WIN32)
+// Load ../ICON0.PNG (PS3_GAME when EXE is in USRDIR) for window + taskbar only.
+static HICON load_icon0_png_as_hicon() {
+    char mod[MAX_PATH] = {};
+    if (!GetModuleFileNameA(nullptr, mod, MAX_PATH)) return nullptr;
+    char* slash = strrchr(mod, '\\');
+    if (!slash) return nullptr;
+    *slash = 0;
+    char candidates[3][MAX_PATH];
+    std::snprintf(candidates[0], MAX_PATH, "%s\\..\\ICON0.PNG", mod);
+    std::snprintf(candidates[1], MAX_PATH, "%s\\ICON0.PNG", mod);
+    std::snprintf(candidates[2], MAX_PATH, "%s\\..\\..\\ICON0.PNG", mod);
+    const char* path = nullptr;
+    for (int i = 0; i < 3; ++i) {
+        DWORD a = GetFileAttributesA(candidates[i]);
+        if (a != INVALID_FILE_ATTRIBUTES && !(a & FILE_ATTRIBUTE_DIRECTORY)) {
+            path = candidates[i]; break;
+        }
+    }
+    if (!path) return nullptr;
+    HRESULT hr_init = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    IWICImagingFactory* factory = nullptr;
+    HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory));
+    if (FAILED(hr) || !factory) { if (SUCCEEDED(hr_init)) CoUninitialize(); return nullptr; }
+    wchar_t wpath[MAX_PATH];
+    MultiByteToWideChar(CP_ACP, 0, path, -1, wpath, MAX_PATH);
+    IWICBitmapDecoder* decoder = nullptr;
+    hr = factory->CreateDecoderFromFilename(wpath, nullptr, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &decoder);
+    HICON hicon = nullptr;
+    if (SUCCEEDED(hr) && decoder) {
+        IWICBitmapFrameDecode* frame = nullptr;
+        if (SUCCEEDED(decoder->GetFrame(0, &frame)) && frame) {
+            IWICFormatConverter* conv = nullptr;
+            if (SUCCEEDED(factory->CreateFormatConverter(&conv)) && conv) {
+                if (SUCCEEDED(conv->Initialize(frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.0, WICBitmapPaletteTypeCustom))) {
+                    UINT w = 0, h = 0; conv->GetSize(&w, &h);
+                    if (w && h) {
+                        UINT stride = w * 4, size = stride * h;
+                        std::vector<BYTE> pixels(size);
+                        if (SUCCEEDED(conv->CopyPixels(nullptr, stride, size, pixels.data()))) {
+                            ICONINFO ii{}; ii.fIcon = TRUE;
+                            BITMAPINFO bmi{}; bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+                            bmi.bmiHeader.biWidth = (LONG)w; bmi.bmiHeader.biHeight = -(LONG)h;
+                            bmi.bmiHeader.biPlanes = 1; bmi.bmiHeader.biBitCount = 32; bmi.bmiHeader.biCompression = BI_RGB;
+                            void* bits = nullptr;
+                            HDC hdc = GetDC(nullptr);
+                            HBITMAP color = CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, &bits, nullptr, 0);
+                            if (color && bits) {
+                                memcpy(bits, pixels.data(), size);
+                                HBITMAP mask = CreateBitmap((int)w, (int)h, 1, 1, nullptr);
+                                ii.hbmColor = color; ii.hbmMask = mask;
+                                hicon = CreateIconIndirect(&ii);
+                                if (mask) DeleteObject(mask);
+                                DeleteObject(color);
+                            }
+                            ReleaseDC(nullptr, hdc);
+                        }
+                    }
+                }
+                conv->Release();
+            }
+            frame->Release();
+        }
+        decoder->Release();
+    }
+    factory->Release();
+    if (SUCCEEDED(hr_init)) CoUninitialize();
+    if (hicon) ps3rt_log("[rsx] window/taskbar icon from %s\n", path);
+    return hicon;
+}
+static void apply_window_icons(HWND hwnd) {
+    if (!hwnd) return;
+    HICON big = load_icon0_png_as_hicon();
+    if (big) {
+        SendMessageA(hwnd, WM_SETICON, ICON_BIG, (LPARAM)big);
+        SendMessageA(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)big);
+    }
+}
+#endif
+
 static void rsx_host_init(uint32_t w, uint32_t h) {
     if (g_hwnd) return;
     g_rsx.width = w ? w : 1280; g_rsx.height = h ? h : 720;
@@ -113,6 +198,7 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
     g_hwnd = CreateWindowExA(0, "PPSX33_RSX", "PPSX33", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         80, 80, (int)g_rsx.width + 16, (int)g_rsx.height + 39, nullptr, nullptr, wc.hInstance, nullptr);
     if (!g_hwnd) return;
+    apply_window_icons(g_hwnd);
     DXGI_SWAP_CHAIN_DESC sd{};
     sd.BufferCount = 2; sd.BufferDesc.Width = g_rsx.width; sd.BufferDesc.Height = g_rsx.height;
     sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;

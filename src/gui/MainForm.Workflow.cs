@@ -41,6 +41,13 @@ public sealed partial class MainForm
                 Filter = "ELF / SELF|*.elf;*.ELF;*.self;*.SELF|All files|*.*",
                 CheckFileExists = true
             };
+            // Open browser at last ELF location when available
+            try {
+                if (!string.IsNullOrWhiteSpace(_settings.LastElfPath) && File.Exists(_settings.LastElfPath))
+                    ofd.InitialDirectory = Path.GetDirectoryName(_settings.LastElfPath) ?? "";
+                else if (!string.IsNullOrWhiteSpace(_settings.LastGameFolderPath) && Directory.Exists(_settings.LastGameFolderPath))
+                    ofd.InitialDirectory = _settings.LastGameFolderPath;
+            } catch { }
             if (ofd.ShowDialog(this) != DialogResult.OK) return;
             path = ofd.FileName;
             _settings.LastElfPath = path;
