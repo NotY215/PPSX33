@@ -1,0 +1,9 @@
+# Deprecated — do not use
+
+This patch file had corrupt headers and will not apply.
+
+Source updates (game-named EXE, ICON0, Roadmap tab) are applied directly to the source files on main.
+
+```bat
+git pull origin main
+```
