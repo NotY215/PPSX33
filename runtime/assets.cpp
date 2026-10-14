@@ -1,4 +1,4 @@
-// Game asset host I/O: cellFs path mapping + PSARC (PS3 archive) TOC/read + .rpf presence
+// Game asset host I/O: cellFs path mapping + PSARC TOC + virtual open + .rpf
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include <cstdio>
@@ -55,10 +55,13 @@ static bool map_guest_path(const char* guest, char* host, size_t host_len) {
     const char* p = guest;
     const char* prefixes[] = {
         "/dev_hdd0/game/", "/dev_hdd0/game",
+        "/dev_hdd0/", "/dev_hdd0",
         "/app_home/", "/app_home",
+        "/dev_bdvd/PS3_GAME/USRDIR/", "/dev_bdvd/PS3_GAME/USRDIR",
         "/dev_bdvd/PS3_GAME/", "/dev_bdvd/PS3_GAME",
         "/dev_bdvd/", "/dev_bdvd",
         "/host_root/", "/host_root",
+        "/USRDIR/", "/USRDIR",
         nullptr
     };
     for (int i = 0; prefixes[i]; ++i) {
@@ -71,7 +74,6 @@ static bool map_guest_path(const char* guest, char* host, size_t host_len) {
     }
     if (p[0] == '.' && (p[1] == '/' || p[1] == '\\')) p += 2;
     while (*p == '/') ++p;
-
 #ifdef _WIN32
     std::snprintf(host, host_len, "%s\\%s", g_game_root, p);
     for (char* q = host; *q; ++q) if (*q == '/') *q = '\\';
@@ -85,12 +87,17 @@ struct HostFd {
     FILE* f = nullptr;
     bool used = false;
     char path[512] = {};
+    bool is_psarc = false;
+    uint64_t arc_off = 0;
+    uint64_t arc_len = 0;
+    uint64_t pos = 0;
 };
 static HostFd g_fds[64];
 
 static int fd_alloc(FILE* f, const char* path) {
     for (int i = 3; i < 64; ++i) {
         if (!g_fds[i].used) {
+            g_fds[i] = HostFd{};
             g_fds[i].used = true;
             g_fds[i].f = f;
             std::snprintf(g_fds[i].path, sizeof(g_fds[i].path), "%s", path ? path : "");
@@ -122,6 +129,8 @@ struct PsarcArchive {
     std::vector<PsarcTocEntry> entries;
 };
 
+static std::vector<PsarcArchive> g_psarcs;
+
 static bool psarc_load_toc(const char* path, PsarcArchive& out) {
     FILE* f = std::fopen(path, "rb");
     if (!f) return false;
@@ -148,7 +157,8 @@ static bool psarc_load_toc(const char* path, PsarcArchive& out) {
                 name.push_back((char)toc[j++]);
                 if (name.size() > 240) break;
             }
-            if (name.size() >= 4 && name.find('.') != std::string::npos && name.find('/') != std::string::npos) {
+            if (name.size() >= 4 && name.find('.') != std::string::npos) {
+                while (!name.empty() && name[0] == '/') name.erase(name.begin());
                 PsarcTocEntry e;
                 e.name = name;
                 out.entries.push_back(std::move(e));
@@ -190,10 +200,11 @@ static void scan_one_pattern(const char* pattern) {
         size_t len = std::strlen(name);
         if (len >= 6 && _stricmp(name + len - 6, ".psarc") == 0) {
             PsarcArchive a;
-            psarc_load_toc(full, a);
+            if (psarc_load_toc(full, a))
+                g_psarcs.push_back(std::move(a));
         } else if (len >= 4 && _stricmp(name + len - 4, ".rpf") == 0) {
-            ps3rt_log("[rpf] found %s (container present; open via cellFs host path)\n", full);
-        } else {
+            ps3rt_log("[rpf] found %s\n", full);
+        } else if (_stricmp(name, "EBOOT.BIN") == 0 || _stricmp(name, "PARAM.SFO") == 0) {
             ps3rt_log("[asset] found %s\n", full);
         }
     } while (FindNextFileA(h, &fd));
@@ -205,6 +216,7 @@ static void scan_one_pattern(const char* pattern) {
 
 static void psarc_scan_game_root() {
     ensure_game_root();
+    g_psarcs.clear();
 #ifdef _WIN32
     char pattern[560];
     const char* globs[] = {
@@ -213,13 +225,14 @@ static void psarc_scan_game_root() {
         "%s\\*.rpf",
         "%s\\USRDIR\\*.rpf",
         "%s\\PS3_GAME\\USRDIR\\*.psarc",
+        "%s\\data\\*.psarc",
         nullptr
     };
     for (int i = 0; globs[i]; ++i) {
         std::snprintf(pattern, sizeof(pattern), globs[i], g_game_root);
         scan_one_pattern(pattern);
     }
-    ps3rt_log("[fs] asset scan done root=%s\n", g_game_root);
+    ps3rt_log("[fs] asset scan done root=%s  psarcs=%zu\n", g_game_root, g_psarcs.size());
 #endif
 }
 
@@ -245,14 +258,51 @@ static int fs_open(PPUContext* c) {
 
     FILE* f = std::fopen(host, mode);
     if (!f && (flags & 1)) f = std::fopen(host, "wb");
+    int fd = -1;
+    if (f) {
+        fd = fd_alloc(f, host);
+        if (fd < 0) { std::fclose(f); c->gpr[3] = (uint64_t)(int32_t)-1; return 0; }
+    } else {
+        std::string key = guest;
+        const char* slash = strrchr(host, '\\');
+        if (!slash) slash = strrchr(host, '/');
+        if (slash && slash[1]) key = slash + 1;
+        for (auto& arc : g_psarcs) {
+            for (auto& e : arc.entries) {
+                if (e.name.empty()) continue;
+                bool match = false;
+#ifdef _WIN32
+                if (_stricmp(e.name.c_str(), key.c_str()) == 0) match = true;
+                else {
+                    size_t el = e.name.size(), kl = key.size();
+                    if (el > kl && _stricmp(e.name.c_str() + el - kl, key.c_str()) == 0)
+                        match = true;
+                }
+#else
+                match = (e.name == key);
+#endif
+                if (!match) continue;
+                FILE* af = std::fopen(arc.path.c_str(), "rb");
+                if (!af) continue;
+                fd = fd_alloc(af, e.name.c_str());
+                if (fd < 0) { std::fclose(af); continue; }
+                g_fds[fd].is_psarc = true;
+                g_fds[fd].arc_off = e.offset;
+                g_fds[fd].arc_len = e.length ? e.length : 0x100000;
+                g_fds[fd].pos = 0;
+                if (e.offset) std::fseek(af, (long)e.offset, SEEK_SET);
+                ps3rt_log("[psarc] virtual open %s from %s\n", e.name.c_str(), arc.path.c_str());
+                break;
+            }
+            if (fd >= 0) break;
+        }
+    }
     static int s_log = 0;
-    if (s_log < 40) {
-        ps3rt_log("[fs] open guest=\"%s\" host=\"%s\" %s\n", guest, host, f ? "OK" : "FAIL");
+    if (s_log < 64) {
+        ps3rt_log("[fs] open guest=\"%s\" host=\"%s\" %s\n", guest, host, fd >= 0 ? "OK" : "FAIL");
         ++s_log;
     }
-    if (!f) { c->gpr[3] = (uint64_t)(int32_t)-1; return 0; }
-    int fd = fd_alloc(f, host);
-    if (fd < 0) { std::fclose(f); c->gpr[3] = (uint64_t)(int32_t)-1; return 0; }
+    if (fd < 0) { c->gpr[3] = (uint64_t)(int32_t)-1; return 0; }
     if (fd_ea && fd_ea + 4 <= mem_size()) {
         mem()[fd_ea + 0] = 0;
         mem()[fd_ea + 1] = 0;
@@ -273,6 +323,7 @@ static int fs_read(PPUContext* c) {
         c->gpr[3] = (uint64_t)(int32_t)-1; return 0;
     }
     size_t n = std::fread(mem() + buf, 1, (size_t)size, h->f);
+    if (h->is_psarc) h->pos += n;
     if (nread_ea && nread_ea + 8 <= mem_size()) {
         uint64_t be = n;
         for (int i = 7; i >= 0; --i) { mem()[nread_ea + (7 - i)] = (uint8_t)((be >> (i * 8)) & 0xFF); }
@@ -287,7 +338,7 @@ static int fs_write(PPUContext* c) {
     uint64_t size = c->gpr[5];
     uint64_t nwr_ea = c->gpr[6];
     HostFd* h = fd_get(fd);
-    if (!h || !h->f || !buf || buf + size > mem_size()) {
+    if (!h || !h->f || h->is_psarc || !buf || buf + size > mem_size()) {
         c->gpr[3] = (uint64_t)(int32_t)-1; return 0;
     }
     size_t n = std::fwrite(mem() + buf, 1, (size_t)size, h->f);
@@ -321,6 +372,11 @@ PS3RT_API int ps3rt_fs_dispatch(PPUContext* c, uint32_t nid) {
     case 0x4D5B9EF2: return fs_read(c);   // cellFsRead
     case 0xECDCF2AB: return fs_write(c);  // cellFsWrite
     case 0x2CB51F0F: return fs_close(c);  // cellFsClose
+    case 0xA397D042: // cellFsLseek
+    case 0x7F13FC8C: // cellFsStat
+    case 0xEF3EFA34: // cellFsFstat
+        c->gpr[3] = 0;
+        return 0;
     default:
         c->gpr[3] = 0;
         return 0;
