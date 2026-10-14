@@ -56,6 +56,9 @@ public sealed partial class MainForm
         }
         _projectDir = proj;
         _project.Text = proj;
+        _settings.LastElfPath = path ?? _settings.LastElfPath;
+        _settings.LastOutputFolderPath = Path.Combine(proj, "output");
+        SaveSettings();
         _canLift = true;
         _canBuild = _canCopy = _canRun = false;
         _gfxUnlocked = false;
@@ -78,28 +81,108 @@ public sealed partial class MainForm
         if (!File.Exists(exe))
             exe = Directory.GetFiles(outDir, "*.exe").FirstOrDefault() ?? "";
         if (string.IsNullOrEmpty(exe) || !File.Exists(exe)) { Append("No game EXE in output/"); return; }
+        _settings.LastOutputFolderPath = outDir;
+        SaveSettings();
         _gameProc = Process.Start(new ProcessStartInfo { FileName = exe, WorkingDirectory = outDir, UseShellExecute = false });
         Append("Running: " + exe);
         await Task.CompletedTask;
     }
 
+    /// <summary>Search folder (and common subfolders) for EBOOT.BIN.</summary>
+    static string? FindEbootBin(string root)
+    {
+        if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return null;
+        string direct = Path.Combine(root, "EBOOT.BIN");
+        if (File.Exists(direct)) return direct;
+        string[] rel = {
+            "USRDIR\\EBOOT.BIN",
+            "PS3_GAME\\USRDIR\\EBOOT.BIN",
+            "PS3_GAME\\EBOOT.BIN",
+        };
+        foreach (var r in rel)
+        {
+            string p = Path.Combine(root, r);
+            if (File.Exists(p)) return p;
+        }
+        try
+        {
+            foreach (var f in Directory.EnumerateFiles(root, "EBOOT.BIN", SearchOption.AllDirectories))
+                return f;
+        }
+        catch { }
+        return null;
+    }
+
     void CopyToGameFolder() {
         if (_projectDir == null) return;
-        Append("Copy to game folder — select folder containing EBOOT.BIN");
-        using var fbd = new FolderBrowserDialog { Description = "Game folder (EBOOT.BIN)" };
+        Append("Copy to game folder — select the game folder (EBOOT.BIN is found automatically)");
+        using var fbd = new FolderBrowserDialog {
+            Description = "Select game folder (EBOOT.BIN will be located automatically)",
+            UseDescriptionForTitle = true
+        };
+        if (!string.IsNullOrWhiteSpace(_settings.LastGameFolderPath) &&
+            Directory.Exists(_settings.LastGameFolderPath))
+        {
+            try { fbd.InitialDirectory = _settings.LastGameFolderPath; } catch { }
+        }
+        else if (!string.IsNullOrWhiteSpace(_settings.LastGamesRootPath) &&
+                 Directory.Exists(_settings.LastGamesRootPath))
+        {
+            try { fbd.InitialDirectory = _settings.LastGamesRootPath; } catch { }
+        }
         if (fbd.ShowDialog() != DialogResult.OK) return;
+
+        string selected = fbd.SelectedPath;
+        string? eboot = FindEbootBin(selected);
+        if (eboot == null)
+        {
+            Append("No EBOOT.BIN found under: " + selected);
+            MessageBox.Show(this,
+                "Could not find EBOOT.BIN in the selected folder.\n\n" +
+                "Select the folder that contains your PS3 game dump (or USRDIR).",
+                "PPSX33", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        string gameFolder = Path.GetDirectoryName(eboot) ?? selected;
+        string name = Path.GetFileName(gameFolder);
+        if (name.Equals("USRDIR", StringComparison.OrdinalIgnoreCase))
+        {
+            string? up = Path.GetDirectoryName(gameFolder);
+            if (up != null)
+            {
+                string upName = Path.GetFileName(up);
+                if (upName.Equals("PS3_GAME", StringComparison.OrdinalIgnoreCase))
+                    gameFolder = Path.GetDirectoryName(up) ?? up;
+                else
+                    gameFolder = up;
+            }
+        }
+        string? gamesRoot = Path.GetDirectoryName(gameFolder);
+        if (string.IsNullOrEmpty(gamesRoot)) gamesRoot = gameFolder;
+
+        _settings.LastGameFolderPath = gameFolder;
+        _settings.LastGamesRootPath = gamesRoot;
+        _settings.LastEbootPath = eboot;
+        _settings.LastBinPath = eboot;
+        _settings.LastOutputFolderPath = Path.Combine(_projectDir, "output");
+        SaveSettings();
+
+        Append("EBOOT.BIN: " + eboot);
+        Append("Game folder: " + gameFolder);
+        Append("Games root saved: " + gamesRoot);
+
         string outDir = Path.Combine(_projectDir, "output");
-        string dest = fbd.SelectedPath;
+        string dest = gameFolder;
         string[] required = {
-            "PPSX33.exe", "ps3rt.dll", "guest_image.bin", "pad_map.json",
-            "lift_report.txt", "analysis_report.txt"
+            "PPSX33.exe", "ps3rt.dll", "guest_image.bin", "pad_map.json"
         };
         int n = 0;
-        foreach (var name in required) {
-            string src = Path.Combine(outDir, name);
+        foreach (var fname in required) {
+            string src = Path.Combine(outDir, fname);
             if (!File.Exists(src)) continue;
-            File.Copy(src, Path.Combine(dest, name), true);
-            Append("  + " + name);
+            File.Copy(src, Path.Combine(dest, fname), true);
+            Append("  + " + fname);
             n++;
         }
         foreach (var f in Directory.GetFiles(outDir, "*.exe")) {
