@@ -25,8 +25,12 @@ PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction sema
 | Project workflow | GUI and CLI support project creation, lifting, and host build invocation |
 | Windows output | Build path can emit `game.exe`, `ps3rt.dll`, and `guest_image.bin` |
 | Runtime correctness | Experimental; commercial-game execution is not established |
-| SPU | Runtime interpreter and create/load/run/mailbox/MFC paths exist in `runtime/ps3rt.cpp`; full ISA coverage, vector/FP behavior, and SPURS remain incomplete |
-| RSX | Partial FIFO/method decoding, surface and draw tracking, flip/control handling, and D3D10/D3D11 integration are present; complete RSX rendering compatibility is not established |
+| Package (XX-A…G) | Game-named EXE, copy into `PS3_GAME/USRDIR`, legal/TERMS (system browser), focused pad logs — see [ROADMAP](ROADMAP.md) |
+| GCM / cellFs (XX-H…J) | GCM HLE (`gcm_hle`), null-loop recovery, PSARC TOC + zlib block streaming (`assets.cpp`) |
+| SPU / MFC / SPURS (XX-K…M) | SPU ISA interpreter, MFC put/get/list/tags, SPURS-like job queue + `cellSpurs` HLE (8 SPU slots) — still a subset, not full Cell accuracy |
+| Audio / UI (XX-N) | `cellAudio` → host waveOut; GDI status overlay; window title uses game name |
+| ICON0 (XX-O) | `PS3_GAME/ICON0.PNG` applied as window/taskbar icon when run from USRDIR |
+| RSX | Partial FIFO/method decoding, surface/draw tracking, flip/control, D3D11 present; textured/full RSX compatibility is not established |
 
 ### Game analysis snapshots
 
@@ -43,9 +47,11 @@ All six game counts describe individual static-lift snapshots. They are not proo
 
 ## Current runtime development status
 
-The current `ROADMAP.md` tracks the runtime/playability work and a separate tooling track. It marks phases I–XIX complete and Phase XX (a full playable pass) pending. These milestone labels describe project work, not verified compatibility with any commercial title.
+The current [ROADMAP.md](ROADMAP.md) tracks tooling (phases I–XIX, testing), packaging (XX-A…XX-G, done), and runtime playability (XX-H…XX-O, done in tree). Milestone labels describe engineering work, not verified compatibility with any commercial title.
 
-The PPU runtime is split across `runtime/ppu_runtime.h`, `runtime/ppu_runtime_core.h`, `runtime/ppu_runtime_core_a.h`, `runtime/ppu_runtime_core_b.h`, and `runtime/ppu_runtime_run.h`. Keep all split headers together when building or packaging the runtime. `ppu_runtime.h` is the include wrapper; `ppu_runtime_run.h` contains the PPU dispatch/recovery loop, while the core headers provide context, memory, register, and helper definitions.
+**Phase XX-H…O (summary):** null-loop / GCM flip recovery; fuller `cellGcmSys` HLE; PSARC zlib streaming; SPU ISA interpreter; MFC list DMA and tags; SPURS-like scheduling; cellAudio→waveOut plus on-screen status; ICON0 window/taskbar icon. Details, log tags, and file map are in the roadmap.
+
+The PPU runtime is split across `runtime/ppu_runtime.h`, `runtime/ppu_runtime_core.h`, `runtime/ppu_runtime_core_a.h`, `runtime/ppu_runtime_core_b.h`, and `runtime/ppu_runtime_run.h`. Keep all split headers together when building or packaging the runtime. `ppu_runtime.h` is the include wrapper; `ppu_runtime_run.h` contains the PPU dispatch/recovery loop, while the core headers provide context, memory, register, and helper definitions. Additional playability code lives in `runtime/ps3rt.cpp`, `runtime/ps3rt_b.inl`, `runtime/spu_stub.cpp`, `runtime/assets.cpp`, `runtime/audio_save.cpp`, and `runtime/rsx_stub.cpp`.
 
 ## Project website and releases
 

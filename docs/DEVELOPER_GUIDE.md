@@ -78,9 +78,9 @@ Do not restore the older single-header runtime as a routine fix. If a header is 
 
 ## Runtime milestone status
 
-Use the current [roadmap](../ROADMAP.md) as the source of truth for runtime and playability milestones. It currently records phases I–XIX as done and Phase XX, the full playable pass, as pending. The roadmap also tracks tooling/UI items such as progress/ETA, build cancellation, post-build cleanup, and controller-tab behavior.
+Use the current [roadmap](../ROADMAP.md) as the source of truth for runtime and playability milestones. Phases I–XIX are **testing**; packaging XX-A…G and runtime playability XX-H…O are **done in tree**. Milestone labels describe engineering work, not verified commercial-game compatibility.
 
-The runtime contains experimental GCM/HLE, PPU recovery, SPU mailbox/MFC, and RSX FIFO/rendering paths. These are incomplete compatibility layers. Recovery logic may redirect control flow, and a translated instruction count does not establish semantic correctness or playability. Record exact logs and tests when making claims about guest behavior.
+The runtime contains experimental GCM/HLE, PPU recovery, SPU interpreter/MFC/SPURS, cellFs/PSARC, audio, and RSX present paths. These are incomplete compatibility layers. Recovery logic may redirect control flow, and a translated instruction count does not establish semantic correctness or playability. Record exact logs and tests when making claims about guest behavior.
 
 
 ## GUI workflow, status, and cancellation
@@ -132,3 +132,39 @@ See [game coverage records](games/README.md), [GOW3 record](games/GOW3/GOW3.md),
 - [ ] New behavior has regression coverage where practical.
 - [ ] Documentation and coverage records match verified behavior.
 - [ ] No copyrighted game files, secrets, proprietary compiler binaries, or unrelated generated artifacts are included.
+
+## Phase XX runtime modules (H–O)
+
+When updating a checkout after Phase XX work, keep these files in sync as a set:
+
+| Module | Path | Role |
+|--------|------|------|
+| PPU loop / null-loop | `runtime/ppu_runtime_run.h` | Soft-break / region skip (XX-H) |
+| GCM + SPURS HLE | `runtime/ps3rt_b.inl`, `runtime/nid_table.h` | `gcm_hle`, `spurs_dispatch` (XX-I, XX-M) |
+| Assets / PSARC | `runtime/assets.cpp` | cellFs + zlib block streaming (XX-J) |
+| SPU interpreter | `runtime/spu_stub.cpp` | ISA step, MFC, SPURS schedule (XX-K–M) |
+| Runtime shell | `runtime/ps3rt.cpp` | SPU pool (8), run/tick/MFC API |
+| Context | `runtime/ppu_runtime_core_a.h` | `SPUContext` MFC/SPURS fields |
+| LV2 extras | `runtime/lv2_syscalls.inl` | `sys_spu_thread_*` range |
+| Audio / save | `runtime/audio_save.cpp` | cellAudio→waveOut (XX-N) |
+| RSX host | `runtime/rsx_stub.cpp` | Present, GDI overlay (XX-N), ICON0 (XX-O) |
+
+### Host dependencies (Windows)
+
+- **MSVC** toolset as used by the GUI build path  
+- **zlib1.dll** (or `zlib.dll`) next to the game EXE for compressed PSARC blocks  
+- **waveOut** (winmm) for XX-N audio  
+- **WIC** for ICON0 PNG decode  
+
+### Log tags (quick reference)
+
+| Tag | Phase |
+|-----|-------|
+| `[gcm] XX-I` | GCM HLE |
+| `[psarc] XX-J` / `[fs] XX-J` | Archives and cellFs |
+| `[spu] XX-K` / `XX-L` | Interpreter / MFC |
+| `[spurs] XX-M` | Job schedule |
+| `[audio] XX-N` | Audio init / AddData |
+| `[rsx] XX-O` | Icon / window title |
+
+See the root [ROADMAP.md](../ROADMAP.md) for goals, status, and the symptom guide.
