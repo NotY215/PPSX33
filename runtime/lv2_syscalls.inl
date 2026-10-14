@@ -22,8 +22,15 @@ case 144: {
 case 145:
     c->gpr[3] = 79800000ull; break;
 
-// sys_spu_thread_* / event stubs seen in GOW boot
-case 169: case 160: case 161: case 162:
+// XX-L/M: sys_spu_thread_* / image / event queue (GOW boot paths)
+// 160 sys_spu_thread_group_create, 161 destroy, 162 start, 163 join, 165 yield
+// 169 sys_spu_thread_write_snr, 171 set_priority, 172 connect_event ...
+case 160: case 161: case 162: case 163: case 165: case 166: case 167:
+case 169: case 170: case 171: case 172: case 173: case 174: case 175:
+case 176: case 177: case 178: case 179: case 180: case 181:
+    c->gpr[3] = 0; break;
+// sys_spu_image_open / close / get_information style (user wrapper often PRX)
+case 156: case 157: case 158: case 159:
     c->gpr[3] = 0; break;
 
 // sys_rwlock / cond

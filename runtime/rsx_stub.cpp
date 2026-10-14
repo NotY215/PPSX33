@@ -53,6 +53,7 @@ static RsxState g_rsx;
 static bool g_user_closed = false;
 
 #if defined(_WIN32)
+extern "C" const char* ps3rt_get_game_name(void);
 static HWND g_hwnd = nullptr;
 static ID3D11Device* g_dev = nullptr;
 static ID3D11DeviceContext* g_ctx11 = nullptr;
@@ -117,12 +118,18 @@ static HICON load_icon0_png_as_hicon() {
     char* slash = strrchr(mod, '\\');
     if (!slash) return nullptr;
     *slash = 0;
-    char candidates[3][MAX_PATH];
-    std::snprintf(candidates[0], MAX_PATH, "%s\\..\\ICON0.PNG", mod);
-    std::snprintf(candidates[1], MAX_PATH, "%s\\ICON0.PNG", mod);
-    std::snprintf(candidates[2], MAX_PATH, "%s\\..\\..\\ICON0.PNG", mod);
+    // XX-O: USRDIR -> ../ICON0.PNG (PS3_GAME), plus layout variants
+    char candidates[8][MAX_PATH];
+    std::snprintf(candidates[0], MAX_PATH, "%s\..\ICON0.PNG", mod);
+    std::snprintf(candidates[1], MAX_PATH, "%s\..\PS3_GAME\ICON0.PNG", mod);
+    std::snprintf(candidates[2], MAX_PATH, "%s\ICON0.PNG", mod);
+    std::snprintf(candidates[3], MAX_PATH, "%s\PS3_GAME\ICON0.PNG", mod);
+    std::snprintf(candidates[4], MAX_PATH, "%s\..\..\ICON0.PNG", mod);
+    std::snprintf(candidates[5], MAX_PATH, "%s\..\..\PS3_GAME\ICON0.PNG", mod);
+    std::snprintf(candidates[6], MAX_PATH, "%s\ICON0.png", mod);
+    std::snprintf(candidates[7], MAX_PATH, "%s\..\icon0.png", mod);
     const char* path = nullptr;
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 8; ++i) {
         DWORD a = GetFileAttributesA(candidates[i]);
         if (a != INVALID_FILE_ATTRIBUTES && !(a & FILE_ATTRIBUTE_DIRECTORY)) {
             path = candidates[i]; break;
@@ -176,7 +183,7 @@ static HICON load_icon0_png_as_hicon() {
     }
     factory->Release();
     if (SUCCEEDED(hr_init)) CoUninitialize();
-    if (hicon) ps3rt_log("[rsx] window/taskbar icon from %s\n", path);
+    if (hicon) ps3rt_log("[rsx] XX-O window/taskbar icon from %s\n", path);
     return hicon;
 }
 static void apply_window_icons(HWND hwnd) {
@@ -195,10 +202,16 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
     WNDCLASSA wc{}; wc.lpfnWndProc = RsxWndProc; wc.hInstance = GetModuleHandleA(nullptr);
     wc.lpszClassName = "PPSX33_RSX"; wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     RegisterClassA(&wc);
-    g_hwnd = CreateWindowExA(0, "PPSX33_RSX", "PPSX33", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+    const char* gname = ps3rt_get_game_name();
+    char title[256];
+    if (gname && gname[0]) std::snprintf(title, sizeof(title), "%s — PPSX33", gname);
+    else std::snprintf(title, sizeof(title), "PPSX33");
+    g_hwnd = CreateWindowExA(0, "PPSX33_RSX", title, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         80, 80, (int)g_rsx.width + 16, (int)g_rsx.height + 39, nullptr, nullptr, wc.hInstance, nullptr);
     if (!g_hwnd) return;
     apply_window_icons(g_hwnd);
+    apply_window_icons(g_hwnd);
+    ps3rt_log("[rsx] XX-O window title=\"%s\"\n", title);
     DXGI_SWAP_CHAIN_DESC sd{};
     sd.BufferCount = 2; sd.BufferDesc.Width = g_rsx.width; sd.BufferDesc.Height = g_rsx.height;
     sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -271,6 +284,30 @@ static void rsx_host_present_clear() {
         g_rsx.draws_this_frame = 0;
         if (need_present && g_swap)
             g_swap->Present(0, 0);
+        // XX-N: GDI status overlay (title / boot progress) until real draws dominate
+        if (g_hwnd) {
+            HDC hdc = GetDC(g_hwnd);
+            if (hdc) {
+                SetBkMode(hdc, TRANSPARENT);
+                SetTextColor(hdc, RGB(240, 240, 240));
+                char line[256];
+                const char* gn = ps3rt_get_game_name();
+                std::snprintf(line, sizeof(line),
+                    "%s  |  flips=%llu  draws=%u  PPSX33 XX-N",
+                    (gn && gn[0]) ? gn : "PPSX33",
+                    (unsigned long long)g_rsx.flip_count,
+                    g_rsx.draws_this_frame);
+                RECT r{ 12, 12, (LONG)g_rsx.width - 12, 48 };
+                DrawTextA(hdc, line, -1, &r, DT_LEFT | DT_TOP | DT_SINGLELINE);
+                // soft shadow line for readability on bright frames
+                SetTextColor(hdc, RGB(20, 20, 20));
+                RECT r2{ 13, 13, (LONG)g_rsx.width - 11, 49 };
+                DrawTextA(hdc, line, -1, &r2, DT_LEFT | DT_TOP | DT_SINGLELINE);
+                SetTextColor(hdc, RGB(240, 240, 240));
+                DrawTextA(hdc, line, -1, &r, DT_LEFT | DT_TOP | DT_SINGLELINE);
+                ReleaseDC(g_hwnd, hdc);
+            }
+        }
     } catch (...) {
         ps3rt_log("[rsx] present exception — switching headless\n");
         g_user_closed = true;

@@ -55,8 +55,39 @@ static uint32_t g_gcm_fifo_size = 0x100000;
 static int g_gcm_inited = 0;
 static uint64_t g_gcm_control = 0;
 static uint64_t g_gcm_labels = 0;
-static uint32_t g_gcm_flip_status = 0;
+static uint32_t g_gcm_flip_status = 0; // 0 = DONE, non-zero = pending
 static uint32_t g_gcm_frame_id = 0;
+static uint64_t g_gcm_local_addr = 0;
+static uint32_t g_gcm_io_offset = 0;
+static uint32_t g_gcm_flip_mode = 1; // VSYNC-ish
+static uint32_t g_gcm_current_fb = 0;
+static uint32_t g_gcm_vblank = 0;
+static uint64_t g_gcm_last_flip_time = 0;
+static uint64_t g_gcm_report_addr = 0;
+
+struct GcmDisplayBuffer {
+    uint32_t offset;
+    uint32_t pitch;
+    uint32_t width;
+    uint32_t height;
+    int set;
+};
+static GcmDisplayBuffer g_gcm_fb[8] = {};
+
+struct GcmTile {
+    uint32_t region;
+    uint32_t offset;
+    uint32_t size;
+    uint32_t pitch;
+    uint32_t base;
+    uint32_t bank;
+    int bound;
+};
+static GcmTile g_gcm_tiles[16] = {};
+
+// XX-I: single entry for all cellGcmSys NIDs
+static int gcm_hle(PPUContext* c, uint32_t nid);
+
 static void gcm_ensure_state() {
     if (!g_gcm_control) {
         g_gcm_control = guest_alloc(0x1000, 0x1000);
@@ -73,7 +104,16 @@ static void gcm_ensure_state() {
         g_gcm_inited = 1;
         if (!g_gcm_fifo) g_gcm_fifo = guest_alloc(g_gcm_fifo_size, 0x10000);
         ps3rt_rsx_init(g_gcm_fifo ? g_gcm_fifo : 0, g_gcm_fifo_size);
-        ps3rt_log("[gcm] Phase G state ready fifo=0x%llx ctrl=0x%llx\n", (unsigned long long)g_gcm_fifo, (unsigned long long)g_gcm_control);
+        if (!g_gcm_report_addr) g_gcm_report_addr = guest_alloc(0x4000, 0x1000);
+        if (!g_gcm_local_addr) {
+            g_gcm_local_addr = guest_alloc(0x1000000, 0x10000);
+            if (g_gcm_local_addr)
+                ps3rt_log("[gcm] local_addr @ 0x%llx\n", (unsigned long long)g_gcm_local_addr);
+        }
+        g_gcm_flip_status = 0;
+        ps3rt_log("[gcm] XX-I state ready fifo=0x%llx ctrl=0x%llx labels=0x%llx\n",
+            (unsigned long long)g_gcm_fifo, (unsigned long long)g_gcm_control,
+            (unsigned long long)g_gcm_labels);
         PS3RT_STAGE("GCM ready end");
     }
 }
@@ -104,6 +144,266 @@ static void gcm_inject_clear_draw() {
     if (s_log < 3) { ps3rt_log("[gcm] inject clear+draw col=0x%06X\n", col); ++s_log; }
 }
 
+
+// XX-I: fuller cellGcmSys HLE — display buffers, flip lifecycle, map/offset, tiles/zcull stubs
+static int gcm_hle(PPUContext* c, uint32_t nid) {
+    if (!c) return -1;
+    gcm_ensure_state();
+    auto ok = [&]() { c->gpr[3] = 0; return 0; };
+    auto fail = [&](int code) { c->gpr[3] = (uint64_t)(int64_t)code; return 0; };
+
+    switch (nid) {
+    case 0x15BAE46B: // InitBody
+        return ok();
+    case 0x55A14C05: // GetControlRegister
+        if (c->gpr[3] && c->gpr[3] + 8 <= g_mem_size) wr_be64_guest(c->gpr[3], g_gcm_control);
+        return ok();
+    case 0x5F909B17: // GetLabelAddress
+        if (c->gpr[3] && c->gpr[3] + 8 <= g_mem_size) wr_be64_guest(c->gpr[3], g_gcm_labels);
+        return ok();
+    case 0xA547ADDE: // GetFlipStatus
+    case 0x72A577CE: // GetFlipStatus2
+        c->gpr[3] = g_gcm_flip_status;
+        return 0;
+    case 0xB2E761D4: // ResetFlipStatus
+        g_gcm_flip_status = 1;
+        return ok();
+    case 0xD81D0D2D: // SetFlip
+    case 0x05E548B9: // SetFlipCommand
+    case 0x0E4F32E0: // SetFlipImmediate
+    case 0xA53D12AE: // SetFlipWithWaitLabel
+    case 0x069704B6: // SetPrepareFlip
+    case 0xDC09357B: // SetFlipMode (also used as flip in some paths)
+        if (nid == 0xDC09357B) {
+            g_gcm_flip_mode = (uint32_t)c->gpr[3];
+            return ok();
+        }
+        {
+            uint32_t id = (uint32_t)c->gpr[3];
+            if (id < 8) g_gcm_current_fb = id;
+            if (g_mem) ps3rt_rsx_flush(g_mem);
+            ps3rt_rsx_flip(id);
+            g_gcm_flip_status = 0;
+            ++g_gcm_frame_id;
+            ++g_gcm_vblank;
+            g_gcm_last_flip_time += 16666; // ~60Hz usec tick
+            return ok();
+        }
+    case 0xF80196C0: // SetWaitFlip
+        if (g_mem) ps3rt_rsx_flush(g_mem);
+        ps3rt_rsx_flip(g_gcm_current_fb);
+        g_gcm_flip_status = 0;
+        ++g_gcm_vblank;
+        return ok();
+    case 0x21AC3697: { // AddressToOffset
+        uint64_t addr = c->gpr[3];
+        uint32_t off = (uint32_t)(addr & 0xFFFFFFFFu);
+        if (g_gcm_local_addr && addr >= g_gcm_local_addr)
+            off = (uint32_t)(addr - g_gcm_local_addr);
+        if (c->gpr[4] && c->gpr[4] + 4 <= g_mem_size) wr_be32_guest(c->gpr[4], off);
+        return ok();
+    }
+    case 0x2A6FBA9C: { // OffsetToAddress
+        uint32_t off = (uint32_t)c->gpr[3];
+        uint64_t addr = (g_gcm_local_addr ? g_gcm_local_addr : 0xC0000000ull) + off;
+        if (c->gpr[4] && c->gpr[4] + 8 <= g_mem_size) wr_be64_guest(c->gpr[4], addr);
+        return ok();
+    }
+    case 0x4524FE95: { // GetConfiguration
+        uint64_t out = c->gpr[3];
+        if (out && out + 0x28 <= g_mem_size) {
+            wr_be64_guest(out + 0,  g_gcm_local_addr ? g_gcm_local_addr : 0xC0000000ull);
+            wr_be64_guest(out + 8,  g_gcm_fifo ? g_gcm_fifo : 0);
+            wr_be32_guest(out + 16, 0x0F900000u);
+            wr_be32_guest(out + 20, g_gcm_fifo_size);
+            wr_be32_guest(out + 24, 0);
+            wr_be32_guest(out + 28, 0);
+        }
+        return ok();
+    }
+    case 0x21397818: { // SetDisplayBuffer(id, offset, pitch, width, height)
+        uint32_t id = (uint32_t)c->gpr[3];
+        if (id < 8) {
+            g_gcm_fb[id].offset = (uint32_t)c->gpr[4];
+            g_gcm_fb[id].pitch  = (uint32_t)c->gpr[5];
+            g_gcm_fb[id].width  = (uint32_t)c->gpr[6];
+            g_gcm_fb[id].height = (uint32_t)c->gpr[7];
+            g_gcm_fb[id].set = 1;
+            static int s_fb = 0;
+            if (s_fb < 8) {
+                ps3rt_log("[gcm] XX-I SetDisplayBuffer id=%u %ux%u pitch=%u off=0x%x\n",
+                    id, g_gcm_fb[id].width, g_gcm_fb[id].height,
+                    g_gcm_fb[id].pitch, g_gcm_fb[id].offset);
+                ++s_fb;
+            }
+        }
+        return ok();
+    }
+    case 0x63387071: { // GetDisplayBuffer(id, out CellGcmDisplayInfo*)
+        uint32_t id = (uint32_t)c->gpr[3];
+        uint64_t out = c->gpr[4];
+        if (id < 8 && out && out + 16 <= g_mem_size) {
+            auto& fb = g_gcm_fb[id];
+            wr_be32_guest(out + 0, fb.set ? fb.offset : 0);
+            wr_be32_guest(out + 4, fb.set ? fb.pitch  : (1280 * 4));
+            wr_be32_guest(out + 8, fb.set ? fb.width  : 1280);
+            wr_be32_guest(out + 12, fb.set ? fb.height : 720);
+        }
+        return ok();
+    }
+    case 0x9DC3136B: // GetCurrentDisplayBufferId
+        c->gpr[3] = g_gcm_current_fb;
+        return 0;
+    case 0x0F9BB8AA: // SetDefaultCommandBuffer
+    case 0xA53D12AF: // SetDefaultFifoSize
+        return ok();
+    case 0xA114EC67: // MapMainMemory
+    case 0xA547ADDF: // MapEaIoAddress
+    case 0x3A33F0FD: // MapEaIoAddressWithFlags
+    case 0x6340CECC: // MapLocalMemory
+        // r3=ea, r4=size, r5=out offset* — give a stable fake IO offset
+        {
+            uint64_t ea = c->gpr[3];
+            uint32_t off = g_gcm_io_offset;
+            g_gcm_io_offset = (g_gcm_io_offset + 0x10000u) & 0x0FFFFFFFu;
+            if (c->gpr[5] && c->gpr[5] + 4 <= g_mem_size) wr_be32_guest(c->gpr[5], off);
+            else if (c->gpr[4] && c->gpr[4] + 4 <= g_mem_size && nid != 0xA114EC67)
+                wr_be32_guest(c->gpr[4], off);
+            (void)ea;
+            return ok();
+        }
+    case 0x05AE417E: // UnmapEaIoAddress
+    case 0xDB23DA22: // UnmapIoAddress
+        return ok();
+    case 0x21AC3698: { // IoOffsetToAddress
+        uint32_t off = (uint32_t)c->gpr[3];
+        uint64_t addr = (g_gcm_local_addr ? g_gcm_local_addr : 0xC0000000ull) + off;
+        if (c->gpr[4] && c->gpr[4] + 8 <= g_mem_size) wr_be64_guest(c->gpr[4], addr);
+        return ok();
+    }
+    case 0x6571A277: // GetLastFlipTime
+        c->gpr[3] = g_gcm_last_flip_time;
+        return 0;
+    case 0xD34B796E: // GetLastSecondVTime
+        c->gpr[3] = g_gcm_last_flip_time;
+        return 0;
+    case 0x0FB8471B: // GetVBlankCount
+        c->gpr[3] = g_gcm_vblank;
+        return 0;
+    case 0x983FB9AA: // SetSecondVFrequency
+    case 0x4AE8D215: // SetVBlankFrequency
+    case 0xCFC88E2D: // SetDebugOutputLevel
+        return ok();
+    case 0xBC982946: // SetTile
+    case 0x9A0159AF: // SetTileInfo
+    case 0xBD2F6DD7: // BindTile
+    case 0xD0B1D189: // UnbindTile
+    case 0x527C6439: // SetInvalidateTile
+        {
+            uint32_t idx = (uint32_t)c->gpr[3] & 15;
+            if (nid == 0xBD2F6DD7) g_gcm_tiles[idx].bound = 1;
+            if (nid == 0xD0B1D189) g_gcm_tiles[idx].bound = 0;
+            if (nid == 0x9A0159AF || nid == 0xBC982946) {
+                g_gcm_tiles[idx].offset = (uint32_t)c->gpr[4];
+                g_gcm_tiles[idx].size   = (uint32_t)c->gpr[5];
+                g_gcm_tiles[idx].pitch  = (uint32_t)c->gpr[6];
+            }
+            return ok();
+        }
+    case 0x9A7920AA: // SetZcull
+    case 0xD34B796F: // BindZcull
+    case 0xA75640E8: // UnbindZcull
+        return ok();
+    case 0xE4F1324B: // SetUserHandler
+    case 0xFA981D20: // SetUserCommand
+    case 0x8C7FF6FE: // SetFlipHandler
+    case 0x4D7CE993: // SetGraphicsHandler
+    case 0xA41EF5C6: // SetQueueHandler
+    case 0xFFEB4B8C: // SetVBlankHandler
+        return ok();
+    case 0x6B91DB6A: // CursorEnable
+    case 0xC5F1D5E3: // CursorDisable
+    case 0x1BBD6B5C: // CursorSetImage
+    case 0x6CD0F95D: // CursorSetPosition
+        return ok();
+    case 0xACEDC629: // GetReportDataAddressLocation
+    case 0x99D397B2: // GetReportDataAddress
+        if (c->gpr[3] && c->gpr[3] + 8 <= g_mem_size)
+            wr_be64_guest(c->gpr[3], g_gcm_report_addr ? g_gcm_report_addr : g_gcm_labels);
+        else
+            c->gpr[3] = g_gcm_report_addr ? g_gcm_report_addr : g_gcm_labels;
+        return 0;
+    case 0x5A41C10F: // GetTimeReportLocation
+        c->gpr[3] = g_gcm_report_addr ? g_gcm_report_addr : 0;
+        return 0;
+    case 0x3B9BD5BD: // SysGetLastError
+        return ok();
+    default: {
+        static int s_unk = 0;
+        if (s_unk < 40) {
+            ps3rt_log("[gcm] XX-I unhandled nid=0x%08X -> OK\n", nid);
+            ++s_unk;
+        }
+        return ok();
+    }
+    }
+}
+
+
+// XX-M: cellSpurs HLE
+extern "C" int ps3rt_spurs_submit_job(uint32_t entry, uint32_t prio, uint32_t workload_id);
+extern "C" int ps3rt_spurs_job_done(int job_id);
+
+static int spurs_dispatch(PPUContext* c, uint32_t nid) {
+    if (!c) return -1;
+    switch (nid) {
+    case 0xAC6B8901: // Initialize
+    case 0xCAFFF3C0: // Finalize
+    case 0x5EF96465: // AttachLv2EventQueue
+    case 0x82A1FDB2: // DetachLv2EventQueue
+    case 0x7CB33C2E: // CreateJobChain
+    case 0x0EB323C0: // JoinJobChain
+    case 0x39C173FB: // ShutdownJobChain
+    case 0x4DC1DEE4: // CreateTaskset
+    case 0xA839A4D9: // JoinTaskset
+    case 0x16394A4A: // GetInfo
+        c->gpr[3] = 0;
+        return 0;
+    case 0xB9BC6207: // AddWorkload
+    case 0x1D46DEA1: // StartWorkload
+        c->gpr[3] = 0;
+        return 0;
+    case 0x0E54C3A6: // RemoveWorkload
+    case 0xFF7A7BD2: // StopWorkload
+        c->gpr[3] = 0;
+        return 0;
+    case 0x2C9B9C1C: // RunJobChain — r3=chain, treat as kick
+    case 0x52CC6C82: // CreateTask — r4 may be entry
+    case 0xE717AC73: // SendSignal
+        {
+            uint32_t entry = (uint32_t)c->gpr[4];
+            if (!entry) entry = (uint32_t)c->gpr[5];
+            if (entry) {
+                int jid = ps3rt_spurs_submit_job(entry, (uint32_t)c->gpr[6], 0);
+                static int s = 0;
+                if (s < 12) {
+                    ps3rt_log("[spurs] XX-M nid=0x%08X submit entry=0x%x job=%d\n", nid, entry, jid);
+                    ++s;
+                }
+            }
+            c->gpr[3] = 0;
+            return 0;
+        }
+    case 0xC2AC4828: // WaitForWorkload
+        // HLE: always complete
+        c->gpr[3] = 0;
+        return 0;
+    default:
+        c->gpr[3] = 0;
+        return 0;
+    }
+}
+
 static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
     if (!c) return -1;
     const NidEntry* e = nid_lookup(maybe_nid);
@@ -115,22 +415,7 @@ static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
             ++g_prx_log;
         }
         if (kind == 1 || (e->module && (std::strstr(e->module, "Gcm") || std::strstr(e->module, "gcm")))) {
-            gcm_ensure_state();
-            if (e->nid == 0x55A14C05 && c->gpr[3] && c->gpr[3]+8 <= g_mem_size) {
-                wr_be64_guest(c->gpr[3], g_gcm_control); c->gpr[3] = 0; return 0;
-            }
-            if (e->nid == 0x5F909B17 && c->gpr[3] && c->gpr[3]+8 <= g_mem_size) {
-                wr_be64_guest(c->gpr[3], g_gcm_labels); c->gpr[3] = 0; return 0;
-            }
-            if (e->nid == 0xA547ADDE) { c->gpr[3] = g_gcm_flip_status; return 0; }
-            if (e->nid == 0xB2E761D4) { g_gcm_flip_status = 0; c->gpr[3] = 0; return 0; }
-            if (e->nid == 0xDC09357B || e->nid == 0x0E4F32E0 || e->nid == 0xA53D12AE || e->nid == 0xD81D0D2D) {
-                if (g_mem) ps3rt_rsx_flush(g_mem);
-                ps3rt_rsx_flip(0);
-                g_gcm_flip_status = 0; ++g_gcm_frame_id; c->gpr[3] = 0; return 0;
-            }
-            if (e->nid == 0xF80196C0) { c->gpr[3] = 0; return 0; }
-            c->gpr[3] = 0; return 0;
+            return gcm_hle(c, e->nid);
         }
         if (e->nid == 0x1C936E6D) { g_pad_inited = 1; pad_poll_host(); c->gpr[3] = 0; return 0; }
         if (e->nid == 0x0D5F2C14) { g_pad_inited = 0; c->gpr[3] = 0; return 0; }
@@ -146,6 +431,7 @@ static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
         if (e->nid == 0x3F797DFF) { c->gpr[3] = 0; return 0; }
         if (kind == 2) { return ps3rt_fs_dispatch(c, e->nid); }
         if (kind == 4) { return ps3rt_audio_dispatch(c, e->nid); }
+        if (kind == 5) { return spurs_dispatch(c, e->nid); }
         if (kind == 11) { return ps3rt_save_dispatch(c, e->nid); }
         if (kind == 8) {
             pad_poll_host();
@@ -153,8 +439,13 @@ static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
         }
         c->gpr[3] = 0; return 0;
     }
+    // No NID table hit — still honour module kind (XX-H)
+    if (kind == 1) {
+        return gcm_hle(c, maybe_nid);
+    }
     if (kind == 2) { return ps3rt_fs_dispatch(c, maybe_nid); }
     if (kind == 4) { return ps3rt_audio_dispatch(c, maybe_nid); }
+    if (kind == 5) { return spurs_dispatch(c, maybe_nid); }
     if (kind == 11) { return ps3rt_save_dispatch(c, maybe_nid); }
     if (kind == 8) { pad_poll_host(); c->gpr[3] = 0; return 0; }
     c->gpr[3] = 0; return 0;
@@ -201,15 +492,24 @@ PS3RT_API void ps3rt_progress_hw(void) {
     if (!g_gcm_inited) gcm_ensure_state();
     if (g_gcm_inited) {
         static uint32_t s_n = 0;
-        if ((++s_n & 0x7F) == 0) {
+        ++s_n;
+        // XX-H: clear pending flip often so GetFlipStatus/WaitFlip cannot stick
+        if (g_gcm_flip_status != 0 && (s_n & 0x1F) == 0) {
+            if (g_mem) ps3rt_rsx_flush(g_mem);
+            ps3rt_rsx_flip(0);
+            g_gcm_flip_status = 0;
+            ++g_gcm_frame_id;
+        }
+        if ((s_n & 0x7F) == 0) {
             uint32_t put = g_gcm_control ? rd_be32_guest(g_gcm_control + 0) : 0;
             if (put == 0) gcm_inject_clear_draw();
             else {
                 static int s_guest = 0;
-                if (s_guest < 3) { ps3rt_log("[gcm] Phase XII guest put 0x0 -> 0x%x\n", put); ++s_guest; }
+                if (s_guest < 3) { ps3rt_log("[gcm] XX-I guest put=0x%x\n", put); ++s_guest; }
                 if (g_mem) ps3rt_rsx_flush(g_mem);
             }
             ps3rt_rsx_flip(0);
+            g_gcm_flip_status = 0;
         }
     }
     static int s_run = 0;

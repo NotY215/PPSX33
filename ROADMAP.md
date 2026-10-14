@@ -15,17 +15,17 @@ These are **testing** quality — not final. Regressions can still appear.
 | XX-F | Post-build layout (reports at project root; runtime in `output/`) |
 | XX-G | Named run logs; pad log only when game window focused |
 
-## Remaining to implement
+## Phase XX-H … XX-O — implemented (apply + test)
 | ID | Item |
 |----|------|
-| **XX-H** | Break null-loop / soft GCM — guest past ~`0x33723c` into real cellFs + draws |
-| XX-I | Full `cellGcmSys` HLE (not null import stubs) |
-| XX-J | Asset streaming: PSARC zlib blocks end-to-end |
-| XX-K | SPU ISA interpreter / JIT (today: mailbox completion stub only) |
-| XX-L | MFC / DMA transfers + tags |
-| XX-M | SPURS-like SPU scheduling / concurrency |
-| XX-N | Audio path + title / UI / text on screen |
-| XX-O | ICON0.PNG as window + taskbar icon when run from USRDIR |
+| **XX-H** | **DONE** — null-loop skip, GCM flip/wait HLE |
+| **XX-I** | **DONE** — fuller cellGcmSys HLE (display buffers, map, tiles) |
+| **XX-J** | **DONE** — PSARC TOC + zlib block streaming |
+| **XX-K** | **DONE** — SPU ISA interpreter (LS/arith/branch/channel) |
+| **XX-L** | **DONE** — MFC list DMA, barriers, atomics, tags |
+| **XX-M** | **DONE** — SPURS job queue + prio schedule + cellSpurs HLE |
+| **XX-N** | **DONE** — cellAudio AddData→waveOut, GDI status overlay, title |
+| **XX-O** | **DONE** — ICON0.PNG window/taskbar icon from PS3_GAME |
 
 ## Solid blue screen (current symptom)
 Log shows RSX flips / clears while PPU hits null-loop soft_breaks at ~`0x33723c`, then halt `pc=0x0`.

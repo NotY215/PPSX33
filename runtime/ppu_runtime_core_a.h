@@ -36,8 +36,8 @@ struct PPUContext {
 };
 
 struct SPUContext {
-    uint8_t  gpr[128][16];
-    uint8_t  ls[256 * 1024];
+    uint8_t  gpr[128][16];   // 128 x 128-bit (16 bytes) GPRs
+    uint8_t  ls[256 * 1024]; // 256 KiB local store
     uint32_t pc;
     uint32_t npc;
     bool     running;
@@ -52,10 +52,21 @@ struct SPUContext {
     uint32_t mfc_size;
     uint32_t mfc_tag;
     uint32_t mfc_cmd;
+    uint32_t mfc_tag_mask;     // XX-K/L: tag wait mask
+    uint32_t mfc_tag_status;   // completed tags bitmask
+    uint32_t mfc_list_stall;   // XX-L: list DMA stall status
+    uint32_t mfc_atomic_stat;
     uint32_t ch_event_mask;
     uint32_t ch_event_stat;
     uint32_t decrementer;
     int      stop_status;
+    uint64_t inst_count;       // XX-K: instructions executed
+    uint32_t last_stop_code;
+    // XX-M SPURS-ish
+    int      spurs_group;      // -1 none
+    uint32_t spurs_job_prio;
+    uint32_t spurs_workload_id;
+    bool     spurs_idle;
 };
 
 static inline uint16_t bs16(uint16_t v) { return (uint16_t)((v >> 8) | (v << 8)); }

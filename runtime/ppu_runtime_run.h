@@ -1,5 +1,6 @@
 // Phase XV: import stub before force-out; wild-PC excludes 0x39800000
 // Phase XIV (safe): sustained dwell assist — no PC thrash storm
+// XX-H: stronger null-loop skip, earlier spin assist, sticky region drop
 static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, size_t n,
                                          uint64_t exclude_pc = 0,
                                          const uint64_t* ban = nullptr, int nban = 0,
@@ -162,11 +163,17 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             if (c.pc != spin_pc) { spin_pc = c.pc; spin_count = 0; }
             ++spin_count;
             if ((spin_count & 0x7F) == 0) { ps3rt_progress_hw(); ++progress_pokes; }
-            if (spin_count >= 0x1000 && (spin_count & 0xFF) == 0) {
+            if (spin_count >= 0x400 && (spin_count & 0x7F) == 0) {
+                // XX-H: earlier spin assist + force flip/fs progress while waiting
+                ps3rt_progress_hw();
+                ++progress_pokes;
                 uint64_t alt = recover_return_pc(c, chunks, n, c.pc, ban_lr, nban, rban, nrban);
-                if (alt && alt != c.pc) {
+                if (alt && alt != c.pc && !is_banned(alt)) {
                     c.pc = alt; c.gpr[3] = 0; spin_count = 0; continue;
                 }
+                // If pc==lr wait-loop, nudge LR path by completing a synthetic flip
+                if (is_wait && (spin_count & 0x1FF) == 0)
+                    c.gpr[3] = 0; // HLE "wait done"
             }
         } else {
             spin_pc = c.pc; spin_count = 0;
@@ -186,18 +193,48 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                         (ret == last_null_lr ||
                          (ret >= (last_null_lr & ~0xFFull) && ret < (last_null_lr & ~0xFFull) + 0x100));
                     if (same_site) {
-                        if (++stub_same_lr > 64) {
+                        if (++stub_same_lr > 32) {
+                            // XX-H: sticky null-loop at same LR — skip forward and force HW progress
                             ++soft_breaks;
                             stub_same_lr = 0;
+                            ps3rt_progress_hw();
+                            ++progress_pokes;
                             uint64_t alt = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
-                            if (alt && alt != ret) ret = alt;
-                            else {
-                                uint64_t stride = (soft_breaks >= 6) ? 0x1000ull : 0x400ull;
+                            if (alt && alt != ret && !is_banned(alt)) {
+                                if (soft_breaks <= 32 || (soft_breaks & 0x1F) == 0)
+                                    ps3rt_log("[ps3] null-loop recover 0x%llx -> 0x%llx (soft_breaks=%d)\n",
+                                        (unsigned long long)ret, (unsigned long long)alt, soft_breaks);
+                                ret = alt;
+                            } else {
+                                // Growing stride: 0x400 → 0x1000 → 0x4000 → 0x10000
+                                uint64_t stride = 0x400ull;
+                                if (soft_breaks >= 4) stride = 0x1000ull;
+                                if (soft_breaks >= 16) stride = 0x4000ull;
+                                if (soft_breaks >= 64) stride = 0x10000ull;
                                 uint64_t next = (ret & ~0xFull) + stride;
-                                if (pc_in_chunks(next, chunks, n)) ret = next;
-                                else if (pc_in_chunks(ret + 4, chunks, n)) ret = ret + 4;
+                                if (pc_in_chunks(next, chunks, n) && !is_banned(next)) {
+                                    if (soft_breaks <= 48 || (soft_breaks & 0x3F) == 0)
+                                        ps3rt_log("[ps3] null-loop skip: 0x%llx +0x%llx -> 0x%llx (soft_breaks=%d)\n",
+                                            (unsigned long long)ret, (unsigned long long)stride,
+                                            (unsigned long long)next, soft_breaks);
+                                    ret = next;
+                                } else if (pc_in_chunks(ret + 4, chunks, n)) {
+                                    ret = ret + 4;
+                                }
                             }
-                            if (soft_breaks >= 8) { add_ban(last_null_lr); last_null_lr = 0; }
+                            // Ban sticky LR earlier so we stop returning into the same trap
+                            if (soft_breaks >= 4 && (soft_breaks & 3) == 0) {
+                                add_ban(last_null_lr);
+                                last_null_lr = 0;
+                            }
+                            // Region exhausted: drop sticky, region-ban the 0x1000 window
+                            if (soft_breaks >= 12 && (soft_breaks % 12) == 0) {
+                                add_rban(ret);
+                                ps3rt_log("[ps3] null-loop region exhausted (soft_breaks=%d) -- dropping sticky\n", soft_breaks);
+                                last_null_lr = 0;
+                                uint64_t far = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
+                                if (far && far != ret) ret = far;
+                            }
                         }
                     } else {
                         stub_same_lr = 0;

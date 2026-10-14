@@ -225,13 +225,15 @@ PS3RT_API uint8_t* ps3rt_memory(void) { return g_mem; }
 PS3RT_API uint64_t ps3rt_stack_top(void) { return kStackBase + kStackSize; }
 PS3RT_API void ps3rt_shutdown(void) { std::lock_guard<std::mutex> lk(g_lock); std::free(g_mem); g_mem = nullptr; g_mem_size = 0; ps3rt_log_close(); }
 
-static SPUContext g_spus[6];
-static int g_spu_count = 0;
+SPUContext g_spus[8];
+int g_spu_count = 0;
 PS3RT_API int ps3rt_spu_supported(void) { return 1; }
 PS3RT_API int ps3rt_spu_create(int* out_id) {
-    if (g_spu_count >= 6) return -1;
+    if (g_spu_count >= 8) return -1;
     int id = g_spu_count++;
     std::memset(&g_spus[id], 0, sizeof(SPUContext));
+    g_spus[id].spurs_idle = true;
+    g_spus[id].spurs_group = -1;
     if (out_id) *out_id = id;
     return 0;
 }
@@ -242,11 +244,16 @@ PS3RT_API int ps3rt_spu_load(int id, const void* img, size_t len) {
     std::memcpy(g_spus[id].ls, img, n);
     return 0;
 }
+// Declared in spu_stub.cpp (XX-K interpreter)
+extern void ps3rt_spu_interpreter_start(int id, uint32_t entry);
+
 PS3RT_API int ps3rt_spu_run(int id, uint32_t entry) {
     if (id < 0 || id >= g_spu_count) return -1;
-    g_spus[id].pc = entry; g_spus[id].running = false; g_spus[id].stop_status = 0x2000;
-    if (g_spus[id].mailbox_out_count < 4) g_spus[id].mailbox_out[g_spus[id].mailbox_out_count++] = 1;
-    static int slog = 0; if (slog < 8) { ps3rt_log("[spu] run id=%d entry=0x%x -> complete+mbox\n", id, entry); ++slog; }
+    ps3rt_spu_interpreter_start(id, entry);
+    // If already stopped after initial slice, mbox was posted by stop handler
+    if (!g_spus[id].running && g_spus[id].mailbox_out_count == 0) {
+        g_spus[id].mailbox_out[g_spus[id].mailbox_out_count++] = 1;
+    }
     return 0;
 }
 PS3RT_API int ps3rt_spu_stop(int id) { if (id < 0 || id >= g_spu_count) return -1; g_spus[id].running = false; return 0; }
@@ -262,10 +269,34 @@ PS3RT_API int ps3rt_spu_mbox_read(int id, uint32_t* out) {
     for (int i = 1; i < g_spus[id].mailbox_out_count; ++i) g_spus[id].mailbox_out[i-1] = g_spus[id].mailbox_out[i];
     --g_spus[id].mailbox_out_count; return 0;
 }
-PS3RT_API int ps3rt_spu_mfc_dma(int, uint32_t, uint64_t, uint32_t, uint32_t) { return 0; }
+PS3RT_API int ps3rt_spu_mfc_dma(int id, uint32_t lsa, uint64_t ea, uint32_t size, uint32_t cmd) {
+    if (id < 0 || id >= g_spu_count) return -1;
+    SPUContext& s = g_spus[id];
+    s.mfc_lsa = lsa;
+    s.mfc_ea = ea;
+    s.mfc_size = size;
+    s.mfc_cmd = cmd;
+    // Reuse interpreter DMA path via channel write simulation
+    // Inline minimal put/get here for PPU-initiated DMA
+    lsa &= 0x3FFFF;
+    if (!g_mem || size == 0) return 0;
+    if (ea + size > g_mem_size) {
+        if (ea >= g_mem_size) return -1;
+        size = (uint32_t)(g_mem_size - ea);
+    }
+    if ((uint64_t)lsa + size > sizeof(s.ls)) size = (uint32_t)(sizeof(s.ls) - lsa);
+    bool is_get = (cmd == 0x20 || cmd == 0x21 || cmd == 0x22 || cmd == 0x30 || cmd == 0x31 || cmd == 0x32);
+    if (is_get) std::memcpy(s.ls + lsa, g_mem + ea, size);
+    else std::memcpy(g_mem + ea, s.ls + lsa, size);
+    s.mfc_tag_status |= (1u << (s.mfc_tag & 31));
+    return 0;
+}
+extern "C" PS3RT_API void ps3rt_spu_tick_all(void);
+
 static void spu_tick_all() {
     static int s_spu_once = 0;
     if (!s_spu_once) { PS3RT_STAGE("SPU progress end"); s_spu_once = 1; }
+    ps3rt_spu_tick_all();
 }
 
 // ---- Phase XVII: full pad / input mapping ----
