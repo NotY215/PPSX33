@@ -7,6 +7,7 @@ namespace PS3Recomp.Gui;
 /// <summary>
 /// First-run gate: TERMS.md rendered as readable HTML (GitHub/VS Code style).
 /// Windows username shown in banner; body keeps proper spacing and structure.
+/// Links always open in the system browser — Terms dialog never navigates away.
 /// </summary>
 public sealed class TermsForm : Form
 {
@@ -73,6 +74,8 @@ public sealed class TermsForm : Form
         _browser.AllowWebBrowserDrop = false;
         _browser.ScriptErrorsSuppressed = true;
         _browser.ScrollBarsEnabled = true;
+        _browser.Navigating += Browser_Navigating;
+        _browser.NewWindow += (_, e) => { e.Cancel = true; };
         string md = LoadTermsRaw();
         string html = MarkdownToHtml(md, user);
         _browser.DocumentText = html;
@@ -139,6 +142,32 @@ public sealed class TermsForm : Form
         };
     }
 
+    static void OpenExternalUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return;
+        if (url.StartsWith("about:", StringComparison.OrdinalIgnoreCase)) return;
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+        }
+        catch { }
+    }
+
+    void Browser_Navigating(object? sender, WebBrowserNavigatingEventArgs e)
+    {
+        string url = e.Url?.AbsoluteUri ?? "";
+        if (string.IsNullOrEmpty(url) ||
+            url.StartsWith("about:", StringComparison.OrdinalIgnoreCase) ||
+            url.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase))
+            return;
+        e.Cancel = true;
+        OpenExternalUrl(url);
+    }
+
     static string LoadTermsRaw()
     {
         string[] candidates =
@@ -165,7 +194,6 @@ public sealed class TermsForm : Form
              + "no proprietary decrypt keys. See repository LEGAL.md and TERMS.md.\n";
     }
 
-    /// <summary>Minimal Markdown → HTML (headings, bold, italic, code, lists, links, paragraphs).</summary>
     public static string MarkdownToHtml(string md, string user)
     {
         if (string.IsNullOrEmpty(md)) md = "";
