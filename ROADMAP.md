@@ -17,7 +17,27 @@ Research PS3 static recompiler / HLE runtime. Not a retail port.
 
 ## Earlier phases (I-XIX)
 
-Core recompiler, HLE stubs, GUI workflow, MSVC pipeline, RSX D3D11 present, pad, audio HLE, save HLE — **Done**.
+| Phase | Status | Focus |
+|-------|--------|-------|
+| I | **Done** | UI, project-named EXE, progress/ETA, basic project pipeline |
+| II | **Done** | Halt recovery (sticky last_good, wide stack walk) |
+| III | **Done** | LV2 expansion + PRX/NID filter |
+| IV | **Done** | Never hard-halt while last_good exists |
+| V | **Done** | Break null-call loops (soft_breaks / stride) + restore TOC + real GCM state |
+| VI | **Done** | Import table / OPD resolution + cellGcmSys stub expansion |
+| VII | **Done** | SPU bring-up (mailbox HLE, auto-complete) |
+| VIII | **Done** | RSX command-buffer drain + FIFO method decode |
+| IX | **Done** | D3D11/D3D10 host backend + Present |
+| X | **Done** | Region-ban walk guards + high last_good preference |
+| XI | **Done** | Timestamped run log next to game EXE (`log_YYYY-MM-DD_HH-MM-SS.txt`) |
+| XII | **Done** | Honour real guest GCM put; inject only when FIFO stalled |
+| XIII | **Done** | Surfaces / wild-PC recovery / GCM nid=0 useful returns / LV2 event queue |
+| XIV | **Done** | Depth / stencil / clear surface fidelity (DSV, mask, no pure-blue clear) |
+| XV | **Done** | Fixed-function draw path + shader/tex method tracking (visible tint on draw) |
+| XVI | **Done** | Audio (cellAudio / libaudio HLE — waveOut 48 kHz host) |
+| XVII | **Done** | Pad / input full mapping (XInput + keyboard → cellPad) |
+| XVIII | **Done** | PS3-native save/load only (game checkpoints / in-game save; no savestates) |
+| XIX | **Done** | Performance: RSX FIFO batch (16k steps), coalesced Present, progress batch + flush |
 
 ## Project folder after successful Build
 
