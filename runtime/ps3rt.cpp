@@ -1,1 +1,1 @@
-PLACEHOLDER
+{{FILE:/tmp/ps3rt.cpp}}
