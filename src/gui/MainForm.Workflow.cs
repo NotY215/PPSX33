@@ -15,7 +15,7 @@ public sealed partial class MainForm
             "• We do NOT promote piracy, unauthorized copies, or redistribution of game assets.\r\n" +
             "• Optional EBOOT handling uses tools YOU provide; PPSX33 does not ship decrypt keys.\r\n" +
             "• Do NOT distribute generated binaries, dumps, or game data.\r\n" +
-            "• Output EXE / window / branding is \"PPSX33\" — research tool, not an official port.\r\n" +
+            "• Output EXE is named after your project/game — research tool, not an official port.\r\n" +
             "• You are solely responsible for complying with applicable law.\r\n" +
             "• Use at your own risk. See LEGAL.md.\r\n\r\n" +
             "Click Yes only if you understand and accept these terms.";
@@ -74,10 +74,24 @@ public sealed partial class MainForm
         await Task.CompletedTask;
     }
 
+    static string SafeGameExeName(string projectDir)
+    {
+        string name = Path.GetFileName(projectDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        if (string.IsNullOrWhiteSpace(name)) name = "game";
+        foreach (char c in Path.GetInvalidFileNameChars())
+            name = name.Replace(c, '_');
+        if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            name += ".exe";
+        return name;
+    }
+
     async Task RunGame() {
         if (_projectDir == null) return;
         string outDir = Path.Combine(_projectDir, "output");
-        string exe = Path.Combine(outDir, "PPSX33.exe");
+        string want = SafeGameExeName(_projectDir);
+        string exe = Path.Combine(outDir, want);
+        if (!File.Exists(exe))
+            exe = Path.Combine(outDir, "PPSX33.exe");
         if (!File.Exists(exe))
             exe = Directory.GetFiles(outDir, "*.exe").FirstOrDefault() ?? "";
         if (string.IsNullOrEmpty(exe) || !File.Exists(exe)) { Append("No game EXE in output/"); return; }
@@ -115,20 +129,20 @@ public sealed partial class MainForm
 
     void CopyToGameFolder() {
         if (_projectDir == null) return;
-        Append("Copy to game folder — select the game folder (EBOOT.BIN is found automatically)");
+        Append("Copy to game folder — select the game folder (files go NEXT TO EBOOT.BIN)");
         using var fbd = new FolderBrowserDialog {
-            Description = "Select game folder (EBOOT.BIN will be located automatically)",
+            Description = "Select game folder — runtime is copied into PS3_GAME\\USRDIR (next to EBOOT.BIN)",
             UseDescriptionForTitle = true
         };
-        if (!string.IsNullOrWhiteSpace(_settings.LastGameFolderPath) &&
-            Directory.Exists(_settings.LastGameFolderPath))
-        {
-            try { fbd.InitialDirectory = _settings.LastGameFolderPath; } catch { }
-        }
-        else if (!string.IsNullOrWhiteSpace(_settings.LastGamesRootPath) &&
-                 Directory.Exists(_settings.LastGamesRootPath))
+        if (!string.IsNullOrWhiteSpace(_settings.LastGamesRootPath) &&
+            Directory.Exists(_settings.LastGamesRootPath))
         {
             try { fbd.InitialDirectory = _settings.LastGamesRootPath; } catch { }
+        }
+        else if (!string.IsNullOrWhiteSpace(_settings.LastGameFolderPath) &&
+                 Directory.Exists(_settings.LastGameFolderPath))
+        {
+            try { fbd.InitialDirectory = _settings.LastGameFolderPath; } catch { }
         }
         if (fbd.ShowDialog() != DialogResult.OK) return;
 
@@ -139,29 +153,33 @@ public sealed partial class MainForm
             Append("No EBOOT.BIN found under: " + selected);
             MessageBox.Show(this,
                 "Could not find EBOOT.BIN in the selected folder.\n\n" +
-                "Select the folder that contains your PS3 game dump (or USRDIR).",
+                "Select the folder that contains your PS3 game dump\n" +
+                "(e.g. E:\\GAMES_PS3\\God of War III).",
                 "PPSX33", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
-        string gameFolder = Path.GetDirectoryName(eboot) ?? selected;
-        string name = Path.GetFileName(gameFolder);
-        if (name.Equals("USRDIR", StringComparison.OrdinalIgnoreCase))
+        // HARD RULE: destination is the directory that contains EBOOT.BIN
+        // e.g. E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR
+        string dest = Path.GetDirectoryName(eboot)!;
+        if (string.IsNullOrEmpty(dest) || !Directory.Exists(dest))
         {
-            string? up = Path.GetDirectoryName(gameFolder);
-            if (up != null)
-            {
-                string upName = Path.GetFileName(up);
-                if (upName.Equals("PS3_GAME", StringComparison.OrdinalIgnoreCase))
-                    gameFolder = Path.GetDirectoryName(up) ?? up;
-                else
-                    gameFolder = up;
-            }
+            Append("Invalid EBOOT directory: " + dest);
+            return;
         }
-        string? gamesRoot = Path.GetDirectoryName(gameFolder);
-        if (string.IsNullOrEmpty(gamesRoot)) gamesRoot = gameFolder;
 
-        _settings.LastGameFolderPath = gameFolder;
+        // Settings: USRDIR for run path; title folder / games root for browsing
+        string titleFolder = dest;
+        string? p1 = Path.GetDirectoryName(dest);
+        if (p1 != null && Path.GetFileName(p1).Equals("PS3_GAME", StringComparison.OrdinalIgnoreCase))
+        {
+            string? title = Path.GetDirectoryName(p1);
+            if (!string.IsNullOrEmpty(title)) titleFolder = title;
+        }
+        string? gamesRoot = Path.GetDirectoryName(titleFolder);
+        if (string.IsNullOrEmpty(gamesRoot)) gamesRoot = titleFolder;
+
+        _settings.LastGameFolderPath = dest;
         _settings.LastGamesRootPath = gamesRoot;
         _settings.LastEbootPath = eboot;
         _settings.LastBinPath = eboot;
@@ -169,31 +187,57 @@ public sealed partial class MainForm
         SaveSettings();
 
         Append("EBOOT.BIN: " + eboot);
-        Append("Game folder: " + gameFolder);
+        Append("DESTINATION (must be USRDIR / next to EBOOT): " + dest);
+        Append("Title folder (settings only): " + titleFolder);
         Append("Games root saved: " + gamesRoot);
 
         string outDir = Path.Combine(_projectDir, "output");
-        string dest = gameFolder;
-        string[] required = {
-            "PPSX33.exe", "ps3rt.dll", "guest_image.bin", "pad_map.json"
+        string gameExeName = SafeGameExeName(_projectDir);
+
+        // Prefer project-named exe, then PPSX33.exe, then any .exe
+        string? srcExe = null;
+        string[] exeCandidates = {
+            Path.Combine(outDir, gameExeName),
+            Path.Combine(outDir, "PPSX33.exe"),
         };
+        foreach (var c in exeCandidates)
+            if (File.Exists(c)) { srcExe = c; break; }
+        if (srcExe == null)
+            srcExe = Directory.GetFiles(outDir, "*.exe").FirstOrDefault();
+
         int n = 0;
-        foreach (var fname in required) {
+        if (srcExe != null && File.Exists(srcExe))
+        {
+            string destExe = Path.Combine(dest, gameExeName);
+            File.Copy(srcExe, destExe, true);
+            Append("  + " + gameExeName + "  (from " + Path.GetFileName(srcExe) + ")");
+            n++;
+        }
+
+        foreach (var fname in new[] { "ps3rt.dll", "guest_image.bin", "pad_map.json" })
+        {
             string src = Path.Combine(outDir, fname);
             if (!File.Exists(src)) continue;
             File.Copy(src, Path.Combine(dest, fname), true);
             Append("  + " + fname);
             n++;
         }
-        foreach (var f in Directory.GetFiles(outDir, "*.exe")) {
-            string bn = Path.GetFileName(f);
-            if (bn.Equals("PPSX33.exe", StringComparison.OrdinalIgnoreCase)) continue;
-            File.Copy(f, Path.Combine(dest, bn), true);
-            Append("  + " + bn);
-            n++;
+
+        if (n == 0)
+            Append("Nothing to copy — build first.");
+        else
+        {
+            Append("Copied " + n + " file(s) INTO: " + dest);
+            Append("Run " + gameExeName + " from that folder (same folder as EBOOT.BIN).");
+            MessageBox.Show(this,
+                "Copied to:\n" + dest + "\n\n" +
+                "EXE: " + gameExeName + "\n" +
+                "Also: ps3rt.dll, guest_image.bin, pad_map.json\n\n" +
+                "Run the EXE from that USRDIR folder.",
+                "PPSX33 — Copy complete",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
         }
-        if (n == 0) Append("Nothing to copy — build first.");
-        else Append("Copied " + n + " file(s) to " + dest + " — run PPSX33.exe from that folder.");
     }
 
     void StopGame() {
