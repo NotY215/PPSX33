@@ -4,21 +4,29 @@ namespace PS3Recomp.Gui;
 
 /// <summary>
 /// Persisted under %APPDATA%/PPSX33/settings.json
-/// Holds RPCS3 path, last ELF/BIN, graphics, threads, DualShock key map, terms acceptance.
+/// Paths, RPCS3, graphics, threads, DualShock key map, terms acceptance.
 /// </summary>
 public sealed class Settings
 {
     public string GraphicsBackend { get; set; } = "D3D11";
     public int PpuThreads { get; set; } = Math.Clamp(Environment.ProcessorCount, 1, 16);
     public string Rpcs3Path { get; set; } = "";
+    /// <summary>Last decrypted/loaded ELF path.</summary>
     public string LastElfPath { get; set; } = "";
+    /// <summary>Last EBOOT.BIN / encrypted binary path.</summary>
     public string LastBinPath { get; set; } = "";
+    /// <summary>Parent of the game folder last chosen (e.g. E:\Games).</summary>
+    public string LastGamesRootPath { get; set; } = "";
+    /// <summary>Full game folder containing EBOOT.BIN (e.g. E:\Games\GOW3).</summary>
+    public string LastGameFolderPath { get; set; } = "";
+    /// <summary>Resolved EBOOT.BIN full path inside the game folder.</summary>
+    public string LastEbootPath { get; set; } = "";
+    /// <summary>Last project output folder (…/projects/Name/output).</summary>
+    public string LastOutputFolderPath { get; set; } = "";
     public KeyMap KeyMap { get; set; } = KeyMap.Defaults();
-    /// <summary>True after first-run Terms dialog is accepted.</summary>
     public bool TermsAccepted { get; set; } = false;
-    /// <summary>Windows username recorded at acceptance (informational).</summary>
     public string TermsAcceptedBy { get; set; } = "";
-    public string TermsVersion { get; set; } = "2026-10-13";
+    public string TermsVersion { get; set; } = "2026-10-14";
 
     public static string DataDir
     {
@@ -28,7 +36,7 @@ public sealed class Settings
             if (string.IsNullOrWhiteSpace(baseDir))
                 baseDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData", "Roaming");
             string dir = Path.Combine(baseDir, "PPSX33");
-            try { Directory.CreateDirectory(dir); } catch { /* ignore */ }
+            try { Directory.CreateDirectory(dir); } catch { }
             return dir;
         }
     }
@@ -56,7 +64,7 @@ public sealed class Settings
                 }
             }
         }
-        catch { /* fall through to defaults */ }
+        catch { }
         return new Settings();
     }
 
@@ -68,6 +76,6 @@ public sealed class Settings
             Directory.CreateDirectory(DataDir);
             File.WriteAllText(FilePath, JsonSerializer.Serialize(this, JsonOpts));
         }
-        catch { /* ignore IO errors */ }
+        catch { }
     }
 }
