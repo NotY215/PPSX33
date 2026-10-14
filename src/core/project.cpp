@@ -19,6 +19,7 @@
 namespace fs = std::filesystem;
 namespace ps3 {
 
-#include "project_impl.inl"
+#include "project_impl_a.inl"
+#include "project_impl_b.inl"
 
 } // namespace ps3
