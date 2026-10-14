@@ -146,22 +146,23 @@ public sealed partial class MainForm : Form
             "========================================\r\n\r\n" +
             "DONE\r\n" +
             "  I–XIX     Core recompiler, HLE, RSX host, audio/pad, pipeline\r\n" +
-            "  XX-A      Runtime package: EXE + ps3rt.dll + guest_image\r\n" +
+            "  XX-A      Game-named EXE + ps3rt.dll + guest_image + pad_map.json\r\n" +
             "  XX-B      cellFs + PSARC TOC / zlib blocks\r\n" +
-            "  XX-C      Copy to game folder (auto-find EBOOT.BIN)\r\n" +
+            "  XX-C      Copy into PS3_GAME\\USRDIR (auto-find EBOOT.BIN)\r\n" +
             "  XX-D      Controller map → pad_map.json\r\n" +
             "  XX-E      Legal / TERMS first-run (links in system browser)\r\n" +
             "  XX-F      Post-build layout (reports at root; output/ runtime only)\r\n" +
-            "  XX-G      Named run logs (in_game_folder / outside_game)\r\n\r\n" +
+            "  XX-G      Named run logs (in_game_folder / outside_game)\r\n" +
+            "  XX-G+     Pad log only when game window focused; asset boot scan\r\n\r\n" +
             "PENDING\r\n" +
             "  XX-H      Full playable pass (title → in-game UI / assets / audio)\r\n\r\n" +
             "WORKFLOW\r\n" +
             "  1. Load decrypted ELF (or Decrypt EBOOT via your RPCS3)\r\n" +
             "  2. Decompile (lift chunks)\r\n" +
             "  3. Set controller keys (before Build)\r\n" +
-            "  4. Build → PPSX33.exe + ps3rt.dll in output/\r\n" +
-            "  5. Copy to game folder (next to EBOOT.BIN)\r\n" +
-            "  6. Run from that folder\r\n\r\n" +
+            "  4. Build → <GameName>.exe + ps3rt.dll in output/\r\n" +
+            "  5. Copy to game folder (into USRDIR next to EBOOT.BIN)\r\n" +
+            "  6. Run the game-named EXE from USRDIR\r\n\r\n" +
             "KNOWN RESEARCH GAPS\r\n" +
             "  · SPU: mailbox HLE only — no full ISA / MFC / SPURS\r\n" +
             "  · Solid blue screen = guest never reached real draws / cellFs\r\n" +
