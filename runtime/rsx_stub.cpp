@@ -530,6 +530,14 @@ static void rsx_process_fifo(uint8_t* mem) {
                  method == 0x1808 || method == 0x1820) {
             ++g_rsx.draws;
             ++g_rsx.draws_this_frame;
+            // XXII-G: count textured vs clear-only draws
+            if (g_rsx.tex_units_bound || g_rsx.tex_offset) {
+                static int gdr = 0;
+                if (gdr < 20) { ps3rt_log("[rsx] XXII-G draw textured tex=0x%x\n", g_rsx.tex_offset); ++gdr; }
+            } else {
+                static int gdc = 0;
+                if (gdc < 12) { ps3rt_log("[rsx] XXII-G draw (no tex unit)\n"); ++gdc; }
+            }
             if (g_rsx.tex_units_bound || g_rsx.tex_offset) {
                 static int stdr = 0;
                 if (stdr < 16) {
@@ -626,7 +634,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] XXII-A flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] XXII-G flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,

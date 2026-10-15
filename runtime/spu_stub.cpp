@@ -196,7 +196,7 @@ static uint32_t ch_read(SPUContext& s, uint32_t ch) {
         return s.signal1;
     case CH_SPU_RdSigNotify2:
         return s.signal2;
-    case CH_MFC_RdTagStat: // XXII-C: report completed tags {
+    case CH_MFC_RdTagStat: { // XXII-C: report completed tags
         uint32_t m = s.mfc_tag_mask ? s.mfc_tag_mask : 0xFFFFFFFFu;
         return s.mfc_tag_status & m;
     }
@@ -761,6 +761,7 @@ static bool spu_step(SPUContext& s) {
         return true;
     }
 
+    // XXII-I: SPU channel path (rdch/wrch) — keep above interpreter ops
     // --- Channels ---
     // wrch: 0010 0001 1 ra rt  (rt=channel, ra=data)  opc9?
     // wrch opcode 0x21A?  Documentation: wrch = 0010 0001 1 | ca | rt  where ca is channel

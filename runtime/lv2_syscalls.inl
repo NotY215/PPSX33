@@ -1,3 +1,4 @@
+// XXII-J: LV2 contracts — prefer documented return where known; else 0 with log upstream
 // XXII-D: LV2 / HLE — log first use; prefer non-zero for unknown high-risk syscalls
 // lv2_syscalls.inl — HLE with first-hit logging (accuracy: stubs still incomplete)\n// lv2_syscalls.inl — H: expanded LV2 HLE (included inside ps3rt_syscall switch)
 

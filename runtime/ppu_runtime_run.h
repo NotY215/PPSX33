@@ -1,3 +1,4 @@
+// XXII-H: PPU recovery/run surface — prefer soft continue over halt
 // Phase XV: import stub before force-out; wild-PC excludes 0x39800000
 // Phase XIV (safe): sustained dwell assist — no PC thrash storm
 // XX-H: stronger null-loop skip, earlier spin assist, sticky region drop
