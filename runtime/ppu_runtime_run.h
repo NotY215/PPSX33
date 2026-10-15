@@ -299,6 +299,21 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
         hit->fn(c);
 
         if ((++steps & 0x3FFFFull) == 0) {
+
+            // XXIII-A: never linger at null PC — re-enter last good or first chunk
+            if (c.pc == 0) {
+                uint64_t boot = last_good_ret;
+                if (!boot && n > 0 && chunks) boot = chunks[0].start;
+                if (boot) {
+                    static int zpc = 0;
+                    if (zpc < 16) {
+                        ps3rt_log("[ps3] XXIII-A null-pc recover -> 0x%llx\n", (unsigned long long)boot);
+                        ++zpc;
+                    }
+                    c.pc = boot;
+                    if (entry_toc) c.gpr[2] = entry_toc;
+                }
+            }
             ps3rt_log("[ps3] heartbeat steps=%llu pc=0x%llx lr=0x%llx r2=0x%llx pokes=%llu nrban=%d\n",
                 (unsigned long long)steps, (unsigned long long)c.pc,
                 (unsigned long long)c.lr, (unsigned long long)c.gpr[2],

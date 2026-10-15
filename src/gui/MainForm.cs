@@ -66,7 +66,7 @@ public sealed partial class MainForm : Form
 
     public MainForm()
     {
-        Text = "PPSX33  ·  PlayStation 3 Recompiler  ·  XXII";
+        Text = "PPSX33  ·  PlayStation 3 Recompiler  ·  XXIIII";
         StartPosition = FormStartPosition.CenterScreen;
         Size = new Size(1280, 800);
         MinimumSize = new Size(1024, 640);
@@ -214,20 +214,18 @@ public sealed partial class MainForm : Form
         _roadmap.Text =
             "PPSX33 - Roadmap\r\n" +
             "========================================\r\n\r\n" +
-            "PHASE 1 - XXI   (see roadmap/ folder for full detail)\r\n" +
-            "  I-XIX     Core pipeline (TESTING)\r\n" +
-            "  XX-A..G   Packaging & host UX (DONE)\r\n" +
-            "  XX-H..O   Runtime base (DONE)\r\n" +
-            "  XXI A-Z   Lettered post-XX work (DONE)\r\n\r\n" +
-            "PHASE XXII - PIPELINE CORRECTNESS (ACTIVE)\r\n" +
-            "  XXII-A   RSX present/color-buffer fidelity\r\n" +
-            "  XXII-B   PPU soft-recovery / helper surface\r\n" +
-            "  XXII-C+  SPU/MFC, LV2/HLE, modules, timing (planned)\r\n\r\n" +
-            "FUTURE - OpenGL fallback\r\n" +
-            "  Auto-select D3D11 when GPU supports it;\r\n" +
-            "  otherwise OpenGL 3.3 (or 2.1) for no dedicated GPU.\r\n\r\n" +
-            "Per-phase docs: roadmap/I.md ... roadmap/XXII.md\r\n" +
-            "Requirements tab: minimum / recommended host specs.\r\n";
+            "PHASE 1 — I–XXII  (see roadmap/ folder)\r\n" +
+            "  I–XIX     Core pipeline (TESTING)\r\n" +
+            "  XX-A..O   Packaging + runtime base (DONE)\r\n" +
+            "  XXI A–Z   Lettered work (DONE)\r\n" +
+            "  XXII      Pipeline correctness (DONE)\r\n\r\n" +
+            "PHASE XXIII — EXECUTION REALITY (ACTIVE)\r\n" +
+            "  XXIII-A  Null-PC / control-flow recovery\r\n" +
+            "  XXIII-B  RSX present path (color/tex every flip)\r\n" +
+            "  XXIII-C  Audio host keep-alive\r\n" +
+            "  See roadmap/XXIII.md for full P0/P1 work list.\r\n\r\n" +
+            "Workflow: Load decrypted ELF → Decompile → Map → Build →\r\n" +
+            "Copy to USRDIR → Run from USRDIR.\r\n";
 
         _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(110, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab;
         AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap); AddTab("Requirements", _requirements);

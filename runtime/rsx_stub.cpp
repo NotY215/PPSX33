@@ -458,9 +458,12 @@ static void rsx_host_present_clear() {
         static uint32_t s_present_skip = 0;
         // V: upload guest texture when unit bound
         { uint8_t* m = ps3rt_memory();
-          if (m && (g_rsx.tex_units_bound || g_rsx.tex_offset || g_rsx.color_valid)) {
+          // XXIII-B: always attempt color/tex present (even when counters say shaders=0)
+          if (m) {
+              if (!g_rsx.tex_offset && g_rsx.color_offset) g_rsx.tex_offset = g_rsx.color_offset;
+              if (!g_rsx.tex_width) { g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280; g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720; }
               rsx_upload_guest_tex(m);
-              rsx_blit_guest_tex_fullscreen(m); // Y
+              rsx_blit_guest_tex_fullscreen(m);
           } }
         bool need_present = (g_rsx.draws_this_frame > 0) || ((s_present_skip++ & 7) == 0);
         g_rsx.draws_this_frame = 0;
@@ -647,7 +650,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] XXII-G flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] XXIII-B flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,

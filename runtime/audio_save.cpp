@@ -1,3 +1,4 @@
+// XXIII-C audio path
 // XXII-K: save lifecycle surface (create/list/load)
 // XXII-F: audio ring / notify surface
 // Phase XVI audio + XVIII PS3-native save (linked with ps3rt)
@@ -128,6 +129,8 @@ static void audio_queue_s16(const int16_t* samples, size_t nframes) {
 }
 
 PS3RT_API void ps3rt_audio_tick(void) {
+    audio_host_open(); // XXIII-C
+
 #if defined(_WIN32)
     if (!g_wo || !g_audio_inited) return;
     // Keep at least one silent buffer if nothing queued (prevent underrun click)
