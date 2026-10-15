@@ -1,0 +1,211 @@
+PPSX33 run log
+mode=launch_in_game_folder
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-15_19-30-32.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-15_19-30-32.txt
+[stage] BOOT start
+[ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
+[ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
+[ps3rt] PS3IMG1 loaded from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\guest_image.bin (2 segments)
+[stage] MEM map end
+[save] root=C:\Users\shrey\OneDrive\Documents\GOW3\PS3_SAVEDATA (PS3-native only; no savestates)
+[psarc] XX-J zlib loaded
+[fs] game_root=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\BAS.PSARC entries=76 block_size=65536 blocks=23700 zlib=1 data_start=0xc230
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CAV.PSARC entries=43 block_size=65536 blocks=40462 zlib=1 data_start=0x14146
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CHALLENGE.PSARC entries=43 block_size=65536 blocks=190 zlib=1 data_start=0x6a6
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CRN.PSARC entries=22 block_size=65536 blocks=8357 zlib=1 data_start=0x43fe
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ENGLISH.PSARC entries=2012 block_size=65536 blocks=16119 zlib=1 data_start=0x169d6
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAME.PSARC entries=122 block_size=65536 blocks=5311 zlib=1 data_start=0x37ea
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAME_SUB.PSARC entries=33 block_size=65536 blocks=6247 zlib=1 data_start=0x34cc
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAZ.PSARC entries=34 block_size=65536 blocks=15909 zlib=1 data_start=0x8066
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\HDS.PSARC entries=112 block_size=65536 blocks=61470 zlib=1 data_start=0x1ed7c
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ICA.PSARC entries=46 block_size=65536 blocks=21910 zlib=1 data_start=0xb0b0
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\LAB.PSARC entries=28 block_size=65536 blocks=17989 zlib=1 data_start=0x8ff2
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\MUSIC.PSARC entries=375 block_size=65536 blocks=29788 zlib=1 data_start=0x114ca
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\OLY.PSARC entries=123 block_size=65536 blocks=67841 zlib=1 data_start=0x2208c
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\POS.PSARC entries=52 block_size=65536 blocks=34108 zlib=1 data_start=0x110b0
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\RES.PSARC entries=368 block_size=65536 blocks=46981 zlib=1 data_start=0x19a4a
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\BAS.PSARC entries=76 block_size=65536 blocks=23700 zlib=1 data_start=0xc230
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CAV.PSARC entries=43 block_size=65536 blocks=40462 zlib=1 data_start=0x14146
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CHALLENGE.PSARC entries=43 block_size=65536 blocks=190 zlib=1 data_start=0x6a6
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CRN.PSARC entries=22 block_size=65536 blocks=8357 zlib=1 data_start=0x43fe
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ENGLISH.PSARC entries=2012 block_size=65536 blocks=16119 zlib=1 data_start=0x169d6
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAME.PSARC entries=122 block_size=65536 blocks=5311 zlib=1 data_start=0x37ea
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAME_SUB.PSARC entries=33 block_size=65536 blocks=6247 zlib=1 data_start=0x34cc
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAZ.PSARC entries=34 block_size=65536 blocks=15909 zlib=1 data_start=0x8066
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\HDS.PSARC entries=112 block_size=65536 blocks=61470 zlib=1 data_start=0x1ed7c
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ICA.PSARC entries=46 block_size=65536 blocks=21910 zlib=1 data_start=0xb0b0
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\LAB.PSARC entries=28 block_size=65536 blocks=17989 zlib=1 data_start=0x8ff2
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\MUSIC.PSARC entries=375 block_size=65536 blocks=29788 zlib=1 data_start=0x114ca
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\OLY.PSARC entries=123 block_size=65536 blocks=67841 zlib=1 data_start=0x2208c
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\POS.PSARC entries=52 block_size=65536 blocks=34108 zlib=1 data_start=0x110b0
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\RES.PSARC entries=368 block_size=65536 blocks=46981 zlib=1 data_start=0x19a4a
+[fs] XX-J asset scan done root=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR  psarcs=30  entries=6978
+[stage] BOOT end
+[stage] PPU run start
+[ps3] prx_import_stub pc=0x39800000 nid=0x0053F96C kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x103ac (#1)
+[ps3] prx_import_stub pc=0x39800000 nid=0x39800000 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x33aec8 (#2)
+[lv2] sc 352 r3=f0ffe04 r4=3cc7f8 r5=4 r6=0
+[lv2] alloc VA=0x8000000 size=0x3cc7f8
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000160 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336750 (#3)
+[ps3] prx_import_stub pc=0x39800000 nid=0xF1500000 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#4)
+[ps3] prx_import_stub pc=0x39800000 nid=0x39800000 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#5)
+[ps3] prx_import_stub pc=0x39800000 nid=0x39800000 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#6)
+[ps3] prx_import_stub pc=0x39800000 nid=0x0065F088 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#7)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000065 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#8)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000065 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#9)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000065 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#10)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000065 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#11)
+[ps3] prx_import_stub pc=0x39800000 nid=0x0065F9C8 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x10464 (#12)
+[ps3] Phase XIV wild-pc 0x0 -> 0x199c78
+[ps3] prx_import_stub pc=0x39800000 nid=0x00525680 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x3462d4 (#13)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00525680 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x3463e8 (#14)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00525680 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x3467c8 (#15)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000020 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336554 (#16)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000020 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x336588 (#17)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000020 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x34636c (#18)
+[ps3] prx_import_stub pc=0x39800000 nid=0x00000020 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x346460 (#19)
+[ps3] prx_import_stub pc=0x39800000 nid=0x0065FCC8 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x346554 (#20)
+[ps3] Phase XIV wild-pc 0x0 -> 0x199c78
+[ps3] Phase XIV wild-pc 0x0 -> 0x199c78
+[ps3] prx_import_stub pc=0x39800000 nid=0x39800000 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x326a70 (#21)
+[ps3] Phase XIV wild-pc 0x0 -> 0x199c78
+[ps3] Phase XIV wild-pc 0x0 -> 0x199c78
+[ps3] Phase XIV wild-pc 0x0 -> 0x199c78
+[ps3] Phase XIV wild-pc 0x0 -> 0x199c78
+[ps3] Phase XIV wild-pc 0x90030004 -> 0x199c78
+[ps3] Phase XIV wild-pc 0x0 -> 0x199c78
+[ps3] Phase XIV wild-pc 0x0 -> 0x199c78
+[ps3] prx_import_stub pc=0x39800000 nid=0x39800000 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x1f2df0 (#22)
+[ps3] prx_import_stub pc=0x39800000 nid=0x39800000 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x1f2df0 (#23)
+[ps3] Phase XIV wild-pc 0x0 -> 0x199c78
+[ps3] Phase XIV wild-pc 0x0 -> 0x199c78
+[ps3] prx_import_stub pc=0x39800000 nid=0x39800000 kind=0
+[ps3] import stub pc=0x39800000 -> ret=0x1f2df0 (#24)
+[ps3] import stub pc=0x39800000 -> ret=0x337188 (#25)
+[ps3] import stub pc=0x39800000 -> ret=0x33723c (#26)
+[stage] PPU progress start
+[stage] SPU progress end
+[pad] XInput loaded from xinput1_4.dll
+[audio] G/K host waveOut 48kHz stereo ready (4 buffers)
+[lv2] alloc VA=0x83cd000 size=0x1000
+[gcm] control @ 0x83cd000
+[lv2] alloc VA=0x83ce000 size=0x10000
+[gcm] labels  @ 0x83ce000
+[lv2] alloc VA=0x83e0000 size=0x100000
+[rsx] XXII-L API preference: D3D11 (OpenGL 3.3/2.1 fallback not linked yet)
+[rsx] PIC1 window/taskbar icon from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR/../PIC1.PNG
+[rsx] PIC1 window/taskbar icon from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR/../PIC1.PNG
+[rsx] XX-O window title="GOW3 — PPSX33"
+[rsx] D3D11 host present ready 1280x720 (depth+stencil)
+[rsx] init fifo=0x83e0000 size=0x100000 backend=1
+[lv2] alloc VA=0x84e0000 size=0x4000
+[lv2] alloc VA=0x84f0000 size=0x1000000
+[gcm] local_addr @ 0x84f0000
+[gcm] XX-I state ready fifo=0x83e0000 ctrl=0x83cd000 labels=0x83ce000
+[stage] GCM ready end
+[stage] RUNNING
+[ps3] Phase M touch-progress n=8192
+[pad] poll#2 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
+[ps3] Phase M touch-progress n=16384
+[pad] poll#3 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
+[ps3] Phase M touch-progress n=24576
+[pad] poll#4 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
+[ps3] Phase M touch-progress n=32768
+[ps3] Phase M touch-progress n=40960
+[ps3] Phase M touch-progress n=49152
+[ps3] Phase M touch-progress n=57344
+[ps3] Phase M touch-progress n=65536
+[ps3] Phase M touch-progress n=73728
+[ps3] Phase M touch-progress n=81920
+[ps3] Phase M touch-progress n=90112
+[ps3] Phase M touch-progress n=98304
+[gcm] inject clear+draw col=0x101828
+[rsx] XXIII-B flip #1 draws=0 clears=0 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=0 unknown=0 1280x720
+[gcm] XX-I guest put=0x20
+[rsx] XXII-G draw (no tex unit)
+[rsx] XXIII-B flip #2 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[gcm] XX-I guest put=0x20
+[rsx] XXIII-B flip #3 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[gcm] XX-I guest put=0x20
+[rsx] XXIII-B flip #4 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #5 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #6 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #7 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #8 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[time] X ppu=1024 spu=768 rsx_flips=0 phase=0
+[rsx] XXIII-B flip #9 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #10 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #11 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #12 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #13 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #14 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #15 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #16 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[time] X ppu=2048 spu=1536 rsx_flips=0 phase=0
+[rsx] XXIII-B flip #17 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #18 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #19 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #20 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #21 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #22 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #23 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #24 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[time] X ppu=3072 spu=2304 rsx_flips=0 phase=0
+[rsx] XXIII-B flip #25 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #26 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #27 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #28 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #29 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #30 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #31 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[rsx] XXIII-B flip #32 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x720
+[time] X ppu=4096 spu=3072 rsx_flips=0 phase=0
+[gcm] inject clear+draw col=0x182030
+[time] X ppu=5120 spu=3840 rsx_flips=0 phase=0
+[time] X ppu=6144 spu=4608 rsx_flips=0 phase=0
+[time] X ppu=7168 spu=5376 rsx_flips=0 phase=0
+[time] X ppu=8192 spu=6144 rsx_flips=0 phase=0
+[rsx] XXIII-B flip #257 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[rsx] XXIII-B flip #513 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[rsx] XXIII-B flip #769 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] XXIII-A null-pc recover -> 0x33723c
+[ps3] heartbeat steps=262144 pc=0x33723c lr=0x0 r2=0x52d6c8 pokes=4085 nrban=0
+[rsx] XXIII-B flip #1025 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[rsx] XXIII-B flip #1281 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] XXIII-A null-pc recover -> 0x33723c
+[ps3] heartbeat steps=524288 pc=0x33723c lr=0x0 r2=0x52d6c8 pokes=8181 nrban=0
+[rsx] XXIII-B flip #1537 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[rsx] XXIII-B flip #1793 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[rsx] XXIII-B flip #2049 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[ps3] XXIII-A null-pc recover -> 0x33723c
+[ps3] heartbeat steps=786432 pc=0x33723c lr=0x0 r2=0x52d6c8 pokes=12277 nrban=0
+[rsx] XXIII-B flip #2305 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[rsx] XXIII-B flip #2561 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
+[rsx] window closed by user — exiting
+[ps3rt] force exit
+
+--- log end ---
