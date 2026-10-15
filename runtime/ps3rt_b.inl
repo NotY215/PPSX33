@@ -53,7 +53,26 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
 static int g_prx_log = 0;
 
 // S: loaded PRX module registry (name + id)
-struct PrxMod { bool used; char name[64]; uint32_t id; uint32_t entry; };
+struct PrxMod { bool used; char name[64]; uint32_t id; uint32_t entry; uint32_t exports; uint64_t base; };
+// W: simple export bind table (NID -> guest stub addr)
+struct PrxExport { uint32_t nid; uint64_t ea; };
+static PrxExport g_prx_exports[128];
+static int g_prx_export_n = 0;
+static void prx_bind_export(uint32_t nid, uint64_t ea) {
+    for (int i = 0; i < g_prx_export_n; ++i)
+        if (g_prx_exports[i].nid == nid) { g_prx_exports[i].ea = ea; return; }
+    if (g_prx_export_n < 128) {
+        g_prx_exports[g_prx_export_n].nid = nid;
+        g_prx_exports[g_prx_export_n].ea = ea;
+        ++g_prx_export_n;
+    }
+}
+static uint64_t prx_find_export(uint32_t nid) {
+    for (int i = 0; i < g_prx_export_n; ++i)
+        if (g_prx_exports[i].nid == nid) return g_prx_exports[i].ea;
+    return 0;
+}
+
 static PrxMod g_prx_mods[32];
 static uint32_t g_prx_mod_seq = 1;
 static int prx_mod_find(const char* name) {
@@ -70,6 +89,8 @@ static int prx_mod_load(const char* name) {
         g_prx_mods[i].used = true;
         g_prx_mods[i].id = g_prx_mod_seq++;
         g_prx_mods[i].entry = 0;
+        g_prx_mods[i].exports = 0;
+        g_prx_mods[i].base = 0;
         if (name) {
             std::strncpy(g_prx_mods[i].name, name, 63);
             g_prx_mods[i].name[63] = 0;
@@ -559,11 +580,35 @@ PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
     return prx_dispatch(c, maybe_nid, kind);
 }
 
-// R: coarse guest timing (PPU slices / SPU / RSX ratio)
+// R+X: coarse guest timing + host frame pacing
 static uint64_t g_time_ppu_slices = 0;
 static uint64_t g_time_spu_ticks = 0;
 static uint64_t g_time_rsx_flips = 0;
 static uint32_t g_time_phase = 0;
+static uint64_t g_time_last_host_ms = 0;
+static uint32_t g_time_target_fps = 60;
+#if defined(_WIN32)
+static uint64_t host_ms_now() {
+    return (uint64_t)GetTickCount64();
+}
+#else
+static uint64_t host_ms_now() { return 0; }
+#endif
+static void frame_pace_wait() {
+    // X: aim ~60Hz between RSX flip assists
+    uint64_t now = host_ms_now();
+    if (!g_time_last_host_ms) { g_time_last_host_ms = now; return; }
+    uint64_t frame_ms = 1000u / (g_time_target_fps ? g_time_target_fps : 60);
+    uint64_t elapsed = now - g_time_last_host_ms;
+    if (elapsed < frame_ms) {
+#if defined(_WIN32)
+        Sleep((DWORD)(frame_ms - elapsed));
+#endif
+    }
+    g_time_last_host_ms = host_ms_now();
+    ++g_time_rsx_flips;
+}
+
 
 PS3RT_API void ps3rt_progress_hw(void) {
     if (ps3rt_should_exit()) { ps3rt_force_exit(); return; }
@@ -585,6 +630,7 @@ PS3RT_API void ps3rt_progress_hw(void) {
         // XX-H: clear pending flip often so GetFlipStatus/WaitFlip cannot stick
         if (g_gcm_flip_status != 0 && (s_n & 0x1F) == 0) {
             if (g_mem) ps3rt_rsx_flush(g_mem);
+            frame_pace_wait(); // X
             ps3rt_rsx_flip(0);
             g_gcm_flip_status = 0;
             ++g_gcm_frame_id;
@@ -606,7 +652,7 @@ PS3RT_API void ps3rt_progress_hw(void) {
     if ((g_time_ppu_slices & 0x3FF) == 0) {
         static int s_t = 0;
         if (s_t < 8) {
-            ps3rt_log("[time] R ppu=%llu spu=%llu rsx_flips=%llu phase=%u\n",
+            ps3rt_log("[time] X ppu=%llu spu=%llu rsx_flips=%llu phase=%u\n",
                 (unsigned long long)g_time_ppu_slices,
                 (unsigned long long)g_time_spu_ticks,
                 (unsigned long long)g_time_rsx_flips, g_time_phase);

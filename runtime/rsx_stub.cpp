@@ -1,4 +1,4 @@
-// A+I+L+T: surfaces, shader, texture unit, textured-draw awareness
+// A+I+L+T+V: + host texture upload from guest TEX_OFFSET
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include <mutex>
@@ -82,6 +82,80 @@ static ID3D11RenderTargetView* g_rtv = nullptr;
 static ID3D11DepthStencilView* g_dsv = nullptr;
 static ID3D11Texture2D* g_depth_tex = nullptr;
 static ID3D11DepthStencilState* g_dss = nullptr;
+// V: host copy of guest texture (point-sampled blit source)
+static ID3D11Texture2D* g_guest_tex = nullptr;
+static ID3D11ShaderResourceView* g_guest_srv = nullptr;
+static uint32_t g_guest_tex_w = 0, g_guest_tex_h = 0;
+static uint64_t g_guest_tex_src = 0;
+
+static void rsx_release_guest_tex() {
+    if (g_guest_srv) { g_guest_srv->Release(); g_guest_srv = nullptr; }
+    if (g_guest_tex) { g_guest_tex->Release(); g_guest_tex = nullptr; }
+    g_guest_tex_w = g_guest_tex_h = 0;
+    g_guest_tex_src = 0;
+}
+
+// V: upload A8R8G8B8 (or raw 32bpp) region from guest RAM into D3D texture
+static void rsx_upload_guest_tex(uint8_t* mem) {
+    if (!g_dev || !g_ctx11 || !mem) return;
+    uint32_t w = g_rsx.tex_width ? g_rsx.tex_width : 256;
+    uint32_t h = g_rsx.tex_height ? g_rsx.tex_height : 256;
+    if (w > 2048) w = 2048;
+    if (h > 2048) h = 2048;
+    uint64_t off = g_rsx.tex_offset;
+    if (!off && g_rsx.color_offset) off = g_rsx.color_offset;
+    if (!off) return;
+    // guest RSX offsets often in local memory window — clamp into 512MB
+    if (off >= 512ull * 1024 * 1024) return;
+    uint32_t pitch = g_rsx.tex_pitch ? g_rsx.tex_pitch : (w * 4);
+    if (pitch < w * 4) pitch = w * 4;
+    if (off + (uint64_t)pitch * h > 512ull * 1024 * 1024) {
+        h = (uint32_t)((512ull * 1024 * 1024 - off) / pitch);
+        if (h < 1) return;
+    }
+    if (!g_guest_tex || g_guest_tex_w != w || g_guest_tex_h != h) {
+        rsx_release_guest_tex();
+        D3D11_TEXTURE2D_DESC td{};
+        td.Width = w; td.Height = h; td.MipLevels = 1; td.ArraySize = 1;
+        td.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        td.SampleDesc.Count = 1;
+        td.Usage = D3D11_USAGE_DYNAMIC;
+        td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        td.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+        if (FAILED(g_dev->CreateTexture2D(&td, nullptr, &g_guest_tex))) return;
+        D3D11_SHADER_RESOURCE_VIEW_DESC sd{};
+        sd.Format = td.Format;
+        sd.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+        sd.Texture2D.MipLevels = 1;
+        g_dev->CreateShaderResourceView(g_guest_tex, &sd, &g_guest_srv);
+        g_guest_tex_w = w; g_guest_tex_h = h;
+        static int sc=0; if(sc<8){ps3rt_log("[rsx] V host tex %ux%u created\n", w, h);++sc;}
+    }
+    D3D11_MAPPED_SUBRESOURCE map{};
+    if (FAILED(g_ctx11->Map(g_guest_tex, 0, D3D11_MAP_WRITE_DISCARD, 0, &map))) return;
+    uint8_t* dst = (uint8_t*)map.pData;
+    const uint8_t* src = mem + off;
+    for (uint32_t y = 0; y < h; ++y) {
+        const uint8_t* row = src + (uint64_t)y * pitch;
+        uint8_t* drow = dst + y * map.RowPitch;
+        // copy min(w*4, pitch) as BGRA->RGBA swap optional — raw copy for HLE
+        uint32_t nbytes = w * 4;
+        if (nbytes > pitch) nbytes = pitch;
+        std::memcpy(drow, row, nbytes);
+    }
+    g_ctx11->Unmap(g_guest_tex, 0);
+    g_guest_tex_src = off;
+    static int su=0; if(su<12){ps3rt_log("[rsx] V upload off=0x%llx %ux%u\n", (unsigned long long)off, w, h);++su;}
+}
+
+// V: blit guest texture to backbuffer via CopyResource path (stretch with Draw not available without shaders —
+// use UpdateSubresource-style full-screen by clearing from average sample)
+static void rsx_blit_guest_tex_debug() {
+    if (!g_guest_tex || !g_ctx11 || !g_rtv) return;
+    // Without a pixel shader pipeline, approximate: sample center pixel CPU-side already uploaded —
+    // Present still shows clear; log proves path. Optional: D3D11 CopySubresourceRegion if sizes match BB.
+}
+
 
 extern "C" PS3RT_API void ps3rt_force_exit(void);
 extern "C" PS3RT_API int ps3rt_should_exit(void);
@@ -307,6 +381,10 @@ static void rsx_host_present_clear() {
         }
         // Phase XIX: coalesce Present — skip empty frames
         static uint32_t s_present_skip = 0;
+        // V: upload guest texture when unit bound
+        { uint8_t* m = ps3rt_memory();
+          if (m && (g_rsx.tex_units_bound || g_rsx.tex_offset || g_rsx.color_valid))
+              rsx_upload_guest_tex(m); }
         bool need_present = (g_rsx.draws_this_frame > 0) || ((s_present_skip++ & 7) == 0);
         g_rsx.draws_this_frame = 0;
         if (need_present && g_swap)
@@ -484,7 +562,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] T flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] V flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,
