@@ -108,7 +108,11 @@ static inline uint64_t ps3_rotl32dup(uint32_t v, unsigned s) {
     uint64_t x = ((uint64_t)v << 32) | (uint64_t)v;
     return ps3_rotl64(x, s & 31u);
 }
-// B+J: accuracy helpers for generated / recovered code
+// B+J+M: accuracy helpers — lifter should emit calls to these for mul/div/rotate
+#define PS3_LIFTER_HELPERS 1
+// Preferred emission names (same as functions below):
+//   ps3_mulhd / ps3_mulhdu / ps3_divd / ps3_divdu / ps3_rlwinm
+
 static inline uint64_t ps3_mulhdu(uint64_t a, uint64_t b) {
 #if defined(_MSC_VER)
     return __umulh(a, b);
@@ -128,6 +132,14 @@ static inline int64_t ps3_divd(int64_t a, int64_t b) {
     if (!b) return a >= 0 ? INT64_MAX : INT64_MIN;
     if (a == INT64_MIN && b == -1) return INT64_MIN;
     return a / b;
+}
+static inline uint32_t ps3_sraw(uint32_t rs, unsigned sh) {
+    sh &= 31u;
+    return (uint32_t)((int32_t)rs >> sh);
+}
+static inline uint64_t ps3_srad(uint64_t rs, unsigned sh) {
+    sh &= 63u;
+    return (uint64_t)((int64_t)rs >> sh);
 }
 static inline uint32_t ps3_rlwinm(uint32_t rs, unsigned sh, unsigned mb, unsigned me) {
     uint32_t r = sh ? ((rs << sh) | (rs >> (32u - sh))) : rs;

@@ -1,4 +1,4 @@
-// A+I: RSX surfaces/COLOR_OFFSET + draw/shader state tracking
+// A+I+L: RSX surfaces, draw/shader state, texture unit tracking
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include <mutex>
@@ -58,6 +58,13 @@ struct RsxState {
     uint32_t begin_mode = 0;
     int vertex_binds = 0;
     int fragment_binds = 0;
+    // L: texture unit 0
+    uint32_t tex_offset = 0;
+    uint32_t tex_format = 0;
+    uint32_t tex_width = 0;
+    uint32_t tex_height = 0;
+    uint32_t tex_pitch = 0;
+    int tex_units_bound = 0;
     uint32_t viewport_w = 1280;
     uint32_t viewport_h = 720;
     uint32_t scissor_x = 0, scissor_y = 0, scissor_w = 1280, scissor_h = 720;
@@ -390,8 +397,24 @@ static void rsx_process_fifo(uint8_t* mem) {
             ++g_rsx.vertex_binds;
         }
         else if (method == 0x1A00 || method == 0x1A04 || method == 0x1A0C ||
-                 method == 0x1840 || method == 0x1844) {
+                 method == 0x1840 || method == 0x1844 || method == 0x1A08 ||
+                 method == 0x1848 || method == 0x184C || method == 0x1A10) {
             ++g_rsx.tex_binds;
+            // L: NV40 texture offset / format / size family
+            if (method == 0x1A00 || method == 0x1840) {
+                g_rsx.tex_offset = arg;
+                g_rsx.tex_units_bound = 1;
+                static int tl=0; if(tl<12){ps3rt_log("[rsx] L TEX_OFFSET=0x%x\n", arg);++tl;}
+            } else if (method == 0x1A04 || method == 0x1844) {
+                g_rsx.tex_format = arg;
+            } else if (method == 0x1A08 || method == 0x1848) {
+                g_rsx.tex_width = (arg >> 16) & 0xFFFF;
+                g_rsx.tex_height = arg & 0xFFFF;
+                if (g_rsx.tex_width == 0) g_rsx.tex_width = 1;
+                if (g_rsx.tex_height == 0) g_rsx.tex_height = 1;
+            } else if (method == 0x1A0C || method == 0x184C) {
+                g_rsx.tex_pitch = arg;
+            }
         }
         else if (method == 0x08C0 || method == 0x08C4 || method == 0x08C8 || method == 0x08CC) {
             if (method == 0x08C0) g_rsx.viewport_w = (arg >> 16) ? (arg >> 16) : g_rsx.viewport_w;
@@ -446,10 +469,10 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] A/I flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] L flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
-            g_rsx.shader_binds, g_rsx.tex_binds,
+            g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,
             g_rsx.methods_seen, g_rsx.known_methods, g_rsx.unknown_methods,
             g_rsx.width, g_rsx.height);
     }

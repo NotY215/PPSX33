@@ -66,7 +66,7 @@ public sealed partial class MainForm : Form
     public MainForm()
     {
         AutoScaleMode = AutoScaleMode.Dpi;
-        Text = "PPSX33  ·  PlayStation 3 Recompiler";
+        Text = "PPSX33  ·  PlayStation 3 Recompiler  ·  A–N";
         Width = 1180; Height = 760;
         MinimumSize = new Size(980, 660);
         StartPosition = FormStartPosition.CenterScreen;
@@ -141,41 +141,57 @@ public sealed partial class MainForm : Form
         _project.Text = "PROJECT  /  NO PROJECT LOADED"; _project.ForeColor = TextPri; _project.BackColor = Color.FromArgb(12, 22, 47);
         _project.Dock = DockStyle.Fill; _project.TextAlign = ContentAlignment.MiddleLeft; _project.Padding = new Padding(12, 0, 0, 0);
         StyleTextBox(_log); StyleTextBox(_report); StyleTextBox(_roadmap);
-        _roadmap.Text =
-            "PPSX33 — Roadmap\r\n" +
-            "========================================\r\n\r\n" +
-            "EARLIER PHASES (I–XIX) — TESTING\r\n" +
-            "  Core recompiler, HLE stubs, RSX host, audio/pad, pipeline\r\n" +
-            "  Not final; regressions still possible\r\n\r\n" +
-            "PACKAGE (XX-A … XX-G) — DONE\r\n" +
-            "  XX-A  Game-named EXE + ps3rt.dll + guest_image + pad_map.json\r\n" +
-            "  XX-B  cellFs + early PSARC TOC\r\n" +
-            "  XX-C  Copy into PS3_GAME\\USRDIR (auto-find EBOOT.BIN)\r\n" +
-            "  XX-D  Controller map → pad_map.json\r\n" +
-            "  XX-E  Legal / TERMS first-run (system browser links)\r\n" +
-            "  XX-F  Post-build layout (reports at root; output/ runtime)\r\n" +
-            "  XX-G  Named run logs; pad log only when window focused\r\n\r\n" +
-            "RUNTIME PLAYABILITY (XX-H … XX-O) — DONE IN TREE\r\n" +
-            "  XX-H  Null-loop skip + GCM flip/wait HLE\r\n" +
-            "  XX-I  Fuller cellGcmSys HLE (display buffers, map, tiles)\r\n" +
-            "  XX-J  PSARC TOC + zlib block streaming (needs zlib1.dll)\r\n" +
-            "  XX-K  SPU ISA interpreter (LS / arith / branch / channels)\r\n" +
-            "  XX-L  MFC list DMA, barriers, atomics, tags\r\n" +
-            "  XX-M  SPURS-like job queue + cellSpurs HLE (8 SPU slots)\r\n" +
-            "  XX-N  cellAudio → waveOut; GDI status overlay; window title\r\n" +
-            "  XX-O  ICON0.PNG window/taskbar icon from PS3_GAME\r\n\r\n" +
-            "WORKFLOW\r\n" +
-            "  1. Load decrypted ELF (or Decrypt EBOOT via RPCS3)\r\n" +
-            "  2. Decompile (lift chunks)\r\n" +
-            "  3. Set controller keys (before Build)\r\n" +
-            "  4. Build → <GameName>.exe + ps3rt.dll in output/\r\n" +
-            "  5. Copy to game folder (USRDIR next to EBOOT.BIN)\r\n" +
-            "  6. Run the game-named EXE from USRDIR\r\n\r\n" +
-            "STILL EXPERIMENTAL\r\n" +
-            "  · Solid blue may persist until real RSX draws / assets load\r\n" +
-            "  · SPU ISA is a subset — report stalls with latest log\r\n" +
-            "  · See ROADMAP.md on GitHub for files, log tags, symptom guide\r\n\r\n" +
-            "PPSX33 is a research toolkit — not a retail port.\r\n";
+_roadmap.Text =
+            "PPSX33 — Roadmap
+" +
+            "========================================
+
+" +
+            "EARLIER PHASES (I–XIX) — TESTING
+" +
+            "  Core recompiler, HLE stubs, RSX host, audio/pad, pipeline
+
+" +
+            "PACKAGE (XX-A … XX-G) — DONE
+" +
+            "  Game-named EXE, cellFs/PSARC, USRDIR copy, pad map, TERMS, logs
+
+" +
+            "RUNTIME (XX-H … XX-O) — DONE IN TREE
+" +
+            "  Null-loop/GCM, cellGcmSys, PSARC zlib, SPU/MFC/SPURS, audio, ICON0
+
+" +
+            "POST-XX LETTERED (A – N)
+" +
+            "  A–K  Surfaces, PPU helpers, SPU/MFC/SPURS, dirs, audio, LV2, shaders, ports
+" +
+            "  L    RSX texture unit (offset/format/size) tracking
+" +
+            "  M    PPU lifter-facing helpers (mul/div/rotate emission surface)
+" +
+            "  N    cellFs errno mapping + SELF/encrypted path rejection
+
+" +
+            "WORKFLOW
+" +
+            "  1. Load decrypted ELF (or Decrypt EBOOT via RPCS3)
+" +
+            "  2. Decompile (lift chunks)
+" +
+            "  3. Set controller keys (before Build)
+" +
+            "  4. Build → game EXE + ps3rt.dll in output/
+" +
+            "  5. Copy to USRDIR (next to EBOOT.BIN)
+" +
+            "  6. Run the game-named EXE from USRDIR
+
+" +
+            "STILL EXPERIMENTAL — see ROADMAP.md for remaining gaps (O+)
+" +
+            "PPSX33 is a research toolkit — not a retail port.
+";
         _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(100, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab;
         AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap);
         BuildControllerTab();

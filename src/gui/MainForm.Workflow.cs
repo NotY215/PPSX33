@@ -21,7 +21,7 @@ public sealed partial class MainForm
             "Click Yes only if you understand and accept these terms.";
 
         var r = MessageBox.Show(this, body, "PPSX33 — Legal acknowledgment",
-            MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+            MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2); // status A–N
         if (r != DialogResult.Yes)
         {
             Append("Legal notice declined — " + action + " cancelled.");
@@ -33,7 +33,7 @@ public sealed partial class MainForm
     }
 
     void LoadElf(string? path) {
-        if (!ShowLegalNotice(path == null ? "Load ELF" : "Load decrypted ELF"))
+        if (!ShowLegalNotice(path == null ? "Load ELF (decrypted)" : "Load decrypted ELF"))
             return;
         if (path == null) {
             using var ofd = new OpenFileDialog {
@@ -161,7 +161,8 @@ public sealed partial class MainForm
             MessageBox.Show(this,
                 "Could not find EBOOT.BIN in the selected folder.\n\n" +
                 "Select the folder that contains your PS3 game dump\n" +
-                "(e.g. E:\\GAMES_PS3\\God of War III).",
+                "(folder with PS3_GAME or USRDIR / EBOOT.BIN).\n\n" +
+                "Use a decrypted ELF for Load ELF. Encrypted SELF is not loaded.",
                 "PPSX33", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
@@ -240,7 +241,9 @@ public sealed partial class MainForm
                 "Copied to:\n" + dest + "\n\n" +
                 "EXE: " + gameExeName + "\n" +
                 "Also: ps3rt.dll, guest_image.bin, pad_map.json\n\n" +
-                "Run the EXE from that USRDIR folder.",
+                "Run the EXE from that USRDIR folder.\n" +
+                "Runtime includes lettered work through N (texture/fs helpers).\n" +
+                "Attach the newest run log if something fails.",
                 "PPSX33 — Copy complete",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);

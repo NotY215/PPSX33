@@ -1,4 +1,4 @@
-// F: cellFs path mapping + PSARC + directory ops
+// F+N: cellFs + PSARC + directories + errno/SELF handling
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include <cstdio>
@@ -578,8 +578,43 @@ static void write_be32(uint64_t ea, uint32_t v) {
     mem()[ea + 3] = (uint8_t)(v & 0xFF);
 }
 
+
+// N: CellFs-style error returns (guest sees negative errno-like values)
+enum {
+    CELL_FS_OK = 0,
+    CELL_FS_ENOENT = -2,
+    CELL_FS_EIO = -5,
+    CELL_FS_ENOTDIR = -20,
+    CELL_FS_EISDIR = -21,
+    CELL_FS_EINVAL = -22,
+    CELL_FS_EMFILE = -24,
+    CELL_FS_ENOSYS = -38,
+    CELL_FS_ENODEV = -19
+};
+static bool path_looks_self(const char* p) {
+    if (!p) return false;
+    size_t n = std::strlen(p);
+    if (n < 5) return false;
+    const char* e = p + n - 5;
+    // .self / .SELF / EBOOT.BIN encrypted markers not handled here
+    if ((e[0]=='.'||e[0]=='.') && (e[1]=='s'||e[1]=='S') && (e[2]=='e'||e[2]=='E') && (e[3]=='l'||e[3]=='L') && (e[4]=='f'||e[4]=='F'))
+        return true;
+    return false;
+}
+static bool file_is_self_header(const char* host) {
+    FILE* f = std::fopen(host, "rb");
+    if (!f) return false;
+    uint8_t h[4] = {};
+    size_t n = std::fread(h, 1, 4, f);
+    std::fclose(f);
+    // SCE encrypted SELF often starts with S C E \0
+    return n == 4 && h[0]=='S' && h[1]=='C' && h[2]=='E' && h[3]==0;
+}
+
 static int fs_open(PPUContext* c) {
     uint64_t path_ea = c->gpr[3];
+    // N: will validate SELF after path resolve
+
     int flags = (int)(uint32_t)c->gpr[4];
     uint64_t fd_ea = c->gpr[5];
     char guest[512] = {};
@@ -594,6 +629,17 @@ static int fs_open(PPUContext* c) {
     }
     char host[1024] = {};
     map_guest_path(guest, host, sizeof(host));
+
+    // N: reject encrypted SELF (not supported in this toolkit)
+    if (path_looks_self(guest) || (host[0] && file_is_self_header(host))) {
+        static int s_self = 0;
+        if (s_self < 12) {
+            ps3rt_log("[fs] N SELF/encrypted not supported: %s\n", guest[0] ? guest : host);
+            ++s_self;
+        }
+        c->gpr[3] = (uint64_t)(int32_t)CELL_FS_ENOSYS;
+        return 0;
+    }
 
     int fd = -1;
     const char* mode = (flags & 2) ? "rb+" : "rb";
@@ -631,7 +677,7 @@ static int fs_open(PPUContext* c) {
                 g_fds[fd].arc_off = e.file_offset;
                 g_fds[fd].arc_len = e.uncompressed ? e.uncompressed : 0x100000;
                 g_fds[fd].pos = 0;
-                ps3rt_log("[psarc] XX-J virtual open \"%s\" (usize=%llu) from %s\n",
+                ps3rt_log("[psarc] N virtual open \"%s\" (usize=%llu) from %s\n",
                           e.name.c_str(), (unsigned long long)g_fds[fd].arc_len, arc.path.c_str());
                 break;
             }
@@ -643,7 +689,15 @@ static int fs_open(PPUContext* c) {
         ps3rt_log("[fs] open guest=\"%s\" host=\"%s\" %s\n", guest, host, fd >= 0 ? "OK" : "FAIL");
         ++s_log;
     }
-    if (fd < 0) { c->gpr[3] = (uint64_t)(int32_t)-1; return 0; }
+    if (fd < 0) {
+        // N: distinguish missing vs SELF vs generic
+        static int s_fail = 0;
+        if (s_fail < 16) {
+            ps3rt_log("[fs] N open failed path guest — errno ENOENT/IO\n");
+            ++s_fail;
+        }
+        c->gpr[3] = (uint64_t)(int32_t)CELL_FS_ENOENT; return 0;
+    }
     if (fd_ea) write_be32(fd_ea, (uint32_t)fd);
     c->gpr[3] = 0;
     return 0;
@@ -814,7 +868,7 @@ static int fs_opendir(PPUContext* c) {
         std::snprintf(host, sizeof(host), "%s\\%s", g_game_root, guest);
     }
     int dfd = dir_alloc(host);
-    if (dfd < 0) { c->gpr[3] = (uint64_t)(int32_t)-1; return 0; }
+    if (dfd < 0) { c->gpr[3] = (uint64_t)(int32_t)CELL_FS_EMFILE; return 0; }
     if (out_ea && out_ea + 4 <= mem_size()) write_be32(out_ea, (uint32_t)dfd);
     c->gpr[3] = 0;
     return 0;
