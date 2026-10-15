@@ -201,7 +201,11 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             }
             return true;
         }
-        if (xo == 150 || xo == 598 || xo == 854) return true;
+        if (xo == 150 || xo == 598 || xo == 854) {
+            // XXIII-D: lwsync / sync / eieio — emit host barrier placeholder
+            o << "/* XXIII-D sync */ ;";
+            return true;
+        }
         if (xo == 0) { unsigned bf = (w >> 23) & 7, bfa = (w >> 18) & 7; o << fmt("c.cr[%u] = c.cr[%u];", bf, bfa); return true; }
         if (xo == 193 || xo == 449 || xo == 257 || xo == 225 || xo == 289 || xo == 33 || xo == 417 || xo == 129) {
             const char* opstr = (xo == 193) ? "^" : (xo == 449) ? "|" : (xo == 257) ? "&" : (xo == 225) ? "&" : (xo == 289) ? "^" : (xo == 33) ? "|" : (xo == 417) ? "|" : "&";
@@ -214,6 +218,7 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             o << "if(v) c.cr[f] |= (1<<(3-b)); else c.cr[f] &= ~(1<<(3-b)); }";
             return true;
         }
+        o << fmt("/* XXIII-D xo=%u */ ;", xo);
         return true;
     }
     case 31: {

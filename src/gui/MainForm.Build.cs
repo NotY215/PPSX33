@@ -219,6 +219,15 @@ public sealed partial class MainForm
         }
         _building = false; _busy = false; UpdateButtons();
         NotifyBuildComplete(ok);
+        if (ok && _projectDir != null) {
+            try {
+                var cb = Path.Combine(_projectDir, "codebase");
+                var inp = Path.Combine(_projectDir, "input");
+                if (Directory.Exists(cb)) Directory.Delete(cb, true);
+                if (Directory.Exists(inp)) Directory.Delete(inp, true);
+                Append("cleanup: removed project codebase/ and input/ (output/ kept)");
+            } catch (Exception ex) { Append("cleanup warn: " + ex.Message); }
+        }
     }
 
     async Task ConfirmCancelBuildAsync() {

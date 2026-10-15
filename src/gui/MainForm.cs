@@ -261,5 +261,27 @@ public sealed partial class MainForm : Form
         Append("Settings: " + Settings.DataDir);
         UpdateButtons();
         Shown += (_, _) => CheckRpcs3OnStartup();
+        FormClosing += (_, _) => CleanupAllProjectWorkFolders();
+    }
+
+    /// <summary>On app exit: delete codebase/ and input/ under every projects/* folder; keep output/.</summary>
+    void CleanupAllProjectWorkFolders()
+    {
+        try
+        {
+            if (!Directory.Exists(ProjectsRoot)) return;
+            foreach (var dir in Directory.GetDirectories(ProjectsRoot))
+            {
+                try
+                {
+                    var codebase = Path.Combine(dir, "codebase");
+                    var input = Path.Combine(dir, "input");
+                    if (Directory.Exists(codebase)) Directory.Delete(codebase, true);
+                    if (Directory.Exists(input)) Directory.Delete(input, true);
+                }
+                catch { /* ignore per-project failures */ }
+            }
+        }
+        catch { }
     }
 }

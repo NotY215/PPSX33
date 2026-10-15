@@ -420,11 +420,26 @@ static void rsx_host_present_clear() {
     }
     if (!g_rtv) return;
     rsx_ensure_depth(g_rsx.width, g_rsx.height);
+    // XXIII-E: if guest never programs color, pulse clear so window is not a dead solid block
+    if (g_rsx.methods_seen == 0 || (g_rsx.draws == 0 && g_rsx.clears <= 3)) {
+        uint32_t t = (uint32_t)(g_rsx.flip_count * 3);
+        g_rsx.clear_color = ((t & 0x7F) + 0x20) << 16 | (((t * 2) & 0x7F) + 0x18) << 8 | (((t * 3) & 0x7F) + 0x28);
+    }
     uint32_t mask = g_rsx.clear_mask;
     float rr = ((g_rsx.clear_color >> 16) & 0xFF) / 255.f;
     float gg = ((g_rsx.clear_color >> 8) & 0xFF) / 255.f;
     float bb = (g_rsx.clear_color & 0xFF) / 255.f;
     float col[4] = { rr, gg, bb, 1.f };
+    // Prefer guest framebuffer upload when offset known
+    {
+        uint8_t* m = ps3rt_memory();
+        if (m && (g_rsx.color_offset || g_rsx.tex_offset)) {
+            if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset;
+            if (!g_rsx.tex_width) { g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280; g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720; }
+            rsx_upload_guest_tex(m);
+            rsx_blit_guest_tex_fullscreen(m);
+        }
+    }
     try {
         g_ctx11->OMSetRenderTargets(1, &g_rtv, g_dsv);
         if (g_dss) g_ctx11->OMSetDepthStencilState(g_dss, g_rsx.clear_stencil);
@@ -605,6 +620,19 @@ static void rsx_process_fifo(uint8_t* mem) {
             if (method == 0x08D0) { g_rsx.scissor_x = arg & 0xFFFF; g_rsx.scissor_w = (arg >> 16) & 0xFFFF; }
             if (method == 0x08D4) { g_rsx.scissor_y = arg & 0xFFFF; g_rsx.scissor_h = (arg >> 16) & 0xFFFF; }
         }
+        // XXIII-E: more FIFO methods recognized (still HLE — not full shader path)
+        else if (method == 0x0300 || method == 0x0304 || method == 0x0310 || method == 0x0314) {
+            /* color mask / blend enable */ ;
+        }
+        else if (method == 0x0A10 || method == 0x0A14 || method == 0x0A18) {
+            /* depth test / write */ ;
+        }
+        else if (method == 0x0000 || method == 0x0100 || method == 0x0140) {
+            /* nop / semaphore / ref */ ;
+        }
+        else if (method == 0x1714 || method == 0x1718 || method == 0x1728) {
+            /* surface clip */ ;
+        }
         else { ++g_rsx.unknown_methods; --g_rsx.known_methods; }
         get = (get + 8) % g_rsx.fifo_size;
         ++steps;
@@ -650,7 +678,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] XXIII-B flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] XXIII-E flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,

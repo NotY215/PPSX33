@@ -314,48 +314,27 @@ void cleanup_after_build(const std::string& project_dir, const fs::path& out, st
         live_log("cleanup: output/ package files only\n");
     }
 
-    // codebase/: keep guest_image + reports; remove generated lift sources
-    if (fs::exists(codebase) && fs::is_directory(codebase)) {
-        for (const char* junk : { "obj", "src", ".vs" }) {
-            if (fs::exists(codebase / junk)) fs::remove_all(codebase / junk, ec);
+    // Copy reports from codebase to root before deleting the folder
+    for (const char* name : { "lift_report.txt", "analysis_report.txt", "guest_image.bin" }) {
+        if (fs::exists(codebase / name) && name[0] == 'g') {
+            // guest_image already handled into output/
+            (void)0;
         }
-        for (auto it = fs::directory_iterator(codebase, ec); it != fs::directory_iterator(); ++it) {
-            if (it->is_directory()) {
-                fs::remove_all(it->path(), ec);
-                continue;
-            }
-            if (!it->is_regular_file()) continue;
-            std::string n = it->path().filename().string();
-            std::string lower = n;
-            for (char& c : lower) c = (char)tolower((unsigned char)c);
-            bool keep = (lower == "guest_image.bin" ||
-                         lower == "lift_report.txt" ||
-                         lower == "analysis_report.txt" ||
-                         (lower.size() > 5 && lower.substr(lower.size() - 5) == ".json"));
-            if (!keep) fs::remove(it->path(), ec);
-        }
-        log += "cleanup: codebase/ pruned (guest_image + reports kept)\n";
-        live_log("cleanup: codebase/ pruned\n");
     }
 
-    // input/: EBOOT only
-    if (fs::exists(input) && fs::is_directory(input)) {
-        for (auto it = fs::directory_iterator(input, ec); it != fs::directory_iterator(); ++it) {
-            if (it->is_directory()) {
-                fs::remove_all(it->path(), ec);
-                continue;
-            }
-            std::string n = it->path().filename().string();
-            std::string lower = n;
-            for (char& c : lower) c = (char)tolower((unsigned char)c);
-            if (lower != "eboot.elf" && lower != "eboot.bin")
-                fs::remove(it->path(), ec);
-        }
-        log += "cleanup: input/ EBOOT only\n";
-        live_log("cleanup: input/ EBOOT only\n");
+    // User request: delete entire codebase/ and input/ after successful build
+    if (fs::exists(codebase)) {
+        fs::remove_all(codebase, ec);
+        log += "cleanup: removed codebase/\n";
+        live_log("cleanup: removed codebase/\n");
+    }
+    if (fs::exists(input)) {
+        fs::remove_all(input, ec);
+        log += "cleanup: removed input/\n";
+        live_log("cleanup: removed input/\n");
     }
 
-    log += "cleanup: done\n";
+    log += "cleanup: done (output package only; codebase+input removed)\n";
     live_log("cleanup: done\n");
 }
 

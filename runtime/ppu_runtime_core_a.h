@@ -1,3 +1,4 @@
+// XXIII-D: semantic helper surface for lifter-emitted ops
 // ppu_runtime_core_a.h - portable MSVC + GCC/Clang
 // XER/FPSCR/VMX helpers + bounds-checked guest memory access
 #pragma once
