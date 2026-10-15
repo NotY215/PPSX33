@@ -110,6 +110,7 @@ static inline uint64_t ps3_rotl32dup(uint32_t v, unsigned s) {
 }
 // B+J+M: accuracy helpers — lifter should emit calls to these for mul/div/rotate
 #define PS3_LIFTER_HELPERS 1
+// XXII-B: lifter/runtime shared helpers remain the emission surface
 // Preferred emission names (same as functions below):
 //   ps3_mulhd / ps3_mulhdu / ps3_divd / ps3_divdu / ps3_rlwinm
 

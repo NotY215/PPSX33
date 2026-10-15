@@ -772,6 +772,7 @@ PS3RT_API void ps3rt_progress_hw(void) {
     }
 }
 
+// XXII-B: PPU soft-recovery — do not hard-halt on unknown ops
 PS3RT_API void ps3rt_on_unimplemented(PPUContext* c, uint32_t opcode, uint64_t pc) {
     static int n = 0;
     if (n < 40) { ps3rt_log("[ps3] unimplemented op=0x%08X pc=0x%llx (soft)\n", opcode, (unsigned long long)pc); ++n; }

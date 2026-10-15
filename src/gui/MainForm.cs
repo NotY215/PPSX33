@@ -19,6 +19,7 @@ public sealed partial class MainForm : Form
     private readonly TextBox _log = new();
     private readonly TextBox _report = new();
     private readonly TextBox _roadmap = new();
+    private readonly TextBox _requirements = new();
     private readonly Ps3HudLabel _project = new();
     private readonly Label _status = new();
     private readonly ProgressBar _progress = new();
@@ -90,7 +91,7 @@ public sealed partial class MainForm : Form
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
         var rail = new Panel { Dock = DockStyle.Fill, BackColor = Panel, Padding = new Padding(14) };
-        var railLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 14, BackColor = Panel };
+        var railLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 16, BackColor = Panel };
         for (int i = 0; i < 14; i++)
             railLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
@@ -111,6 +112,21 @@ public sealed partial class MainForm : Form
         StyleBtn(_btnRun, "Run", Panel2);
         StyleBtn(_btnCopy, "Copy to game folder", Panel2);
         StyleBtn(_btnCancel, "Cancel / Stop", Danger);
+
+        _btnRpcs3 = new Ps3Button();
+        StyleBtn(_btnRpcs3, "RPCS3 path…", Panel2);
+        _btnRpcs3.Click += (_, _) => {
+            using var ofd = new OpenFileDialog {
+                Title = "Locate RPCS3.exe",
+                Filter = "RPCS3|RPCS3.exe|Executables|*.exe|All|*.*"
+            };
+            if (ofd.ShowDialog(this) != DialogResult.OK) return;
+            _settings.Rpcs3Path = ofd.FileName;
+            SaveSettings();
+            UpdateRpcs3Button();
+            Append("RPCS3 path set: " + _settings.Rpcs3Path);
+        };
+
 
         _gfx.DropDownStyle = ComboBoxStyle.DropDownList;
         _gfx.Items.AddRange(new object[] { "D3D11", "Vulkan (stub)", "OpenGL (stub)" });
@@ -134,11 +150,12 @@ public sealed partial class MainForm : Form
         railLayout.Controls.Add(_btnRun, 0, 6);
         railLayout.Controls.Add(_btnCopy, 0, 7);
         railLayout.Controls.Add(_btnCancel, 0, 8);
-        railLayout.Controls.Add(MakeLabel("GRAPHICS"), 0, 9);
-        railLayout.Controls.Add(_gfx, 0, 10);
-        railLayout.Controls.Add(MakeLabel("THREADS"), 0, 11);
-        railLayout.Controls.Add(_threads, 0, 12);
-        railLayout.Controls.Add(_eta, 0, 13);
+        railLayout.Controls.Add(_btnRpcs3, 0, 9);
+        railLayout.Controls.Add(MakeLabel("GRAPHICS"), 0, 10);
+        railLayout.Controls.Add(_gfx, 0, 11);
+        railLayout.Controls.Add(MakeLabel("THREADS"), 0, 12);
+        railLayout.Controls.Add(_threads, 0, 13);
+        railLayout.Controls.Add(_eta, 0, 14);
         rail.Controls.Add(railLayout);
 
         var right = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Bg };
@@ -151,19 +168,21 @@ public sealed partial class MainForm : Form
         _roadmap.Text =
             "PPSX33 - Roadmap\r\n" +
             "========================================\r\n\r\n" +
-            "I-XIX TESTING · XX-A...XX-O DONE\r\n\r\n" +
-            "PHASE XXI - LETTERED A-Z (DONE IN TREE)\r\n" +
-            "  A-X  Surfaces through texture upload, PRX HLE, frame pace\r\n" +
-            "  Y    Fullscreen blit of host-uploaded guest texture\r\n" +
-            "  Z    PRX ELF load into guest RAM (PT_LOAD)\r\n\r\n" +
-            "WORKFLOW\r\n" +
-            "  1. Load decrypted ELF (or Decrypt EBOOT via RPCS3)\r\n" +
-            "  2. Decompile (lift chunks)\r\n" +
-            "  3. Set controller keys (before Build)\r\n" +
-            "  4. Build -> game EXE + ps3rt.dll in output/\r\n" +
-            "  5. Copy to USRDIR (next to EBOOT.BIN)\r\n" +
-            "  6. Run the game-named EXE from USRDIR\r\n\r\n" +
-            "Research toolkit - see ROADMAP.md. Not a retail port.\r\n";
+            "PHASE 1 - XXI   (see roadmap/ folder for full detail)\r\n" +
+            "  I-XIX     Core pipeline (TESTING)\r\n" +
+            "  XX-A..G   Packaging & host UX (DONE)\r\n" +
+            "  XX-H..O   Runtime base (DONE)\r\n" +
+            "  XXI A-Z   Lettered post-XX work (DONE)\r\n\r\n" +
+            "PHASE XXII - PIPELINE CORRECTNESS (ACTIVE)\r\n" +
+            "  XXII-A   RSX present/color-buffer fidelity\r\n" +
+            "  XXII-B   PPU soft-recovery / helper surface\r\n" +
+            "  XXII-C+  SPU/MFC, LV2/HLE, modules, timing (planned)\r\n\r\n" +
+            "FUTURE - OpenGL fallback\r\n" +
+            "  Auto-select D3D11 when GPU supports it;\r\n" +
+            "  otherwise OpenGL 3.3 (or 2.1) for no dedicated GPU.\r\n\r\n" +
+            "Per-phase docs: roadmap/I.md ... roadmap/XXII.md\r\n" +
+            "Requirements tab: minimum / recommended host specs.\r\n";
+
         _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(100, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab;
         AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap);
         BuildControllerTab();

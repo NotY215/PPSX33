@@ -1,4 +1,4 @@
-// A+I+L+T+V+Y: + fullscreen blit of uploaded guest texture to backbuffer
+// XXII-A: RSX present/color-buffer fidelity · // A+I+L+T+V+Y: + fullscreen blit of uploaded guest texture to backbuffer
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include <mutex>
@@ -146,7 +146,7 @@ static void rsx_upload_guest_tex(uint8_t* mem) {
     }
     g_ctx11->Unmap(g_guest_tex, 0);
     g_guest_tex_src = off;
-    static int su=0; if(su<12){ps3rt_log("[rsx] V upload off=0x%llx %ux%u\n", (unsigned long long)off, w, h);++su;}
+    static int su=0; if(su<12){ps3rt_log("[rsx] XXII-A upload off=0x%llx %ux%u\n", (unsigned long long)off, w, h);++su;}
 }
 
 // Y: nearest-neighbor scale guest tex onto backbuffer (CPU path, no PS required)
@@ -214,7 +214,7 @@ static void rsx_blit_guest_tex_fullscreen(uint8_t* /*mem*/) {
     g_ctx11->CopyResource(bb, staging);
     gst->Release(); staging->Release(); bb->Release();
     static int syb = 0;
-    if (syb < 12) { ps3rt_log("[rsx] Y fullscreen blit %ux%u -> %ux%u\n", sw, sh, dw, dh); ++syb; }
+    if (syb < 12) { ps3rt_log("[rsx] XXII-A fullscreen blit %ux%u -> %ux%u\n", sw, sh, dw, dh); ++syb; }
 }
 
 
@@ -626,7 +626,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] Y flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] XXII-A flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,
