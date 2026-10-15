@@ -267,23 +267,23 @@ static void rsx_ensure_depth(uint32_t w, uint32_t h) {
 
 
 #if defined(_WIN32)
-// Load ../ICON0.PNG (PS3_GAME when EXE is in USRDIR) for window + taskbar only.
-static HICON load_icon0_png_as_hicon() {
+// Load ../PIC1.PNG (PS3_GAME when EXE is in USRDIR) for window + taskbar only.
+static HICON load_pic1_png_as_hicon() {
     char mod[MAX_PATH] = {};
     if (!GetModuleFileNameA(nullptr, mod, MAX_PATH)) return nullptr;
     char* slash = strrchr(mod, '\\');
     if (!slash) return nullptr;
     *slash = 0;
-    // XX-O: USRDIR -> ../ICON0.PNG (PS3_GAME); forward slashes avoid C4129
+    // XX-O: USRDIR -> ../PIC1.PNG (PS3_GAME); forward slashes avoid C4129
     char candidates[8][MAX_PATH];
-    std::snprintf(candidates[0], MAX_PATH, "%s/../ICON0.PNG", mod);
-    std::snprintf(candidates[1], MAX_PATH, "%s/../PS3_GAME/ICON0.PNG", mod);
-    std::snprintf(candidates[2], MAX_PATH, "%s/ICON0.PNG", mod);
-    std::snprintf(candidates[3], MAX_PATH, "%s/PS3_GAME/ICON0.PNG", mod);
-    std::snprintf(candidates[4], MAX_PATH, "%s/../../ICON0.PNG", mod);
-    std::snprintf(candidates[5], MAX_PATH, "%s/../../PS3_GAME/ICON0.PNG", mod);
-    std::snprintf(candidates[6], MAX_PATH, "%s/ICON0.png", mod);
-    std::snprintf(candidates[7], MAX_PATH, "%s/../icon0.png", mod);
+    std::snprintf(candidates[0], MAX_PATH, "%s/../PIC1.PNG", mod);
+    std::snprintf(candidates[1], MAX_PATH, "%s/../PS3_GAME/PIC1.PNG", mod);
+    std::snprintf(candidates[2], MAX_PATH, "%s/PIC1.PNG", mod);
+    std::snprintf(candidates[3], MAX_PATH, "%s/PS3_GAME/PIC1.PNG", mod);
+    std::snprintf(candidates[4], MAX_PATH, "%s/../../PIC1.PNG", mod);
+    std::snprintf(candidates[5], MAX_PATH, "%s/../../PS3_GAME/PIC1.PNG", mod);
+    std::snprintf(candidates[6], MAX_PATH, "%s/PIC1.PNG", mod);
+    std::snprintf(candidates[7], MAX_PATH, "%s/../PIC1.PNG", mod);
     const char* path = nullptr;
     for (int i = 0; i < 8; ++i) {
         DWORD a = GetFileAttributesA(candidates[i]);
@@ -339,12 +339,12 @@ static HICON load_icon0_png_as_hicon() {
     }
     factory->Release();
     if (SUCCEEDED(hr_init)) CoUninitialize();
-    if (hicon) ps3rt_log("[rsx] XX-O window/taskbar icon from %s\n", path);
+    if (hicon) ps3rt_log("[rsx] PIC1 window/taskbar icon from %s\n", path);
     return hicon;
 }
 static void apply_window_icons(HWND hwnd) {
     if (!hwnd) return;
-    HICON big = load_icon0_png_as_hicon();
+    HICON big = load_pic1_png_as_hicon();
     if (big) {
         SendMessageA(hwnd, WM_SETICON, ICON_BIG, (LPARAM)big);
         SendMessageA(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)big);
@@ -352,8 +352,21 @@ static void apply_window_icons(HWND hwnd) {
 }
 #endif
 
+
+// XXII-L: graphics API probe prep (D3D11 preferred; OpenGL fallback future)
+static int g_gfx_api = 0; // 0=D3D11, 1=OpenGL (reserved)
+static void rsx_probe_api_preference() {
+    static int once = 0;
+    if (once) return;
+    once = 1;
+    // Current build path is D3D11. Future: query adapter / Feature Level and set g_gfx_api.
+    g_gfx_api = 0;
+    ps3rt_log("[rsx] XXII-L API preference: D3D11 (OpenGL 3.3/2.1 fallback not linked yet)\n");
+}
+
 static void rsx_host_init(uint32_t w, uint32_t h) {
     if (g_hwnd) return;
+    rsx_probe_api_preference();
     g_rsx.width = w ? w : 1280; g_rsx.height = h ? h : 720;
     WNDCLASSA wc{}; wc.lpfnWndProc = RsxWndProc; wc.hInstance = GetModuleHandleA(nullptr);
     wc.lpszClassName = "PPSX33_RSX"; wc.hCursor = LoadCursor(nullptr, IDC_ARROW);

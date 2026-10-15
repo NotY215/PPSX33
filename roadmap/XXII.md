@@ -2,20 +2,24 @@
 
 | ID | Status | Work |
 |----|--------|------|
-| **XXII-A** | DONE | RSX present / color-buffer |
-| **XXII-B** | DONE | PPU soft-recovery |
-| **XXII-C** | DONE | SPU/MFC tag & stall (case fix) |
-| **XXII-D** | DONE | LV2/HLE visibility |
-| **XXII-E** | DONE | Modules/PRX/FS ordered load |
-| **XXII-F** | DONE | Timing / audio surface |
-| **XXII-G** | DONE | RSX draw classification (tex vs none) |
-| **XXII-H** | DONE | PPU recovery surface depth |
-| **XXII-I** | DONE | SPU channel path continuity |
-| **XXII-J** | DONE | LV2 contracts note / upstream log |
-| **XXII-K** | PLANNED | Save / pad depth |
-| **XXII-L** | PLANNED | OpenGL probe prep |
+| A–J | DONE | See prior drops |
+| **XXII-K** | DONE | Save / pad surface tags |
+| **XXII-L** | DONE | OpenGL probe prep (D3D11 default log) |
 
-## Fixes in this drop
+## Package cleanup (`project.cpp`)
 
-- `spu_stub.cpp`: `CH_MFC_RdTagStat` brace was inside a comment → cases outside switch / `ch_write` not found. Fixed.
-- Controller tab: `StyleBtn` Dock=Top broke absolute layout; rebuilt with `TableLayoutPanel` + `StyleBtnNoDock`.
+After a successful build, `output/` keeps only:
+
+- `build_live.log`
+- `<game>.exe`
+- `guest_image.bin`
+- `pad_map.json`
+- `ps3rt.dll`
+
+`output/src`, `output/obj`, link rsp/pdb/exp removed. Reports copied to project root.  
+`codebase/` compiler junk removed; sources kept.  
+`input/` EBOOT kept; build noise removed.
+
+## Window icon
+
+Runtime loads **PIC1.PNG** (not ICON0.PNG) for HWND big/small icons.

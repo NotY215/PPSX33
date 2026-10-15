@@ -1,3 +1,4 @@
+// XXII-K: save lifecycle surface (create/list/load)
 // XXII-F: audio ring / notify surface
 // Phase XVI audio + XVIII PS3-native save (linked with ps3rt)
 #define PS3RT_BUILD_DLL 1

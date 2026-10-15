@@ -246,6 +246,7 @@ void cleanup_after_build(const std::string& project_dir, const fs::path& out, st
     fs::path codebase = root / "codebase";
     fs::path input = root / "input";
 
+    // Reports → project root (not left in output/)
     for (const char* name : { "lift_report.txt", "analysis_report.txt" }) {
         fs::path src = codebase / name;
         if (!fs::exists(src)) src = out / name;
@@ -253,17 +254,30 @@ void cleanup_after_build(const std::string& project_dir, const fs::path& out, st
             fs::copy_file(src, root / name, fs::copy_options::overwrite_existing, ec);
         if (fs::exists(out / name)) fs::remove(out / name, ec);
     }
+
+    // Mirror live log to root, but KEEP build_live.log in output/
     if (fs::exists(out / "build_live.log")) {
         fs::copy_file(out / "build_live.log", root / "build_log.txt",
                       fs::copy_options::overwrite_existing, ec);
-        fs::remove(out / "build_live.log", ec);
-        log += "cleanup: build_log.txt at project root\n";
-        live_log("cleanup: build_log.txt at project root\n");
+        log += "cleanup: build_log.txt at project root (build_live.log kept in output/)\n";
+        live_log("cleanup: build_live.log kept in output/\n");
     }
+
     if (fs::exists(codebase / "guest_image.bin") && !fs::exists(out / "guest_image.bin"))
         fs::copy_file(codebase / "guest_image.bin", out / "guest_image.bin",
                       fs::copy_options::overwrite_existing, ec);
 
+    // Ensure pad_map.json present in output when available at root/settings copy site
+    if (!fs::exists(out / "pad_map.json")) {
+        for (auto cand : { root / "pad_map.json", codebase / "pad_map.json" }) {
+            if (fs::exists(cand)) {
+                fs::copy_file(cand, out / "pad_map.json", fs::copy_options::overwrite_existing, ec);
+                break;
+            }
+        }
+    }
+
+    // Strip intermediate trees
     if (fs::exists(out / "obj")) {
         fs::remove_all(out / "obj", ec);
         log += "cleanup: removed output/obj\n";
@@ -274,19 +288,83 @@ void cleanup_after_build(const std::string& project_dir, const fs::path& out, st
         log += "cleanup: removed output/src\n";
         live_log("cleanup: removed output/src\n");
     }
-    for (const char* name : {
-        "build.ninja", "build_msvc.bat", "link_rt.rsp", "link_game.rsp",
-        "build_cancel.flag", "ps3rt.exp", "ps3rt.lib", "PPSX33.exp", "PPSX33.lib",
-        "PPSX33.ilk", "PPSX33.pdb", "ps3rt.pdb"
-    }) {
-        if (fs::exists(out / name)) fs::remove(out / name, ec);
+
+    // Keep only package files in output/: game EXE, ps3rt.dll, guest_image.bin, pad_map.json, build_live.log
+    auto keep_output = [](const fs::path& p) -> bool {
+        std::string n = p.filename().string();
+        std::string lower = n;
+        for (char& c : lower) c = (char)tolower((unsigned char)c);
+        if (lower == "ps3rt.dll") return true;
+        if (lower == "guest_image.bin") return true;
+        if (lower == "pad_map.json") return true;
+        if (lower == "build_live.log") return true;
+        // game-named EXE (any .exe except helper names)
+        if (lower.size() > 4 && lower.substr(lower.size() - 4) == ".exe") {
+            if (lower == "cl.exe" || lower == "link.exe" || lower == "ps3recomp.exe") return false;
+            return true;
+        }
+        return false;
+    };
+
+    if (fs::exists(out) && fs::is_directory(out)) {
+        for (auto it = fs::directory_iterator(out, ec); it != fs::directory_iterator(); ++it) {
+            if (ec) break;
+            const fs::path& p = it->path();
+            if (it->is_directory()) {
+                fs::remove_all(p, ec);
+                continue;
+            }
+            if (!keep_output(p)) {
+                fs::remove(p, ec);
+            }
+        }
+        log += "cleanup: output/ pruned to EXE + ps3rt.dll + guest_image.bin + pad_map.json + build_live.log\n";
+        live_log("cleanup: output/ package files only\n");
     }
 
-    // Keep input/ and codebase/ so Cancel or rebuild never loses the project.
-    // Only intermediate build junk under output/ is removed above.
+    // Light cleanup under codebase/: remove compiler junk if any leaked there
+    if (fs::exists(codebase)) {
+        for (const char* junk : { "obj", "src", ".vs" }) {
+            if (fs::exists(codebase / junk)) fs::remove_all(codebase / junk, ec);
+        }
+        for (auto it = fs::directory_iterator(codebase, ec); it != fs::directory_iterator(); ++it) {
+            if (!it->is_regular_file()) continue;
+            std::string n = it->path().filename().string();
+            std::string lower = n;
+            for (char& c : lower) c = (char)tolower((unsigned char)c);
+            if (lower.size() >= 4) {
+                std::string ext = lower.substr(lower.size() - 4);
+                if (ext == ".obj" || ext == ".pdb" || ext == ".ilk" || ext == ".exp")
+                    fs::remove(it->path(), ec);
+            }
+            if (lower.size() >= 2 && lower.substr(lower.size() - 2) == ".o")
+                fs::remove(it->path(), ec);
+        }
+        log += "cleanup: codebase/ compiler junk removed (sources kept)\n";
+    }
 
-    log += "cleanup: done — reports at root; runtime package in output/; input+codebase kept\n";
-    live_log("cleanup: done (project preserved)\n");
+    // input/: keep EBOOT.elf only; remove stray intermediates
+    if (fs::exists(input) && fs::is_directory(input)) {
+        for (auto it = fs::directory_iterator(input, ec); it != fs::directory_iterator(); ++it) {
+            if (it->is_directory()) { fs::remove_all(it->path(), ec); continue; }
+            std::string n = it->path().filename().string();
+            std::string lower = n;
+            for (char& c : lower) c = (char)tolower((unsigned char)c);
+            if (lower != "eboot.elf" && lower != "eboot.bin") {
+                // keep known game dumps; remove build noise
+                if (lower.size() >= 4) {
+                    std::string ext = lower.substr(lower.size() - 4);
+                    if (ext == ".obj" || ext == ".pdb" || ext == ".log" || ext == ".exp" ||
+                        lower == "build.ninja" || lower == "link.rsp")
+                        fs::remove(it->path(), ec);
+                }
+            }
+        }
+        log += "cleanup: input/ build noise removed (EBOOT kept)\n";
+    }
+
+    log += "cleanup: done — reports at root; lean output/; input+codebase preserved\n";
+    live_log("cleanup: done (lean output package)\n");
 }
 
 } // namespace

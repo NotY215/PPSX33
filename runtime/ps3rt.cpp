@@ -299,7 +299,7 @@ static void spu_tick_all() {
     ps3rt_spu_tick_all();
 }
 
-// ---- Phase XVII: full pad / input mapping ----
+// XXII-K + Phase XVII: full pad / input mapping ----
 enum : uint16_t {
     CELL_PAD_SELECT   = 0x0001,
     CELL_PAD_L3       = 0x0002,
