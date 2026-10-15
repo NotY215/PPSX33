@@ -8,7 +8,7 @@
 // SPU pool + main memory live in ps3rt.cpp / exports
 extern SPUContext g_spus[];
 extern int g_spu_count;
-extern "C" void ps3rt_spu_interpreter_start(int id, uint32_t entry);
+extern void ps3rt_spu_interpreter_start(int id, uint32_t entry);
 
 static inline uint8_t* main_mem() { return ps3rt_memory(); }
 static inline uint64_t main_mem_size() { return 512ull * 1024 * 1024; }

@@ -245,7 +245,7 @@ PS3RT_API int ps3rt_spu_load(int id, const void* img, size_t len) {
     return 0;
 }
 // Declared in spu_stub.cpp (XX-K interpreter)
-extern "C" void ps3rt_spu_interpreter_start(int id, uint32_t entry);
+extern void ps3rt_spu_interpreter_start(int id, uint32_t entry);
 
 PS3RT_API int ps3rt_spu_run(int id, uint32_t entry) {
     if (id < 0 || id >= g_spu_count) return -1;

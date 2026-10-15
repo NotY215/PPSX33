@@ -1,6 +1,6 @@
 # PPSX33 Roadmap
 
-**Last updated:** 2026-10-14  
+**Last updated:** 2026-10-15  
 **Scope:** Runtime playability, packaging, and host tooling for the experimental PS3 static recompiler.
 
 PPSX33 is a **research toolkit**, not a retail emulator or a finished port of any commercial game. Milestone labels describe engineering work completed in-tree. They do **not** claim verified boot, full graphics, audio fidelity, or playability for any title.
@@ -24,7 +24,7 @@ PPSX33 is a **research toolkit**, not a retail emulator or a finished port of an
 Tooling & lift (I–XIX)     →  static analysis, decompile, project build UI
 Package (XX-A … XX-G)      →  game-named EXE, copy-to-USRDIR, legal, logs
 Runtime playability (XX-H … XX-O)  →  GCM, cellFs/PSARC, SPU/MFC/SPURS, audio, ICON0
-Future (post-O)            →  accuracy, coverage, more HLE, RSX draws
+Future (post-O)            →  RSX pipelines, CPU/SPU accuracy, DMA, HLE, timing, saves, PRX
 ```
 
 ---
@@ -195,18 +195,33 @@ Prefer clean rebuild after dropping a full `runtime/` set. Avoid mixing half-app
 
 ---
 
-## Future work (post XX-O) — PLANNED / PARTIAL
+## Future work (post XX-O) — missing / weak areas blocking real play
 
-| Area | Direction |
-|------|----------|
-| RSX | Real surface uploads, shaders, textured draws beyond clear/flip |
-| PPU accuracy | Reduce approximate ops; better recovery than region skip alone |
-| SPU | Broader ISA (vector/FP edge cases), optional JIT later |
-| MFC | Full list-element formats, stall/queue depth fidelity |
-| SPURS | Closer jobchain/taskset semantics vs simple prio queue |
-| cellFs | Directories, more error codes, encrypted/self paths if ever in scope |
-| Audio | Correct port ring layout per title; libaudio event queues |
-| Compatibility | Per-game notes under `docs/games/` — lift stats ≠ playable |
+The milestones above describe code paths present in the tree, not complete or accurate PS3 hardware emulation. The following gaps remain open and are planned for implementation. Statuses are intentionally **PLANNED** or **PARTIAL** until the relevant semantics are implemented and validated with tests and real title traces.
+
+| Area | Status | Missing / weak implementation | Why it blocks real play | Planned implementation direction |
+|------|--------|-------------------------------|--------------------------|----------------------------------|
+| **RSX graphics** | PARTIAL | Real surface uploads; shader handling; textured draws; vertex/fragment pipelines; depth/stencil; render targets beyond clear/flip | Many titles remain on solid blue/black clears or show no meaningful scene | Implement surface and texture upload paths, draw-state decoding, shader/pipeline support, depth/stencil and render-target transitions; validate with captured commands and visual test scenes |
+| **PPU accuracy** | PARTIAL | A number of instructions are approximate or no-op; recovery often skips a region instead of reproducing correct semantics | Incorrect branches, numerical results, state changes and silent logic failures | Audit opcode coverage, implement missing semantics and edge cases, make unsupported instructions explicit, and add instruction-level regression tests; keep region skipping diagnostic rather than a correctness substitute |
+| **SPU ISA** | PARTIAL | Current subset focuses on load/store, basic arithmetic, branches, channels and stop; broad vector/floating-point coverage, shuffle edge cases and complete channel behavior are missing | SPU-driven physics, audio, decompression and job work can hang or produce incorrect output | Expand opcode families and exact lane/rounding/condition semantics; model channel behavior and add focused interpreter tests |
+| **MFC / DMA fidelity** | PARTIAL | List-element formats are incomplete; stall handling and queue depth are not accurate enough | DMA races, tag waits, ordering problems and memory corruption can deadlock or destabilize titles | Complete list formats and command validation; model queues, stalls, tags, ordering and completion transitions; add deterministic DMA/tag tests |
+| **SPURS** | PARTIAL | Scheduler is a simplified priority queue, not full job-chain/taskset behavior | Titles using more complex SPURS patterns may never complete jobs or unblock waiting threads | Implement job-chain/taskset lifecycle, workload readiness, priorities, event/wait behavior and completion signaling; test multi-job and multi-SPU cases |
+| **cellFs / VFS** | PARTIAL | Basic open/read and PSARC support exist, but directory listing, error codes, path semantics and encrypted/SELF-related paths are weak or unsupported | Assets may be missing, path resolution may fail, and games may abort on unexpected filesystem results | Expand directory/stat/seek/read behavior, path normalization, error mapping and archive edge cases; clearly report unsupported encrypted/SELF flows |
+| **Audio** | PARTIAL | Port + AddData to waveOut works, but ring-buffer layout, event queues and multi-port timing are incomplete | Audio may crackle, become silent, use wrong channels or drift out of sync | Model per-port buffers and status, queue/event semantics, channel formats and timing; add buffer-boundary and multi-port tests |
+| **LV2 / syscalls** | PARTIAL | Many syscall paths remain stubs or return success without performing the requested behavior | Threads, events, semaphores, synchronization and memory management can break despite apparent success | Inventory syscall usage, implement correct return/error/state semantics for high-impact calls, and ensure unimplemented calls fail visibly instead of falsely succeeding |
+| **Libraries / HLE** | PARTIAL | Only slices of cellGcmSys, cellSpurs, cellAudio and early cellFs are implemented; much of libc, libpad, save-data and network behavior is missing | Games can import hundreds of NIDs that currently resolve to null or stub behavior | Prioritize NIDs from real game traces, implement library-specific contracts and error codes, and add NID dispatch/behavior tests |
+| **Save data** | PLANNED | Save-data API is minimal or stubbed | Titles cannot reliably create, enumerate, load or persist progress | Implement save-data lifecycle and metadata handling with a user-selected host save directory; test create/load/update/error cases |
+| **Pad / controller** | PARTIAL | XInput mapping works, but pressure-sensitive buttons, Sixaxis data and full libpad semantics are incomplete | Games requiring analog pressure, motion data or richer controller status may misread input | Extend pad state and API responses, map available host inputs where possible, and return explicit unsupported status for unavailable hardware features |
+| **Timing / threads** | PARTIAL | Scheduling is cooperative-like, without an accurate coordinated PPU/SPU/RSX timing model | Races, speed anomalies, missed wakeups and softlocks | Introduce explicit guest timing and synchronization points across PPU, SPU, DMA and RSX; validate wait/signal behavior and repeatability |
+| **PRX / modules** | PARTIAL | Module detection exists, but real PRX loading and relocation are not robust | Titles that depend on dynamically loaded modules may fail during startup or later execution | Implement module metadata parsing, supported relocation types, import/export resolution and module lifecycle; report unsupported relocation/import cases clearly |
+
+### Implementation and validation policy
+
+1. Treat each row above as an open work area, not as completed functionality.
+2. Prioritize by evidence from game logs, import/NID traces, RSX command traces and reproducible minimal tests, rather than by static instruction counts alone.
+3. For each implementation, add targeted tests for normal behavior, edge cases and failure paths before changing the status from **PLANNED/PARTIAL**.
+4. Keep known limitations visible in logs and compatibility notes. A stub returning success, a skipped PPU region, or a clear/flip-only RSX path must not be described as full support.
+5. Update the relevant runtime documentation and per-game notes as behavior is verified. Static-lift coverage does not prove correct execution or playability.
 
 ---
 
