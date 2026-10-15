@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-15_18-23-41.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-15_18-23-41.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-15_18-55-40.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-15_18-55-40.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -115,8 +115,9 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [lv2] alloc VA=0x83ce000 size=0x10000
 [gcm] labels  @ 0x83ce000
 [lv2] alloc VA=0x83e0000 size=0x100000
-[rsx] XX-O window/taskbar icon from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR/../ICON0.PNG
-[rsx] XX-O window/taskbar icon from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR/../ICON0.PNG
+[rsx] XXII-L API preference: D3D11 (OpenGL 3.3/2.1 fallback not linked yet)
+[rsx] PIC1 window/taskbar icon from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR/../PIC1.PNG
+[rsx] PIC1 window/taskbar icon from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR/../PIC1.PNG
 [rsx] XX-O window title="GOW3 — PPSX33"
 [rsx] D3D11 host present ready 1280x720 (depth+stencil)
 [rsx] init fifo=0x83e0000 size=0x100000 backend=1
@@ -204,41 +205,3 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] heartbeat steps=1048576 pc=0x0 lr=0x0 r2=0x0 pokes=16373 nrban=0
 [rsx] XXII-G flip #3073 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
 [rsx] XXII-G flip #3329 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=1310720 pc=0x0 lr=0x0 r2=0x0 pokes=20469 nrban=0
-[ps3] heartbeat steps=1572864 pc=0x0 lr=0x0 r2=0x0 pokes=24565 nrban=0
-[ps3] heartbeat steps=1835008 pc=0x0 lr=0x0 r2=0x0 pokes=28661 nrban=0
-[ps3] heartbeat steps=2097152 pc=0x0 lr=0x0 r2=0x0 pokes=32757 nrban=0
-[ps3] heartbeat steps=2359296 pc=0x0 lr=0x0 r2=0x0 pokes=36853 nrban=0
-[rsx] XXII-G flip #3585 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=2621440 pc=0x0 lr=0x0 r2=0x0 pokes=40949 nrban=0
-[ps3] heartbeat steps=2883584 pc=0x0 lr=0x0 r2=0x0 pokes=45045 nrban=0
-[ps3] heartbeat steps=3145728 pc=0x0 lr=0x0 r2=0x0 pokes=49141 nrban=0
-[ps3] heartbeat steps=3407872 pc=0x0 lr=0x0 r2=0x0 pokes=53237 nrban=0
-[ps3] heartbeat steps=3670016 pc=0x0 lr=0x0 r2=0x0 pokes=57333 nrban=0
-[ps3] heartbeat steps=3932160 pc=0x0 lr=0x0 r2=0x0 pokes=61429 nrban=0
-[ps3] heartbeat steps=4194304 pc=0x0 lr=0x0 r2=0x0 pokes=65525 nrban=0
-[ps3] heartbeat steps=4456448 pc=0x0 lr=0x0 r2=0x0 pokes=69621 nrban=0
-[rsx] XXII-G flip #3841 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=4718592 pc=0x0 lr=0x0 r2=0x0 pokes=73717 nrban=0
-[ps3] heartbeat steps=4980736 pc=0x0 lr=0x0 r2=0x0 pokes=77813 nrban=0
-[ps3] heartbeat steps=5242880 pc=0x0 lr=0x0 r2=0x0 pokes=81909 nrban=0
-[ps3] heartbeat steps=5505024 pc=0x0 lr=0x0 r2=0x0 pokes=86005 nrban=0
-[ps3] heartbeat steps=5767168 pc=0x0 lr=0x0 r2=0x0 pokes=90101 nrban=0
-[ps3] heartbeat steps=6029312 pc=0x0 lr=0x0 r2=0x0 pokes=94197 nrban=0
-[ps3] heartbeat steps=6291456 pc=0x0 lr=0x0 r2=0x0 pokes=98293 nrban=0
-[ps3] heartbeat steps=6553600 pc=0x0 lr=0x0 r2=0x0 pokes=102389 nrban=0
-[rsx] XXII-G flip #4097 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=6815744 pc=0x0 lr=0x0 r2=0x0 pokes=106485 nrban=0
-[ps3] heartbeat steps=7077888 pc=0x0 lr=0x0 r2=0x0 pokes=110581 nrban=0
-[ps3] heartbeat steps=7340032 pc=0x0 lr=0x0 r2=0x0 pokes=114677 nrban=0
-[ps3] heartbeat steps=7602176 pc=0x0 lr=0x0 r2=0x0 pokes=118773 nrban=0
-[ps3] heartbeat steps=7864320 pc=0x0 lr=0x0 r2=0x0 pokes=122869 nrban=0
-[ps3] heartbeat steps=8126464 pc=0x0 lr=0x0 r2=0x0 pokes=126965 nrban=0
-[ps3] heartbeat steps=8388608 pc=0x0 lr=0x0 r2=0x0 pokes=131061 nrban=0
-[ps3] heartbeat steps=8650752 pc=0x0 lr=0x0 r2=0x0 pokes=135157 nrban=0
-[rsx] XXII-G flip #4353 draws=1 clears=3 depth=1 stencil=1 shaders=0 tex=0 methods=4 known=4 unknown=0 1280x729
-[ps3] heartbeat steps=8912896 pc=0x0 lr=0x0 r2=0x0 pokes=139253 nrban=0
-[rsx] window closed by user — exiting
-[ps3rt] force exit
-
---- log end ---
