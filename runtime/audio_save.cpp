@@ -249,22 +249,46 @@ static int save_write_file(const char* dir_name, const char* file_name, const vo
 PS3RT_API int ps3rt_save_dispatch(PPUContext* c, uint32_t nid) {
     if (!c) return -1;
     save_ensure_root();
-    // Minimal PARAM.SFO-ish header so games see a slot
-    if (nid == 0x04C06FC2 || nid == 0x21CCD0B0 || nid == 0xEDB7727B) {
+    // P: lifecycle — create / list / load / save / delete / exists
+    // create / save (PARAM.SFO + slot)
+    if (nid == 0x04C06FC2 || nid == 0x21CCD0B0 || nid == 0xEDB7727B ||
+        nid == 0x95AEBDAB || nid == 0x52CBC4FC) {
         uint8_t buf[256] = {};
         std::memcpy(buf, "\0PSF", 4);
         std::snprintf((char*)buf + 0x14, 64, "%s", g_game_name);
         save_write_file("SLOT0", "PARAM.SFO", buf, sizeof(buf));
         save_write_file("SLOT0", "ICON0.PNG", nullptr, 0);
-        ps3rt_log("[save] game SAVE nid=0x%08X -> %s\\SLOT0\n", nid, g_save_root);
+        static int s_sv = 0;
+        if (s_sv < 12) { ps3rt_log("[save] P create/save nid=0x%08X -> %s\\SLOT0\n", nid, g_save_root); ++s_sv; }
         c->gpr[3] = 0; return 0;
     }
-    if (nid == 0xF6488C08 || nid == 0x39D6C2BB) {
-        ps3rt_log("[save] game LOAD nid=0x%08X from %s\n", nid, g_save_root);
+    // load / open
+    if (nid == 0xF6488C08 || nid == 0x39D6C2BB || nid == 0x24793432) {
+        static int s_ld = 0;
+        if (s_ld < 12) { ps3rt_log("[save] P load/open nid=0x%08X from %s\n", nid, g_save_root); ++s_ld; }
         c->gpr[3] = 0; return 0;
     }
-    if (nid == 0x48418D11) {
-        ps3rt_log("[save] delete requested\n"); c->gpr[3] = 0; return 0;
+    // list / getdir / enumerate — report 1 slot
+    if (nid == 0x21965478 || nid == 0x1AF0148E || nid == 0xEDC97180) {
+        uint64_t out = c->gpr[3];
+        // if pointer, write count=1
+        uint8_t* mem = ps3rt_memory();
+        if (mem && out && out + 4 <= 512ull*1024*1024) {
+            mem[out] = 0; mem[out+1] = 0; mem[out+2] = 0; mem[out+3] = 1;
+        }
+        static int s_ls = 0;
+        if (s_ls < 8) { ps3rt_log("[save] P list/enum nid=0x%08X slots=1\n", nid); ++s_ls; }
+        c->gpr[3] = 0; return 0;
+    }
+    // delete
+    if (nid == 0x48418D11 || nid == 0x27978D77) {
+        static int s_dl = 0;
+        if (s_dl < 8) { ps3rt_log("[save] P delete nid=0x%08X\n", nid); ++s_dl; }
+        c->gpr[3] = 0; return 0;
+    }
+    // stat / get size / exists — success empty
+    if (nid == 0x5CB9BCFF || nid == 0x22AC00B8 || nid == 0x8B7B4BF8) {
+        c->gpr[3] = 0; return 0;
     }
     c->gpr[3] = 0;
     return 0;

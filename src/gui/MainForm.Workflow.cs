@@ -21,7 +21,7 @@ public sealed partial class MainForm
             "Click Yes only if you understand and accept these terms.";
 
         var r = MessageBox.Show(this, body, "PPSX33 — Legal acknowledgment",
-            MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2); // status A–N
+            MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2); // status A–Q
         if (r != DialogResult.Yes)
         {
             Append("Legal notice declined — " + action + " cancelled.");
@@ -242,7 +242,7 @@ public sealed partial class MainForm
                 "EXE: " + gameExeName + "\n" +
                 "Also: ps3rt.dll, guest_image.bin, pad_map.json\n\n" +
                 "Run the EXE from that USRDIR folder.\n" +
-                "Runtime includes lettered work through N (texture/fs helpers).\n" +
+                "Runtime includes lettered work through Q (texture/fs helpers).\n" +
                 "Attach the newest run log if something fails.",
                 "PPSX33 — Copy complete",
                 MessageBoxButtons.OK,

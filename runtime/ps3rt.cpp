@@ -321,6 +321,10 @@ enum : uint16_t {
 static uint16_t g_pad_buttons = 0;
 static int8_t g_pad_lx = 0, g_pad_ly = 0, g_pad_rx = 0, g_pad_ry = 0;
 static uint8_t g_pad_l2 = 0, g_pad_r2 = 0;
+// Q: pressure (0-255) + sixaxis accel stubs
+static uint8_t g_pad_pressure[16] = {};
+static int16_t g_pad_accel_x = 0, g_pad_accel_y = 0, g_pad_accel_z = 0;
+static int g_pad_sensor_enabled = 0;
 static int g_pad_inited = 0;
 static int g_pad_connected = 1;
 static uint32_t g_pad_poll_count = 0;
@@ -329,6 +333,20 @@ PS3RT_API void ps3rt_pad_set(uint16_t buttons, int16_t lx, int16_t ly, int16_t r
     g_pad_buttons = buttons;
     g_pad_lx = (int8_t)(lx >> 8); g_pad_ly = (int8_t)(ly >> 8);
     g_pad_rx = (int8_t)(rx >> 8); g_pad_ry = (int8_t)(ry >> 8);
+}
+PS3RT_API void ps3rt_pad_set_sensor(int enabled) {
+    g_pad_sensor_enabled = enabled ? 1 : 0;
+    static int s_q = 0;
+    if (s_q < 4) { ps3rt_log("[pad] Q sensor %s\n", enabled ? "on" : "off"); ++s_q; }
+}
+PS3RT_API void ps3rt_pad_get_pressure(uint8_t out[16]) {
+    if (!out) return;
+    for (int i = 0; i < 16; ++i) out[i] = g_pad_pressure[i];
+}
+PS3RT_API void ps3rt_pad_get_accel(int16_t* x, int16_t* y, int16_t* z) {
+    if (x) *x = g_pad_accel_x;
+    if (y) *y = g_pad_accel_y;
+    if (z) *z = g_pad_accel_z;
 }
 
 #if defined(_WIN32)
@@ -441,6 +459,25 @@ static void pad_poll_host() {
     g_pad_buttons = btn;
     g_pad_lx = lx; g_pad_ly = ly; g_pad_rx = rx; g_pad_ry = ry;
     g_pad_l2 = l2; g_pad_r2 = r2;
+    // Q: map digital face buttons to full pressure when held
+    g_pad_pressure[0] = (btn & CELL_PAD_LEFT) ? 255 : 0;
+    g_pad_pressure[1] = (btn & CELL_PAD_DOWN) ? 255 : 0;
+    g_pad_pressure[2] = (btn & CELL_PAD_RIGHT) ? 255 : 0;
+    g_pad_pressure[3] = (btn & CELL_PAD_UP) ? 255 : 0;
+    g_pad_pressure[4] = (btn & CELL_PAD_SQUARE) ? 255 : 0;
+    g_pad_pressure[5] = (btn & CELL_PAD_CROSS) ? 255 : 0;
+    g_pad_pressure[6] = (btn & CELL_PAD_CIRCLE) ? 255 : 0;
+    g_pad_pressure[7] = (btn & CELL_PAD_TRIANGLE) ? 255 : 0;
+    g_pad_pressure[8] = (btn & CELL_PAD_R1) ? 255 : 0;
+    g_pad_pressure[9] = (btn & CELL_PAD_L1) ? 255 : 0;
+    g_pad_pressure[10] = r2;
+    g_pad_pressure[11] = l2;
+    // sixaxis: neutral when sensor off; mild gravity on Z when on
+    if (g_pad_sensor_enabled) {
+        g_pad_accel_x = 0; g_pad_accel_y = 0; g_pad_accel_z = 256;
+    } else {
+        g_pad_accel_x = g_pad_accel_y = g_pad_accel_z = 0;
+    }
     // Only log pad/XInput while the game window is focused
     if (window_is_focused()) {
         if ((g_pad_poll_count <= 4) || ((g_pad_poll_count & 0x3FF) == 1 && btn)) {

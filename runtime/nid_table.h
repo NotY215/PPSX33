@@ -140,6 +140,30 @@ static const NidEntry kNidTable[] = {
     { 0xDA9883AA, "cellGame", "cellGameDataCheck", 10 },
     { 0xB7A0F6C8, "cellGame", "cellGameBootCheck", 10 },
     { 0xA45362F6, "sysPrxForUser", "sys_initialize_tls", 0 },
+
+    // --- O: expanded library stubs (return success / no-op) ---
+    { 0x2C03F51C, "cellSysutilRegisterCallback", "cellSysutil", 0 },
+    { 0x9D98AFA0, "cellSysutilUnregisterCallback", "cellSysutil", 0 },
+    { 0x189A74DA, "cellSysutilCheckCallback", "cellSysutil", 0 },
+    { 0x40E895D3, "cellSysutilGetSystemParamInt", "cellSysutil", 0 },
+    { 0x938013A3, "cellSysutilGetSystemParamString", "cellSysutil", 0 },
+    { 0xCFDD8E87, "cellSysmoduleLoadModule", "cellSysmodule", 0 },
+    { 0xA193EA16, "cellSysmoduleUnloadModule", "cellSysmodule", 0 },
+    { 0x5A59E273, "cellSysmoduleIsLoaded", "cellSysmodule", 0 },
+    { 0x3A52CF82, "cellSysmoduleInitialize", "cellSysmodule", 0 },
+    { 0x63FF6C11, "cellPadInit", "cellPad", 0 },
+    { 0xA703A51D, "cellPadEnd", "cellPad", 0 },
+    { 0x1CF98800, "cellPadGetInfo2", "cellPad", 0 },
+    { 0x3AAAD464, "cellPadGetData", "cellPad", 0 },
+    { 0x0D5F2C14, "cellPadClearBuf", "cellPad", 0 },
+    { 0xF54172B3, "cellPadSetPortSetting", "cellPad", 0 },
+    { 0x0EB1F0BA, "cellKbInit", "cellKb", 0 },
+    { 0xBFCE3285, "cellKbEnd", "cellKb", 0 },
+    { 0x1F71ECBE, "cellMouseInit", "cellMouse", 0 },
+    { 0x3EF332C8, "cellMouseEnd", "cellMouse", 0 },
+    { 0x45EC29DB, "cellSpursInitialize", "cellSpurs", 0 },
+    { 0xCA64789A, "cellSpursFinalize", "cellSpurs", 0 },
+    { 0xACFC2024, "cellSpursAttachLv2EventQueue", "cellSpurs", 0 },
 };
 
 static constexpr int kNidTableCount = (int)(sizeof(kNidTable) / sizeof(kNidTable[0]));

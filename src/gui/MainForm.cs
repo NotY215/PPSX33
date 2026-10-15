@@ -66,7 +66,7 @@ public sealed partial class MainForm : Form
     public MainForm()
     {
         AutoScaleMode = AutoScaleMode.Dpi;
-        Text = "PPSX33  ·  PlayStation 3 Recompiler  ·  A–N";
+        Text = "PPSX33  ·  PlayStation 3 Recompiler  ·  A–Q";
         Width = 1180; Height = 760;
         MinimumSize = new Size(980, 660);
         StartPosition = FormStartPosition.CenterScreen;

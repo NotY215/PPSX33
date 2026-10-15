@@ -1,3 +1,4 @@
+// O: NID table expanded in nid_table.h (sysutil/sysmodule/pad/kb/mouse/spurs stubs)
 static void pad_write_data(uint64_t out) {
     if (!out || out + 24 > g_mem_size) return;
     wr_be32_guest(out, 24);
