@@ -1,40 +1,61 @@
 # PPSX33: PlayStation 3 Static Recompiler
 
-<p align="center"><strong>Decode · Translate · Play</strong></p>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/NotY215/PPSX33/main/assets/ppsx33-banner.png" alt="PPSX33 banner" width="100%" />
+</p>
 
-Experimental static recompiler for decrypted PS3 ELF64. Not a complete emulator; commercial playability is not established.
+<p align="center"><strong>PlayStation 3 Static Recompiler</strong><br />Decode · Translate · Play</p>
 
-## Status
+PPSX33 is an experimental static recompiler for decrypted ELF64 big-endian PowerPC64 input targeting the PlayStation 3. The repository contains a C/C++ core, command-line frontend, C# WinForms GUI, and guest runtime support. Project page: [notyvos.gt.tc/PPSX3](https://notyvos.gt.tc/PPSX3/).
+
+PPSX33 is not a complete PS3 emulator. PPU translation, instruction semantics, system libraries, SPU execution, and RSX rendering remain separate engineering problems. Commercial-game playability is not established.
+
+## Implementation status
 
 | Area | Status |
 |------|--------|
-| Package XX-A…G / Runtime XX-H…O | DONE in tree |
-| **A–H** lettered post-O work | **DONE** (see table) |
-| Full RSX shaders, deep HLE, saves, PRX | Still open |
+| ELF load / analysis / PPU static lift | Implemented (static metrics only) |
+| Phases I–XIX (tooling & core pipeline) | TESTING |
+| Package XX-A … XX-G | DONE |
+| Runtime XX-H … XX-O | DONE in tree |
+| Post-XX lettered **A – K** | DONE in tree |
+| Later lettered work (L+) | PARTIAL / PLANNED — see [ROADMAP](ROADMAP.md) |
 
-### Lettered implementations (post XX-O)
+### Post-XX lettered work (A – K)
 
-| Sno. | Name | Status | Work |
-|------|------|--------|------|
-| A | RSX surfaces + blit | DONE | Surface offsets, flip tagging |
-| B | PPU accuracy helpers | DONE | mul/div/rotate, LR recovery |
-| C | SPU ISA expansion | DONE | float/logic/rotates |
-| D | MFC / DMA fidelity | DONE | List EA48, tags, queue |
-| E | SPURS jobchain | DONE | ready + chain_next |
-| F | cellFs directories | DONE | opendir/readdir/closedir |
-| G | Audio ring / notify | DONE | ring indices, notify key |
-| H | LV2 syscalls | DONE | mutex/event/sem/thread/mem |
+| Sno. | Name | Status |
+|------|------|--------|
+| A | RSX surfaces + blit | DONE |
+| B | PPU accuracy helpers | DONE |
+| C | SPU ISA expansion | DONE |
+| D | MFC / DMA fidelity | DONE |
+| E | SPURS jobchain | DONE |
+| F | cellFs directories | DONE |
+| G | Audio ring / notify | DONE |
+| H | LV2 syscalls expand | DONE |
+| I | RSX draw / shader state | DONE |
+| J | PPU lifter-facing helpers | DONE |
+| K | Audio multi-port | DONE |
 
-Runtime package for users who have not applied earlier zips: **`PPSX33_A-F_G_H.zip`** (all of A–H).
+Full phase tables and remaining gaps: [ROADMAP.md](ROADMAP.md).
 
-Details: [ROADMAP.md](ROADMAP.md) · End-user: [USER_MANUAL.md](USER_MANUAL.md)
+## Documentation
 
-## Build
+- [USER_MANUAL.md](USER_MANUAL.md) — workflow, legal notice, troubleshooting  
+- [ROADMAP.md](ROADMAP.md) — phases I–XIX, XX-A–O, lettered A–K and beyond  
+- [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) — architecture  
+
+## Build (Windows)
 
 ```bat
 scripts\build_all.bat
 ```
 
-Workflow: Load ELF → Decompile → Map controls → Build → Copy to USRDIR → Run.
+Typical GUI flow: Load ELF → Decompile → controller map → Build → Copy to game folder → Run from `USRDIR`.
 
-Website: https://notyvos.gt.tc/PPSX3/
+Successful compilation is not proof of runtime correctness.
+
+## Links
+
+- Website: https://notyvos.gt.tc/PPSX3/  
+- [CONTRIBUTING.md](CONTRIBUTING.md) · [SUPPORT.md](SUPPORT.md) · [SECURITY.md](SECURITY.md) · [LEGAL.md](LEGAL.md)
