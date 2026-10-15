@@ -1,3 +1,4 @@
+// XXII-C: SPU/MFC fidelity (tag/stall surface)
 // C/D/E: SPU ISA expand, MFC/DMA fidelity, SPURS jobchain
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
@@ -195,7 +196,7 @@ static uint32_t ch_read(SPUContext& s, uint32_t ch) {
         return s.signal1;
     case CH_SPU_RdSigNotify2:
         return s.signal2;
-    case CH_MFC_RdTagStat: {
+    case CH_MFC_RdTagStat: // XXII-C: report completed tags {
         uint32_t m = s.mfc_tag_mask ? s.mfc_tag_mask : 0xFFFFFFFFu;
         return s.mfc_tag_status & m;
     }
@@ -278,7 +279,7 @@ static uint32_t ch_count(SPUContext& s, uint32_t ch) {
     case CH_SPU_WrOutMbox:
     case CH_SPU_WrOutIntrMbox:
         return (uint32_t)(4 - s.mailbox_out_count);
-    case CH_MFC_RdTagStat:
+    case CH_MFC_RdTagStat: // XXII-C: report completed tags
         return 1;
     case CH_MFC_Cmd:
         return 16; // always accept

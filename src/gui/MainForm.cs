@@ -66,7 +66,7 @@ public sealed partial class MainForm : Form
 
     public MainForm()
     {
-        Text = "PPSX33  ·  PlayStation 3 Recompiler  ·  XXI A-Z";
+        Text = "PPSX33  ·  PlayStation 3 Recompiler  ·  XXII";
         StartPosition = FormStartPosition.CenterScreen;
         Size = new Size(1280, 800);
         MinimumSize = new Size(1024, 640);
@@ -95,15 +95,40 @@ public sealed partial class MainForm : Form
         for (int i = 0; i < 14; i++)
             railLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        _logo.Size = new Size(120, 120);
+        _logo.Size = new Size(140, 140);
         _logo.SizeMode = PictureBoxSizeMode.Zoom;
         _logo.BackColor = Color.Transparent;
+        _logo.Margin = new Padding(8, 4, 8, 12);
         try
         {
-            var logoPath = Path.Combine(AppContext.BaseDirectory, "assets", "ppsx33-logo.png");
-            if (File.Exists(logoPath)) _logo.Image = Image.FromFile(logoPath);
+            // Form / taskbar icon (.ico)
+            string[] icoCandidates = {
+                Path.Combine(AppContext.BaseDirectory, "assets", "ppsx33-logo.ico"),
+                Path.Combine(AppContext.BaseDirectory, "ppsx33-logo.ico"),
+                Path.Combine(AppContext.BaseDirectory, "..", "assets", "ppsx33-logo.ico"),
+                Path.Combine(AppContext.BaseDirectory, "..", "..", "assets", "ppsx33-logo.ico"),
+            };
+            foreach (var ico in icoCandidates)
+            {
+                if (!File.Exists(ico)) continue;
+                Icon = new Icon(ico);
+                break;
+            }
+            // Rail logo (.png)
+            string[] pngCandidates = {
+                Path.Combine(AppContext.BaseDirectory, "assets", "ppsx33-logo.png"),
+                Path.Combine(AppContext.BaseDirectory, "ppsx33-logo.png"),
+                Path.Combine(AppContext.BaseDirectory, "..", "assets", "ppsx33-logo.png"),
+                Path.Combine(AppContext.BaseDirectory, "..", "..", "assets", "ppsx33-logo.png"),
+            };
+            foreach (var png in pngCandidates)
+            {
+                if (!File.Exists(png)) continue;
+                _logo.Image = Image.FromFile(png);
+                break;
+            }
         }
-        catch { }
+        catch { /* missing assets */ }
 
         StyleBtn(_btnDecrypt, "Decrypt EBOOT", Panel2);
         StyleBtn(_btnLoad, "Load ELF", Panel2);
@@ -165,6 +190,27 @@ public sealed partial class MainForm : Form
         _project.Text = "PROJECT  /  NO PROJECT LOADED"; _project.ForeColor = TextPri; _project.BackColor = Color.FromArgb(12, 22, 47);
         _project.Dock = DockStyle.Fill; _project.TextAlign = ContentAlignment.MiddleLeft; _project.Padding = new Padding(12, 0, 0, 0);
         StyleTextBox(_log); StyleTextBox(_report); StyleTextBox(_roadmap);
+        StyleTextBox(_requirements);
+        _requirements.Text =
+            "PPSX33 - Host requirements (research toolkit)\r\n" +
+            "========================================\r\n\r\n" +
+            "REQUIRED\r\n" +
+            "  Disk type     HDD or SSD (SSD preferred for game data)\r\n" +
+            "  RAM           8 GB system memory\r\n" +
+            "  GPU           Any GPU with a WDDM driver (integrated OK)\r\n" +
+            "  VRAM          Shared or dedicated; enough for a D3D11 swap chain\r\n" +
+            "  Monitor       1280x720 or higher\r\n" +
+            "  Graphics API  Direct3D 11 Feature Level 10_0+\r\n" +
+            "  OS            Windows 10 or later (x64)\r\n\r\n" +
+            "RECOMMENDED\r\n" +
+            "  Disk type     SSD / NVMe\r\n" +
+            "  RAM           16 GB or more\r\n" +
+            "  GPU           Discrete GPU, D3D11 Feature Level 11_0\r\n" +
+            "  VRAM          2 GB or more dedicated\r\n" +
+            "  Monitor       1920x1080\r\n" +
+            "  Graphics API  D3D11 FL11_0; future OpenGL 3.3/2.1 fallback\r\n\r\n" +
+            "Commercial playability is not guaranteed at any host specification.\r\n";
+
         _roadmap.Text =
             "PPSX33 - Roadmap\r\n" +
             "========================================\r\n\r\n" +
@@ -183,8 +229,8 @@ public sealed partial class MainForm : Form
             "Per-phase docs: roadmap/I.md ... roadmap/XXII.md\r\n" +
             "Requirements tab: minimum / recommended host specs.\r\n";
 
-        _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(100, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab;
-        AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap);
+        _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(110, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab;
+        AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap); AddTab("Requirements", _requirements);
         BuildControllerTab();
         _status.TextAlign = ContentAlignment.MiddleLeft; _status.Padding = new Padding(8, 0, 0, 0);
         _status.Dock = DockStyle.Fill; _status.ForeColor = TextSec; _status.BackColor = Color.FromArgb(10, 17, 37);

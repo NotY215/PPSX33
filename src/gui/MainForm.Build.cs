@@ -7,14 +7,32 @@ public sealed partial class MainForm
 {
     void AddTab(string title, Control body) { var page = new TabPage(title) { BackColor = Panel, Padding = new Padding(4) }; page.Controls.Add(body); _tabs.TabPages.Add(page); }
 
-    void StyleBtn(Control b, string text, Color bg) { b.Text = text; b.BackColor = bg; b.ForeColor = TextPri; }
+    void StyleBtn(Control b, string text, Color bg)
+    {
+        b.Text = text;
+        b.BackColor = bg;
+        b.ForeColor = TextPri;
+        b.Dock = DockStyle.Top;
+        b.Height = 38;
+        b.Margin = new Padding(0, 0, 0, 8);
+        b.Padding = new Padding(8, 0, 8, 0);
+        if (b is Button btn)
+        {
+            btn.FlatStyle = FlatStyle.Flat;
+            btn.FlatAppearance.BorderSize = 0;
+            btn.TextAlign = ContentAlignment.MiddleCenter;
+            btn.Cursor = Cursors.Hand;
+        }
+    }
     void StyleTextBox(TextBox t) { t.Multiline = true; t.ScrollBars = ScrollBars.Both; t.Dock = DockStyle.Fill; t.BackColor = Panel; t.ForeColor = TextPri; t.BorderStyle = BorderStyle.None; t.Font = new Font("Consolas", 9f); }
     void StyleCombo(ComboBox c) {
         c.FlatStyle = FlatStyle.Flat;
         c.BackColor = Panel2;
         c.ForeColor = TextPri;
         c.Font = new Font("Segoe UI", 9f);
-        c.Width = 240;
+        c.Dock = DockStyle.Top;
+        c.Margin = new Padding(0, 0, 0, 8);
+        c.DropDownStyle = ComboBoxStyle.DropDownList;
     }
     Label MakeLabel(string text) => MakeLbl(text, TextSec, true);
     Label MakeLbl(string text, Color c, bool bold) => new Label { Text = text, ForeColor = c, BackColor = Color.Transparent, Font = bold ? new Font("Segoe UI", 9f, FontStyle.Bold) : new Font("Segoe UI", 9f) };

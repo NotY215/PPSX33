@@ -1,3 +1,4 @@
+// XXII-D: LV2 / HLE — log first use; prefer non-zero for unknown high-risk syscalls
 // lv2_syscalls.inl — HLE with first-hit logging (accuracy: stubs still incomplete)\n// lv2_syscalls.inl — H: expanded LV2 HLE (included inside ps3rt_syscall switch)
 
 // sys_lwmutex_lock / unlock / trylock / destroy

@@ -1,3 +1,4 @@
+// XXII-D marker
 #include <vector>
 // O: NID table expanded in nid_table.h (sysutil/sysmodule/pad/kb/mouse/spurs stubs)
 static void pad_write_data(uint64_t out) {

@@ -47,7 +47,7 @@ All six game counts describe individual static-lift snapshots. They are not proo
 
 ## Current runtime development status
 
-The current [ROADMAP.md](ROADMAP.md) tracks tooling (phases I–XIX, testing), packaging (XX-A…XX-G, done), and runtime playability (XX-H…XX-O, done in tree). Milestone labels describe engineering work, not verified compatibility with any commercial title.
+The current [ROADMAP.md](ROADMAP.md) tracks **PHASE 1 – XXII**: tooling (I–XIX), packaging (XX-A…XX-G), runtime base (XX-H…XX-O), lettered XXI (A–Z), and active **Phase XXII** pipeline correctness (A–D and planned E+). Milestone labels describe engineering work, not verified compatibility with any commercial title.
 
 **Phase XX-H…O (summary):** null-loop / GCM flip recovery; fuller `cellGcmSys` HLE; PSARC zlib streaming; SPU ISA interpreter; MFC list DMA and tags; SPURS-like scheduling; cellAudio→waveOut plus on-screen status; ICON0 window/taskbar icon. Details, log tags, and file map are in the roadmap.
 
