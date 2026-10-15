@@ -103,7 +103,8 @@ static void rsx_upload_guest_tex(uint8_t* mem) {
     if (w > 2048) w = 2048;
     if (h > 2048) h = 2048;
     uint64_t off = g_rsx.tex_offset;
-    if (!off && g_rsx.color_offset) off = g_rsx.color_offset;
+    if (!off && g_rsx.color_valid && g_rsx.color_offset) off = g_rsx.color_offset;
+    else if (!off && g_rsx.color_offset) off = g_rsx.color_offset;
     if (!off) return;
     // guest RSX offsets often in local memory window — clamp into 512MB
     if (off >= 512ull * 1024 * 1024) return;

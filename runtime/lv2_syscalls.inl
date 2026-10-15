@@ -1,4 +1,4 @@
-// lv2_syscalls.inl — H: expanded LV2 HLE (included inside ps3rt_syscall switch)
+// lv2_syscalls.inl — HLE with first-hit logging (accuracy: stubs still incomplete)\n// lv2_syscalls.inl — H: expanded LV2 HLE (included inside ps3rt_syscall switch)
 
 // sys_lwmutex_lock / unlock / trylock / destroy
 case 48: case 49: case 50: case 51:

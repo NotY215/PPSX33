@@ -157,7 +157,7 @@ static void mfc_do_dma(SPUContext& s) {
     if (cmd == 0x60 || cmd == 0x61 || cmd == 0x62 || cmd == 0x64) {
         if (cmd == 0x60) mfc_xfer(s, lsa, ea, size ? size : 4, true);
         else if (cmd == 0x61 || cmd == 0x62) mfc_xfer(s, lsa, ea, size ? size : 4, false);
-        s.mfc_atomic_stat = 0; // success
+        s.mfc_atomic_stat = 0; // success (HLE — no real reservation)
         mfc_complete_tag(s);
         return;
     }
@@ -200,11 +200,12 @@ static uint32_t ch_read(SPUContext& s, uint32_t ch) {
         return s.mfc_tag_status & m;
     }
     case CH_SPU_RdMachStat:
-        return 0;
+        // isolation / run bit: report running when interpreter active
+        return s.running ? 1u : 0u;
     case CH_MFC_RdAtomicStat:
         return s.mfc_atomic_stat;
     case CH_MFC_RdListStallStat:
-        return 0;
+        return s.mfc_list_stall;
     default:
         return 0;
     }

@@ -9,6 +9,14 @@ public sealed partial class MainForm
 
     void StyleBtn(Control b, string text, Color bg) { b.Text = text; b.BackColor = bg; b.ForeColor = TextPri; }
     void StyleTextBox(TextBox t) { t.Multiline = true; t.ScrollBars = ScrollBars.Both; t.Dock = DockStyle.Fill; t.BackColor = Panel; t.ForeColor = TextPri; t.BorderStyle = BorderStyle.None; t.Font = new Font("Consolas", 9f); }
+    void StyleCombo(ComboBox c) {
+        c.FlatStyle = FlatStyle.Flat;
+        c.BackColor = Panel2;
+        c.ForeColor = TextPri;
+        c.Font = new Font("Segoe UI", 9f);
+        c.Width = 240;
+    }
+    Label MakeLabel(string text) => MakeLbl(text, TextSec, true);
     Label MakeLbl(string text, Color c, bool bold) => new Label { Text = text, ForeColor = c, BackColor = Color.Transparent, Font = bold ? new Font("Segoe UI", 9f, FontStyle.Bold) : new Font("Segoe UI", 9f) };
     void DrawPs3Tab(object? sender, DrawItemEventArgs e) {
         if (e.Index < 0) return;
