@@ -51,6 +51,41 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
 }
 
 static int g_prx_log = 0;
+
+// S: loaded PRX module registry (name + id)
+struct PrxMod { bool used; char name[64]; uint32_t id; uint32_t entry; };
+static PrxMod g_prx_mods[32];
+static uint32_t g_prx_mod_seq = 1;
+static int prx_mod_find(const char* name) {
+    for (int i = 0; i < 32; ++i)
+        if (g_prx_mods[i].used && name && std::strncmp(g_prx_mods[i].name, name, 63) == 0)
+            return i;
+    return -1;
+}
+static int prx_mod_load(const char* name) {
+    int i = prx_mod_find(name);
+    if (i >= 0) return i;
+    for (i = 0; i < 32; ++i) {
+        if (g_prx_mods[i].used) continue;
+        g_prx_mods[i].used = true;
+        g_prx_mods[i].id = g_prx_mod_seq++;
+        g_prx_mods[i].entry = 0;
+        if (name) {
+            std::strncpy(g_prx_mods[i].name, name, 63);
+            g_prx_mods[i].name[63] = 0;
+        } else {
+            std::snprintf(g_prx_mods[i].name, 64, "mod_%u", g_prx_mods[i].id);
+        }
+        static int s_ld = 0;
+        if (s_ld < 16) {
+            ps3rt_log("[prx] S load "%s" id=%u\n", g_prx_mods[i].name, g_prx_mods[i].id);
+            ++s_ld;
+        }
+        return i;
+    }
+    return -1;
+}
+
 static uint64_t g_gcm_fifo = 0;
 static uint32_t g_gcm_fifo_size = 0x100000;
 static int g_gcm_inited = 0;
@@ -418,6 +453,38 @@ static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
         if (kind == 1 || (e->module && (std::strstr(e->module, "Gcm") || std::strstr(e->module, "gcm")))) {
             return gcm_hle(c, e->nid);
         }
+
+        // U: deeper sysutil param behaviour
+        if (e->nid == 0x40E895D3 || e->nid == 0x1E14A55D) {
+            // GetSystemParamInt — r3=id, r4=&value
+            uint32_t id = (uint32_t)c->gpr[3];
+            uint64_t out = c->gpr[4];
+            int32_t val = 0;
+            if (id == 0x111) val = 1;       // lang English-ish
+            else if (id == 0x112) val = 1;  // aspect
+            else if (id == 0x113) val = 0;  // parental
+            else if (id == 0x131) val = 1;  // ENTER button
+            else val = 0;
+            if (out && g_mem && out + 4 <= g_mem_size) {
+                uint8_t* p = g_mem + out;
+                p[0]=(uint8_t)(val>>24); p[1]=(uint8_t)(val>>16); p[2]=(uint8_t)(val>>8); p[3]=(uint8_t)val;
+            }
+            static int su=0; if(su<10){ps3rt_log("[prx] U GetSystemParamInt id=0x%x -> %d\n", id, val);++su;}
+            c->gpr[3] = 0; return 0;
+        }
+        if (e->nid == 0x938013A3) {
+            // GetSystemParamString — write short empty/default
+            uint64_t out = c->gpr[4];
+            if (out && g_mem && out + 8 <= g_mem_size) {
+                g_mem[out] = 0;
+            }
+            c->gpr[3] = 0; return 0;
+        }
+        if (e->nid == 0x189A74DA) {
+            // CheckCallback — no callbacks pending
+            c->gpr[3] = 0; return 0;
+        }
+
         if (e->nid == 0x1C936E6D) { g_pad_inited = 1; pad_poll_host(); c->gpr[3] = 0; return 0; }
         if (e->nid == 0x0D5F2C14) { g_pad_inited = 0; c->gpr[3] = 0; return 0; }
         if (e->nid == 0x3733EA3C || e->nid == 0x89FF8792) {
@@ -434,10 +501,19 @@ static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
         if (kind == 4) { return ps3rt_audio_dispatch(c, e->nid); }
         if (kind == 5) { return spurs_dispatch(c, e->nid); }
         if (kind == 11) { return ps3rt_save_dispatch(c, e->nid); }
+        if (kind == 3 || (e->module && std::strstr(e->module, "Sysmodule"))) {
+            // S: sysmodule load/unload/isLoaded
+            if (e->nid == 0x3A495ADE || e->nid == 0xCFDD8E87 || e->nid == 0x3A52CF82) {
+                prx_mod_load(e->name ? e->name : "sysmodule");
+            }
+            c->gpr[3] = 0; return 0;
+        }
         if (kind == 8) {
             pad_poll_host();
             c->gpr[3] = 0; return 0;
         }
+        // S: track first hit per module name as "loaded"
+        if (e->module) prx_mod_load(e->module);
         c->gpr[3] = 0; return 0;
     }
     // No NID table hit — still honour module kind (XX-H)
@@ -483,11 +559,23 @@ PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
     return prx_dispatch(c, maybe_nid, kind);
 }
 
+// R: coarse guest timing (PPU slices / SPU / RSX ratio)
+static uint64_t g_time_ppu_slices = 0;
+static uint64_t g_time_spu_ticks = 0;
+static uint64_t g_time_rsx_flips = 0;
+static uint32_t g_time_phase = 0;
+
 PS3RT_API void ps3rt_progress_hw(void) {
     if (ps3rt_should_exit()) { ps3rt_force_exit(); return; }
     static int s_ppu_once = 0;
     if (!s_ppu_once) { PS3RT_STAGE("PPU progress start"); s_ppu_once = 1; }
-    spu_tick_all();
+    ++g_time_ppu_slices;
+    g_time_phase = (g_time_phase + 1) & 3;
+    // R: phase 0,1 = SPU heavy; 2 = pad/audio; 3 = RSX bias already below
+    if (g_time_phase != 2) {
+        spu_tick_all();
+        ++g_time_spu_ticks;
+    }
     pad_poll_host();
     ps3rt_audio_tick();
     if (!g_gcm_inited) gcm_ensure_state();
@@ -515,6 +603,16 @@ PS3RT_API void ps3rt_progress_hw(void) {
     }
     static int s_run = 0;
     if (!s_run && g_gcm_inited) { PS3RT_STAGE("RUNNING"); s_run = 1; }
+    if ((g_time_ppu_slices & 0x3FF) == 0) {
+        static int s_t = 0;
+        if (s_t < 8) {
+            ps3rt_log("[time] R ppu=%llu spu=%llu rsx_flips=%llu phase=%u\n",
+                (unsigned long long)g_time_ppu_slices,
+                (unsigned long long)g_time_spu_ticks,
+                (unsigned long long)g_time_rsx_flips, g_time_phase);
+            ++s_t;
+        }
+    }
 }
 
 PS3RT_API void ps3rt_on_unimplemented(PPUContext* c, uint32_t opcode, uint64_t pc) {

@@ -1,4 +1,4 @@
-// A+I+L: RSX surfaces, draw/shader state, texture unit tracking
+// A+I+L+T: surfaces, shader, texture unit, textured-draw awareness
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include <mutex>
@@ -287,6 +287,13 @@ static void rsx_host_present_clear() {
             if (!df) df = D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL;
             g_ctx11->ClearDepthStencilView(g_dsv, df, g_rsx.clear_depth, g_rsx.clear_stencil);
         }
+        if (g_rsx.draws_this_frame > 0 && (g_rsx.tex_units_bound || g_rsx.tex_offset)) {
+            // T: tint clear slightly when textured draws were issued (debug visibility)
+            float t = (float)(g_rsx.flip_count & 7) / 7.f;
+            rr = rr * 0.85f + 0.05f * t;
+            gg = gg * 0.85f + 0.08f;
+            bb = bb * 0.85f + 0.12f;
+        }
         if (g_rsx.draws_this_frame > 0) {
             float pr = ((g_rsx.prim_color >> 16) & 0xFF) / 255.f;
             float pg = ((g_rsx.prim_color >> 8) & 0xFF) / 255.f;
@@ -381,6 +388,14 @@ static void rsx_process_fifo(uint8_t* mem) {
                  method == 0x1808 || method == 0x1820) {
             ++g_rsx.draws;
             ++g_rsx.draws_this_frame;
+            if (g_rsx.tex_units_bound || g_rsx.tex_offset) {
+                static int stdr = 0;
+                if (stdr < 16) {
+                    ps3rt_log("[rsx] T textured draw tex=0x%x %ux%u fmt=0x%x\n",
+                        g_rsx.tex_offset, g_rsx.tex_width, g_rsx.tex_height, g_rsx.tex_format);
+                    ++stdr;
+                }
+            }
         }
         else if (method == 0x1D60 || method == 0x1D64 || method == 0x1D6C ||
                  method == 0x09B0 || method == 0x09B4 || method == 0x09B8) {
@@ -469,7 +484,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] L flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] T flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,
