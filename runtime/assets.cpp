@@ -1,3 +1,4 @@
+// XXII-E: modules/FS path fidelity notes
 // F+N: cellFs + PSARC + directories + errno/SELF handling
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
