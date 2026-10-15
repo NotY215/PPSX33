@@ -144,37 +144,37 @@ public sealed partial class MainForm : Form
         _roadmap.Text =
             "PPSX33 — Roadmap\r\n" +
             "========================================\r\n\r\n" +
-            "EARLIER PHASES (I–XIX → testing)\r\n" +
+            "EARLIER PHASES (I–XIX) — TESTING\r\n" +
             "  Core recompiler, HLE stubs, RSX host, audio/pad, pipeline\r\n" +
-            "  Marked TESTING — not final; regressions still possible\r\n\r\n" +
-            "PACKAGE PHASE (XX-A … XX-G+) — done\r\n" +
-            "  XX-A      Game-named EXE + ps3rt.dll + guest_image + pad_map.json\r\n" +
-            "  XX-B      cellFs + PSARC TOC / zlib blocks (partial)\r\n" +
-            "  XX-C      Copy into PS3_GAME\\USRDIR (auto-find EBOOT.BIN)\r\n" +
-            "  XX-D      Controller map → pad_map.json\r\n" +
-            "  XX-E      Legal / TERMS first-run (system browser links)\r\n" +
-            "  XX-F      Post-build layout (reports at root; output/ runtime)\r\n" +
-            "  XX-G      Named run logs + pad log only when window focused\r\n\r\n" +
-            "REMAINING TO IMPLEMENT\r\n" +
-            "  XX-H      Break null-loop / soft GCM — reach real cellFs + draws\r\n" +
-            "  XX-I      Full cellGcmSys HLE (not null import stubs)\r\n" +
-            "  XX-J      Asset streaming: PSARC zlib blocks end-to-end\r\n" +
-            "  XX-K      SPU ISA interpreter / JIT (currently mailbox stub only)\r\n" +
-            "  XX-L      MFC / DMA transfers + tags\r\n" +
-            "  XX-M      SPURS-like SPU scheduling\r\n" +
-            "  XX-N      Audio path + title/UI/text on screen\r\n" +
-            "  XX-O      ICON0 window/taskbar icon when run from USRDIR\r\n\r\n" +
+            "  Not final; regressions still possible\r\n\r\n" +
+            "PACKAGE (XX-A … XX-G) — DONE\r\n" +
+            "  XX-A  Game-named EXE + ps3rt.dll + guest_image + pad_map.json\r\n" +
+            "  XX-B  cellFs + early PSARC TOC\r\n" +
+            "  XX-C  Copy into PS3_GAME\\USRDIR (auto-find EBOOT.BIN)\r\n" +
+            "  XX-D  Controller map → pad_map.json\r\n" +
+            "  XX-E  Legal / TERMS first-run (system browser links)\r\n" +
+            "  XX-F  Post-build layout (reports at root; output/ runtime)\r\n" +
+            "  XX-G  Named run logs; pad log only when window focused\r\n\r\n" +
+            "RUNTIME PLAYABILITY (XX-H … XX-O) — DONE IN TREE\r\n" +
+            "  XX-H  Null-loop skip + GCM flip/wait HLE\r\n" +
+            "  XX-I  Fuller cellGcmSys HLE (display buffers, map, tiles)\r\n" +
+            "  XX-J  PSARC TOC + zlib block streaming (needs zlib1.dll)\r\n" +
+            "  XX-K  SPU ISA interpreter (LS / arith / branch / channels)\r\n" +
+            "  XX-L  MFC list DMA, barriers, atomics, tags\r\n" +
+            "  XX-M  SPURS-like job queue + cellSpurs HLE (8 SPU slots)\r\n" +
+            "  XX-N  cellAudio → waveOut; GDI status overlay; window title\r\n" +
+            "  XX-O  ICON0.PNG window/taskbar icon from PS3_GAME\r\n\r\n" +
             "WORKFLOW\r\n" +
-            "  1. Load decrypted ELF (or Decrypt EBOOT via your RPCS3)\r\n" +
+            "  1. Load decrypted ELF (or Decrypt EBOOT via RPCS3)\r\n" +
             "  2. Decompile (lift chunks)\r\n" +
             "  3. Set controller keys (before Build)\r\n" +
             "  4. Build → <GameName>.exe + ps3rt.dll in output/\r\n" +
             "  5. Copy to game folder (USRDIR next to EBOOT.BIN)\r\n" +
             "  6. Run the game-named EXE from USRDIR\r\n\r\n" +
-            "KNOWN GAPS (solid blue / null-loop)\r\n" +
-            "  · Guest stuck ~pc=0x33723c soft_breaks — GCM stubs incomplete\r\n" +
-            "  · No [fs]/[psarc] in log until cellFs is really used\r\n" +
-            "  · SPU: mailbox only — report stalls via GitHub issue + log\r\n\r\n" +
+            "STILL EXPERIMENTAL\r\n" +
+            "  · Solid blue may persist until real RSX draws / assets load\r\n" +
+            "  · SPU ISA is a subset — report stalls with latest log\r\n" +
+            "  · See ROADMAP.md on GitHub for files, log tags, symptom guide\r\n\r\n" +
             "PPSX33 is a research toolkit — not a retail port.\r\n";
         _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(100, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab;
         AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap);

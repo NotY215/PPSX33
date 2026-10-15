@@ -118,16 +118,16 @@ static HICON load_icon0_png_as_hicon() {
     char* slash = strrchr(mod, '\\');
     if (!slash) return nullptr;
     *slash = 0;
-    // XX-O: USRDIR -> ../ICON0.PNG (PS3_GAME), plus layout variants
+    // XX-O: USRDIR -> ../ICON0.PNG (PS3_GAME); forward slashes avoid C4129
     char candidates[8][MAX_PATH];
-    std::snprintf(candidates[0], MAX_PATH, "%s\..\ICON0.PNG", mod);
-    std::snprintf(candidates[1], MAX_PATH, "%s\..\PS3_GAME\ICON0.PNG", mod);
-    std::snprintf(candidates[2], MAX_PATH, "%s\ICON0.PNG", mod);
-    std::snprintf(candidates[3], MAX_PATH, "%s\PS3_GAME\ICON0.PNG", mod);
-    std::snprintf(candidates[4], MAX_PATH, "%s\..\..\ICON0.PNG", mod);
-    std::snprintf(candidates[5], MAX_PATH, "%s\..\..\PS3_GAME\ICON0.PNG", mod);
-    std::snprintf(candidates[6], MAX_PATH, "%s\ICON0.png", mod);
-    std::snprintf(candidates[7], MAX_PATH, "%s\..\icon0.png", mod);
+    std::snprintf(candidates[0], MAX_PATH, "%s/../ICON0.PNG", mod);
+    std::snprintf(candidates[1], MAX_PATH, "%s/../PS3_GAME/ICON0.PNG", mod);
+    std::snprintf(candidates[2], MAX_PATH, "%s/ICON0.PNG", mod);
+    std::snprintf(candidates[3], MAX_PATH, "%s/PS3_GAME/ICON0.PNG", mod);
+    std::snprintf(candidates[4], MAX_PATH, "%s/../../ICON0.PNG", mod);
+    std::snprintf(candidates[5], MAX_PATH, "%s/../../PS3_GAME/ICON0.PNG", mod);
+    std::snprintf(candidates[6], MAX_PATH, "%s/ICON0.png", mod);
+    std::snprintf(candidates[7], MAX_PATH, "%s/../icon0.png", mod);
     const char* path = nullptr;
     for (int i = 0; i < 8; ++i) {
         DWORD a = GetFileAttributesA(candidates[i]);
