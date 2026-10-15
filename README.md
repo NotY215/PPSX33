@@ -6,56 +6,41 @@
 
 <p align="center"><strong>PlayStation 3 Static Recompiler</strong><br />Decode · Translate · Play</p>
 
-PPSX33 is an experimental static recompiler for decrypted ELF64 big-endian PowerPC64 input targeting the PlayStation 3. The repository contains a C/C++ core, command-line frontend, C# WinForms GUI, and guest runtime support. Project page: [notyvos.gt.tc/PPSX3](https://notyvos.gt.tc/PPSX3/).
+Experimental static recompiler for decrypted PS3 ELF64. Not a complete emulator; commercial playability is not established.
 
-PPSX33 is not a complete PS3 emulator. PPU translation, instruction semantics, system libraries, SPU execution, and RSX rendering remain separate engineering problems. Commercial-game playability is not established.
-
-## Implementation status
+## Status
 
 | Area | Status |
 |------|--------|
-| ELF load / analysis / PPU static lift | Implemented (static metrics only) |
-| Phases I–XIX (tooling & core pipeline) | TESTING |
+| Phases I–XIX | TESTING |
 | Package XX-A … XX-G | DONE |
 | Runtime XX-H … XX-O | DONE in tree |
-| Post-XX lettered **A – K** | DONE in tree |
-| Later lettered work (L+) | PARTIAL / PLANNED — see [ROADMAP](ROADMAP.md) |
+| Post-XX lettered **A – N** | DONE in tree |
+| Later work (O+) | PARTIAL / PLANNED |
 
-### Post-XX lettered work (A – K)
+### Post-XX lettered (A – N)
 
 | Sno. | Name | Status |
 |------|------|--------|
-| A | RSX surfaces + blit | DONE |
-| B | PPU accuracy helpers | DONE |
-| C | SPU ISA expansion | DONE |
-| D | MFC / DMA fidelity | DONE |
-| E | SPURS jobchain | DONE |
-| F | cellFs directories | DONE |
-| G | Audio ring / notify | DONE |
-| H | LV2 syscalls expand | DONE |
-| I | RSX draw / shader state | DONE |
-| J | PPU lifter-facing helpers | DONE |
-| K | Audio multi-port | DONE |
+| A–K | Surfaces through multi-port audio / LV2 | DONE |
+| L | RSX texture unit tracking | DONE |
+| M | PPU lifter helper surface | DONE |
+| N | cellFs errno + SELF rejection | DONE |
 
-Full phase tables and remaining gaps: [ROADMAP.md](ROADMAP.md).
+Details: [ROADMAP.md](ROADMAP.md).
 
 ## Documentation
 
-- [USER_MANUAL.md](USER_MANUAL.md) — workflow, legal notice, troubleshooting  
-- [ROADMAP.md](ROADMAP.md) — phases I–XIX, XX-A–O, lettered A–K and beyond  
-- [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) — architecture  
+- [USER_MANUAL.md](USER_MANUAL.md)  
+- [ROADMAP.md](ROADMAP.md)  
+- [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)  
 
-## Build (Windows)
+## Build
 
 ```bat
 scripts\build_all.bat
 ```
 
-Typical GUI flow: Load ELF → Decompile → controller map → Build → Copy to game folder → Run from `USRDIR`.
+Workflow: Load decrypted ELF → Decompile → Map controls → Build → Copy to USRDIR → Run.
 
-Successful compilation is not proof of runtime correctness.
-
-## Links
-
-- Website: https://notyvos.gt.tc/PPSX3/  
-- [CONTRIBUTING.md](CONTRIBUTING.md) · [SUPPORT.md](SUPPORT.md) · [SECURITY.md](SECURITY.md) · [LEGAL.md](LEGAL.md)
+Website: https://notyvos.gt.tc/PPSX3/
