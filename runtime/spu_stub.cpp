@@ -1,3 +1,4 @@
+// XXIII-J SPURS completion
 // XXIII-F: SPU/MFC tag update, list-stall ack, atomic HLE
 // XXII-C: SPU/MFC fidelity (tag/stall surface)
 // C/D/E: SPU ISA expand, MFC/DMA fidelity, SPURS jobchain
@@ -868,10 +869,29 @@ static void spurs_schedule() {
         g_spus[sid].spurs_workload_id = g_jobs[best].workload_id;
         g_spus[sid].spurs_idle = false;
         ps3rt_spu_interpreter_start(sid, g_jobs[best].entry);
+        // XXIII-J: run a bounded slice immediately so jobs can complete
+        if (sid >= 0 && sid < g_spu_count) {
+            extern void spu_run_slice(int id, int max_steps); // may not exist
+            // inline slice
+            auto& s = g_spus[sid];
+            for (int step = 0; step < 256 && s.running; ++step) {
+                if (!spu_step(s)) break;
+                if (s.decrementer) --s.decrementer;
+            }
+            if (!s.running) {
+                g_jobs[best].done = true;
+                g_jobs[best].cause = (uint32_t)s.last_stop_code;
+                s.spurs_idle = true;
+                if (g_jobs[best].chain_next != 0xFFFFFFFFu) {
+                    uint32_t n = g_jobs[best].chain_next;
+                    if (n < 32 && g_jobs[n].used) g_jobs[n].ready = true;
+                }
+            }
+        }
         static int s_sched = 0;
         if (s_sched < 16) {
-            ps3rt_log("[spurs] E schedule job=%d -> spu=%d entry=0x%x prio=%u\n",
-                      best, sid, g_jobs[best].entry, g_jobs[best].prio);
+            ps3rt_log("[spurs] XXIII-J schedule job=%d -> spu=%d entry=0x%x prio=%u done=%d\n",
+                      best, sid, g_jobs[best].entry, g_jobs[best].prio, g_jobs[best].done ? 1 : 0);
             ++s_sched;
         }
     }

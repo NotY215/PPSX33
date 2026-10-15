@@ -1,3 +1,4 @@
+// XXIII-K timing model
 // XXII-D marker
 #include <vector>
 // O: NID table expanded in nid_table.h (sysutil/sysmodule/pad/kb/mouse/spurs stubs)
@@ -791,16 +792,30 @@ PS3RT_API void ps3rt_progress_hw(void) {
             g_gcm_flip_status = 0;
             ++g_gcm_frame_id;
         }
-        if ((s_n & 0x7F) == 0) {
+        // XXIII-K: tighter RSX assist cadence (every 32 ticks)
+        if ((s_n & 0x1F) == 0) {
             uint32_t put = g_gcm_control ? rd_be32_guest(g_gcm_control + 0) : 0;
-            if (put == 0) gcm_inject_clear_draw();
-            else {
+            uint32_t get = g_gcm_control ? rd_be32_guest(g_gcm_control + 4) : 0;
+            if (put == 0) {
+                gcm_inject_clear_draw();
+            } else {
                 static int s_guest = 0;
-                if (s_guest < 3) { ps3rt_log("[gcm] XX-I guest put=0x%x\n", put); ++s_guest; }
-                if (g_mem) ps3rt_rsx_flush(g_mem);
+                if (s_guest < 8) {
+                    ps3rt_log("[gcm] XXIII-K guest put=0x%x get=0x%x\n", put, get);
+                    ++s_guest;
+                }
             }
+            if (g_mem) {
+                ps3rt_rsx_set_put(put);
+                ps3rt_rsx_flush(g_mem);
+            }
+            frame_pace_wait();
             ps3rt_rsx_flip(0);
             g_gcm_flip_status = 0;
+            // advance GET toward PUT so guest does not stall forever
+            if (g_gcm_control && put != get) {
+                wr_be32_guest(g_gcm_control + 4, put);
+            }
         }
     }
     static int s_run = 0;
@@ -808,7 +823,7 @@ PS3RT_API void ps3rt_progress_hw(void) {
     if ((g_time_ppu_slices & 0x3FF) == 0) {
         static int s_t = 0;
         if (s_t < 8) {
-            ps3rt_log("[time] X ppu=%llu spu=%llu rsx_flips=%llu phase=%u\n",
+            ps3rt_log("[time] XXIII-K ppu=%llu spu=%llu rsx_flips=%llu phase=%u\n",
                 (unsigned long long)g_time_ppu_slices,
                 (unsigned long long)g_time_spu_ticks,
                 (unsigned long long)g_time_rsx_flips, g_time_phase);

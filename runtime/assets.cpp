@@ -1,3 +1,4 @@
+// XXIII-I cellFs/PSARC fidelity
 // XXII-E: modules/FS path fidelity notes
 // F+N: cellFs + PSARC + directories + errno/SELF handling
 #define PS3RT_BUILD_DLL 1
@@ -34,6 +35,16 @@ static size_t mem_size() { return 512ull * 1024 * 1024; }
 #include <windows.h>
 #endif
 
+
+// XXIII-I: rate-limited miss log
+static void fs_log_miss(const char* guest, const char* host) {
+    static int n = 0;
+    if (n < 32) {
+        ps3rt_log("[fs] XXIII-I miss guest=\"%s\" host=\"%s\"\n",
+            guest ? guest : "?", host ? host : "?");
+        ++n;
+    }
+}
 static std::mutex g_fs_mu;
 static char g_game_root[512] = {};
 
@@ -63,6 +74,7 @@ PS3RT_API void ps3rt_set_game_root(const char* path) {
         g_game_root[0] = 0;
 }
 
+// XXIII-I: cellFs / PSARC path fidelity
 static bool map_guest_path(const char* guest, char* host, size_t host_len) {
     ensure_game_root();
     if (!guest || !host || host_len < 8) return false;
@@ -604,7 +616,7 @@ static bool path_looks_self(const char* p) {
 }
 static bool file_is_self_header(const char* host) {
     FILE* f = std::fopen(host, "rb");
-    if (!f) return false;
+    if (!f) { fs_log_miss(guest_path, host); } if (!f) return false;
     uint8_t h[4] = {};
     size_t n = std::fread(h, 1, 4, f);
     std::fclose(f);
