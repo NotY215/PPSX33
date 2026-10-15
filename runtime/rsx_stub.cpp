@@ -1,4 +1,4 @@
-// A+I+L+T+V: + host texture upload from guest TEX_OFFSET
+// A+I+L+T+V+Y: + fullscreen blit of uploaded guest texture to backbuffer
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include <mutex>
@@ -148,13 +148,74 @@ static void rsx_upload_guest_tex(uint8_t* mem) {
     static int su=0; if(su<12){ps3rt_log("[rsx] V upload off=0x%llx %ux%u\n", (unsigned long long)off, w, h);++su;}
 }
 
-// V: blit guest texture to backbuffer via CopyResource path (stretch with Draw not available without shaders —
-// use UpdateSubresource-style full-screen by clearing from average sample)
-static void rsx_blit_guest_tex_debug() {
-    if (!g_guest_tex || !g_ctx11 || !g_rtv) return;
-    // Without a pixel shader pipeline, approximate: sample center pixel CPU-side already uploaded —
-    // Present still shows clear; log proves path. Optional: D3D11 CopySubresourceRegion if sizes match BB.
+// Y: nearest-neighbor scale guest tex onto backbuffer (CPU path, no PS required)
+static void rsx_blit_guest_tex_fullscreen(uint8_t* /*mem*/) {
+    if (!g_guest_tex || !g_ctx11 || !g_dev || !g_swap) return;
+    ID3D11Texture2D* bb = nullptr;
+    if (FAILED(g_swap->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&bb)) || !bb) return;
+    D3D11_TEXTURE2D_DESC bbd{};
+    bb->GetDesc(&bbd);
+    // staging for BB write
+    D3D11_TEXTURE2D_DESC sd = bbd;
+    sd.Usage = D3D11_USAGE_STAGING;
+    sd.BindFlags = 0;
+    sd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ;
+    sd.MiscFlags = 0;
+    ID3D11Texture2D* staging = nullptr;
+    if (FAILED(g_dev->CreateTexture2D(&sd, nullptr, &staging)) || !staging) {
+        bb->Release();
+        return;
+    }
+    // read guest tex
+    D3D11_MAPPED_SUBRESOURCE srcmap{};
+    if (FAILED(g_ctx11->Map(g_guest_tex, 0, D3D11_MAP_WRITE_DISCARD, 0, &srcmap))) {
+        // dynamic may not allow read — re-upload path: use color clear fallback
+        staging->Release(); bb->Release();
+        return;
+    }
+    // Actually DYNAMIC+WRITE_DISCARD invalid for read; create CPU copy via second map on STAGING copy of guest
+    g_ctx11->Unmap(g_guest_tex, 0);
+    D3D11_TEXTURE2D_DESC gd{};
+    g_guest_tex->GetDesc(&gd);
+    D3D11_TEXTURE2D_DESC gs = gd;
+    gs.Usage = D3D11_USAGE_STAGING;
+    gs.BindFlags = 0;
+    gs.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    gs.MiscFlags = 0;
+    ID3D11Texture2D* gst = nullptr;
+    if (FAILED(g_dev->CreateTexture2D(&gs, nullptr, &gst)) || !gst) {
+        staging->Release(); bb->Release(); return;
+    }
+    g_ctx11->CopyResource(gst, g_guest_tex);
+    D3D11_MAPPED_SUBRESOURCE gm{}, bm{};
+    if (FAILED(g_ctx11->Map(gst, 0, D3D11_MAP_READ, 0, &gm))) {
+        gst->Release(); staging->Release(); bb->Release(); return;
+    }
+    // fill staging BB with scaled tex
+    if (FAILED(g_ctx11->Map(staging, 0, D3D11_MAP_WRITE, 0, &bm))) {
+        g_ctx11->Unmap(gst, 0); gst->Release(); staging->Release(); bb->Release(); return;
+    }
+    const uint32_t sw = g_guest_tex_w ? g_guest_tex_w : 1;
+    const uint32_t sh = g_guest_tex_h ? g_guest_tex_h : 1;
+    const uint32_t dw = bbd.Width, dh = bbd.Height;
+    for (uint32_t y = 0; y < dh; ++y) {
+        uint32_t sy = y * sh / dh;
+        const uint8_t* srow = (const uint8_t*)gm.pData + sy * gm.RowPitch;
+        uint8_t* drow = (uint8_t*)bm.pData + y * bm.RowPitch;
+        for (uint32_t x = 0; x < dw; ++x) {
+            uint32_t sx = x * sw / dw;
+            const uint8_t* p = srow + sx * 4;
+            drow[x*4+0] = p[0]; drow[x*4+1] = p[1]; drow[x*4+2] = p[2]; drow[x*4+3] = 255;
+        }
+    }
+    g_ctx11->Unmap(staging, 0);
+    g_ctx11->Unmap(gst, 0);
+    g_ctx11->CopyResource(bb, staging);
+    gst->Release(); staging->Release(); bb->Release();
+    static int syb = 0;
+    if (syb < 12) { ps3rt_log("[rsx] Y fullscreen blit %ux%u -> %ux%u\n", sw, sh, dw, dh); ++syb; }
 }
+
 
 
 extern "C" PS3RT_API void ps3rt_force_exit(void);
@@ -383,8 +444,10 @@ static void rsx_host_present_clear() {
         static uint32_t s_present_skip = 0;
         // V: upload guest texture when unit bound
         { uint8_t* m = ps3rt_memory();
-          if (m && (g_rsx.tex_units_bound || g_rsx.tex_offset || g_rsx.color_valid))
-              rsx_upload_guest_tex(m); }
+          if (m && (g_rsx.tex_units_bound || g_rsx.tex_offset || g_rsx.color_valid)) {
+              rsx_upload_guest_tex(m);
+              rsx_blit_guest_tex_fullscreen(m); // Y
+          } }
         bool need_present = (g_rsx.draws_this_frame > 0) || ((s_present_skip++ & 7) == 0);
         g_rsx.draws_this_frame = 0;
         if (need_present && g_swap)
@@ -562,7 +625,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] V flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] Y flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,

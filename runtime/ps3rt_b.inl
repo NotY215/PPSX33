@@ -1,3 +1,4 @@
+#include <vector>
 // O: NID table expanded in nid_table.h (sysutil/sysmodule/pad/kb/mouse/spurs stubs)
 static void pad_write_data(uint64_t out) {
     if (!out || out + 24 > g_mem_size) return;
@@ -72,6 +73,103 @@ static uint64_t prx_find_export(uint32_t nid) {
         if (g_prx_exports[i].nid == nid) return g_prx_exports[i].ea;
     return 0;
 }
+
+// Z: load ELF64 (or raw) PRX image into guest memory at module base
+static bool prx_load_file_into_guest(const char* host_path, uint64_t base, uint32_t* out_entry) {
+    if (!host_path || !host_path[0] || !g_mem || base >= g_mem_size) return false;
+    FILE* f = std::fopen(host_path, "rb");
+    if (!f) return false;
+    std::fseek(f, 0, SEEK_END);
+    long sz = std::ftell(f);
+    std::fseek(f, 0, SEEK_SET);
+    if (sz < 16 || sz > 16 * 1024 * 1024) { std::fclose(f); return false; }
+    std::vector<uint8_t> buf((size_t)sz);
+    if (std::fread(buf.data(), 1, (size_t)sz, f) != (size_t)sz) { std::fclose(f); return false; }
+    std::fclose(f);
+    // ELF magic
+    if (buf.size() >= 4 && buf[0]==0x7F && buf[1]=='E' && buf[2]=='L' && buf[3]=='F') {
+        // ELF64 big-endian program headers
+        if (buf.size() < 64) return false;
+        uint16_t phentsize = (uint16_t)((buf[54] << 8) | buf[55]);
+        uint16_t phnum = (uint16_t)((buf[56] << 8) | buf[57]);
+        uint64_t phoff = 0;
+        for (int i = 0; i < 8; ++i) phoff = (phoff << 8) | buf[32 + i];
+        uint64_t e_entry = 0;
+        for (int i = 0; i < 8; ++i) e_entry = (e_entry << 8) | buf[24 + i];
+        if (out_entry) *out_entry = (uint32_t)(e_entry ? e_entry : (base + 0x100));
+        if (phentsize < 32 || phnum == 0 || phnum > 64) {
+            // fallback: blob at base
+            size_t n = (size_t)sz;
+            if (base + n > g_mem_size) n = (size_t)(g_mem_size - base);
+            std::memcpy(g_mem + base, buf.data(), n);
+        } else {
+            for (uint16_t i = 0; i < phnum; ++i) {
+                size_t o = (size_t)phoff + (size_t)i * phentsize;
+                if (o + 56 > buf.size()) break;
+                uint32_t p_type = (uint32_t)((buf[o]<<24)|(buf[o+1]<<16)|(buf[o+2]<<8)|buf[o+3]);
+                if (p_type != 1) continue; // PT_LOAD
+                uint64_t p_offset=0,p_vaddr=0,p_filesz=0,p_memsz=0;
+                for (int k=0;k<8;++k) p_offset=(p_offset<<8)|buf[o+8+k];
+                for (int k=0;k<8;++k) p_vaddr=(p_vaddr<<8)|buf[o+16+k];
+                for (int k=0;k<8;++k) p_filesz=(p_filesz<<8)|buf[o+32+k];
+                for (int k=0;k<8;++k) p_memsz=(p_memsz<<8)|buf[o+40+k];
+                uint64_t dst = base + (p_vaddr & 0xFFFFFull); // relative prefer
+                if (p_vaddr >= 0x10000ull && p_vaddr < g_mem_size) dst = p_vaddr;
+                if (dst >= g_mem_size) continue;
+                size_t fs = (size_t)p_filesz, ms = (size_t)p_memsz;
+                if (dst + ms > g_mem_size) ms = (size_t)(g_mem_size - dst);
+                if (fs > ms) fs = ms;
+                if (p_offset + fs > buf.size()) fs = buf.size() > (size_t)p_offset ? buf.size()-(size_t)p_offset : 0;
+                std::memset(g_mem + dst, 0, ms);
+                if (fs) std::memcpy(g_mem + dst, buf.data() + (size_t)p_offset, fs);
+            }
+        }
+        static int szl = 0;
+        if (szl < 12) {
+            ps3rt_log("[prx] Z ELF load \"%s\" base=0x%llx size=%ld entry=0x%x\\n",
+                host_path, (unsigned long long)base, sz, out_entry ? *out_entry : 0);
+            ++szl;
+        }
+        return true;
+    }
+    // raw / SELF header — copy as blob, do not decrypt
+    if (buf.size() >= 4 && buf[0]=='S' && buf[1]=='C' && buf[2]=='E') {
+        static int ss = 0;
+        if (ss < 8) { ps3rt_log("[prx] Z SELF not loaded (encrypted): %s\\n", host_path); ++ss; }
+        return false;
+    }
+    size_t n = (size_t)sz;
+    if (base + n > g_mem_size) n = (size_t)(g_mem_size - base);
+    std::memcpy(g_mem + base, buf.data(), n);
+    if (out_entry) *out_entry = (uint32_t)(base + 0x100);
+    static int sr = 0;
+    if (sr < 8) { ps3rt_log("[prx] Z raw load \"%s\" base=0x%llx\\n", host_path, (unsigned long long)base); ++sr; }
+    return true;
+}
+
+static int prx_try_load_named(const char* name) {
+    int idx = prx_mod_load(name);
+    if (idx < 0) return -1;
+    // search common relative paths under game root
+    char host[768];
+    const char* roots[] = { ".", "USRDIR", "USRDIR/modules", "modules", nullptr };
+    for (int r = 0; roots[r]; ++r) {
+        std::snprintf(host, sizeof(host), "%s/%s", roots[r], name);
+        uint32_t entry = 0;
+        if (prx_load_file_into_guest(host, g_prx_mods[idx].base, &entry)) {
+            g_prx_mods[idx].entry = entry;
+            prx_bind_export(0xA0000000u + g_prx_mods[idx].id, g_prx_mods[idx].base + 0x100);
+            return idx;
+        }
+        std::snprintf(host, sizeof(host), "%s/%s.prx", roots[r], name);
+        if (prx_load_file_into_guest(host, g_prx_mods[idx].base, &entry)) {
+            g_prx_mods[idx].entry = entry;
+            return idx;
+        }
+    }
+    return idx; // registry only
+}
+
 
 static PrxMod g_prx_mods[32];
 static uint32_t g_prx_mod_seq = 1;
@@ -525,7 +623,20 @@ static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
         if (kind == 3 || (e->module && std::strstr(e->module, "Sysmodule"))) {
             // S: sysmodule load/unload/isLoaded
             if (e->nid == 0x3A495ADE || e->nid == 0xCFDD8E87 || e->nid == 0x3A52CF82) {
-                prx_mod_load(e->name ? e->name : "sysmodule");
+                // Z: attempt ELF load by module name / path in r3
+                char mname[128] = {};
+                uint64_t pea = c->gpr[3];
+                if (pea && g_mem && pea < g_mem_size) {
+                    size_t n = 0;
+                    while (n + 1 < sizeof(mname) && pea + n < g_mem_size) {
+                        char ch = (char)g_mem[pea + n];
+                        if (!ch) break;
+                        mname[n++] = ch;
+                    }
+                }
+                if (!mname[0] && e->name) std::strncpy(mname, e->name, sizeof(mname)-1);
+                if (!mname[0]) std::strncpy(mname, "sysmodule", sizeof(mname)-1);
+                prx_try_load_named(mname);
             }
             c->gpr[3] = 0; return 0;
         }
