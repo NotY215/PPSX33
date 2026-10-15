@@ -1,3 +1,4 @@
+// XXIII-F: SPU/MFC tag update, list-stall ack, atomic HLE
 // XXII-C: SPU/MFC fidelity (tag/stall surface)
 // C/D/E: SPU ISA expand, MFC/DMA fidelity, SPURS jobchain
 #define PS3RT_BUILD_DLL 1
@@ -158,7 +159,7 @@ static void mfc_do_dma(SPUContext& s) {
     if (cmd == 0x60 || cmd == 0x61 || cmd == 0x62 || cmd == 0x64) {
         if (cmd == 0x60) mfc_xfer(s, lsa, ea, size ? size : 4, true);
         else if (cmd == 0x61 || cmd == 0x62) mfc_xfer(s, lsa, ea, size ? size : 4, false);
-        s.mfc_atomic_stat = 0; // success (HLE — no real reservation)
+        s.mfc_atomic_stat = 0; // XXIII-F: HLE success (no real reservation yet)
         mfc_complete_tag(s);
         return;
     }
@@ -256,7 +257,8 @@ static void ch_write(SPUContext& s, uint32_t ch, uint32_t val) {
     case CH_MFC_WrTagMask:
         s.mfc_tag_mask = val;
         break;
-    case CH_MFC_WrTagUpdate: {
+    case CH_MFC_WrTagUpdate: { // XXIII-F: mark masked tags complete
+        s.mfc_tag_status |= (s.mfc_tag_mask ? s.mfc_tag_mask : 0xFFFFFFFFu);
         uint32_t m = s.mfc_tag_mask ? s.mfc_tag_mask : 0xFFFFFFFFu;
         if (val == 0) s.mfc_tag_status |= m;
         else if (val == 1) { if ((s.mfc_tag_status & m) == 0) s.mfc_tag_status |= m; }
@@ -264,6 +266,7 @@ static void ch_write(SPUContext& s, uint32_t ch, uint32_t val) {
         break;
     }
     case CH_MFC_WrListStallAck:
+        s.mfc_list_stall = 0; // XXIII-F
         break;
     case CH_MFC_WrMSSyncReq:
         break;

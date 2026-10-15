@@ -1,13 +1,21 @@
+// XXIII-G: LV2 wait/signal contracts
 // XXII-J: LV2 contracts — prefer documented return where known; else 0 with log upstream
 // XXII-D: LV2 / HLE — log first use; prefer non-zero for unknown high-risk syscalls
 // lv2_syscalls.inl — HLE with first-hit logging (accuracy: stubs still incomplete)\n// lv2_syscalls.inl — H: expanded LV2 HLE (included inside ps3rt_syscall switch)
 
-// sys_lwmutex_lock / unlock / trylock / destroy
-case 48: case 49: case 50: case 51:
+// XXIII-G: lwmutex
+case 48: case 49: case 50: case 51: {
+    static int s_mtx = 0;
+    if (s_mtx < 12) { ps3rt_log("[lv2] XXIII-G lwmutex sc r3=0x%llx
+", (unsigned long long)r3); ++s_mtx; }
     c->gpr[3] = 0; break;
+}
 
-// sys_timer_usleep (141) / sys_timer_sleep (142)
+// XXIII-G: timer sleep yields host slice
 case 141: case 142:
+#if defined(_WIN32)
+    Sleep(0);
+#endif
     c->gpr[3] = 0; break;
 
 // sys_time_get_current_time — r3=&sec, r4=&nsec

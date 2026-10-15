@@ -667,6 +667,7 @@ static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
     c->gpr[3] = 0; return 0;
 }
 
+// XXIII-H: PRX import NID recovery + module bind
 PS3RT_API int ps3rt_prx_call(PPUContext* c, uint32_t nid) {
     if (!c) return -1;
     const NidEntry* e = nid_lookup(nid);
@@ -684,15 +685,51 @@ PS3RT_API int ps3rt_prx_call(PPUContext* c, uint32_t nid) {
 // Called from ppu_run when PC lands on a null/import-like address.
 PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
     if (!c) return -1;
+    // XXIII-H: recover NID — r11 is often TOC/stub; try several sources
     uint32_t maybe_nid = (uint32_t)c->gpr[11];
-    if (maybe_nid == 0) maybe_nid = (uint32_t)(pc & 0xFFFFFFFFu);
+    auto looks_like_nid = [](uint32_t v) -> bool {
+        if (v == 0) return false;
+        // reject obvious addresses / stub region
+        if (v >= 0x30000000u && v <= 0x3FFFFFFFu) return false;
+        if ((v & 0x3) == 0 && v < 0x100000u) return false;
+        return true;
+    };
+    if (!looks_like_nid(maybe_nid)) {
+        uint32_t cands[] = {
+            (uint32_t)c->gpr[0], (uint32_t)c->gpr[3], (uint32_t)c->gpr[4],
+            (uint32_t)c->gpr[5], (uint32_t)c->gpr[6], (uint32_t)c->gpr[10],
+            (uint32_t)(c->gpr[2] & 0xFFFFFFFFu)
+        };
+        for (uint32_t cand : cands) {
+            if (looks_like_nid(cand) && nid_lookup(cand)) { maybe_nid = cand; break; }
+        }
+        if (!looks_like_nid(maybe_nid) || !nid_lookup(maybe_nid)) {
+            for (uint32_t cand : cands) {
+                if (looks_like_nid(cand)) { maybe_nid = cand; break; }
+            }
+        }
+    }
+    // Word just before LR sometimes holds reloc NID
+    if ((!looks_like_nid(maybe_nid) || !nid_lookup(maybe_nid)) && g_mem && c->lr >= 4 && c->lr < g_mem_size) {
+        uint64_t a = c->lr - 4;
+        uint32_t w = ((uint32_t)g_mem[a] << 24) | ((uint32_t)g_mem[a+1] << 16) |
+                     ((uint32_t)g_mem[a+2] << 8) | (uint32_t)g_mem[a+3];
+        if (looks_like_nid(w)) maybe_nid = w;
+    }
+    if (!looks_like_nid(maybe_nid))
+        maybe_nid = (uint32_t)(pc & 0xFFFFFFFFu);
+
     const NidEntry* e = nid_lookup(maybe_nid);
     int kind = e ? e->kind : 0;
     if (e && e->module) kind = prx_module_kind(e->module);
+    // XXIII-H: register module hit as loaded
+    if (e && e->module) prx_mod_load(e->module);
+
     static int s = 0;
-    if (s < 24) {
-        ps3rt_log("[ps3] prx_import_stub pc=0x%llx nid=0x%08X kind=%d\n",
-            (unsigned long long)pc, maybe_nid, kind);
+    if (s < 40) {
+        ps3rt_log("[ps3] XXIII-H prx_import pc=0x%llx nid=0x%08X kind=%d mod=%s\n",
+            (unsigned long long)pc, maybe_nid, kind,
+            (e && e->module) ? e->module : "?");
         ++s;
     }
     return prx_dispatch(c, maybe_nid, kind);
