@@ -29,8 +29,10 @@ PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction sema
 | GCM / cellFs (XX-H…J) | GCM HLE (`gcm_hle`), null-loop recovery, PSARC TOC + zlib block streaming (`assets.cpp`) |
 | SPU / MFC / SPURS (XX-K…M) | SPU ISA interpreter, MFC put/get/list/tags, SPURS-like job queue + `cellSpurs` HLE (8 SPU slots) — still a subset, not full Cell accuracy |
 | Audio / UI (XX-N) | `cellAudio` → host waveOut; GDI status overlay; window title uses game name |
-| ICON0 (XX-O) | `PS3_GAME/ICON0.PNG` applied as window/taskbar icon when run from USRDIR |
+| ICON0 / PIC1 (XX-O) | Window/taskbar icon from game folder when present |
 | RSX | Partial FIFO/method decoding, surface/draw tracking, flip/control, D3D11 present; textured/full RSX compatibility is not established |
+| Phase XXII | Finished — pipeline correctness lettered work; see [roadmap/XXII.md](roadmap/XXII.md) |
+| Phase XXIII | Active — execution reality; see [roadmap/XXIII.md](roadmap/XXIII.md) |
 
 ### Game analysis snapshots
 
@@ -47,9 +49,9 @@ All six game counts describe individual static-lift snapshots. They are not proo
 
 ## Current runtime development status
 
-The current [ROADMAP.md](ROADMAP.md) tracks **PHASE 1 – XXII**: tooling (I–XIX), packaging (XX-A…XX-G), runtime base (XX-H…XX-O), lettered XXI (A–Z), and active **Phase XXII** pipeline correctness (A–D and planned E+). Milestone labels describe engineering work, not verified compatibility with any commercial title.
+The current [ROADMAP.md](ROADMAP.md) tracks **PHASE 1 – XXIII**: tooling (I–XIX), packaging (XX-A…XX-G), runtime base (XX-H…XX-O), lettered XXI (A–Z), **Phase XXII** pipeline correctness (finished), and active **Phase XXIII** execution reality. Milestone labels describe engineering work, not verified compatibility with any commercial title.
 
-**Phase XX-H…O (summary):** null-loop / GCM flip recovery; fuller `cellGcmSys` HLE; PSARC zlib streaming; SPU ISA interpreter; MFC list DMA and tags; SPURS-like scheduling; cellAudio→waveOut plus on-screen status; ICON0 window/taskbar icon. Details, log tags, and file map are in the roadmap.
+**Phase XX-H…O (summary):** null-loop / GCM flip recovery; fuller `cellGcmSys` HLE; PSARC zlib streaming; SPU ISA interpreter; MFC list DMA and tags; SPURS-like scheduling; cellAudio→waveOut plus on-screen status; window icon from game folder. Details, log tags, and file map are in the roadmap.
 
 The PPU runtime is split across `runtime/ppu_runtime.h`, `runtime/ppu_runtime_core.h`, `runtime/ppu_runtime_core_a.h`, `runtime/ppu_runtime_core_b.h`, and `runtime/ppu_runtime_run.h`. Keep all split headers together when building or packaging the runtime. `ppu_runtime.h` is the include wrapper; `ppu_runtime_run.h` contains the PPU dispatch/recovery loop, while the core headers provide context, memory, register, and helper definitions. Additional playability code lives in `runtime/ps3rt.cpp`, `runtime/ps3rt_b.inl`, `runtime/spu_stub.cpp`, `runtime/assets.cpp`, `runtime/audio_save.cpp`, and `runtime/rsx_stub.cpp`.
 
@@ -100,7 +102,7 @@ See the [Alpha 01 release notes](releases/PPSX33-Alpha-01.md) for scope, known l
 
 ## GUI status and settings
 
-The GUI workflow is **Decrypt EBOOT / Load ELF → Decompile → Build → Run**, with **Copy to game folder** available after a successful build. The Console, Report, and Roadmap tabs expose logs and reports. Build progress is inferred from object-file updates and should be treated as approximate. Status messages distinguish successful, failed, and stopped operations. Build cancellation is requested through the native API; the GUI's cancellation path unloads the selected project and removes generated `input/`, `codebase/`, and `output/` folders, so reload the ELF before continuing. Decompilation is a separate synchronous native operation and is not cancellable through this button.
+The GUI workflow is **Decrypt EBOOT / Load ELF → Decompile → Build → Run**, with **Copy to game folder** available after a successful build. The Console, Report, Roadmap, Requirements, and Controller tabs expose logs and reports. Build progress is inferred from object-file updates and should be treated as approximate. Status messages distinguish successful, failed, and stopped operations. Build cancellation is requested through the native API; the GUI's cancellation path unloads the selected project and removes generated `input/`, `codebase/`, and `output/` folders, so reload the ELF before continuing. Decompilation is a separate synchronous native operation and is not cancellable through this button.
 
 Settings are stored in `%APPDATA%/PPSX33/settings.json` and include the graphics backend, PPU thread count, RPCS3 path, last selected input paths, and keyboard-to-controller map. The exact options shown may depend on the current build.
 
@@ -114,6 +116,20 @@ Windows development uses CMake, Ninja, a C++17-capable compiler, and the .NET 8 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 
 See [Compiler Setup](Compilers-files/README.md) for tool discovery and local staging rules.
+
+### Host requirements (run tools)
+
+| Item | Required | Recommended |
+| --- | --- | --- |
+| Disk type | HDD or SSD | SSD / NVMe |
+| RAM | 8 GB | 16 GB or more |
+| GPU | WDDM driver (integrated OK) | Discrete, D3D11 FL 11_0 |
+| VRAM | Enough for a D3D11 swap chain | 2 GB+ dedicated |
+| Monitor | 1280×720 | 1920×1080 |
+| Graphics API | Direct3D 11 FL 10_0+ | D3D11 FL 11_0; future OpenGL 3.3/2.1 fallback |
+| OS | Windows 10 x64+ | Windows 10/11 x64 |
+
+These are host-tool requirements. They do not imply that any game will run correctly.
 
 ## Build on Windows
 
