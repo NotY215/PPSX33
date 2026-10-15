@@ -1,4 +1,4 @@
-// XX-J: cellFs path mapping + full PSARC TOC + zlib block decompress streaming
+// F: cellFs path mapping + PSARC + directory ops
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include <cstdio>
@@ -752,6 +752,109 @@ static int fs_stat_common(PPUContext* c, bool by_fd) {
     return 0;
 }
 
+
+// F: directory handles
+struct DirFd {
+    bool used = false;
+    std::string path;
+    std::vector<std::string> entries;
+    size_t index = 0;
+};
+static DirFd g_dirs[16];
+static int dir_alloc(const char* host_path) {
+    for (int i = 0; i < 16; ++i) {
+        if (g_dirs[i].used) continue;
+        g_dirs[i].used = true;
+        g_dirs[i].path = host_path ? host_path : "";
+        g_dirs[i].entries.clear();
+        g_dirs[i].index = 0;
+#if defined(_WIN32)
+        char pattern[600];
+        std::snprintf(pattern, sizeof(pattern), "%s\\*", host_path);
+        WIN32_FIND_DATAA fd{};
+        HANDLE h = FindFirstFileA(pattern, &fd);
+        if (h != INVALID_HANDLE_VALUE) {
+            do {
+                if (std::strcmp(fd.cFileName, ".") && std::strcmp(fd.cFileName, ".."))
+                    g_dirs[i].entries.push_back(fd.cFileName);
+            } while (FindNextFileA(h, &fd));
+            FindClose(h);
+        }
+#endif
+        static int s_d = 0;
+        if (s_d < 12) {
+            ps3rt_log("[fs] F opendir \"%s\" entries=%zu\n", host_path, g_dirs[i].entries.size());
+            ++s_d;
+        }
+        return i + 1000;
+    }
+    return -1;
+}
+static DirFd* dir_get(int dfd) {
+    int i = dfd - 1000;
+    if (i < 0 || i >= 16 || !g_dirs[i].used) return nullptr;
+    return &g_dirs[i];
+}
+static int fs_opendir(PPUContext* c) {
+    uint64_t path_ea = c->gpr[3];
+    uint64_t out_ea = c->gpr[4];
+    char guest[512] = {};
+    if (path_ea && path_ea + 1 < mem_size()) {
+        size_t n = 0;
+        while (n < 511 && path_ea + n < mem_size()) {
+            char ch = (char)mem()[path_ea + n];
+            guest[n++] = ch;
+            if (!ch) break;
+        }
+        guest[511] = 0;
+    }
+    char host[600] = {};
+    if (!map_guest_path(guest, host, sizeof(host))) {
+        ensure_game_root();
+        std::snprintf(host, sizeof(host), "%s\\%s", g_game_root, guest);
+    }
+    int dfd = dir_alloc(host);
+    if (dfd < 0) { c->gpr[3] = (uint64_t)(int32_t)-1; return 0; }
+    if (out_ea && out_ea + 4 <= mem_size()) write_be32(out_ea, (uint32_t)dfd);
+    c->gpr[3] = 0;
+    return 0;
+}
+static int fs_readdir(PPUContext* c) {
+    int dfd = (int)(uint32_t)c->gpr[3];
+    uint64_t dent_ea = c->gpr[4];
+    DirFd* d = dir_get(dfd);
+    if (!d) { c->gpr[3] = (uint64_t)(int32_t)-1; return 0; }
+    if (d->index >= d->entries.size()) {
+        c->gpr[3] = 0;
+        if (dent_ea && dent_ea + 0x108 <= mem_size()) {
+            mem()[dent_ea] = 0;
+            mem()[dent_ea + 1] = 0;
+        }
+        return 0;
+    }
+    const std::string& name = d->entries[d->index++];
+    if (dent_ea && dent_ea + 0x108 <= mem_size()) {
+        mem()[dent_ea] = 2;
+        size_t nl = name.size();
+        if (nl > 255) nl = 255;
+        mem()[dent_ea + 1] = (uint8_t)nl;
+        for (size_t i = 0; i < nl; ++i) mem()[dent_ea + 2 + i] = (uint8_t)name[i];
+        mem()[dent_ea + 2 + nl] = 0;
+    }
+    c->gpr[3] = 0;
+    return 0;
+}
+static int fs_closedir(PPUContext* c) {
+    int dfd = (int)(uint32_t)c->gpr[3];
+    DirFd* d = dir_get(dfd);
+    if (!d) { c->gpr[3] = (uint64_t)(int32_t)-1; return 0; }
+    d->used = false;
+    d->entries.clear();
+    c->gpr[3] = 0;
+    return 0;
+}
+
+
 PS3RT_API int ps3rt_fs_dispatch(PPUContext* c, uint32_t nid) {
     if (!c) return -1;
     std::lock_guard<std::mutex> lk(g_fs_mu);
@@ -768,11 +871,14 @@ PS3RT_API int ps3rt_fs_dispatch(PPUContext* c, uint32_t nid) {
     case 0xA397D042: return fs_lseek(c);   // cellFsLseek
     case 0x7F13FC8C: return fs_stat_common(c, false); // cellFsStat
     case 0xEF3EFA34: return fs_stat_common(c, true);  // cellFsFstat
-    case 0x3F61245C: // cellFsOpendir
-    case 0x5C74903D: // cellFsReaddir
-    case 0xFF42DCC3: // cellFsClosedir
-    case 0x9B882495: // cellFsGetDirectoryEntries
+    case 0x3F61245C: return fs_opendir(c);
+    case 0x5C74903D: return fs_readdir(c);
+    case 0xFF42DCC3: return fs_closedir(c);
+    case 0x9B882495: {
+        static int s_gde = 0;
+        if (s_gde < 6) { ps3rt_log("[fs] F GetDirectoryEntries (stub OK)\n"); ++s_gde; }
         c->gpr[3] = 0; return 0;
+    }
     default:
         c->gpr[3] = 0;
         return 0;

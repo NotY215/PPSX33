@@ -1,4 +1,4 @@
-// Phase XV+XIX: RSX + depth/stencil + draw path + FIFO batching / coalesced Present
+// A+I: RSX surfaces/COLOR_OFFSET + draw/shader state tracking
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include <mutex>
@@ -45,6 +45,19 @@ struct RsxState {
     uint8_t clear_stencil = 0;
     uint32_t prim_color = 0x4060A0;
     int draws_this_frame = 0;
+    // A: surface
+    int color_blits = 0;
+    uint64_t color_offset = 0;
+    uint32_t color_pitch = 0;
+    uint32_t surf_w = 1280, surf_h = 720;
+    bool color_valid = false;
+    // I: draw / shader
+    uint32_t shader_prog = 0;
+    uint32_t shader_const_count = 0;
+    uint32_t vertex_array_mask = 0;
+    uint32_t begin_mode = 0;
+    int vertex_binds = 0;
+    int fragment_binds = 0;
     uint32_t viewport_w = 1280;
     uint32_t viewport_h = 720;
     uint32_t scissor_x = 0, scissor_y = 0, scissor_w = 1280, scissor_h = 720;
@@ -351,6 +364,11 @@ static void rsx_process_fifo(uint8_t* mem) {
             ++g_rsx.stencil_clears;
         }
         else if (method == 0x0B00 || method == 0x0B04 || method == 0x0B08) {}
+        else if (method == 0x0200 || method == 0x200) {
+            g_rsx.color_offset = arg; g_rsx.color_valid = (arg != 0);
+            static int slog=0; if(slog<10){ps3rt_log("[rsx] A COLOR_OFFSET=0x%x\n", arg);++slog;}
+        }
+        else if (method == 0x0204 || method == 0x204) { g_rsx.color_pitch = arg; }
         else if (method == 0x0208 || method == 0x020C || method == 0x0A00 || method == 0x0A04) {}
         else if (method == 0x1800 || method == 0x1810 || method == 0x1818 ||
                  method == 0x1808 || method == 0x1820) {
@@ -358,8 +376,18 @@ static void rsx_process_fifo(uint8_t* mem) {
             ++g_rsx.draws_this_frame;
         }
         else if (method == 0x1D60 || method == 0x1D64 || method == 0x1D6C ||
-                 method == 0x09B0 || method == 0x09B4) {
+                 method == 0x09B0 || method == 0x09B4 || method == 0x09B8) {
             ++g_rsx.shader_binds;
+            if (method == 0x1D60 || method == 0x09B0) {
+                g_rsx.shader_prog = arg; ++g_rsx.vertex_binds;
+                static int sv=0; if(sv<10){ps3rt_log("[rsx] I vertex/shader prog=0x%x\n", arg);++sv;}
+            }
+            if (method == 0x1D64 || method == 0x09B4) ++g_rsx.fragment_binds;
+            if (method == 0x1D6C) g_rsx.shader_const_count = arg;
+        }
+        else if (method == 0x1680 || method == 0x1684 || method == 0x1688 || method == 0x1690) {
+            g_rsx.vertex_array_mask |= 1u << ((method >> 2) & 7);
+            ++g_rsx.vertex_binds;
         }
         else if (method == 0x1A00 || method == 0x1A04 || method == 0x1A0C ||
                  method == 0x1840 || method == 0x1844) {
@@ -418,7 +446,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] A/I flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds,

@@ -108,6 +108,34 @@ static inline uint64_t ps3_rotl32dup(uint32_t v, unsigned s) {
     uint64_t x = ((uint64_t)v << 32) | (uint64_t)v;
     return ps3_rotl64(x, s & 31u);
 }
+// B+J: accuracy helpers for generated / recovered code
+static inline uint64_t ps3_mulhdu(uint64_t a, uint64_t b) {
+#if defined(_MSC_VER)
+    return __umulh(a, b);
+#else
+    return (uint64_t)(((unsigned __int128)a * (unsigned __int128)b) >> 64);
+#endif
+}
+static inline int64_t ps3_mulhd(int64_t a, int64_t b) {
+#if defined(_MSC_VER)
+    return (int64_t)__mulh(a, b);
+#else
+    return (int64_t)(((__int128)a * (__int128)b) >> 64);
+#endif
+}
+static inline uint64_t ps3_divdu(uint64_t a, uint64_t b) { return b ? a / b : ~0ull; }
+static inline int64_t ps3_divd(int64_t a, int64_t b) {
+    if (!b) return a >= 0 ? INT64_MAX : INT64_MIN;
+    if (a == INT64_MIN && b == -1) return INT64_MIN;
+    return a / b;
+}
+static inline uint32_t ps3_rlwinm(uint32_t rs, unsigned sh, unsigned mb, unsigned me) {
+    uint32_t r = sh ? ((rs << sh) | (rs >> (32u - sh))) : rs;
+    uint32_t mask = (mb <= me) ? ((0xFFFFFFFFu >> mb) & (0xFFFFFFFFu << (31u - me)))
+                               : ((0xFFFFFFFFu >> mb) | (0xFFFFFFFFu << (31u - me)));
+    return r & mask;
+}
+
 
 PS3RT_API void ps3rt_touch(uint64_t addr, size_t len);
 // Tee log to stderr + timestamped file next to game EXE

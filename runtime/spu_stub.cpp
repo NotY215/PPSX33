@@ -1,4 +1,4 @@
-// XX-K: SPU ISA interpreter (local-store execution + channel/MFC hooks)
+// C/D/E: SPU ISA expand, MFC/DMA fidelity, SPURS jobchain
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include <cstring>
@@ -80,6 +80,7 @@ enum {
 static void mfc_complete_tag(SPUContext& s) {
     s.mfc_tag_status |= (1u << (s.mfc_tag & 31));
 }
+static int g_mfc_queue_depth[8] = {};
 
 static void mfc_xfer(SPUContext& s, uint32_t lsa, uint64_t ea, uint32_t size, bool is_get) {
     if (!main_mem() || size == 0) return;
@@ -95,38 +96,36 @@ static void mfc_xfer(SPUContext& s, uint32_t lsa, uint64_t ea, uint32_t size, bo
 }
 
 static void mfc_list_dma(SPUContext& s, bool is_get) {
-    // List elements live in LS at mfc_lsa: each 8 bytes { size:16, ea:32/48 }
-    // Simplified: size in low 16 of word0, ea = word1 (32-bit) or full 64 via pairs
-    uint32_t list_lsa = s.mfc_lsa & 0x3FFFF;
-    uint32_t list_size = s.mfc_size & 0x7FFF; // bytes of list
-    uint32_t transfer_lsa = list_lsa; // actual transfer LSA often separate — use EAL high bit form
-    // PS3 list DMA: EAL has list address when cmd is GETL/PUTL; LSA is dest/src in LS
+
     uint32_t dst_lsa = s.mfc_lsa & 0x3FFFF;
     uint64_t list_ea = s.mfc_ea;
+    uint32_t list_size = s.mfc_size & 0x7FFF;
     uint32_t done = 0;
     uint32_t elems = list_size / 8;
     if (elems == 0) elems = 1;
     if (elems > 2048) elems = 2048;
     for (uint32_t i = 0; i < elems; ++i) {
         uint64_t le_off = list_ea + (uint64_t)i * 8;
-        if (le_off + 8 > main_mem_size()) break;
+        if (le_off + 8 > main_mem_size()) { s.mfc_list_stall = 1; break; }
         uint8_t* p = main_mem() + le_off;
         uint16_t sz = (uint16_t)((p[0] << 8) | p[1]);
-        // remaining 6 bytes EA — take low 32 of last 4 for simplicity
-        uint64_t ea = ((uint64_t)p[4] << 24) | ((uint64_t)p[5] << 16) | ((uint64_t)p[6] << 8) | p[7];
-        if (sz == 0) continue;
+        uint64_t ea = ((uint64_t)p[2] << 40) | ((uint64_t)p[3] << 32) |
+                      ((uint64_t)p[4] << 24) | ((uint64_t)p[5] << 16) |
+                      ((uint64_t)p[6] << 8) | (uint64_t)p[7];
+        if (sz == 0) break;
         if (sz > 16 * 1024) sz = 16 * 1024;
-        mfc_xfer(s, dst_lsa + done, ea, sz, is_get);
-        done += sz;
+        mfc_xfer(s, (dst_lsa + done) & ~0xFu, ea, sz, is_get);
+        done += (sz + 15u) & ~15u;
         if (done >= 256 * 1024) break;
     }
     static int s_list = 0;
-    if (s_list < 12) {
-        ps3rt_log("[spu] XX-L MFC LIST %s elems=%u transferred=%u tag=%u\n",
-                  is_get ? "GETL" : "PUTL", elems, done, s.mfc_tag);
+    if (s_list < 16) {
+        ps3rt_log("[spu] D MFC LIST %s elems=%u xfer=%u tag=%u stall=%u\n",
+                  is_get ? "GETL" : "PUTL", elems, done, s.mfc_tag, s.mfc_list_stall);
         ++s_list;
     }
     mfc_complete_tag(s);
+
 }
 
 static void mfc_do_dma(SPUContext& s) {
@@ -170,7 +169,7 @@ static void mfc_do_dma(SPUContext& s) {
     mfc_complete_tag(s);
     static int s_dma = 0;
     if (s_dma < 20) {
-        ps3rt_log("[spu] XX-L MFC %s lsa=0x%x ea=0x%llx size=%u tag=%u\n",
+        ps3rt_log("[spu] D MFC %s lsa=0x%x ea=0x%llx size=%u tag=%u\n",
                   is_get ? "GET" : "PUT", lsa, (unsigned long long)ea, size, s.mfc_tag);
         ++s_dma;
     }
@@ -198,9 +197,7 @@ static uint32_t ch_read(SPUContext& s, uint32_t ch) {
         return s.signal2;
     case CH_MFC_RdTagStat: {
         uint32_t m = s.mfc_tag_mask ? s.mfc_tag_mask : 0xFFFFFFFFu;
-        uint32_t st = s.mfc_tag_status & m;
-        // sticky: keep status; waiters poll until non-zero match
-        return st ? st : m; // HLE: always report complete for masked tags
+        return s.mfc_tag_status & m;
     }
     case CH_SPU_RdMachStat:
         return 0;
@@ -244,17 +241,26 @@ static void ch_write(SPUContext& s, uint32_t ch, uint32_t val) {
     case CH_MFC_TagID:
         s.mfc_tag = val & 31;
         break;
-    case CH_MFC_Cmd:
-        s.mfc_cmd = val;
-        mfc_do_dma(s);
+    case CH_MFC_Cmd: {
+        int sid = (int)(&s - g_spus);
+        if (sid >= 0 && sid < 8) {
+            if (g_mfc_queue_depth[sid] >= 16) break;
+            ++g_mfc_queue_depth[sid];
+        }
+        s.mfc_cmd = val; mfc_do_dma(s);
+        if (sid >= 0 && sid < 8 && g_mfc_queue_depth[sid] > 0) --g_mfc_queue_depth[sid];
         break;
+    }
     case CH_MFC_WrTagMask:
         s.mfc_tag_mask = val;
         break;
-    case CH_MFC_WrTagUpdate:
-        // XX-L: 0=immediate, 1=any, 2=all — under HLE mark masked tags done
-        s.mfc_tag_status |= (s.mfc_tag_mask ? s.mfc_tag_mask : 0xFFFFFFFFu);
+    case CH_MFC_WrTagUpdate: {
+        uint32_t m = s.mfc_tag_mask ? s.mfc_tag_mask : 0xFFFFFFFFu;
+        if (val == 0) s.mfc_tag_status |= m;
+        else if (val == 1) { if ((s.mfc_tag_status & m) == 0) s.mfc_tag_status |= m; }
+        else s.mfc_tag_status |= m;
         break;
+    }
     case CH_MFC_WrListStallAck:
         break;
     case CH_MFC_WrMSSyncReq:
@@ -784,10 +790,24 @@ static bool spu_step(SPUContext& s) {
         return true;
     }
 
-    // Unknown — count and continue (skip)
+    
+    // ---- C: expanded ISA ----
+    if (opc11 == 0x241) { for (int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)|lr128_word(reg(rb),w)); return true; }
+    if (opc11 == 0x1CE) { uint32_t v=0; for(int w=0;w<4;++w) v|=lr128_word(reg(ra),w); r128_clear(reg(rt)); sr128_word(reg(rt),0,v); return true; }
+    if (opc11 == 0x0C3) { for(int w=0;w<4;++w) sr128_word(reg(rt),w,~(lr128_word(reg(ra),w)&lr128_word(reg(rb),w))); return true; }
+    if (opc11 == 0x244) { for(int w=0;w<4;++w) sr128_word(reg(rt),w,~(lr128_word(reg(ra),w)^lr128_word(reg(rb),w))); return true; }
+    if (opc11 == 0x0C2) { for(int w=0;w<4;++w){ uint64_t sum=(uint64_t)lr128_word(reg(ra),w)+lr128_word(reg(rb),w); sr128_word(reg(rt),w,(sum>>32)?1u:0u);} return true; }
+    if (opc11 == 0x240) { for(int w=0;w<4;++w){ int32_t a=(int32_t)lr128_word(reg(ra),w),b=(int32_t)lr128_word(reg(rb),w); sr128_word(reg(rt),w,a>b?0xFFFFFFFFu:0);} return true; }
+    if (opc11 == 0x3C0) { for(int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)==lr128_word(reg(rb),w)?0xFFFFFFFFu:0); return true; }
+    if (opc11 == 0x1C7) { int sh=(int)(lr128_word(reg(rb),0)&15); uint8_t tmp[16]; r128_copy(tmp,reg(ra)); for(int i=0;i<16;++i) reg(rt)[i]=tmp[(i+sh)&15]; return true; }
+    if (opc11 == 0x2C4 || opc11 == 0x2C5 || opc11 == 0x2C6) {
+        for (int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w),ub=lr128_word(reg(rb),w); float a,b; std::memcpy(&a,&ua,4); std::memcpy(&b,&ub,4);
+            float r=(opc11==0x2C4)?a+b:((opc11==0x2C5)?a-b:a*b); uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
+    if (opc11 == 0x1B6) { for(int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w); float a; std::memcpy(&a,&ua,4); float r=(a!=0.f)?1.f/a:0.f; uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
+// Unknown — count and continue (skip)
     static int s_unk = 0;
     if (s_unk < 24) {
-        ps3rt_log("[spu] XX-K unhandled op=0x%08X pc=0x%x\n", op, pc);
+        ps3rt_log("[spu] C unhandled op=0x%08X pc=0x%x\n", op, pc);
         ++s_unk;
     }
     return true;
@@ -804,12 +824,8 @@ static void spu_run_slice(SPUContext& s, int max_steps) {
 
 // XX-M: simple SPURS-like job slots
 struct SpursJob {
-    bool used;
-    int spu_id;          // assigned SPU or -1
-    uint32_t entry;
-    uint32_t prio;
-    uint32_t workload_id;
-    bool done;
+    bool used; int spu_id; uint32_t entry; uint32_t prio; uint32_t workload_id; bool done;
+    bool ready; uint32_t chain_next; uint32_t event_mask; uint32_t cause;
 };
 static SpursJob g_jobs[32];
 static int g_spurs_inited = 0;
@@ -832,7 +848,7 @@ static void spurs_schedule() {
         int best = -1;
         uint32_t best_prio = 0;
         for (int j = 0; j < 32; ++j) {
-            if (!g_jobs[j].used || g_jobs[j].done || g_jobs[j].spu_id >= 0) continue;
+            if (!g_jobs[j].used || g_jobs[j].done || !g_jobs[j].ready || g_jobs[j].spu_id >= 0) continue;
             if (best < 0 || g_jobs[j].prio >= best_prio) {
                 best = j; best_prio = g_jobs[j].prio;
             }
@@ -848,19 +864,23 @@ static void spurs_schedule() {
         ps3rt_spu_interpreter_start(sid, g_jobs[best].entry);
         static int s_sched = 0;
         if (s_sched < 16) {
-            ps3rt_log("[spurs] XX-M schedule job=%d -> spu=%d entry=0x%x prio=%u\n",
+            ps3rt_log("[spurs] E schedule job=%d -> spu=%d entry=0x%x prio=%u\n",
                       best, sid, g_jobs[best].entry, g_jobs[best].prio);
             ++s_sched;
         }
     }
-    // Mark jobs done when their SPU stopped
     for (int j = 0; j < 32; ++j) {
         if (!g_jobs[j].used || g_jobs[j].done || g_jobs[j].spu_id < 0) continue;
         int sid = g_jobs[j].spu_id;
         if (sid < g_spu_count && !g_spus[sid].running) {
             g_jobs[j].done = true;
+            g_jobs[j].cause = (uint32_t)g_spus[sid].last_stop_code;
             g_spus[sid].spurs_idle = true;
             g_spus[sid].spurs_group = -1;
+            if (g_jobs[j].chain_next != 0xFFFFFFFFu) {
+                uint32_t n = g_jobs[j].chain_next;
+                if (n < 32 && g_jobs[n].used) g_jobs[n].ready = true;
+            }
         }
     }
 }
@@ -868,14 +888,11 @@ static void spurs_schedule() {
 extern "C" PS3RT_API int ps3rt_spurs_submit_job(uint32_t entry, uint32_t prio, uint32_t workload_id) {
     for (int j = 0; j < 32; ++j) {
         if (g_jobs[j].used && !g_jobs[j].done) continue;
-        g_jobs[j].used = true;
-        g_jobs[j].spu_id = -1;
-        g_jobs[j].entry = entry;
-        g_jobs[j].prio = prio;
-        g_jobs[j].workload_id = workload_id ? workload_id : g_spurs_workload_seq++;
-        g_jobs[j].done = false;
-        spurs_schedule();
-        return j;
+        g_jobs[j].used = true; g_jobs[j].spu_id = -1; g_jobs[j].entry = entry;
+        g_jobs[j].prio = prio; g_jobs[j].workload_id = workload_id ? workload_id : g_spurs_workload_seq++;
+        g_jobs[j].done = false; g_jobs[j].ready = true; g_jobs[j].chain_next = 0xFFFFFFFFu;
+        g_jobs[j].event_mask = 0; g_jobs[j].cause = 0;
+        spurs_schedule(); return j;
     }
     return -1;
 }
@@ -897,6 +914,16 @@ extern "C" PS3RT_API void ps3rt_spu_tick_all(void) {
     }
 }
 
+
+extern "C" PS3RT_API int ps3rt_spurs_link_chain(int job_id, int next_job_id) {
+    if (job_id < 0 || job_id >= 32 || !g_jobs[job_id].used) return -1;
+    if (next_job_id < 0 || next_job_id >= 32) { g_jobs[job_id].chain_next = 0xFFFFFFFFu; return 0; }
+    g_jobs[job_id].chain_next = (uint32_t)next_job_id; g_jobs[next_job_id].ready = false; return 0;
+}
+extern "C" PS3RT_API int ps3rt_spurs_set_ready(int job_id, int ready) {
+    if (job_id < 0 || job_id >= 32 || !g_jobs[job_id].used) return -1;
+    g_jobs[job_id].ready = ready != 0; if (ready) spurs_schedule(); return 0;
+}
 // Called from ps3rt when run is requested — start interpreter
 extern "C" void ps3rt_spu_interpreter_start(int id, uint32_t entry) {
     if (id < 0 || id >= g_spu_count) return;

@@ -1,7 +1,6 @@
-// lv2_syscalls.inl — Phase P extra LV2 HLE (included inside ps3rt_syscall switch)
-// Keep this file focused on syscall numbers only.
+// lv2_syscalls.inl — H: expanded LV2 HLE (included inside ps3rt_syscall switch)
 
-// sys_lwmutex_lock / unlock family — succeed immediately
+// sys_lwmutex_lock / unlock / trylock / destroy
 case 48: case 49: case 50: case 51:
     c->gpr[3] = 0; break;
 
@@ -22,17 +21,43 @@ case 144: {
 case 145:
     c->gpr[3] = 79800000ull; break;
 
-// XX-L/M: sys_spu_thread_* / image / event queue (GOW boot paths)
-// 160 sys_spu_thread_group_create, 161 destroy, 162 start, 163 join, 165 yield
-// 169 sys_spu_thread_write_snr, 171 set_priority, 172 connect_event ...
+// sys_spu_thread_* / image
 case 160: case 161: case 162: case 163: case 165: case 166: case 167:
 case 169: case 170: case 171: case 172: case 173: case 174: case 175:
 case 176: case 177: case 178: case 179: case 180: case 181:
     c->gpr[3] = 0; break;
-// sys_spu_image_open / close / get_information style (user wrapper often PRX)
 case 156: case 157: case 158: case 159:
     c->gpr[3] = 0; break;
 
 // sys_rwlock / cond
 case 112: case 113: case 114: case 115:
+    c->gpr[3] = 0; break;
+
+// H: sys_mutex_*
+case 100: case 101: case 102: case 103: case 104: case 105: case 106: case 107:
+    c->gpr[3] = 0; break;
+
+// H: sys_event_queue_*
+case 128: case 129: case 130: case 131: case 132: case 133: case 134: case 135:
+case 136: case 137:
+    c->gpr[3] = 0; break;
+
+// H: sys_semaphore_*
+case 90: case 91: case 92: case 93: case 94: case 95: case 96:
+    c->gpr[3] = 0; break;
+
+// H: sys_ppu_thread_*
+case 41: case 43: case 44: case 45: case 46: case 47:
+    c->gpr[3] = 0; break;
+
+// H: sys_memory_*
+case 348: case 349: case 350: case 351: case 352: case 353:
+    c->gpr[3] = 0; break;
+
+// H: sys_process_exit / getpid
+case 1: case 3:
+    c->gpr[3] = 0; break;
+
+// H: sys_fs_* LV2-level
+case 801: case 802: case 803: case 804: case 808: case 809: case 811:
     c->gpr[3] = 0; break;

@@ -15,6 +15,8 @@ static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, 
         }
         return false;
     };
+    if (c.lr && !banned(c.lr) && (c.lr & 3ull) == 0 && pc_in_chunks(c.lr, chunks, n))
+        return c.lr;
     if (c.ctr && !banned(c.ctr) && (c.ctr & 3ull) == 0 && pc_in_chunks(c.ctr, chunks, n))
         return c.ctr;
     uint64_t sp = c.gpr[1];

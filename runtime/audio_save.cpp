@@ -24,6 +24,17 @@ static uint64_t g_audio_read_idx = 0;
 static uint64_t g_port_addr = 0; // guest EA of ring (if known)
 static uint32_t g_port_nblocks = 8;
 static int g_port_open = 0;
+// G+K: ring + multi-port (up to 8)
+static uint32_t g_ring_write = 0;
+static uint32_t g_ring_read = 0;
+static uint32_t g_ring_nblocks = 8;
+static uint64_t g_notify_key = 0;
+static int g_ports_active = 0;
+static uint32_t g_port_flags[8] = {};
+static uint32_t g_port_ring_w[8] = {};
+static uint32_t g_port_ring_r[8] = {};
+static int g_current_port = 0;
+
 #endif
 
 static char g_game_name[128] = "GOW3";
@@ -75,7 +86,7 @@ static void audio_host_open() {
     wfx.nBlockAlign = 4;
     wfx.nAvgBytesPerSec = 48000 * 4;
     if (waveOutOpen(&g_wo, WAVE_MAPPER, &wfx, 0, 0, CALLBACK_NULL) != MMSYSERR_NOERROR) {
-        g_wo = nullptr; ps3rt_log("[audio] XX-N waveOutOpen failed — silent HLE\n"); return;
+        g_wo = nullptr; ps3rt_log("[audio] G/K waveOutOpen failed — silent HLE\n"); return;
     }
     for (int i = 0; i < 4; ++i) {
         std::memset(g_pcm[i], 0, sizeof(g_pcm[i]));
@@ -83,7 +94,7 @@ static void audio_host_open() {
         g_wh[i].dwBufferLength = sizeof(g_pcm[i]);
         waveOutPrepareHeader(g_wo, &g_wh[i], sizeof(g_wh[i]));
     }
-    ps3rt_log("[audio] XX-N host waveOut 48kHz stereo ready (4 buffers)\n");
+    ps3rt_log("[audio] G/K host waveOut 48kHz stereo ready (4 buffers)\n");
 #endif
 }
 
@@ -136,12 +147,18 @@ PS3RT_API int ps3rt_audio_dispatch(PPUContext* c, uint32_t nid) {
     // cellAudioInit
     if (nid == 0x0B168F92 || nid == 0x0B2A7777 || nid == 0x0E4DF449) {
         g_audio_inited = 1; audio_host_open();
-        ps3rt_log("[audio] XX-N cellAudioInit\n"); c->gpr[3] = 0; return 0;
+        ps3rt_log("[audio] G/K cellAudioInit\n"); c->gpr[3] = 0; return 0;
     }
     // Port open / create / start
     if (nid == 0x5B1E2C73 || nid == 0x566966C0 || nid == 0x65C27676 || nid == 0x4129FE2C) {
         if (!g_audio_inited) { g_audio_inited = 1; audio_host_open(); }
         g_port_open = 1;
+        if (g_ports_active < 8) {
+            g_current_port = g_ports_active;
+            g_port_flags[g_ports_active] |= 1u;
+            ++g_ports_active;
+            static int spo=0; if(spo<8){ps3rt_log("[audio] G/K port open id=%d active=%d\n", g_current_port, g_ports_active);++spo;}
+        }
         // r3 may be port id out; write 0
         if (c->gpr[3] && c->gpr[3] + 4 <= 512ull*1024*1024) {
             // leave; game usually passes out pointer in r4/r3
@@ -190,7 +207,10 @@ PS3RT_API int ps3rt_audio_dispatch(PPUContext* c, uint32_t nid) {
             audio_queue_s16(conv, nframes);
             static int s_add = 0;
             if (s_add < 8) {
-                ps3rt_log("[audio] XX-N AddData frames=%u\n", nframes);
+                int pid = g_current_port & 7;
+            g_port_ring_w[pid] = (g_port_ring_w[pid] + 1) & 15;
+            g_ring_write = (g_ring_write + 1) % (g_ring_nblocks ? g_ring_nblocks : 8);
+            ps3rt_log("[audio] G/K AddData port=%d frames=%u ring_w=%u\n", pid, nframes, g_port_ring_w[pid]);
                 ++s_add;
             }
         }
@@ -198,6 +218,9 @@ PS3RT_API int ps3rt_audio_dispatch(PPUContext* c, uint32_t nid) {
     }
     // SetNotifyEventQueue / CreateNotifyEventQueue
     if (nid == 0xC20EE39D || nid == 0x2BEF9CDE) {
+        g_notify_key = c->gpr[3];
+        static int s_nq = 0;
+        if (s_nq < 6) { ps3rt_log("[audio] G/K SetNotifyEventQueue key=0x%llx\n", (unsigned long long)g_notify_key); ++s_nq; }
         c->gpr[3] = 0; return 0;
     }
     c->gpr[3] = 0;
