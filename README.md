@@ -1,7 +1,5 @@
 # PPSX33: PlayStation 3 Static Recompiler
 
-<p align="center"><strong>Decode · Translate · Play</strong></p>
-
 Experimental static recompiler for decrypted PS3 ELF64. Not a complete emulator.
 
 ## Status
@@ -9,14 +7,19 @@ Experimental static recompiler for decrypted PS3 ELF64. Not a complete emulator.
 | Area | Status |
 |------|--------|
 | I–XIX / XX-A…O | TESTING / DONE |
-| Post-XX lettered **A – Q** | DONE in tree |
-| Later (R+) | PARTIAL / PLANNED |
+| Post-XX lettered **A – U** | DONE in tree |
+| Optional V+ | PLANNED |
 
-### Lettered A – Q (summary)
+### Latest letters
 
-Surfaces through texture unit (A–L), PPU/SPU/MFC/SPURS (B–E), filesystem/audio/LV2 (F–K, N), library NID stubs (**O**), save lifecycle (**P**), pad pressure/sixaxis (**Q**).
+| Sno. | Name | Status |
+|------|------|--------|
+| R | Timing model | DONE |
+| S | PRX module registry | DONE |
+| T | RSX textured-draw awareness | DONE |
+| U | Deeper sysutil NID behaviour | DONE |
 
-Full tables: [ROADMAP.md](ROADMAP.md).
+Full history: [ROADMAP.md](ROADMAP.md).
 
 ## Build
 
