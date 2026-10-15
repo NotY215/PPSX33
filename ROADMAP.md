@@ -1,6 +1,6 @@
 # PPSX33 Roadmap
 
-**Last updated:** 2026-10-14  
+**Last updated:** 2026-10-15  
 **Scope:** Runtime playability, packaging, and host tooling for the experimental PS3 static recompiler.
 
 PPSX33 is a **research toolkit**, not a retail emulator or a finished port of any commercial game. Milestone labels describe engineering work completed in-tree. They do **not** claim verified boot, full graphics, audio fidelity, or playability for any title.
@@ -197,17 +197,46 @@ Prefer clean rebuild after dropping a full `runtime/` set. Avoid mixing half-app
 
 ## Future work (post XX-O) — PLANNED / PARTIAL
 
-| Area | Direction |
-|------|----------|
-| RSX | Real surface uploads, shaders, textured draws beyond clear/flip |
-| PPU accuracy | Reduce approximate ops; better recovery than region skip alone |
-| SPU | Broader ISA (vector/FP edge cases), optional JIT later |
-| MFC | Full list-element formats, stall/queue depth fidelity |
-| SPURS | Closer jobchain/taskset semantics vs simple prio queue |
-| cellFs | Directories, more error codes, encrypted/self paths if ever in scope |
-| Audio | Correct port ring layout per title; libaudio event queues |
-| Compatibility | Per-game notes under `docs/games/` — lift stats ≠ playable |
+These are known compatibility gaps that remain before PPSX33 can be considered broadly playable. They are **planned implementation work**, not claims that the features already work. Prioritize correctness and observable title progress over superficial boot success.
 
+### Playability blockers and implementation plan
+
+| Area | Status | Missing / weak behaviour to implement | Why it blocks real play |
+|------|--------|----------------------------------------|-------------------------|
+| **RSX graphics** | PLANNED · highest priority | Real surface and texture uploads; shader handling; textured draws; vertex/fragment pipeline; depth/stencil; render targets beyond clear/flip; more complete GCM command and state handling | Many titles remain on a solid blue/black clear because actual scene geometry and materials are not rendered. |
+| **PPU accuracy** | PARTIAL | Replace approximate or no-op instruction semantics with correct behaviour; improve branch and arithmetic accuracy; make fault recovery identify and report unsupported regions instead of relying on region skipping | Incorrect branches and calculations can derail game logic, while silent skips hide the original failure. |
+| **SPU ISA** | PARTIAL | Expand beyond the current subset with missing vector and floating-point instructions, instruction edge cases, shuffle semantics, and complete channel behaviour | Physics, audio, decompression, and other SPU-heavy tasks may hang or produce incorrect results. |
+| **MFC / DMA fidelity** | PARTIAL | Complete list-element formats and transfer validation; model stall notifications, tag status, queue depth, ordering, and synchronization accurately | Incorrect DMA completion and tag waits can create races, memory corruption, or deadlocks. |
+| **SPURS** | PARTIAL | Implement more faithful job-chain, workload, taskset, synchronization, and scheduling semantics instead of relying only on a simple priority queue | Titles using complex SPURS job patterns may never complete their work. |
+| **cellFs / virtual filesystem** | PARTIAL | Improve directory enumeration, path resolution, file metadata and error codes; handle supported encrypted/container/SELF-related paths only where legally and technically feasible; strengthen PSARC edge cases | Missing files, bad paths, and incorrect errors prevent assets and configuration from loading. |
+| **Audio** | PARTIAL | Correct port/ring-buffer layout, AddData timing, event queues, channel handling, and multi-port synchronization beyond the current waveOut path | Audio can crackle, be silent, drift, or play through incorrect channels. |
+| **LV2 / system calls** | PARTIAL | Replace success-returning stubs with syscall-specific semantics for threads, events, semaphores, memory management, waits, and lifecycle operations | Guest synchronization and memory behaviour can fail even when a syscall appears to succeed. |
+| **HLE library coverage** | PARTIAL | Expand NID coverage and real behaviour for cellGcmSys, cellSpurs, cellAudio, cellFs, libc, libpad, save-data APIs, and networking APIs; log unknown NIDs with useful context | Games invoke many imports that are currently null, stubbed, or only partially implemented. |
+| **Save data** | PLANNED | Implement save-data enumeration, creation, metadata, read/write, and error behaviour with a safe per-title host mapping | Titles cannot reliably create, load, or preserve progress. |
+| **Controller / libpad** | PARTIAL | Extend beyond XInput digital mapping to pressure-sensitive buttons, Sixaxis/motion where feasible, controller state details, and fuller libpad semantics | Some titles require analog pressure or richer controller state than digital buttons provide. |
+| **Timing and threads** | PARTIAL | Introduce a more consistent PPU/SPU/RSX timing model, thread scheduling, waits, event delivery, and synchronization; avoid relying on cooperative progress alone | Races, incorrect speed, missed events, and softlocks can occur when guest timing assumptions are violated. |
+| **PRX / modules** | PARTIAL | Strengthen module discovery, loading, memory placement, relocation, imports/exports, initialization, and unload lifecycle | Games that depend on dynamically loaded modules may fail even when the main ELF is lifted. |
+
+### Suggested implementation order
+
+1. **RSX/GCM draw pipeline**: move from clear/flip-only output toward surfaces, textures, shaders, draw state, and actual geometry.
+2. **PPU correctness and diagnostics**: implement missing instruction semantics and replace silent recovery paths with traceable failures.
+3. **SPU ISA and MFC/DMA**: expand instruction coverage and make DMA/tag/stall behaviour reliable.
+4. **LV2, HLE, and PRX loading**: establish correct thread, synchronization, import, and module lifecycle behaviour.
+5. **cellFs/VFS and save data**: make content lookup, directory operations, errors, and persistence reliable.
+6. **SPURS and timing**: improve task execution, scheduling, and cross-processor synchronization.
+7. **Audio and controller fidelity**: complete event/ring behaviour, richer pad state, and per-title validation.
+8. **Compatibility validation**: test each change against reproducible homebrew tests and per-title logs; update game reports only with observed results.
+
+Dependencies may change as testing reveals blockers. Each item should move from **PLANNED/PARTIAL** only after implementation and targeted validation; a stub or successful return code alone does not count as completion.
+
+### Acceptance criteria for playability work
+
+- Unsupported instructions, NIDs, syscalls, and graphics methods are visible in logs rather than silently treated as successful.
+- Unit/smoke tests cover new instruction, DMA, filesystem, scheduling, and HLE behaviour where practical.
+- Graphics progress is validated with actual draw calls and resources, not only clear/flip counts.
+- Save/load, controller, audio, and thread behaviour are tested independently before marking a title-level improvement.
+- Per-game status distinguishes static lift/build success from boot, rendered gameplay, input, audio, and save-data validation.
 ---
 
 ## Related docs
