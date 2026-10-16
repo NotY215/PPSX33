@@ -45,6 +45,12 @@ struct RsxState {
     uint8_t clear_stencil = 0;
     uint32_t prim_color = 0x4060A0;
     int draws_this_frame = 0;
+    // XXIII-N: vertex attribute surface (HLE tracking only)
+    uint32_t vertex_a_count = 0;
+    uint32_t vertex_a_offset[16] = {};
+    uint32_t vertex_a_stride[16] = {};
+    uint32_t index_offset = 0;
+    uint32_t index_count = 0;
     // A: surface
     int color_blits = 0;
     uint64_t color_offset = 0;
@@ -520,11 +526,12 @@ static HWND g_hwnd = nullptr;
 #endif
 
 static void rsx_process_fifo(uint8_t* mem) {
+    // XXIII-M: process guest command stream between GET and PUT
     if (!mem || !g_rsx.fifo_addr || !g_rsx.fifo_size) return;
     uint32_t put = g_rsx.put % g_rsx.fifo_size;
     uint32_t get = g_rsx.get % g_rsx.fifo_size;
     int steps = 0;
-    while (get != put && steps < 16384) {
+    while (get != put && steps < 65536) { // XXIII-M: larger FIFO drain
         uint64_t fa = g_rsx.fifo_addr + get;
         if (fa + 8 > 512ull * 1024 * 1024) break;
         uint32_t hdr = (mem[fa] << 24) | (mem[fa+1] << 16) | (mem[fa+2] << 8) | mem[fa+3];
@@ -633,6 +640,27 @@ static void rsx_process_fifo(uint8_t* mem) {
         else if (method == 0x1714 || method == 0x1718 || method == 0x1728) {
             /* surface clip */ ;
         }
+        // XXIII-N: vertex array / index (track only — not full decode)
+        else if (method >= 0x1680 && method <= 0x16BF) {
+            unsigned slot = (method - 0x1680) / 4;
+            if (slot < 16) {
+                if (((method - 0x1680) & 3) == 0) g_rsx.vertex_a_offset[slot] = arg;
+                if (((method - 0x1680) & 3) == 1) g_rsx.vertex_a_stride[slot] = arg & 0xFFFF;
+                g_rsx.vertex_a_count = slot + 1;
+            }
+        }
+        else if (method == 0x1710 || method == 0x1738) {
+            g_rsx.index_offset = arg;
+        }
+        else if (method == 0x1804 || method == 0x1828) {
+            g_rsx.index_count = arg;
+            static int vn = 0;
+            if (vn < 12) {
+                ps3rt_log("[rsx] XXIII-N draw-ish index_count=%u attrs=%u\n",
+                    g_rsx.index_count, g_rsx.vertex_a_count);
+                ++vn;
+            }
+        }
         else { ++g_rsx.unknown_methods; --g_rsx.known_methods; }
         get = (get + 8) % g_rsx.fifo_size;
         ++steps;
@@ -655,6 +683,10 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
     ps3rt_log("[rsx] init fifo=0x%llx size=0x%x backend=%d\n", (unsigned long long)fifo_addr, g_rsx.fifo_size, g_backend);
 }
 
+PS3RT_API void ps3rt_rsx_set_get(uint32_t get) {
+    std::lock_guard<std::mutex> lk(g_rsx_mu);
+    g_rsx.get = get;
+}
 PS3RT_API void ps3rt_rsx_set_put(uint32_t put) {
     std::lock_guard<std::mutex> lk(g_rsx_mu);
     g_rsx.put = put;
@@ -678,7 +710,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] XXIII-E flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] XXIII-M/N flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,

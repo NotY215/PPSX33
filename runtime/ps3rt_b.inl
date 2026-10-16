@@ -1,3 +1,4 @@
+// XXIII-M GCM FIFO assist + XXIII-L coverage path uses assets
 // XXIII-K timing model
 // XXII-D marker
 #include <vector>
@@ -801,12 +802,14 @@ PS3RT_API void ps3rt_progress_hw(void) {
             } else {
                 static int s_guest = 0;
                 if (s_guest < 8) {
-                    ps3rt_log("[gcm] XXIII-K guest put=0x%x get=0x%x\n", put, get);
+                    ps3rt_log("[gcm] XXIII-M/K guest put=0x%x get=0x%x\n", put, get);
                     ++s_guest;
                 }
             }
             if (g_mem) {
                 ps3rt_rsx_set_put(put);
+                // XXIII-M: also seed GET if still zero so drain can start
+                ps3rt_rsx_set_get(get);
                 ps3rt_rsx_flush(g_mem);
             }
             frame_pace_wait();

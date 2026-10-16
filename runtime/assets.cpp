@@ -1,3 +1,4 @@
+// XXIII-L/M/N asset formats + coverage (with I path)
 // XXIII-I cellFs/PSARC fidelity
 // XXII-E: modules/FS path fidelity notes
 // F+N: cellFs + PSARC + directories + errno/SELF handling
@@ -219,6 +220,149 @@ static uint64_t be40(const uint8_t* p) {
            (uint64_t(p[3]) << 8) | uint64_t(p[4]);
 }
 
+
+// ============================================================================
+// XXIII-L/M/N support: format identity + coverage counters + path open
+// Guest-facing files are opened as host streams; BE fields decoded with be32/be64.
+// ============================================================================
+
+// XXIII-L: lightweight coverage counters (logged occasionally)
+static uint64_t g_cov_open_ok = 0, g_cov_open_fail = 0;
+static uint64_t g_cov_read_bytes = 0, g_cov_format_hits = 0;
+
+enum AssetKind : int {
+    AK_UNKNOWN = 0,
+    AK_SFB, AK_SFO, AK_PKG, AK_SPRX, AK_EDAT, AK_SDAT,
+    AK_PSARC, AK_PAK, AK_RPF, AK_ARC, AK_BIG, AK_VIV, AK_FORGE, AK_PCK,
+    AK_DAT, AK_BIN, AK_OBB, AK_IDX,
+    AK_DDS, AK_FNT, AK_PAM, AK_AT3, AK_AA3, AK_MSF, AK_BNSF, AK_MP4, AK_AVI,
+    AK_ELF, AK_SELF
+};
+
+static const char* asset_kind_name(int k) {
+    switch (k) {
+    case AK_SFB: return "SFB"; case AK_SFO: return "SFO"; case AK_PKG: return "PKG";
+    case AK_SPRX: return "SPRX"; case AK_EDAT: return "EDAT"; case AK_SDAT: return "SDAT";
+    case AK_PSARC: return "PSARC"; case AK_PAK: return "PAK"; case AK_RPF: return "RPF";
+    case AK_ARC: return "ARC"; case AK_BIG: return "BIG"; case AK_VIV: return "VIV";
+    case AK_FORGE: return "FORGE"; case AK_PCK: return "PCK";
+    case AK_DAT: return "DAT"; case AK_BIN: return "BIN"; case AK_OBB: return "OBB"; case AK_IDX: return "IDX";
+    case AK_DDS: return "DDS"; case AK_FNT: return "FNT"; case AK_PAM: return "PAM";
+    case AK_AT3: return "AT3"; case AK_AA3: return "AA3"; case AK_MSF: return "MSF"; case AK_BNSF: return "BNSF";
+    case AK_MP4: return "MP4"; case AK_AVI: return "AVI";
+    case AK_ELF: return "ELF"; case AK_SELF: return "SELF";
+    default: return "UNKNOWN";
+    }
+}
+
+static int asset_kind_from_ext(const char* path) {
+    if (!path) return AK_UNKNOWN;
+    const char* dot = strrchr(path, '.');
+    if (!dot || !dot[1]) return AK_UNKNOWN;
+    char e[16] = {};
+    size_t n = 0;
+    for (const char* p = dot + 1; *p && n < 15; ++p) {
+        char c = *p;
+        if (c >= 'A' && c <= 'Z') c = (char)(c - 'A' + 'a');
+        e[n++] = c;
+    }
+    e[n] = 0;
+    if (!std::strcmp(e, "sfb")) return AK_SFB;
+    if (!std::strcmp(e, "sfo")) return AK_SFO;
+    if (!std::strcmp(e, "pkg")) return AK_PKG;
+    if (!std::strcmp(e, "sprx")) return AK_SPRX;
+    if (!std::strcmp(e, "edat")) return AK_EDAT;
+    if (!std::strcmp(e, "sdat")) return AK_SDAT;
+    if (!std::strcmp(e, "psarc")) return AK_PSARC;
+    if (!std::strcmp(e, "pak")) return AK_PAK;
+    if (!std::strcmp(e, "rpf")) return AK_RPF;
+    if (!std::strcmp(e, "arc")) return AK_ARC;
+    if (!std::strcmp(e, "big")) return AK_BIG;
+    if (!std::strcmp(e, "viv")) return AK_VIV;
+    if (!std::strcmp(e, "forge")) return AK_FORGE;
+    if (!std::strcmp(e, "pck")) return AK_PCK;
+    if (!std::strcmp(e, "dat")) return AK_DAT;
+    if (!std::strcmp(e, "bin")) return AK_BIN;
+    if (!std::strcmp(e, "obb")) return AK_OBB;
+    if (!std::strcmp(e, "idx")) return AK_IDX;
+    if (!std::strcmp(e, "dds")) return AK_DDS;
+    if (!std::strcmp(e, "fnt")) return AK_FNT;
+    if (!std::strcmp(e, "pam")) return AK_PAM;
+    if (!std::strcmp(e, "at3")) return AK_AT3;
+    if (!std::strcmp(e, "aa3")) return AK_AA3;
+    if (!std::strcmp(e, "msf")) return AK_MSF;
+    if (!std::strcmp(e, "bnsf")) return AK_BNSF;
+    if (!std::strcmp(e, "mp4")) return AK_MP4;
+    if (!std::strcmp(e, "avi")) return AK_AVI;
+    if (!std::strcmp(e, "elf")) return AK_ELF;
+    if (!std::strcmp(e, "self")) return AK_SELF;
+    return AK_UNKNOWN;
+}
+
+// Magic-byte refinement (BE-aware where formats are BE)
+static int asset_kind_from_magic(const uint8_t* h, size_t n, int from_ext) {
+    if (!h || n < 4) return from_ext;
+    // ELF / SELF
+    if (n >= 4 && h[0] == 0x7F && h[1] == 'E' && h[2] == 'L' && h[3] == 'F') return AK_ELF;
+    if (n >= 4 && h[0] == 'S' && h[1] == 'C' && h[2] == 'E' && h[3] == 0) return AK_SELF;
+    // PSARC
+    if (n >= 4 && h[0] == 'P' && h[1] == 'S' && h[2] == 'A' && h[3] == 'R') return AK_PSARC;
+    // PARAM.SFO magic "\0PSF"
+    if (n >= 4 && h[0] == 0 && h[1] == 'P' && h[2] == 'S' && h[3] == 'F') return AK_SFO;
+    // PS3_DISC.SFB often starts with ".SFB" or "SFB"
+    if (n >= 4 && ((h[0]=='.' && h[1]=='S' && h[2]=='F' && h[3]=='B') ||
+                   (h[0]=='S' && h[1]=='F' && h[2]=='B'))) return AK_SFB;
+    // PKG magic
+    if (n >= 4 && h[0] == 0x7F && h[1] == 'P' && h[2] == 'K' && h[3] == 'G') return AK_PKG;
+    // DDS
+    if (n >= 4 && h[0] == 'D' && h[1] == 'D' && h[2] == 'S' && h[3] == ' ') return AK_DDS;
+    // NPD header used by EDAT/SDAT
+    if (n >= 4 && h[0] == 'N' && h[1] == 'P' && h[2] == 'D' && h[3] == 0) {
+        return (from_ext == AK_SDAT) ? AK_SDAT : AK_EDAT;
+    }
+    // RIFF/AVI
+    if (n >= 12 && h[0]=='R' && h[1]=='I' && h[2]=='F' && h[3]=='F' &&
+        h[8]=='A' && h[9]=='V' && h[10]=='I') return AK_AVI;
+    // ftyp mp4
+    if (n >= 8 && h[4]=='f' && h[5]=='t' && h[6]=='y' && h[7]=='p') return AK_MP4;
+    // BIG (EA) often "BIGF"
+    if (n >= 4 && h[0]=='B' && h[1]=='I' && h[2]=='G' && h[3]=='F') return AK_BIG;
+    return from_ext;
+}
+
+static void asset_note_open(const char* host_path, int kind, bool ok) {
+    if (ok) ++g_cov_open_ok; else ++g_cov_open_fail;
+    if (kind != AK_UNKNOWN) ++g_cov_format_hits;
+    static int s = 0;
+    if (s < 48) {
+        ps3rt_log("[fs] XXIII-L open %s kind=%s path=%s\n",
+            ok ? "ok" : "fail", asset_kind_name(kind), host_path ? host_path : "?");
+        ++s;
+    }
+}
+
+// Minimal SFO title/id probe (big-endian key table) — read-only metadata
+static void sfo_probe_log(FILE* f) {
+    if (!f) return;
+    long pos = std::ftell(f);
+    uint8_t hdr[20];
+    if (std::fread(hdr, 1, 20, f) != 20) { std::fseek(f, pos, SEEK_SET); return; }
+    if (!(hdr[0]==0 && hdr[1]=='P' && hdr[2]=='S' && hdr[3]=='F')) {
+        std::fseek(f, pos, SEEK_SET); return;
+    }
+    // key table start / data table start / entry count — LE in some SFO, BE in others;
+    // PS3 PARAM.SFO uses little-endian integers in the header (Sony SFO is LE on disc).
+    uint32_t key_table = (uint32_t)hdr[8] | ((uint32_t)hdr[9]<<8) | ((uint32_t)hdr[10]<<16) | ((uint32_t)hdr[11]<<24);
+    uint32_t data_table = (uint32_t)hdr[12] | ((uint32_t)hdr[13]<<8) | ((uint32_t)hdr[14]<<16) | ((uint32_t)hdr[15]<<24);
+    uint32_t count = (uint32_t)hdr[16] | ((uint32_t)hdr[17]<<8) | ((uint32_t)hdr[18]<<16) | ((uint32_t)hdr[19]<<24);
+    static int sfo_n = 0;
+    if (sfo_n < 6) {
+        ps3rt_log("[fs] XXIII-L SFO keys=%u key_table=0x%x data_table=0x%x\n", count, key_table, data_table);
+        ++sfo_n;
+    }
+    std::fseek(f, pos, SEEK_SET);
+}
+
 struct PsarcTocEntry {
     std::string name;
     uint32_t block_index = 0;   // first block index
@@ -385,6 +529,26 @@ struct HostFd {
 static HostFd g_fds[64];
 
 static int fd_alloc(FILE* f, const char* path) {
+    // XXIII-L: classify by extension + magic
+    int kind = asset_kind_from_ext(path);
+    if (f) {
+        uint8_t magic[16] = {};
+        long p0 = std::ftell(f);
+        size_t got = std::fread(magic, 1, 16, f);
+        std::fseek(f, p0, SEEK_SET);
+        kind = asset_kind_from_magic(magic, got, kind);
+        if (kind == AK_SFO) sfo_probe_log(f);
+        if (kind == AK_EDAT || kind == AK_SDAT) {
+            static int ed = 0;
+            if (ed < 8) {
+                ps3rt_log("[fs] XXIII-L encrypted container %s (read as opaque; no key unwrap)\n",
+                    asset_kind_name(kind));
+                ++ed;
+            }
+        }
+        asset_note_open(path, kind, true);
+    }
+
     for (int i = 3; i < 64; ++i) {
         if (!g_fds[i].used) {
             g_fds[i] = HostFd{};
@@ -730,6 +894,7 @@ static int fs_read(PPUContext* c) {
         n = psarc_read(h, mem() + buf, (size_t)size);
     else
         n = std::fread(mem() + buf, 1, (size_t)size, h->f);
+    if (n > 0) g_cov_read_bytes += (uint64_t)n;
     if (nread_ea) write_be64(nread_ea, n);
     c->gpr[3] = 0;
     return 0;
