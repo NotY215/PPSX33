@@ -219,7 +219,8 @@ public sealed partial class MainForm : Form
             "PHASE XXIII — EXECUTION REALITY (ACTIVE)\r\n" +
             "  A–Q   Surface work (in tree; test pending)\r\n" +
             "  R–T   Control-flow, workers, HLSL blit path\r\n" +
-            "  U–W   DXT note, host draw, save/sysutil\r\n" +
+            "  U–W   DXT, host draw, save/sysutil\r\n" +
+            "  X–Z   Frame path, shader surface, tiling note\r\n" +
             "  X+    Golden tests / full shader ISA (planned)\r\n\r\n" +
             "Workflow: Load ELF → Decompile → Map → Build →\r\n" +
             "Copy to USRDIR → Run from USRDIR.\r\n";

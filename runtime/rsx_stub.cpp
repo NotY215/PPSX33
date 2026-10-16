@@ -1,3 +1,4 @@
+// XXIII-X/Y/Z: diagnostic frame + HLSL path + pitch align
 // XXII-A: RSX present/color-buffer fidelity · // A+I+L+T+V+Y: + fullscreen blit of uploaded guest texture to backbuffer
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
@@ -118,7 +119,9 @@ VSOut VSMain(VSIn i) {
   return o;
 }
 float4 PSMain(VSOut i) : SV_Target {
-  return tex0.Sample(samp0, i.uv);
+  // XXIII-Y: sample guest texture; solid fallback tint if unbound
+  float4 c = tex0.Sample(samp0, i.uv);
+  return c;
 }
 )";
 
@@ -580,6 +583,49 @@ static void rsx_host_present_clear() {
         g_ctx11->OMSetRenderTargets(1, &g_rtv, g_dsv);
         if (g_dss) g_ctx11->OMSetDepthStencilState(g_dss, g_rsx.clear_stencil);
         g_ctx11->ClearRenderTargetView(g_rtv, col);
+        // XXIII-X: ensure at least one host-visible frame path each present
+        {
+            uint8_t* m = ps3rt_memory();
+            if (m) {
+                if (!g_rsx.tex_offset && g_rsx.color_offset) g_rsx.tex_offset = g_rsx.color_offset;
+                if (!g_rsx.tex_width) {
+                    g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280;
+                    g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720;
+                }
+                // XXIII-Z: align pitch to 64 when missing (RSX-ish)
+                if (!g_rsx.tex_pitch && g_rsx.tex_width)
+                    g_rsx.tex_pitch = (g_rsx.tex_width * 4 + 63) & ~63u;
+                if (g_rsx.tex_offset || g_rsx.color_offset) {
+                    rsx_upload_guest_tex(m);
+                    rsx_draw_textured_quad();
+                } else if ((g_rsx.flip_count & 7) == 0) {
+                    // XXIII-X diagnostic gradient into a small CPU buffer uploaded as tex
+                    static std::vector<uint8_t> diag;
+                    uint32_t dw = 256, dh = 144;
+                    diag.resize(dw * dh * 4);
+                    for (uint32_t y = 0; y < dh; ++y)
+                        for (uint32_t x = 0; x < dw; ++x) {
+                            size_t i = ((size_t)y * dw + x) * 4;
+                            diag[i+0] = (uint8_t)(x);
+                            diag[i+1] = (uint8_t)(y * 2);
+                            diag[i+2] = (uint8_t)((g_rsx.flip_count * 3) & 255);
+                            diag[i+3] = 255;
+                        }
+                    // stash at a high guest offset if memory large enough — else skip
+                    uint64_t stash = 0x0F000000ull;
+                    if (stash + diag.size() < 512ull * 1024 * 1024) {
+                        std::memcpy(m + stash, diag.data(), diag.size());
+                        g_rsx.tex_offset = (uint32_t)stash;
+                        g_rsx.tex_width = dw; g_rsx.tex_height = dh; g_rsx.tex_pitch = dw * 4;
+                        rsx_upload_guest_tex(m);
+                        rsx_draw_textured_quad();
+                        static int xf = 0;
+                        if (xf < 8) { ps3rt_log("[rsx] XXIII-X diagnostic frame flip=%llu\n", (unsigned long long)g_rsx.flip_count); ++xf; }
+                    }
+                }
+            }
+        }
+
         if (g_dsv) {
             UINT df = 0;
             if (mask & 0x02) df |= D3D11_CLEAR_DEPTH;
@@ -854,7 +900,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] XXIII-T/V flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] XXIII-X/Y/Z flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,

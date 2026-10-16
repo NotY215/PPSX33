@@ -1,3 +1,4 @@
+// XXIII-X frame assist
 // XXIII-W save/sysutil depth surface
 // XXIII-S worker assist via existing SPURS/SPU phase in progress_hw
 // XXIII-Q import/HLE coverage for init that issues draws
@@ -805,7 +806,7 @@ PS3RT_API void ps3rt_progress_hw(void) {
             uint32_t put = g_gcm_control ? rd_be32_guest(g_gcm_control + 0) : 0;
             uint32_t get = g_gcm_control ? rd_be32_guest(g_gcm_control + 4) : 0;
             if (put == 0) {
-                gcm_inject_clear_draw();
+                gcm_inject_clear_draw(); // XXIII-X keep inject until guest PUT lives
             } else {
                 static int s_guest = 0;
                 if (s_guest < 8) {

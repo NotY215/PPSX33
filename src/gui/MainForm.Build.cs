@@ -113,12 +113,12 @@ public sealed partial class MainForm
             if (success)
             {
                 MessageBox.Show(this,
-                    "Build completed successfully.\n\n" +
-                    "Run and Copy to game folder are now unlocked.
-Phase XXIII T–W runtime applied when present in output/src.\n" +
-                    "Copy places PPSX33.exe + required files next to EBOOT.BIN\n" +
+                    "Build completed successfully.\r\n\r\n" +
+                    "Run and Copy to game folder are now unlocked.\r\n" +
+                    "Phase XXIII runtime is used when present under output/src.\r\n" +
+                    "Copy places the game EXE and required files next to EBOOT.BIN\r\n" +
                     "(typically ...\\PS3_GAME\\USRDIR).",
-                    "PPSX33 \u2014 Build complete",
+                    "PPSX33 - Build complete",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
             }
