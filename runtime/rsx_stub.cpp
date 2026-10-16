@@ -1,3 +1,4 @@
+// XXV-FRAME: visible present path (guest geometry still Phase XXV-D+)
 // XXIV-E COLOR_OFFSET present + visible diagnostic
 // XXIV-A/B/C companion in rsx: FIFO bound + HLSL prove
 // XXIII-X/Y/Z: diagnostic frame + HLSL path + pitch align
@@ -561,10 +562,14 @@ static void rsx_host_present_clear() {
     }
     if (!g_rtv) return;
     rsx_ensure_depth(g_rsx.width, g_rsx.height);
-    // XXIII-E: if guest never programs color, pulse clear so window is not a dead solid block
-    if (g_rsx.methods_seen == 0 || (g_rsx.draws == 0 && g_rsx.clears <= 3)) {
-        uint32_t t = (uint32_t)(g_rsx.flip_count * 3);
-        g_rsx.clear_color = ((t & 0x7F) + 0x20) << 16 | (((t * 2) & 0x7F) + 0x18) << 8 | (((t * 3) & 0x7F) + 0x28);
+    // XXV-FRAME: always a bright base clear so a frame is visible even without guest content
+    {
+        uint32_t t = (uint32_t)(g_rsx.flip_count * 5);
+        uint32_t r = 40 + (t & 0x7F);
+        uint32_t g = 20 + ((t * 3) & 0x5F);
+        uint32_t b = 80 + ((t * 7) & 0x7F);
+        if (!g_rsx.color_offset && g_rsx.draws == 0)
+            g_rsx.clear_color = (r << 16) | (g << 8) | b;
     }
     uint32_t mask = g_rsx.clear_mask;
     float rr = ((g_rsx.clear_color >> 16) & 0xFF) / 255.f;
@@ -674,8 +679,17 @@ static void rsx_host_present_clear() {
         bool need_present = true; // XXIV-E: present every flip
         g_rsx.draws_this_frame = 0;
         g_rsx.methods_this_frame = 0; // XXIV-B
-        if (need_present && g_swap)
+        if (need_present && g_swap) {
             g_swap->Present(0, 0);
+            static int pf = 0;
+            if (pf < 20) {
+                ps3rt_log("[rsx] XXV-FRAME present flip=%llu color=0x%x tex=0x%x draws=%d\n",
+                    (unsigned long long)g_rsx.flip_count, g_rsx.clear_color,
+                    g_rsx.tex_offset ? g_rsx.tex_offset : g_rsx.color_offset,
+                    g_rsx.draws_this_frame);
+                ++pf;
+            }
+        }
         // XX-N: GDI status overlay (title / boot progress) until real draws dominate
         if (g_hwnd) {
             HDC hdc = GetDC(g_hwnd);
@@ -913,7 +927,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] XXIV-E flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] XXV flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,

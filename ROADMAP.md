@@ -36,11 +36,11 @@ Detail: [roadmap/XXV.md](roadmap/XXV.md).
 
 ### External audit (GPT) — accepted priorities
 
-1. PPU lifter truthfulness
-2. Deterministic faults (limit wild-PC guessing)
-3. Real RSX pipeline (not diagnostic-only)
-4. LV2/PRX contracts
-5. SPU/MFC/SPURS semantics
+1. PPU lifter truthfulness  
+2. Deterministic faults (limit wild-PC guessing)  
+3. Real RSX pipeline (not diagnostic-only)  
+4. LV2/PRX contracts  
+5. SPU/MFC/SPURS semantics  
 
 ---
 

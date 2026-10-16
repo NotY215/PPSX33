@@ -97,9 +97,16 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         o << fmt("c.gpr[%u] = ps3_rotl32dup((uint32_t)c.gpr[%u], (unsigned)c.gpr[%u]) & 0x%llxull;", ra, rt, rb, (unsigned long long)m);
         rc0(ra); return true;
     }
-    case 0: return true;
-    case 1: case 5: case 6: case 9: return true;
-    case 2: case 3: return true;
+    // XXV-P1: do not claim Implemented for empty emission (GPT audit)
+    case 0:
+        o << "/* lift unsupported primary opc=0 */;";
+        return false;
+    case 1: case 5: case 6: case 9:
+        o << "/* lift unsupported primary */;";
+        return false;
+    case 2: case 3:
+        o << "/* lift unsupported primary */;";
+        return false;
     case 20: {
         unsigned sh = rb, mb = (w >> 6) & 31, me = (w >> 1) & 31;
         uint64_t m = mask64(mb + 32, me + 32);

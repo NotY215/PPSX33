@@ -5,7 +5,7 @@ Informed by external audit (GPT) cross-checked against the tree and GOW logs.
 ## What the audit got right
 
 | Claim | Verdict |
-|-------|--------|
+|-------|---------|
 | Silent `return true` in `ppu_lifter.cpp` for empty cases | **Correct** — primary opc 0/1/2/3/5/6/9 paths emitted nothing |
 | Wild-PC recovery can mask real faults | **Correct** — useful experimentally; unsafe as default compatibility |
 | RSX is not a faithful renderer | **Correct** — HLSL blit/diagnostic ≠ game geometry |
@@ -35,9 +35,9 @@ Informed by external audit (GPT) cross-checked against the tree and GOW logs.
 
 ## Recommended order (aligned with audit)
 
-1. **XXV-A…C** — build green + visible frame + honest lift
-2. **XXV-D** — real surface present / FIFO
-3. **XXV-E/F** — truthful PPU + deterministic faults
-4. **XXV-G/H** — HLE + SPU/DMA
+1. **XXV-A…C** — build green + visible frame + honest lift  
+2. **XXV-D** — real surface present / FIFO  
+3. **XXV-E/F** — truthful PPU + deterministic faults  
+4. **XXV-G/H** — HLE + SPU/DMA  
 
 FPS is not a goal until frames show correct guest content.

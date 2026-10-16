@@ -82,6 +82,8 @@ static void save_ensure_root() {
     ps3rt_log("[save] root=%s (PS3-native only; no savestates)\n", g_save_root);
 }
 
+static void audio_queue_s16(const int16_t* samples, size_t nframes); // forward
+
 static void audio_host_open() {
 #if defined(_WIN32)
     if (g_wo || g_audio_open_failed) return; // XXIV-A: never retry after fail
