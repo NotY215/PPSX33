@@ -1,3 +1,4 @@
+// XXIV-A: audio open fail-once
 // XXIII-W save-data surface
 // XXIII-C audio path
 // XXII-K: save lifecycle surface (create/list/load)
@@ -19,6 +20,7 @@
 
 static int g_audio_inited = 0;
 #if defined(_WIN32)
+static int g_audio_open_failed = 0; // XXIV-A: fail once
 static HWAVEOUT g_wo = nullptr;
 static WAVEHDR g_wh[4]{};
 static int16_t g_pcm[4][2048]; // 4 buffers x 1024 stereo frames
@@ -81,7 +83,7 @@ static void save_ensure_root() {
 
 static void audio_host_open() {
 #if defined(_WIN32)
-    if (g_wo) return;
+    if (g_wo || g_audio_open_failed) return; // XXIV-A: never retry after fail
     WAVEFORMATEX wfx{};
     wfx.wFormatTag = WAVE_FORMAT_PCM;
     wfx.nChannels = 2;
@@ -90,7 +92,14 @@ static void audio_host_open() {
     wfx.nBlockAlign = 4;
     wfx.nAvgBytesPerSec = 48000 * 4;
     if (waveOutOpen(&g_wo, WAVE_MAPPER, &wfx, 0, 0, CALLBACK_NULL) != MMSYSERR_NOERROR) {
-        g_wo = nullptr; ps3rt_log("[audio] G/K waveOutOpen failed — silent HLE\n"); return;
+        g_wo = nullptr;
+        g_audio_open_failed = 1;
+        static int once = 0;
+        if (!once) {
+            ps3rt_log("[audio] XXIV-A waveOutOpen failed — silent HLE (no further retries)\n");
+            once = 1;
+        }
+        return;
     }
     for (int i = 0; i < 4; ++i) {
         std::memset(g_pcm[i], 0, sizeof(g_pcm[i]));
@@ -130,7 +139,7 @@ static void audio_queue_s16(const int16_t* samples, size_t nframes) {
 }
 
 PS3RT_API void ps3rt_audio_tick(void) {
-    audio_host_open(); // XXIII-C
+    audio_host_open(); // XXIV-A once
 
 #if defined(_WIN32)
     if (!g_wo || !g_audio_inited) return;

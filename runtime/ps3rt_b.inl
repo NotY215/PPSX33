@@ -1,3 +1,4 @@
+// XXIV-B GCM put threshold
 // XXIII-X frame assist
 // XXIII-W save/sysutil depth surface
 // XXIII-S worker assist via existing SPURS/SPU phase in progress_hw
@@ -805,17 +806,18 @@ PS3RT_API void ps3rt_progress_hw(void) {
         if ((s_n & 0x0F) == 0) { // XXIII-M deep: assist every 16 ticks
             uint32_t put = g_gcm_control ? rd_be32_guest(g_gcm_control + 0) : 0;
             uint32_t get = g_gcm_control ? rd_be32_guest(g_gcm_control + 4) : 0;
-            if (put == 0) {
-                gcm_inject_clear_draw(); // XXIII-X keep inject until guest PUT lives
+            // XXIV-B: only treat as real guest stream when put moves past minimal residual
+            if (put <= 0x20 && get <= 0x20) {
+                gcm_inject_clear_draw();
             } else {
                 static int s_guest = 0;
-                if (s_guest < 8) {
-                    ps3rt_log("[gcm] XXIII-M deep guest put=0x%x get=0x%x\n", put, get);
+                if (s_guest < 12) {
+                    ps3rt_log("[gcm] XXIV-B guest put=0x%x get=0x%x\n", put, get);
                     ++s_guest;
                 }
             }
             if (g_mem) {
-                ps3rt_rsx_set_put(put);
+                if (put > 0x20) ps3rt_rsx_set_put(put);
                 ps3rt_rsx_flush(g_mem);
             }
             frame_pace_wait();

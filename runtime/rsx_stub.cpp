@@ -1,3 +1,4 @@
+// XXIV-A/B/C companion in rsx: FIFO bound + HLSL prove
 // XXIII-X/Y/Z: diagnostic frame + HLSL path + pitch align
 // XXII-A: RSX present/color-buffer fidelity · // A+I+L+T+V+Y: + fullscreen blit of uploaded guest texture to backbuffer
 #define PS3RT_BUILD_DLL 1
@@ -35,6 +36,7 @@ struct RsxState {
     int depth_clears = 0;
     int stencil_clears = 0;
     int methods_seen = 0;
+    int methods_this_frame = 0; // XXIV-B
     int known_methods = 0;
     int unknown_methods = 0;
     int shader_binds = 0;
@@ -133,7 +135,7 @@ static bool rsx_ensure_hlsl() {
     if (!d3dcomp) d3dcomp = LoadLibraryA("d3dcompiler_43.dll");
     if (!d3dcomp) {
         static int s = 0;
-        if (s < 3) { ps3rt_log("[rsx] XXIII-T D3DCompile DLL missing — CPU blit only\n"); ++s; }
+        if (s < 1) { ps3rt_log("[rsx] XXIV-C D3DCompile DLL missing — CPU blit only\n"); ++s; }
         return false;
     }
     typedef HRESULT (WINAPI *PFN_D3DCompile)(LPCVOID, SIZE_T, LPCSTR, const void*, const void*,
@@ -144,13 +146,15 @@ static bool rsx_ensure_hlsl() {
     HRESULT hr = pCompile(kBlitHLSL, strlen(kBlitHLSL), "blit", nullptr, nullptr,
         "VSMain", "vs_4_0", 0, 0, &vsb, &err);
     if (FAILED(hr) || !vsb) {
-        if (err) { ps3rt_log("[rsx] XXIII-T VS compile fail\n"); err->Release(); }
+        ps3rt_log("[rsx] XXIV-C VS compile fail\n");
+        if (err) err->Release();
         return false;
     }
     hr = pCompile(kBlitHLSL, strlen(kBlitHLSL), "blit", nullptr, nullptr,
         "PSMain", "ps_4_0", 0, 0, &psb, &err);
     if (FAILED(hr) || !psb) {
-        if (err) { ps3rt_log("[rsx] XXIII-T PS compile fail\n"); err->Release(); }
+        ps3rt_log("[rsx] XXIV-C PS compile fail\n");
+        if (err) err->Release();
         vsb->Release();
         return false;
     }
@@ -174,7 +178,7 @@ static bool rsx_ensure_hlsl() {
     samp.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
     samp.AddressU = samp.AddressV = samp.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
     g_dev->CreateSamplerState(&samp, &g_samp);
-    ps3rt_log("[rsx] XXIII-T HLSL blit VS/PS ready\n");
+    ps3rt_log("[rsx] XXIV-C HLSL blit VS/PS ready\n");
     return g_vs_blit && g_ps_blit;
 }
 
@@ -598,8 +602,8 @@ static void rsx_host_present_clear() {
                 if (g_rsx.tex_offset || g_rsx.color_offset) {
                     rsx_upload_guest_tex(m);
                     rsx_draw_textured_quad();
-                } else if ((g_rsx.flip_count & 7) == 0) {
-                    // XXIII-X diagnostic gradient into a small CPU buffer uploaded as tex
+                } else {
+                    // XXIV-C diagnostic gradient every present when no guest tex into a small CPU buffer uploaded as tex
                     static std::vector<uint8_t> diag;
                     uint32_t dw = 256, dh = 144;
                     diag.resize(dw * dh * 4);
@@ -620,7 +624,7 @@ static void rsx_host_present_clear() {
                         rsx_upload_guest_tex(m);
                         rsx_draw_textured_quad();
                         static int xf = 0;
-                        if (xf < 8) { ps3rt_log("[rsx] XXIII-X diagnostic frame flip=%llu\n", (unsigned long long)g_rsx.flip_count); ++xf; }
+                        if (xf < 16) { ps3rt_log("[rsx] XXIV-C diagnostic frame flip=%llu hlsl=%d\n", (unsigned long long)g_rsx.flip_count, g_hlsl_ready && g_vs_blit ? 1 : 0); ++xf; }
                     }
                 }
             }
@@ -667,6 +671,7 @@ static void rsx_host_present_clear() {
           } }
         bool need_present = (g_rsx.draws_this_frame > 0) || ((s_present_skip++ & 7) == 0);
         g_rsx.draws_this_frame = 0;
+        g_rsx.methods_this_frame = 0; // XXIV-B
         if (need_present && g_swap)
             g_swap->Present(0, 0);
         // XX-N: GDI status overlay (title / boot progress) until real draws dominate
@@ -708,8 +713,13 @@ static void rsx_process_fifo(uint8_t* mem) {
     if (!mem || !g_rsx.fifo_addr || !g_rsx.fifo_size) return;
     uint32_t put = g_rsx.put % g_rsx.fifo_size;
     uint32_t get = g_rsx.get % g_rsx.fifo_size;
+    // XXIV-B: no drain when empty or only tiny residual (e.g. put=get=0x20)
+    if (put == get) return;
+    uint32_t delta = (put >= get) ? (put - get) : (g_rsx.fifo_size - get + put);
+    if (delta < 8) return; // less than one method word pair
     int steps = 0;
-    while (get != put && steps < 131072) { // XXIII-M deep drain
+    const int kMaxSteps = (int)((delta / 8) + 64);
+    while (get != put && steps < kMaxSteps && steps < 8192) { // XXIV-B bounded by real delta
         uint64_t fa = g_rsx.fifo_addr + get;
         if (fa + 8 > 512ull * 1024 * 1024) break;
         uint32_t hdr = (mem[fa] << 24) | (mem[fa+1] << 16) | (mem[fa+2] << 8) | mem[fa+3];
@@ -720,13 +730,13 @@ static void rsx_process_fifo(uint8_t* mem) {
             // JUMP_REL or similar — treat arg as new get offset
             uint32_t target = arg % (g_rsx.fifo_size ? g_rsx.fifo_size : 1);
             get = target;
-            ++g_rsx.methods_seen;
+            ++g_rsx.methods_seen; ++g_rsx.methods_this_frame; ++g_rsx.methods_this_frame;
             ++steps;
             static int jn = 0;
             if (jn < 8) { ps3rt_log("[rsx] XXIII-M fifo jump -> 0x%x\n", target); ++jn; }
             continue;
         }
-        ++g_rsx.methods_seen;
+        ++g_rsx.methods_seen; ++g_rsx.methods_this_frame;
         ++g_rsx.known_methods;
         if (method == 0x01D8 || method == 0x1D8) {
             g_rsx.clear_color = arg & 0xFFFFFF;
@@ -874,6 +884,7 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
     g_rsx.fifo_size = fifo_size ? fifo_size : 0x100000;
     g_rsx.put = g_rsx.get = 0;
     if (!g_hwnd) rsx_host_init(1280, 720);
+    rsx_ensure_hlsl(); // XXIV-C prove HLSL at init
     ps3rt_log("[rsx] init fifo=0x%llx size=0x%x backend=%d\n", (unsigned long long)fifo_addr, g_rsx.fifo_size, g_backend);
 }
 
@@ -900,11 +911,11 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] XXIII-X/Y/Z flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] XXIV flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,
-            g_rsx.methods_seen, g_rsx.known_methods, g_rsx.unknown_methods,
+            g_rsx.methods_this_frame, g_rsx.known_methods, g_rsx.unknown_methods,
             g_rsx.width, g_rsx.height);
     }
 }
