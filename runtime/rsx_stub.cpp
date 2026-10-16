@@ -45,12 +45,6 @@ struct RsxState {
     uint8_t clear_stencil = 0;
     uint32_t prim_color = 0x4060A0;
     int draws_this_frame = 0;
-    // XXIII-N: vertex attribute surface (HLE tracking only)
-    uint32_t vertex_a_count = 0;
-    uint32_t vertex_a_offset[16] = {};
-    uint32_t vertex_a_stride[16] = {};
-    uint32_t index_offset = 0;
-    uint32_t index_count = 0;
     // A: surface
     int color_blits = 0;
     uint64_t color_offset = 0;
@@ -71,6 +65,14 @@ struct RsxState {
     uint32_t tex_height = 0;
     uint32_t tex_pitch = 0;
     int tex_units_bound = 0;
+    // XXIII-O: program bind surface
+    uint32_t vp_offset = 0;   // vertex program
+    uint32_t fp_offset = 0;   // fragment program
+    uint32_t fp_control = 0;
+    // XXIII-P: texture format surface
+    uint32_t tex_mipmap = 0;
+    uint32_t tex_depth = 1;
+    uint32_t tex_swizzle = 0;
     uint32_t viewport_w = 1280;
     uint32_t viewport_h = 720;
     uint32_t scissor_x = 0, scissor_y = 0, scissor_w = 1280, scissor_h = 720;
@@ -103,40 +105,35 @@ static void rsx_release_guest_tex() {
 
 // V: upload A8R8G8B8 (or raw 32bpp) region from guest RAM into D3D texture
 static void rsx_upload_guest_tex(uint8_t* mem) {
-    if (!g_dev || !g_ctx11 || !mem) return;
-    uint32_t w = g_rsx.tex_width ? g_rsx.tex_width : 256;
-    uint32_t h = g_rsx.tex_height ? g_rsx.tex_height : 256;
-    if (w > 2048) w = 2048;
-    if (h > 2048) h = 2048;
-    uint64_t off = g_rsx.tex_offset;
-    if (!off && g_rsx.color_valid && g_rsx.color_offset) off = g_rsx.color_offset;
-    else if (!off && g_rsx.color_offset) off = g_rsx.color_offset;
+    // XXIII-P: pitch/format-aware guest → D3D11 upload (32bpp paths + expand 16bpp)
+    if (!mem || !g_dev || !g_ctx11) return;
+    uint32_t w = g_rsx.tex_width ? g_rsx.tex_width : (g_rsx.width ? g_rsx.width : 256);
+    uint32_t h = g_rsx.tex_height ? g_rsx.tex_height : (g_rsx.height ? g_rsx.height : 256);
+    if (w > 4096) w = 4096;
+    if (h > 4096) h = 4096;
+    uint64_t off = g_rsx.tex_offset ? g_rsx.tex_offset : g_rsx.color_offset;
     if (!off) return;
-    // guest RSX offsets often in local memory window — clamp into 512MB
-    if (off >= 512ull * 1024 * 1024) return;
     uint32_t pitch = g_rsx.tex_pitch ? g_rsx.tex_pitch : (w * 4);
-    if (pitch < w * 4) pitch = w * 4;
-    if (off + (uint64_t)pitch * h > 512ull * 1024 * 1024) {
-        h = (uint32_t)((512ull * 1024 * 1024 - off) / pitch);
-        if (h < 1) return;
-    }
+    // format nibble heuristics (RSX texture format field is complex; use size hints)
+    uint32_t fmt = g_rsx.tex_format;
+    int bpp = 4;
+    if ((fmt & 0x9F) == 0x82 || (fmt & 0xFF) == 0x1A) bpp = 2; // 16bpp-ish
+    if ((fmt & 0x9F) == 0x81) bpp = 1;
+    if (pitch < w * (uint32_t)bpp) pitch = w * (uint32_t)bpp;
+    uint64_t need = (uint64_t)pitch * h;
+    if (off >= 512ull * 1024 * 1024 || off + need > 512ull * 1024 * 1024) return;
+
     if (!g_guest_tex || g_guest_tex_w != w || g_guest_tex_h != h) {
-        rsx_release_guest_tex();
+        if (g_guest_tex) { g_guest_tex->Release(); g_guest_tex = nullptr; }
         D3D11_TEXTURE2D_DESC td{};
         td.Width = w; td.Height = h; td.MipLevels = 1; td.ArraySize = 1;
-        td.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        td.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         td.SampleDesc.Count = 1;
         td.Usage = D3D11_USAGE_DYNAMIC;
         td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
         td.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        if (FAILED(g_dev->CreateTexture2D(&td, nullptr, &g_guest_tex))) return;
-        D3D11_SHADER_RESOURCE_VIEW_DESC sd{};
-        sd.Format = td.Format;
-        sd.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-        sd.Texture2D.MipLevels = 1;
-        g_dev->CreateShaderResourceView(g_guest_tex, &sd, &g_guest_srv);
+        if (FAILED(g_dev->CreateTexture2D(&td, nullptr, &g_guest_tex)) || !g_guest_tex) return;
         g_guest_tex_w = w; g_guest_tex_h = h;
-        static int sc=0; if(sc<8){ps3rt_log("[rsx] V host tex %ux%u created\n", w, h);++sc;}
     }
     D3D11_MAPPED_SUBRESOURCE map{};
     if (FAILED(g_ctx11->Map(g_guest_tex, 0, D3D11_MAP_WRITE_DISCARD, 0, &map))) return;
@@ -144,15 +141,37 @@ static void rsx_upload_guest_tex(uint8_t* mem) {
     const uint8_t* src = mem + off;
     for (uint32_t y = 0; y < h; ++y) {
         const uint8_t* row = src + (uint64_t)y * pitch;
-        uint8_t* drow = dst + y * map.RowPitch;
-        // copy min(w*4, pitch) as BGRA->RGBA swap optional — raw copy for HLE
-        uint32_t nbytes = w * 4;
-        if (nbytes > pitch) nbytes = pitch;
-        std::memcpy(drow, row, nbytes);
+        uint8_t* drow = dst + (uint64_t)y * map.RowPitch;
+        if (bpp == 4) {
+            uint32_t bytes = w * 4;
+            if (bytes > map.RowPitch) bytes = map.RowPitch;
+            if (bytes > pitch) bytes = pitch;
+            std::memcpy(drow, row, bytes);
+        } else if (bpp == 2) {
+            for (uint32_t x = 0; x < w; ++x) {
+                uint16_t p = (uint16_t)row[x * 2] | ((uint16_t)row[x * 2 + 1] << 8);
+                // A1R5G5B5-ish expand
+                uint8_t a = (p & 0x8000) ? 255 : 0;
+                uint8_t r = (uint8_t)(((p >> 10) & 31) * 255 / 31);
+                uint8_t g = (uint8_t)(((p >> 5) & 31) * 255 / 31);
+                uint8_t b = (uint8_t)((p & 31) * 255 / 31);
+                drow[x * 4 + 0] = b; drow[x * 4 + 1] = g; drow[x * 4 + 2] = r; drow[x * 4 + 3] = a;
+            }
+        } else {
+            for (uint32_t x = 0; x < w; ++x) {
+                uint8_t v = row[x];
+                drow[x * 4 + 0] = v; drow[x * 4 + 1] = v; drow[x * 4 + 2] = v; drow[x * 4 + 3] = 255;
+            }
+        }
     }
     g_ctx11->Unmap(g_guest_tex, 0);
     g_guest_tex_src = off;
-    static int su=0; if(su<12){ps3rt_log("[rsx] XXII-A upload off=0x%llx %ux%u\n", (unsigned long long)off, w, h);++su;}
+    static int su = 0;
+    if (su < 16) {
+        ps3rt_log("[rsx] XXIII-P upload off=0x%llx %ux%u pitch=%u fmt=0x%x bpp=%d\n",
+            (unsigned long long)off, w, h, pitch, fmt, bpp);
+        ++su;
+    }
 }
 
 // Y: nearest-neighbor scale guest tex onto backbuffer (CPU path, no PS required)
@@ -526,12 +545,11 @@ static HWND g_hwnd = nullptr;
 #endif
 
 static void rsx_process_fifo(uint8_t* mem) {
-    // XXIII-M: process guest command stream between GET and PUT
     if (!mem || !g_rsx.fifo_addr || !g_rsx.fifo_size) return;
     uint32_t put = g_rsx.put % g_rsx.fifo_size;
     uint32_t get = g_rsx.get % g_rsx.fifo_size;
     int steps = 0;
-    while (get != put && steps < 65536) { // XXIII-M: larger FIFO drain
+    while (get != put && steps < 16384) {
         uint64_t fa = g_rsx.fifo_addr + get;
         if (fa + 8 > 512ull * 1024 * 1024) break;
         uint32_t hdr = (mem[fa] << 24) | (mem[fa+1] << 16) | (mem[fa+2] << 8) | mem[fa+3];
@@ -589,15 +607,23 @@ static void rsx_process_fifo(uint8_t* mem) {
                  method == 0x09B0 || method == 0x09B4 || method == 0x09B8) {
             ++g_rsx.shader_binds;
             if (method == 0x1D60 || method == 0x09B0) {
-                g_rsx.shader_prog = arg; ++g_rsx.vertex_binds;
-                static int sv=0; if(sv<10){ps3rt_log("[rsx] I vertex/shader prog=0x%x\n", arg);++sv;}
+                g_rsx.shader_prog = arg;
+                g_rsx.vp_offset = arg;
+                ++g_rsx.vertex_binds;
+                static int sv=0; if(sv<10){ps3rt_log("[rsx] XXIII-O vertex/shader prog=0x%x\n", arg);++sv;}
             }
-            if (method == 0x1D64 || method == 0x09B4) ++g_rsx.fragment_binds;
+            if (method == 0x1D64 || method == 0x09B4) {
+                ++g_rsx.fragment_binds;
+                g_rsx.fp_offset = arg;
+                g_rsx.fp_control = arg;
+                static int sf=0; if(sf<10){ps3rt_log("[rsx] XXIII-O fragment prog=0x%x\n", arg);++sf;}
+            }
             if (method == 0x1D6C) g_rsx.shader_const_count = arg;
         }
         else if (method == 0x1680 || method == 0x1684 || method == 0x1688 || method == 0x1690) {
             g_rsx.vertex_array_mask |= 1u << ((method >> 2) & 7);
             ++g_rsx.vertex_binds;
+            if (method == 0x1688 || method == 0x1690) g_rsx.vp_offset = arg;
         }
         else if (method == 0x1A00 || method == 0x1A04 || method == 0x1A0C ||
                  method == 0x1840 || method == 0x1844 || method == 0x1A08 ||
@@ -640,27 +666,6 @@ static void rsx_process_fifo(uint8_t* mem) {
         else if (method == 0x1714 || method == 0x1718 || method == 0x1728) {
             /* surface clip */ ;
         }
-        // XXIII-N: vertex array / index (track only — not full decode)
-        else if (method >= 0x1680 && method <= 0x16BF) {
-            unsigned slot = (method - 0x1680) / 4;
-            if (slot < 16) {
-                if (((method - 0x1680) & 3) == 0) g_rsx.vertex_a_offset[slot] = arg;
-                if (((method - 0x1680) & 3) == 1) g_rsx.vertex_a_stride[slot] = arg & 0xFFFF;
-                g_rsx.vertex_a_count = slot + 1;
-            }
-        }
-        else if (method == 0x1710 || method == 0x1738) {
-            g_rsx.index_offset = arg;
-        }
-        else if (method == 0x1804 || method == 0x1828) {
-            g_rsx.index_count = arg;
-            static int vn = 0;
-            if (vn < 12) {
-                ps3rt_log("[rsx] XXIII-N draw-ish index_count=%u attrs=%u\n",
-                    g_rsx.index_count, g_rsx.vertex_a_count);
-                ++vn;
-            }
-        }
         else { ++g_rsx.unknown_methods; --g_rsx.known_methods; }
         get = (get + 8) % g_rsx.fifo_size;
         ++steps;
@@ -683,10 +688,6 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
     ps3rt_log("[rsx] init fifo=0x%llx size=0x%x backend=%d\n", (unsigned long long)fifo_addr, g_rsx.fifo_size, g_backend);
 }
 
-PS3RT_API void ps3rt_rsx_set_get(uint32_t get) {
-    std::lock_guard<std::mutex> lk(g_rsx_mu);
-    g_rsx.get = get;
-}
 PS3RT_API void ps3rt_rsx_set_put(uint32_t put) {
     std::lock_guard<std::mutex> lk(g_rsx_mu);
     g_rsx.put = put;
@@ -710,7 +711,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] XXIII-M/N flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] XXIII-O/P flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,

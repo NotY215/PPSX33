@@ -164,6 +164,24 @@ static const NidEntry kNidTable[] = {
     { 0x45EC29DB, "cellSpursInitialize", "cellSpurs", 0 },
     { 0xCA64789A, "cellSpursFinalize", "cellSpurs", 0 },
     { 0xACFC2024, "cellSpursAttachLv2EventQueue", "cellSpurs", 0 },
+
+    // XXIII-Q: additional GCM / RESC / sysutil NIDs commonly hit during boot draws
+    { 0xFE47E4A0, "cellGcmSys", "cellGcmSetFragmentProgramOffset", 1 },
+    { 0xA91B3B70, "cellGcmSys", "cellGcmSetVertexProgram", 1 },
+    { 0x21CEE584, "cellGcmSys", "cellGcmSetFragmentProgram", 1 },
+    { 0x51C9D62B, "cellGcmSys", "cellGcmSetVertexProgramLoad", 1 },
+    { 0x876153B8, "cellGcmSys", "cellGcmSetFragmentProgramLoad", 1 },
+    { 0x0C4524F2, "cellGcmSys", "cellGcmSetVertexDataArrayFormat", 1 },
+    { 0x8BDE5EBF, "cellGcmSys", "cellGcmSetVertexDataArrayOffset", 1 },
+    { 0xD9A0A879, "cellGcmSys", "cellGcmSetTexture", 1 },
+    { 0x7CE45E09, "cellGcmSys", "cellGcmSetTextureAddress", 1 },
+    { 0x650E2403, "cellGcmSys", "cellGcmSetTextureControl", 1 },
+    { 0x3746F642, "cellGcmSys", "cellGcmSetTextureFilter", 1 },
+    { 0xA7E03D81, "cellGcmSys", "cellGcmSetDrawInlineArray", 1 },
+    { 0x4A62F756, "cellGcmSys", "cellGcmSetDrawIndexArray", 1 },
+    { 0xC47D0812, "cellSysutil", "cellSysutilRegisterCallback", 3 },
+    { 0x9D98AFA0, "cellSysutil", "cellSysutilCheckCallback", 3 },
+    { 0x189A74DA, "cellSysutil", "cellSysutilUnregisterCallback", 3 },
 };
 
 static constexpr int kNidTableCount = (int)(sizeof(kNidTable) / sizeof(kNidTable[0]));

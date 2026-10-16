@@ -1,4 +1,4 @@
-// XXIII-M GCM FIFO assist + XXIII-L coverage path uses assets
+// XXIII-Q import/HLE coverage for init that issues draws
 // XXIII-K timing model
 // XXII-D marker
 #include <vector>
@@ -734,7 +734,12 @@ PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
             (e && e->module) ? e->module : "?");
         ++s;
     }
-    return prx_dispatch(c, maybe_nid, kind);
+    int rc = prx_dispatch(c, maybe_nid, kind);
+    // XXIII-Q: if graphics-ish NID pattern, ensure GCM surface exists
+    if ((maybe_nid & 0xFF000000u) == 0x48000000u || kind == 1) {
+        if (!g_gcm_inited) gcm_ensure_state();
+    }
+    return rc;
 }
 
 // R+X: coarse guest timing + host frame pacing
@@ -802,14 +807,12 @@ PS3RT_API void ps3rt_progress_hw(void) {
             } else {
                 static int s_guest = 0;
                 if (s_guest < 8) {
-                    ps3rt_log("[gcm] XXIII-M/K guest put=0x%x get=0x%x\n", put, get);
+                    ps3rt_log("[gcm] XXIII-K guest put=0x%x get=0x%x\n", put, get);
                     ++s_guest;
                 }
             }
             if (g_mem) {
                 ps3rt_rsx_set_put(put);
-                // XXIII-M: also seed GET if still zero so drain can start
-                ps3rt_rsx_set_get(get);
                 ps3rt_rsx_flush(g_mem);
             }
             frame_pace_wait();
