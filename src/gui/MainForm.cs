@@ -214,17 +214,14 @@ public sealed partial class MainForm : Form
         _roadmap.Text =
             "PPSX33 - Roadmap\r\n" +
             "========================================\r\n\r\n" +
-            "PHASE 1 — I–XXII  (see roadmap/ folder)\r\n" +
-            "  I–XIX     Core pipeline (TESTING)\r\n" +
-            "  XX-A..O   Packaging + runtime base (DONE)\r\n" +
-            "  XXI A–Z   Lettered work (DONE)\r\n" +
-            "  XXII      Pipeline correctness (DONE)\r\n\r\n" +
+            "PHASE 1 — I–XXII (see roadmap/)\r\n" +
+            "  XXII  Pipeline correctness (DONE)\r\n\r\n" +
             "PHASE XXIII — EXECUTION REALITY (ACTIVE)\r\n" +
-            "  XXIII-A  Null-PC / control-flow recovery\r\n" +
-            "  XXIII-B  RSX present path (color/tex every flip)\r\n" +
-            "  XXIII-C  Audio host keep-alive\r\n" +
-            "  See roadmap/XXIII.md for full P0/P1 work list.\r\n\r\n" +
-            "Workflow: Load decrypted ELF → Decompile → Map → Build →\r\n" +
+            "  A–Q   Surface work (in tree; test pending)\r\n" +
+            "  R–T   Control-flow, workers, HLSL blit path\r\n" +
+            "  U–W   DXT note, host draw, save/sysutil\r\n" +
+            "  X+    Golden tests / full shader ISA (planned)\r\n\r\n" +
+            "Workflow: Load ELF → Decompile → Map → Build →\r\n" +
             "Copy to USRDIR → Run from USRDIR.\r\n";
 
         _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(110, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab;

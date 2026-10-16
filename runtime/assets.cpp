@@ -76,7 +76,7 @@ PS3RT_API void ps3rt_set_game_root(const char* path) {
 }
 
 // XXIII-I: cellFs / PSARC path fidelity
-static bool map_guest_path(const char* guest, char* host, size_t host_len) {
+static bool map_guest(const char* guest, char* host, size_t host_len) {
     ensure_game_root();
     if (!guest || !host || host_len < 8) return false;
     while (*guest == ' ') ++guest;
@@ -632,7 +632,7 @@ static bool path_looks_self(const char* p) {
 }
 static bool file_is_self_header(const char* host) {
     FILE* f = std::fopen(host, "rb");
-    if (!f) { fs_log_miss(guest_path, host); } if (!f) return false;
+    if (!f) { fs_log_miss("?", host); return false; }
     uint8_t h[4] = {};
     size_t n = std::fread(h, 1, 4, f);
     std::fclose(f);
@@ -657,7 +657,7 @@ static int fs_open(PPUContext* c) {
         guest[n] = 0;
     }
     char host[1024] = {};
-    map_guest_path(guest, host, sizeof(host));
+    map_guest(guest, host, sizeof(host));
 
     // N: reject encrypted SELF (not supported in this toolkit)
     if (path_looks_self(guest) || (host[0] && file_is_self_header(host))) {
@@ -892,7 +892,7 @@ static int fs_opendir(PPUContext* c) {
         guest[511] = 0;
     }
     char host[600] = {};
-    if (!map_guest_path(guest, host, sizeof(host))) {
+    if (!map_guest(guest, host, sizeof(host))) {
         ensure_game_root();
         std::snprintf(host, sizeof(host), "%s\\%s", g_game_root, guest);
     }

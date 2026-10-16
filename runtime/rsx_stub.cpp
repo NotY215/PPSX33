@@ -10,6 +10,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <d3d11.h>
+#include <d3dcompiler.h>
 #include <wincodec.h>
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -96,6 +97,106 @@ static ID3D11ShaderResourceView* g_guest_srv = nullptr;
 static uint32_t g_guest_tex_w = 0, g_guest_tex_h = 0;
 static uint64_t g_guest_tex_src = 0;
 
+// XXIII-T: host HLSL blit pipeline (compiled at runtime via D3DCompile)
+static ID3D11VertexShader* g_vs_blit = nullptr;
+static ID3D11PixelShader* g_ps_blit = nullptr;
+static ID3D11InputLayout* g_layout_blit = nullptr;
+static ID3D11Buffer* g_vb_quad = nullptr;
+static ID3D11SamplerState* g_samp = nullptr;
+static ID3D11ShaderResourceView* g_srv_tex = nullptr;
+static int g_hlsl_ready = 0;
+
+static const char* kBlitHLSL = R"(
+struct VSIn { float2 pos : POSITION; float2 uv : TEXCOORD0; };
+struct VSOut { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
+Texture2D tex0 : register(t0);
+SamplerState samp0 : register(s0);
+VSOut VSMain(VSIn i) {
+  VSOut o;
+  o.pos = float4(i.pos, 0, 1);
+  o.uv = i.uv;
+  return o;
+}
+float4 PSMain(VSOut i) : SV_Target {
+  return tex0.Sample(samp0, i.uv);
+}
+)";
+
+static bool rsx_ensure_hlsl() {
+    if (g_hlsl_ready) return g_vs_blit && g_ps_blit;
+    g_hlsl_ready = 1;
+    if (!g_dev) return false;
+    HMODULE d3dcomp = LoadLibraryA("d3dcompiler_47.dll");
+    if (!d3dcomp) d3dcomp = LoadLibraryA("d3dcompiler_43.dll");
+    if (!d3dcomp) {
+        static int s = 0;
+        if (s < 3) { ps3rt_log("[rsx] XXIII-T D3DCompile DLL missing — CPU blit only\n"); ++s; }
+        return false;
+    }
+    typedef HRESULT (WINAPI *PFN_D3DCompile)(LPCVOID, SIZE_T, LPCSTR, const void*, const void*,
+        LPCSTR, LPCSTR, UINT, UINT, ID3DBlob**, ID3DBlob**);
+    auto pCompile = (PFN_D3DCompile)GetProcAddress(d3dcomp, "D3DCompile");
+    if (!pCompile) return false;
+    ID3DBlob *vsb = nullptr, *psb = nullptr, *err = nullptr;
+    HRESULT hr = pCompile(kBlitHLSL, strlen(kBlitHLSL), "blit", nullptr, nullptr,
+        "VSMain", "vs_4_0", 0, 0, &vsb, &err);
+    if (FAILED(hr) || !vsb) {
+        if (err) { ps3rt_log("[rsx] XXIII-T VS compile fail\n"); err->Release(); }
+        return false;
+    }
+    hr = pCompile(kBlitHLSL, strlen(kBlitHLSL), "blit", nullptr, nullptr,
+        "PSMain", "ps_4_0", 0, 0, &psb, &err);
+    if (FAILED(hr) || !psb) {
+        if (err) { ps3rt_log("[rsx] XXIII-T PS compile fail\n"); err->Release(); }
+        vsb->Release();
+        return false;
+    }
+    g_dev->CreateVertexShader(vsb->GetBufferPointer(), vsb->GetBufferSize(), nullptr, &g_vs_blit);
+    g_dev->CreatePixelShader(psb->GetBufferPointer(), psb->GetBufferSize(), nullptr, &g_ps_blit);
+    D3D11_INPUT_ELEMENT_DESC ied[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    };
+    g_dev->CreateInputLayout(ied, 2, vsb->GetBufferPointer(), vsb->GetBufferSize(), &g_layout_blit);
+    vsb->Release(); psb->Release();
+    float quad[] = {
+        -1,-1, 0,1,  1,-1, 1,1,  -1,1, 0,0,
+        -1,1, 0,0,  1,-1, 1,1,  1,1, 1,0,
+    };
+    D3D11_BUFFER_DESC bd{}; bd.ByteWidth = sizeof(quad); bd.Usage = D3D11_USAGE_IMMUTABLE;
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    D3D11_SUBRESOURCE_DATA sd{ quad, 0, 0 };
+    g_dev->CreateBuffer(&bd, &sd, &g_vb_quad);
+    D3D11_SAMPLER_DESC samp{};
+    samp.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+    samp.AddressU = samp.AddressV = samp.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    g_dev->CreateSamplerState(&samp, &g_samp);
+    ps3rt_log("[rsx] XXIII-T HLSL blit VS/PS ready\n");
+    return g_vs_blit && g_ps_blit;
+}
+
+static void rsx_draw_textured_quad() {
+    if (!rsx_ensure_hlsl() || !g_ctx11 || !g_guest_tex || !g_rtv) return;
+    if (g_srv_tex) { g_srv_tex->Release(); g_srv_tex = nullptr; }
+    g_dev->CreateShaderResourceView(g_guest_tex, nullptr, &g_srv_tex);
+    if (!g_srv_tex) return;
+    UINT stride = 16, offset = 0;
+    g_ctx11->IASetInputLayout(g_layout_blit);
+    g_ctx11->IASetVertexBuffers(0, 1, &g_vb_quad, &stride, &offset);
+    g_ctx11->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    g_ctx11->VSSetShader(g_vs_blit, nullptr, 0);
+    g_ctx11->PSSetShader(g_ps_blit, nullptr, 0);
+    g_ctx11->PSSetShaderResources(0, 1, &g_srv_tex);
+    g_ctx11->PSSetSamplers(0, 1, &g_samp);
+    g_ctx11->OMSetRenderTargets(1, &g_rtv, nullptr);
+    D3D11_VIEWPORT vp{ 0, 0, (float)g_rsx.width, (float)g_rsx.height, 0, 1 };
+    g_ctx11->RSSetViewports(1, &vp);
+    g_ctx11->Draw(6, 0);
+    static int sd = 0;
+    if (sd < 12) { ps3rt_log("[rsx] XXIII-T/V HLSL textured quad draw\n"); ++sd; }
+}
+
+
 static void rsx_release_guest_tex() {
     if (g_guest_srv) { g_guest_srv->Release(); g_guest_srv = nullptr; }
     if (g_guest_tex) { g_guest_tex->Release(); g_guest_tex = nullptr; }
@@ -117,8 +218,15 @@ static void rsx_upload_guest_tex(uint8_t* mem) {
     // format nibble heuristics (RSX texture format field is complex; use size hints)
     uint32_t fmt = g_rsx.tex_format;
     int bpp = 4;
-    if ((fmt & 0x9F) == 0x82 || (fmt & 0xFF) == 0x1A) bpp = 2; // 16bpp-ish
+    bool dxt = false;
+    if ((fmt & 0x9F) == 0x82 || (fmt & 0xFF) == 0x1A) bpp = 2;
     if ((fmt & 0x9F) == 0x81) bpp = 1;
+    // XXIII-U: DXT/BC family (common RSX compressed enums) — expand not full yet
+    if ((fmt & 0xFF) == 0x86 || (fmt & 0xFF) == 0x87 || (fmt & 0xFF) == 0x88) {
+        dxt = true; bpp = 4;
+        static int ud = 0;
+        if (ud < 8) { ps3rt_log("[rsx] XXIII-U DXT/BC fmt=0x%x — upload as linear 32bpp fallback\n", fmt); ++ud; }
+    }
     if (pitch < w * (uint32_t)bpp) pitch = w * (uint32_t)bpp;
     uint64_t need = (uint64_t)pitch * h;
     if (off >= 512ull * 1024 * 1024 || off + need > 512ull * 1024 * 1024) return;
@@ -462,7 +570,10 @@ static void rsx_host_present_clear() {
             if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset;
             if (!g_rsx.tex_width) { g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280; g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720; }
             rsx_upload_guest_tex(m);
-            rsx_blit_guest_tex_fullscreen(m);
+            rsx_upload_guest_tex(m);
+              rsx_draw_textured_quad();
+              if (!g_hlsl_ready || !g_vs_blit)
+                  rsx_blit_guest_tex_fullscreen(m);
         }
     }
     try {
@@ -503,7 +614,10 @@ static void rsx_host_present_clear() {
               if (!g_rsx.tex_offset && g_rsx.color_offset) g_rsx.tex_offset = g_rsx.color_offset;
               if (!g_rsx.tex_width) { g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280; g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720; }
               rsx_upload_guest_tex(m);
-              rsx_blit_guest_tex_fullscreen(m);
+              rsx_upload_guest_tex(m);
+              rsx_draw_textured_quad();
+              if (!g_hlsl_ready || !g_vs_blit)
+                  rsx_blit_guest_tex_fullscreen(m);
           } }
         bool need_present = (g_rsx.draws_this_frame > 0) || ((s_present_skip++ & 7) == 0);
         g_rsx.draws_this_frame = 0;
@@ -597,11 +711,21 @@ static void rsx_process_fifo(uint8_t* mem) {
                  method == 0x1808 || method == 0x1820) {
             ++g_rsx.draws;
             ++g_rsx.draws_this_frame;
+            // XXIII-V: attempt host textured draw when guest issues draw method
+            if (g_rsx.tex_offset || g_rsx.color_offset) {
+                uint8_t* m = ps3rt_memory();
+                if (m) {
+                    if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset;
+                    rsx_upload_guest_tex(m);
+                    rsx_draw_textured_quad();
+                }
+            }
             if (g_rsx.vp_offset || g_rsx.fp_offset || g_rsx.shader_prog) {
                 static int td = 0;
                 if (td < 16) {
-                    ps3rt_log("[rsx] XXIII-T draw with programs vp=0x%x fp=0x%x\n",
-                        g_rsx.vp_offset ? g_rsx.vp_offset : g_rsx.shader_prog, g_rsx.fp_offset);
+                    ps3rt_log("[rsx] XXIII-V/T draw vp=0x%x fp=0x%x tex=0x%x\n",
+                        g_rsx.vp_offset ? g_rsx.vp_offset : g_rsx.shader_prog,
+                        g_rsx.fp_offset, g_rsx.tex_offset);
                     ++td;
                 }
             }
@@ -730,7 +854,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] XXIII-M/T flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] XXIII-T/V flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,

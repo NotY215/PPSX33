@@ -114,7 +114,8 @@ public sealed partial class MainForm
             {
                 MessageBox.Show(this,
                     "Build completed successfully.\n\n" +
-                    "Run and Copy to game folder are now unlocked.\n" +
+                    "Run and Copy to game folder are now unlocked.
+Phase XXIII T–W runtime applied when present in output/src.\n" +
                     "Copy places PPSX33.exe + required files next to EBOOT.BIN\n" +
                     "(typically ...\\PS3_GAME\\USRDIR).",
                     "PPSX33 \u2014 Build complete",
