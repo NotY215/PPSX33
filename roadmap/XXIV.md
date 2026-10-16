@@ -1,23 +1,29 @@
 # Phase XXIV — Boot-to-first-pixels (ACTIVE)
 
-Driven by GOW III log `2026-10-16_14-13-47`: audio storm, FIFO put=get=0x20 with inflated methods, missing HLSL/diagnostic proof.
+Log `2026-10-16_14-31-14`: audio spam fixed; HLSL ready; diagnostic uploads at `0xf000000`; PRX still `mod=?`; no game COLOR_OFFSET.
 
 ## Subphases
 
 | ID | Status | Focus | Files |
 |----|--------|-------|-------|
-| **XXIV-A** | DONE (untested) | Audio: `waveOutOpen` fail-once; no per-tick retry/log | `runtime/audio_save.cpp` |
-| **XXIV-B** | DONE (untested) | FIFO: skip empty/tiny delta; bound drain; per-flip method count; put≤0x20 → inject only | `runtime/rsx_stub.cpp`, `runtime/ps3rt_b.inl` |
-| **XXIV-C** | DONE (untested) | HLSL compile log once; diagnostic gradient when no guest tex; ensure_hlsl at init | `runtime/rsx_stub.cpp` |
-| **XXIV-D** | PLANNED | PRX NID quality + import return-to-LR | `ps3rt_b.inl`, `nid_table.h` |
-| **XXIV-E** | PLANNED | COLOR_OFFSET blit every flip when set | `rsx_stub.cpp` |
+| **XXIV-A** | DONE | Audio fail-once | `audio_save.cpp` |
+| **XXIV-B** | DONE | FIFO bound / method counts | `rsx_stub.cpp`, `ps3rt_b.inl` |
+| **XXIV-C** | DONE | HLSL prove + diagnostic | `rsx_stub.cpp` |
+| **XXIV-D** | DONE (untested) | PRX NID filter (reject 0x48xxxxxx); better candidates; lr log | `ps3rt_b.inl` |
+| **XXIV-E** | DONE (untested) | Always Present; prefer COLOR_OFFSET; brighter diagnostic; prove-tone | `rsx_stub.cpp`, `audio_save.cpp` |
 
-## Expected log after A–C
+## Expected after D–E
 
-- At most **one** `[audio] XXIV-A waveOutOpen failed` (or one success).
-- `[rsx] XXIV-C HLSL blit VS/PS ready` **or** `XXIV-C D3DCompile DLL missing` / compile fail.
-- `[rsx] XXIV-C diagnostic frame flip=…` when guest tex still empty.
-- Flip lines `methods=` stay small unless guest `put` advances.
+- `[ps3] XXIV-D prx_import …` with fewer garbage NIDs
+- `[rsx] XXIV-E COLOR_OFFSET=…` when guest sets surface
+- Bright bar diagnostic if no color buffer
+- `[audio] XXIV prove-tone` once when waveOut opens
+- Present every flip
+
+## Still needed for game pixels / game audio
+
+- Guest PUT advancing with real methods (boot past imports)
+- cellAudio feeding PCM (prove-tone only validates host path)
 
 ## Related
 
