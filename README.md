@@ -20,16 +20,24 @@ PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction sema
 | --- | --- |
 | ELF64 big-endian loading | Implemented for loadable segments and entry/function-descriptor handling |
 | ELF analysis | Symbol and OPD discovery, heuristic PRX/NID detection, embedded SPU image detection |
-| PPU static lifting | High instruction counts on sample titles; **counts are not semantic correctness** (see XXV-C/E) |
+| PPU static lifting | Sample titles show high translate counts; **counts are not semantic proof** (Phase XXV-C/E) |
 | PPU semantics | Partial; audit-driven honesty work in Phase XXV |
 | Project workflow | GUI and CLI support project creation, lifting, and host build invocation |
-| Windows output | Build path can emit game EXE, `ps3rt.dll`, and `guest_image.bin` |
+| Windows output | Build path can emit project EXE, `ps3rt.dll`, and `guest_image.bin` |
 | Runtime correctness | Experimental; commercial-game execution is not established |
-| RSX | D3D11 present + partial FIFO; **not** faithful game rendering yet (XXV-D) |
+| Package (XX-A…G) | Game-named EXE, copy into `PS3_GAME/USRDIR`, legal/TERMS — see [ROADMAP](ROADMAP.md) |
+| GCM / cellFs (XX-H…J) | GCM HLE, PSARC TOC + zlib streaming |
+| SPU / MFC / SPURS (XX-K…M) | Interpreter + MFC/SPURS subset — not full Cell accuracy |
+| Audio / UI | cellAudio→waveOut path; host prove-tone separate from guest PCM |
+| RSX | D3D11 present + partial FIFO; faithful game rendering is **XXV-D** |
 | Phase XXII | Finished — [roadmap/XXII.md](roadmap/XXII.md) |
 | Phase XXIII | In tree — [roadmap/XXIII.md](roadmap/XXIII.md) |
 | Phase XXIV | Boot-to-first-pixels — [roadmap/XXIV.md](roadmap/XXIV.md) |
 | Phase XXV | **Active** — truthful exec & pixels — [roadmap/XXV.md](roadmap/XXV.md) |
+
+### Game analysis snapshots
+
+Static-lift counts for sample titles are historical snapshots only. They are **not** proof of correct instruction semantics, successful boot, rendering, or playability. See [PPU coverage](docs/PPU_COVERAGE.md), [game records](docs/games/README.md), and [roadmap](ROADMAP.md).
 
 ## Current runtime development status
 
@@ -49,7 +57,9 @@ The current [ROADMAP.md](ROADMAP.md) tracks tooling (**I–XIX**), packaging (**
 
 Approach (audit-aligned): capture failing PC/NID/method → define semantics → implement real behaviour → re-test. Detail and function checklist: [roadmap/XXV.md](roadmap/XXV.md).
 
-The PPU runtime is split across `runtime/ppu_runtime.h`, `runtime/ppu_runtime_core.h`, `runtime/ppu_runtime_core_a.h`, `runtime/ppu_runtime_core_b.h`, and `runtime/ppu_runtime_run.h`. Additional playability code lives in `runtime/ps3rt.cpp`, `runtime/ps3rt_b.inl`, `runtime/spu_stub.cpp`, `runtime/assets.cpp`, `runtime/audio_save.cpp`, and `runtime/rsx_stub.cpp`.
+**Phase XX-H…O (summary):** null-loop / GCM flip recovery; `cellGcmSys` HLE; PSARC zlib streaming; SPU ISA interpreter; MFC list DMA and tags; SPURS-like scheduling; cellAudio→waveOut; window icon from game folder.
+
+The PPU runtime is split across `runtime/ppu_runtime.h`, `runtime/ppu_runtime_core.h`, `runtime/ppu_runtime_core_a.h`, `runtime/ppu_runtime_core_b.h`, and `runtime/ppu_runtime_run.h`. Keep all split headers together when building or packaging the runtime. Additional playability code lives in `runtime/ps3rt.cpp`, `runtime/ps3rt_b.inl`, `runtime/spu_stub.cpp`, `runtime/assets.cpp`, `runtime/audio_save.cpp`, and `runtime/rsx_stub.cpp`.
 
 ## Project website and releases
 
@@ -58,15 +68,17 @@ The PPU runtime is split across `runtime/ppu_runtime.h`, `runtime/ppu_runtime_co
 - **Alpha 01 notes:** [releases/PPSX33-Alpha-01.md](releases/PPSX33-Alpha-01.md)
 - **Release prerequisites:** [Redist.md](Redist.md)
 
+## Alpha release: PPSX33-Alpha-01
+
+PPSX33-Alpha-01 is an experimental Windows package for early evaluation of the GUI, CLI, static ELF analysis, PPU lifting, and project build workflow. It is not a production release and does not claim full PS3 game compatibility. See [Alpha 01 release notes](releases/PPSX33-Alpha-01.md) and [Redist.md](Redist.md).
+
 ## GUI status and settings
 
-The GUI workflow is **Decrypt EBOOT / Load ELF → Decompile → Build → Run**, with **Copy to game folder** available after a successful build. The Console, Report, Roadmap, Requirements, and Controller tabs expose logs and reports.
-
-Settings are stored in `%APPDATA%/PPSX33/settings.json`.
+The GUI workflow is **Decrypt EBOOT / Load ELF → Decompile → Build → Run**, with **Copy to game folder** available after a successful build. The Console, Report, Roadmap, Requirements, and Controller tabs expose logs and reports. Settings are stored in `%APPDATA%/PPSX33/settings.json`.
 
 ## Requirements
 
-Windows development uses CMake, Ninja, a C++17-capable compiler, and the .NET 8 SDK for the GUI.
+Windows development uses CMake, Ninja, a C++17-capable compiler, and the .NET 8 SDK for the GUI. Visual Studio with **Desktop development with C++**, a Windows SDK, and .NET 8 is the documented development setup.
 
 ### Host requirements (run tools)
 
@@ -90,13 +102,41 @@ scripts\build_all.bat
 
 Output is placed in `build\dist\`.
 
-## Developer documentation
+## Run the synthetic smoke test
 
-- [Roadmap](ROADMAP.md)
-- [Phase XXV detail](roadmap/XXV.md)
+```sh
+bash scripts/run_smoke_test.sh
+```
+
+On Windows, build first, then `scripts\run_smoke_test.bat`. The smoke test checks the pipeline, not commercial-game compatibility.
+
+## Recompile workflow
+
+1. Use an ELF you are authorized to analyze.
+2. Launch `PS3Recomp.exe` → Load ELF / Decrypt EBOOT.
+3. Decompile → Build → Run / Copy to game folder.
+4. Successful compilation is not proof of runtime correctness.
+
+## Repository map
+
+```text
+Compilers-files/  Compiler discovery and local tool staging guidance
+docs/             Developer guide, key map, PPU coverage, game lift records
+runtime/          Guest memory, split PPU helpers, logging, audio/save, SPU/RSX support
+src/core/         ELF loader, PPU lifter, project/build driver
+src/cli/          Command-line frontend
+src/gui/          C# WinForms GUI
+scripts/          Build and smoke-test scripts
+roadmap/          Phase detail (XXII–XXV, …)
+```
+
+## Developer documentation and policies
+
+- [Roadmap](ROADMAP.md) · [Phase XXV](roadmap/XXV.md)
 - [Contributor workflow](CONTRIBUTING.md)
 - [Developer guide](docs/DEVELOPER_GUIDE.md)
 - [PPU coverage methodology](docs/PPU_COVERAGE.md)
+- [Release redistributables](Redist.md)
 
 ---
 
