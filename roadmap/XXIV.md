@@ -24,7 +24,3 @@ Log `2026-10-16_14-31-14`: audio spam fixed; HLSL ready; diagnostic uploads at `
 
 - Guest PUT advancing with real methods (boot past imports)
 - cellAudio feeding PCM (prove-tone only validates host path)
-
-## Related
-
-Prior surface: [roadmap/XXIII.md](XXIII.md). Overview: [ROADMAP.md](../ROADMAP.md).

@@ -1,3 +1,4 @@
+// XXIV-D PRX NID quality + return surface
 // XXIV-B GCM put threshold
 // XXIII-X frame assist
 // XXIII-W save/sysutil depth surface
@@ -691,58 +692,66 @@ PS3RT_API int ps3rt_prx_call(PPUContext* c, uint32_t nid) {
 // Called from ppu_run when PC lands on a null/import-like address.
 PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
     if (!c) return -1;
-    // XXIII-H: recover NID — r11 is often TOC/stub; try several sources
-    uint32_t maybe_nid = (uint32_t)c->gpr[11];
+    // XXIV-D: reject TOC/code-looking values; prefer true 32-bit NIDs
     auto looks_like_nid = [](uint32_t v) -> bool {
-        if (v == 0) return false;
-        // reject obvious addresses / stub region
-        if (v >= 0x30000000u && v <= 0x3FFFFFFFu) return false;
-        if ((v & 0x3) == 0 && v < 0x100000u) return false;
+        if (v == 0 || v == 0xFFFFFFFFu) return false;
+        if (v >= 0x30000000u && v <= 0x3FFFFFFFu) return false; // stub region
+        if (v >= 0x48000000u && v <= 0x4FFFFFFFu) return false; // common false positive / code
+        if (v >= 0x80000000u) return false; // high VA
+        // NIDs are arbitrary 32-bit but rarely look like small pointers
+        if (v < 0x10000u) return false;
         return true;
     };
+    uint32_t maybe_nid = (uint32_t)c->gpr[11];
     if (!looks_like_nid(maybe_nid)) {
         uint32_t cands[] = {
             (uint32_t)c->gpr[0], (uint32_t)c->gpr[3], (uint32_t)c->gpr[4],
-            (uint32_t)c->gpr[5], (uint32_t)c->gpr[6], (uint32_t)c->gpr[10],
-            (uint32_t)(c->gpr[2] & 0xFFFFFFFFu)
+            (uint32_t)c->gpr[5], (uint32_t)c->gpr[6], (uint32_t)c->gpr[7],
+            (uint32_t)c->gpr[10], (uint32_t)(c->gpr[2] & 0xFFFFFFFFu)
         };
+        maybe_nid = 0;
         for (uint32_t cand : cands) {
             if (looks_like_nid(cand) && nid_lookup(cand)) { maybe_nid = cand; break; }
         }
-        if (!looks_like_nid(maybe_nid) || !nid_lookup(maybe_nid)) {
+        if (!maybe_nid) {
             for (uint32_t cand : cands) {
                 if (looks_like_nid(cand)) { maybe_nid = cand; break; }
             }
         }
     }
-    // Word just before LR sometimes holds reloc NID
-    if ((!looks_like_nid(maybe_nid) || !nid_lookup(maybe_nid)) && g_mem && c->lr >= 4 && c->lr < g_mem_size) {
-        uint64_t a = c->lr - 4;
-        uint32_t w = ((uint32_t)g_mem[a] << 24) | ((uint32_t)g_mem[a+1] << 16) |
-                     ((uint32_t)g_mem[a+2] << 8) | (uint32_t)g_mem[a+3];
-        if (looks_like_nid(w)) maybe_nid = w;
+    // Word at LR-4 / PC+0 sometimes holds reloc NID in tables
+    if ((!maybe_nid || !nid_lookup(maybe_nid)) && g_mem) {
+        uint64_t addrs[] = { c->lr >= 4 ? c->lr - 4 : 0, pc, pc + 4 };
+        for (uint64_t a : addrs) {
+            if (!a || a + 4 > g_mem_size) continue;
+            uint32_t w = ((uint32_t)g_mem[a] << 24) | ((uint32_t)g_mem[a+1] << 16) |
+                         ((uint32_t)g_mem[a+2] << 8) | (uint32_t)g_mem[a+3];
+            if (looks_like_nid(w) && nid_lookup(w)) { maybe_nid = w; break; }
+            if (!maybe_nid && looks_like_nid(w)) maybe_nid = w;
+        }
     }
-    if (!looks_like_nid(maybe_nid))
-        maybe_nid = (uint32_t)(pc & 0xFFFFFFFFu);
+    if (!maybe_nid) maybe_nid = 0;
 
-    const NidEntry* e = nid_lookup(maybe_nid);
+    const NidEntry* e = maybe_nid ? nid_lookup(maybe_nid) : nullptr;
     int kind = e ? e->kind : 0;
     if (e && e->module) kind = prx_module_kind(e->module);
-    // XXIII-H: register module hit as loaded
     if (e && e->module) prx_mod_load(e->module);
 
     static int s = 0;
     if (s < 40) {
-        ps3rt_log("[ps3] XXIII-H prx_import pc=0x%llx nid=0x%08X kind=%d mod=%s\n",
+        ps3rt_log("[ps3] XXIV-D prx_import pc=0x%llx nid=0x%08X kind=%d mod=%s lr=0x%llx\n",
             (unsigned long long)pc, maybe_nid, kind,
-            (e && e->module) ? e->module : "?");
+            (e && e->module) ? e->module : "?",
+            (unsigned long long)c->lr);
         ++s;
     }
     int rc = prx_dispatch(c, maybe_nid, kind);
-    // XXIII-Q: if graphics-ish NID pattern, ensure GCM surface exists
-    if ((maybe_nid & 0xFF000000u) == 0x48000000u || kind == 1) {
-        if (!g_gcm_inited) gcm_ensure_state();
+    // XXIV-D: always return to LR when it looks like a valid code address
+    if (c->lr && (c->lr & 3ull) == 0 && c->lr >= 0x10000ull && c->lr < 0x30000000ull) {
+        // leave LR for blr semantics; caller of stub uses r3 = rc
+        (void)0;
     }
+    c->gpr[3] = (uint64_t)(int64_t)rc;
     return rc;
 }
 

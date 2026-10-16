@@ -5,6 +5,7 @@
 // XXII-F: audio ring / notify surface
 // Phase XVI audio + XVIII PS3-native save (linked with ps3rt)
 #define PS3RT_BUILD_DLL 1
+#include <cmath>
 #include "ppu_runtime.h"
 #include <cstdio>
 #include <cstring>
@@ -108,6 +109,16 @@ static void audio_host_open() {
         waveOutPrepareHeader(g_wo, &g_wh[i], sizeof(g_wh[i]));
     }
     ps3rt_log("[audio] G/K host waveOut 48kHz stereo ready (4 buffers)\n");
+    // XXIV: one short prove-tone so host path is audible even before cellAudio feeds
+    {
+        int16_t tone[48000 / 10 * 2]; // 100ms
+        for (int i = 0; i < 48000 / 10; ++i) {
+            int16_t s = (int16_t)(8000.0 * sin(2.0 * 3.14159265 * 440.0 * i / 48000.0));
+            tone[i * 2] = s; tone[i * 2 + 1] = s;
+        }
+        audio_queue_s16(tone, 48000 / 10);
+        ps3rt_log("[audio] XXIV prove-tone 440Hz 100ms queued\n");
+    }
 #endif
 }
 

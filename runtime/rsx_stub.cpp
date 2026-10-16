@@ -1,3 +1,4 @@
+// XXIV-E COLOR_OFFSET present + visible diagnostic
 // XXIV-A/B/C companion in rsx: FIFO bound + HLSL prove
 // XXIII-X/Y/Z: diagnostic frame + HLSL path + pitch align
 // XXII-A: RSX present/color-buffer fidelity · // A+I+L+T+V+Y: + fullscreen blit of uploaded guest texture to backbuffer
@@ -605,7 +606,8 @@ static void rsx_host_present_clear() {
                 } else {
                     // XXIV-C diagnostic gradient every present when no guest tex into a small CPU buffer uploaded as tex
                     static std::vector<uint8_t> diag;
-                    uint32_t dw = 256, dh = 144;
+                    uint32_t dw = g_rsx.width ? (g_rsx.width > 640 ? 640u : g_rsx.width) : 320;
+                    uint32_t dh = g_rsx.height ? (g_rsx.height > 360 ? 360u : g_rsx.height) : 180;
                     diag.resize(dw * dh * 4);
                     for (uint32_t y = 0; y < dh; ++y)
                         for (uint32_t x = 0; x < dw; ++x) {
@@ -669,7 +671,7 @@ static void rsx_host_present_clear() {
               if (!g_hlsl_ready || !g_vs_blit)
                   rsx_blit_guest_tex_fullscreen(m);
           } }
-        bool need_present = (g_rsx.draws_this_frame > 0) || ((s_present_skip++ & 7) == 0);
+        bool need_present = true; // XXIV-E: present every flip
         g_rsx.draws_this_frame = 0;
         g_rsx.methods_this_frame = 0; // XXIV-B
         if (need_present && g_swap)
@@ -759,7 +761,7 @@ static void rsx_process_fifo(uint8_t* mem) {
         else if (method == 0x0B00 || method == 0x0B04 || method == 0x0B08) {}
         else if (method == 0x0200 || method == 0x200) {
             g_rsx.color_offset = arg; g_rsx.color_valid = (arg != 0);
-            static int slog=0; if(slog<10){ps3rt_log("[rsx] A COLOR_OFFSET=0x%x\n", arg);++slog;}
+            static int slog=0; if(slog<10){ps3rt_log("[rsx] XXIV-E COLOR_OFFSET=0x%x\n", arg);++slog;}
         }
         else if (method == 0x0204 || method == 0x204) { g_rsx.color_pitch = arg; }
         else if (method == 0x0208 || method == 0x020C || method == 0x0A00 || method == 0x0A04) {}
@@ -911,7 +913,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] XXIV flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] XXIV-E flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,
