@@ -1,48 +1,31 @@
 # Phase XXIII — Execution reality (ACTIVE)
 
-GOW III still shows flips with synthetic methods only until guest GCM PUT advances. **I–N implemented in tree (not fully tested).** **O–Q** add shader/texture/HLE surface depth.
+**I–W in tree; testing of I+ still pending.**
 
 ## Subphases
 
 | ID | Status | Focus |
 |----|--------|-------|
-| **XXIII-A…H** | DONE | Null-PC, present, audio, lifter, RSX methods, SPU/MFC, LV2, PRX NID |
-| **XXIII-I** | DONE (untested) | cellFs / PSARC miss logging |
-| **XXIII-J** | DONE (untested) | SPURS job slice |
-| **XXIII-K** | DONE (untested) | Timing / GET=PUT assist |
-| **XXIII-L** | DONE (untested) | Format identity + open coverage |
-| **XXIII-M** | DONE (untested) | FIFO drain / GET commit |
-| **XXIII-N** | DONE (untested) | Vertex attr tracking |
-| **XXIII-O** | DONE (untested) | VP/FP program bind surface + logs |
-| **XXIII-P** | DONE (untested) | Texture pitch / 16→32 expand upload |
-| **XXIII-Q** | DONE (untested) | Extra GCM/sysutil NIDs; GCM ensure on import |
-| **XXIII-R** | PLANNED | PPU control-flow (wild-pc / TOC / OPD) |
-| **XXIII-S** | PLANNED | Threading: workers that fill FIFO |
-| **XXIII-T** | PLANNED | Full host shader translation (RSX→HLSL/SPIR-V) |
-| **XXIII-U** | PLANNED | DXT/BC / tiled texture decode |
-| **XXIII-V** | PLANNED | Real indexed draw execution on D3D11 |
-| **XXIII-W** | PLANNED | Save/trophy/sysutil depth |
-| **XXIII-X** | PLANNED | Per-title boot harness + frame golden tests |
+| **A–H** | DONE | Boot surface, present, audio, lifter, SPU/LV2/PRX |
+| **I–N** | DONE (untested) | FS, SPURS, timing, formats, FIFO, vertex track |
+| **O–Q** | DONE (untested) | Programs/tex/HLE NIDs |
+| **R–S** | DONE (untested) | Control-flow TOC/OPD; thread create |
+| **T** | DONE (untested) | **Runtime HLSL VS/PS blit** (D3DCompile) for textured present/draw |
+| **U** | DONE (untested) | DXT/BC format detect + linear fallback upload |
+| **V** | DONE (untested) | Host textured quad on guest draw methods |
+| **W** | DONE (untested) | Save/sysutil surface tags |
+| **X** | PLANNED | Per-title golden frame tests |
+| **Y** | PLANNED | Full RSX shader ISA → HLSL (not only blit) |
+| **Z** | PLANNED | Tiled / swizzled memory + full BC decode |
 
-## When can the whole game render?
+## T scope
 
-Not with O–Q alone. End-to-end scene rendering needs **all** of:
+T compiles a **real HLSL** vertex+pixel pair for fullscreen textured blit and uses it on draw/present when a guest texture/color buffer is uploaded. It is **not** yet a full per-shader RSX microcode translator (that is **Y**).
 
-1. **Stable PPU control flow** (R) — fewer `wild-pc 0x0` / wrong TOC
-2. **HLE that reaches draw setup** (Q+) — imports that init RSX/FIFO must be real enough
-3. **Guest FIFO PUT ≠ 0** (M depth) — real command stream, not inject-only
-4. **Vertex + shader + texture path** (N/O/P → T/U/V) — actual GPU work
-5. **SPU/FS/assets** delivering meshes/textures on time (I/J + formats)
+## When full game renders
 
-**Practical checkpoint:** first non-solid frame = guest methods ≫ 4, `tex>0` or real color buffer, overlay `draws>0` without inject-only pattern.
-**Full game:** only after R–V class work is validated on a title boot path — substantial engineering, not one lettered drop.
+Still requires guest FIFO PUT activity, stable PPU (R), and Y/Z-class work for arbitrary shaders/tiling. First non-solid frame: methods ≫ 4 and HLSL path logs `[rsx] XXIII-T/V`.
 
-## Asset reading vs playing
+## Build fix
 
-Open/read for many container types (L) is **necessary but not sufficient**. Play needs correct **bytes at the right guest addresses at the right time** (decrypt EDAT where legal keys exist, decompress archives, feed RSX). Encrypted `.edat`/`.sdat` remain opaque without keys.
-
-## Log tags
-
-- `[rsx] XXIII-O` — VP/FP bind
-- `[rsx] XXIII-P` — texture upload
-- `[prx] XXIII-Q` — unknown NID / GCM ensure
+`assets.cpp`: `guest_path` undeclared in SELF header probe — fixed to use host path in miss log.
