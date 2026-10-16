@@ -56,9 +56,27 @@ case 136: case 137:
 case 90: case 91: case 92: case 93: case 94: case 95: case 96:
     c->gpr[3] = 0; break;
 
-// H: sys_ppu_thread_*
-case 41: case 43: case 44: case 45: case 46: case 47:
+// XXIII-S: sys_ppu_thread_* — record create; success so workers can proceed
+case 41: case 43: case 44: case 45: case 46: case 47: {
+    static uint32_t s_tid = 1;
+    static int s_th = 0;
+    if ((c->gpr[11] & 0xFFFFFFFF) == 41 || (c->gpr[11] & 0xFFFF) == 41) {
+        // create-ish: return a fake thread id in *r3 if pointer
+        uint64_t p = c->gpr[3];
+        if (p && p + 4 <= g_mem_size) {
+            uint32_t tid = s_tid++;
+            g_mem[p] = (uint8_t)(tid >> 24); g_mem[p+1] = (uint8_t)(tid >> 16);
+            g_mem[p+2] = (uint8_t)(tid >> 8); g_mem[p+3] = (uint8_t)tid;
+        }
+    }
+    if (s_th < 16) {
+        ps3rt_log("[lv2] XXIII-S ppu_thread sc=%llu r3=0x%llx
+",
+            (unsigned long long)(c->gpr[11] & 0xFFFFFFFF), (unsigned long long)c->gpr[3]);
+        ++s_th;
+    }
     c->gpr[3] = 0; break;
+}
 
 // H: sys_memory_*
 case 348: case 349: case 350: case 351: case 352: case 353:

@@ -1,4 +1,4 @@
-// XXIII-O/P/Q accompany: asset path remains open-on-demand for all registered kinds
+// Sequential load: opens remain in cellFs call order (caller-driven)\n// XXIII-O/P/Q accompany: asset path remains open-on-demand for all registered kinds
 // XXIII-I cellFs/PSARC fidelity
 // XXII-E: modules/FS path fidelity notes
 // F+N: cellFs + PSARC + directories + errno/SELF handling

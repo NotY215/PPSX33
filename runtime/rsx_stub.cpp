@@ -549,12 +549,23 @@ static void rsx_process_fifo(uint8_t* mem) {
     uint32_t put = g_rsx.put % g_rsx.fifo_size;
     uint32_t get = g_rsx.get % g_rsx.fifo_size;
     int steps = 0;
-    while (get != put && steps < 16384) {
+    while (get != put && steps < 131072) { // XXIII-M deep drain
         uint64_t fa = g_rsx.fifo_addr + get;
         if (fa + 8 > 512ull * 1024 * 1024) break;
         uint32_t hdr = (mem[fa] << 24) | (mem[fa+1] << 16) | (mem[fa+2] << 8) | mem[fa+3];
         uint32_t arg = (mem[fa+4] << 24) | (mem[fa+5] << 16) | (mem[fa+6] << 8) | mem[fa+7];
         uint32_t method = hdr & 0x1FFC;
+        // XXIII-M: JUMP / CALL / RETURN style commands in command buffer
+        if ((hdr & 0xE0000003u) == 0x20000000u) {
+            // JUMP_REL or similar — treat arg as new get offset
+            uint32_t target = arg % (g_rsx.fifo_size ? g_rsx.fifo_size : 1);
+            get = target;
+            ++g_rsx.methods_seen;
+            ++steps;
+            static int jn = 0;
+            if (jn < 8) { ps3rt_log("[rsx] XXIII-M fifo jump -> 0x%x\n", target); ++jn; }
+            continue;
+        }
         ++g_rsx.methods_seen;
         ++g_rsx.known_methods;
         if (method == 0x01D8 || method == 0x1D8) {
@@ -586,6 +597,14 @@ static void rsx_process_fifo(uint8_t* mem) {
                  method == 0x1808 || method == 0x1820) {
             ++g_rsx.draws;
             ++g_rsx.draws_this_frame;
+            if (g_rsx.vp_offset || g_rsx.fp_offset || g_rsx.shader_prog) {
+                static int td = 0;
+                if (td < 16) {
+                    ps3rt_log("[rsx] XXIII-T draw with programs vp=0x%x fp=0x%x\n",
+                        g_rsx.vp_offset ? g_rsx.vp_offset : g_rsx.shader_prog, g_rsx.fp_offset);
+                    ++td;
+                }
+            }
             // XXII-G: count textured vs clear-only draws
             if (g_rsx.tex_units_bound || g_rsx.tex_offset) {
                 static int gdr = 0;
@@ -610,13 +629,13 @@ static void rsx_process_fifo(uint8_t* mem) {
                 g_rsx.shader_prog = arg;
                 g_rsx.vp_offset = arg;
                 ++g_rsx.vertex_binds;
-                static int sv=0; if(sv<10){ps3rt_log("[rsx] XXIII-O vertex/shader prog=0x%x\n", arg);++sv;}
+                static int sv=0; if(sv<10){ps3rt_log("[rsx] XXIII-T/O vertex program ea=0x%x (host translate stub)\n", arg);++sv;}
             }
             if (method == 0x1D64 || method == 0x09B4) {
                 ++g_rsx.fragment_binds;
                 g_rsx.fp_offset = arg;
                 g_rsx.fp_control = arg;
-                static int sf=0; if(sf<10){ps3rt_log("[rsx] XXIII-O fragment prog=0x%x\n", arg);++sf;}
+                static int sf=0; if(sf<10){ps3rt_log("[rsx] XXIII-T/O fragment program ea=0x%x (host translate stub)\n", arg);++sf;}
             }
             if (method == 0x1D6C) g_rsx.shader_const_count = arg;
         }
@@ -711,7 +730,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] XXIII-O/P flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] XXIII-M/T flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,

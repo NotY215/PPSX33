@@ -1,3 +1,4 @@
+// XXIII-R: PPU control-flow TOC/OPD recovery
 // XXII-H: PPU recovery/run surface — prefer soft continue over halt
 // Phase XV: import stub before force-out; wild-PC excludes 0x39800000
 // Phase XIV (safe): sustained dwell assist — no PC thrash storm
@@ -37,6 +38,17 @@ static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, 
         }
     }
     if (best_hi) return best_hi;
+    // XXIII-R: try function descriptor via TOC (r2): OPD = [entry,toc]
+    uint64_t toc = c.gpr[2];
+    if (toc && guest_ok(c, toc, 16)) {
+        for (int k = 0; k < 8; ++k) {
+            uint64_t opd = toc + (uint64_t)k * 8ull;
+            if (!guest_ok(c, opd, 16)) break;
+            uint64_t ent = rd64(c, opd);
+            if (!banned(ent) && (ent & 3ull) == 0 && pc_in_chunks(ent, chunks, n))
+                return ent;
+        }
+    }
     return 0;
 }
 
@@ -147,7 +159,8 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             if (alt) {
                 static int wild_log = 0;
                 if (wild_log < 12) {
-                    ps3rt_log("[ps3] Phase XIV wild-pc 0x%llx -> 0x%llx\n",
+                    if (entry_toc) c.gpr[2] = entry_toc; // XXIII-R
+                    ps3rt_log("[ps3] XXIII-R wild-pc 0x%llx -> 0x%llx\n",
                         (unsigned long long)c.pc, (unsigned long long)alt);
                     ++wild_log;
                 }
@@ -300,14 +313,16 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
 
         if ((++steps & 0x3FFFFull) == 0) {
 
-            // XXIII-A: never linger at null PC — re-enter last good or first chunk
+            // XXIII-R/A: null-PC — last_good, first chunk, or mid-chunk; restore TOC
             if (c.pc == 0) {
                 uint64_t boot = last_good_ret;
                 if (!boot && n > 0 && chunks) boot = chunks[0].start;
+                if (!boot && n > 1 && chunks) boot = chunks[n / 2].start;
                 if (boot) {
                     static int zpc = 0;
-                    if (zpc < 16) {
-                        ps3rt_log("[ps3] XXIII-A null-pc recover -> 0x%llx\n", (unsigned long long)boot);
+                    if (zpc < 20) {
+                        ps3rt_log("[ps3] XXIII-R null-pc recover -> 0x%llx toc=0x%llx\n",
+                            (unsigned long long)boot, (unsigned long long)entry_toc);
                         ++zpc;
                     }
                     c.pc = boot;
