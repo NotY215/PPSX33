@@ -1,6 +1,6 @@
 # PPSX33 Roadmap
 
-**Last updated:** 2026-10-15 (XXII finished; XXIII active)  
+**Last updated:** 2026-10-16 (XXIII T–W in tree, untested)  
 **Scope:** Experimental PlayStation 3 static recompiler — research toolkit, not a retail emulator.
 
 ---
@@ -16,7 +16,7 @@
 | Pipeline correctness | **XXII** | DONE | [roadmap/XXII.md](roadmap/XXII.md) |
 | Execution reality | **XXIII** (active) | IN PROGRESS | [roadmap/XXIII.md](roadmap/XXIII.md) |
 
-**Current focus: Phase XXIII** — null-PC recovery, present path, audio keep-alive; deeper P0 work listed in XXIII.md.
+**Current focus: Phase XXIII** — HLSL textured blit (T), DXT detect (U), host draw (V), save/sysutil (W). Detail: [roadmap/XXIII.md](roadmap/XXIII.md).
 
 ### XXII (finished)
 
@@ -28,10 +28,10 @@
 
 | ID | Status | Work |
 |----|--------|------|
-| **XXIII-A** | DONE | Null-PC recovery |
-| **XXIII-B** | DONE | RSX present every flip |
-| **XXIII-C** | DONE | Audio host keep-alive |
-| **XXIII-D+** | PLANNED | See [roadmap/XXIII.md](roadmap/XXIII.md) |
+| **XXIII-A…S** | DONE (untested) | See [roadmap/XXIII.md](roadmap/XXIII.md) |
+| **XXIII-T** | DONE (untested) | Runtime HLSL VS/PS blit (D3DCompile) |
+| **XXIII-U…W** | DONE (untested) | DXT detect, host textured draw, save/sysutil |
+| **XXIII-X…Z** | PLANNED | Golden tests; full RSX→HLSL ISA; tiling/BC |
 
 ---
 
