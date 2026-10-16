@@ -1,6 +1,6 @@
 # PPSX33 Roadmap
 
-**Last updated:** 2026-10-16 (XXV start: truthful lift + visible frames)  
+**Last updated:** 2026-10-16 (XXV expanded per GPT audit)  
 **Scope:** Experimental PlayStation 3 static recompiler — research toolkit, not a retail emulator.
 
 ---
@@ -15,32 +15,34 @@
 | Boot-to-first-pixels | **XXIV** | A–E in tree | [roadmap/XXIV.md](roadmap/XXIV.md) |
 | Truthful exec & pixels | **XXV** | ACTIVE | [roadmap/XXV.md](roadmap/XXV.md) |
 
-**Current focus:** XXV — fix build (audio), force visible presents, stop silent lifter success; then real RSX surfaces and strict PPU faults.
+**Current focus:** XXV-D RSX pipeline start (guest surface present); then E/F PPU truth + strict faults; G/H HLE + SPU/DMA.
 
-### XXIV (boot assist)
-
-| ID | Status |
-|----|--------|
-| A–E | IN TREE — audio fail-once, FIFO bound, HLSL, PRX filter, COLOR/diagnostic |
-
-### XXV (active)
+### XXV subphases (summary)
 
 | ID | Status | Work |
 |----|--------|------|
-| **XXV-A** | DONE (untested) | `audio_queue_s16` forward declare (C3861) |
-| **XXV-B** | DONE (untested) | Visible frame present path |
-| **XXV-C** | DONE (untested) | Lifter empty opc → not Implemented |
-| **XXV-D…H** | PLANNED | RSX surfaces, LiftStatus, strict faults, HLE, SPU/DMA |
+| **A** | DONE (untested) | Audio C3861 / host open |
+| **B** | DONE (untested) | Visible host present |
+| **C** | PARTIAL | Lifter empty opc honesty |
+| **D** | ACTIVE | RSX FIFO / surface / present guest RT |
+| **E** | PLANNED | Full lifter status + opcode audit |
+| **F** | PLANNED | validate_guest_pc / capture_guest_fault |
+| **G** | PLANNED | PRX/LV2 contracts |
+| **H** | PLANNED | SPU/MFC/SPURS layers |
+| **I** | PLANNED | FS / audio / pad / save services |
+| **J** | PLANNED | End-to-end title checklist |
 
-Detail: [roadmap/XXV.md](roadmap/XXV.md).
+Full function lists and audit table: [roadmap/XXV.md](roadmap/XXV.md).
 
-### External audit (GPT) — accepted priorities
+### GPT audit priorities (accepted)
 
-1. PPU lifter truthfulness  
-2. Deterministic faults (limit wild-PC guessing)  
-3. Real RSX pipeline (not diagnostic-only)  
-4. LV2/PRX contracts  
-5. SPU/MFC/SPURS semantics  
+1. PPU translation truthful
+2. Deterministic faults (limit recovery guessing)
+3. Real RSX pipeline
+4. PRX/LV2 contracts
+5. SPU/MFC/SPURS semantics
+6. Game services
+7. End-to-end proof
 
 ---
 
