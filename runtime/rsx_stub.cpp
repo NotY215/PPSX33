@@ -1,3 +1,4 @@
+// XXV-D: surface_bind + present_guest (RSX pipeline start)
 // XXV-FRAME: visible present path (guest geometry still Phase XXV-D+)
 // XXIV-E COLOR_OFFSET present + visible diagnostic
 // XXIV-A/B/C companion in rsx: FIFO bound + HLSL prove
@@ -593,6 +594,10 @@ static void rsx_host_present_clear() {
         g_ctx11->OMSetRenderTargets(1, &g_rtv, g_dsv);
         if (g_dss) g_ctx11->OMSetDepthStencilState(g_dss, g_rsx.clear_stencil);
         g_ctx11->ClearRenderTargetView(g_rtv, col);
+        {
+            uint8_t* m = ps3rt_memory();
+            if (m) rsx_present_guest_or_diag(m);
+        }
         // XXIII-X: ensure at least one host-visible frame path each present
         {
             uint8_t* m = ps3rt_memory();
@@ -725,6 +730,48 @@ static void rsx_host_present_clear() {}
 static HWND g_hwnd = nullptr;
 #endif
 
+
+// ============================================================================
+// XXV-D: RSX pipeline skeleton (audit-aligned names)
+// ============================================================================
+static void rsx_surface_bind_color(uint32_t offset, uint32_t pitch, uint32_t w, uint32_t h) {
+    g_rsx.color_offset = offset;
+    g_rsx.color_valid = (offset != 0);
+    if (pitch) g_rsx.color_pitch = pitch;
+    if (w) g_rsx.width = w;
+    if (h) g_rsx.height = h;
+    // Present path uses tex_* as upload source
+    g_rsx.tex_offset = offset;
+    if (w) g_rsx.tex_width = w;
+    if (h) g_rsx.tex_height = h;
+    if (pitch) g_rsx.tex_pitch = pitch;
+    else if (w) g_rsx.tex_pitch = (w * 4 + 63u) & ~63u;
+    static int sb = 0;
+    if (sb < 12) {
+        ps3rt_log("[rsx] XXV-D surface_bind color=0x%x pitch=%u %ux%u\n",
+            offset, g_rsx.tex_pitch, g_rsx.tex_width, g_rsx.tex_height);
+        ++sb;
+    }
+}
+
+static void rsx_present_guest_or_diag(uint8_t* mem) {
+    // Prefer guest color buffer; else diagnostic gradient already prepared upstream
+    if (!mem || !g_ctx11 || !g_rtv) return;
+    if (g_rsx.color_valid && g_rsx.color_offset) {
+        g_rsx.tex_offset = g_rsx.color_offset;
+        if (!g_rsx.tex_width) g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280;
+        if (!g_rsx.tex_height) g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720;
+        if (!g_rsx.tex_pitch) g_rsx.tex_pitch = (g_rsx.tex_width * 4 + 63u) & ~63u;
+        rsx_upload_guest_tex(mem);
+        rsx_draw_textured_quad();
+        static int pg = 0;
+        if (pg < 16) {
+            ps3rt_log("[rsx] XXV-D present_guest color=0x%x\n", g_rsx.color_offset);
+            ++pg;
+        }
+    }
+}
+
 static void rsx_process_fifo(uint8_t* mem) {
     if (!mem || !g_rsx.fifo_addr || !g_rsx.fifo_size) return;
     uint32_t put = g_rsx.put % g_rsx.fifo_size;
@@ -774,10 +821,9 @@ static void rsx_process_fifo(uint8_t* mem) {
         }
         else if (method == 0x0B00 || method == 0x0B04 || method == 0x0B08) {}
         else if (method == 0x0200 || method == 0x200) {
-            g_rsx.color_offset = arg; g_rsx.color_valid = (arg != 0);
-            static int slog=0; if(slog<10){ps3rt_log("[rsx] XXIV-E COLOR_OFFSET=0x%x\n", arg);++slog;}
+            rsx_surface_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height);
         }
-        else if (method == 0x0204 || method == 0x204) { g_rsx.color_pitch = arg; }
+        else if (method == 0x0204 || method == 0x204) { g_rsx.color_pitch = arg; if (g_rsx.color_offset) rsx_surface_bind_color(g_rsx.color_offset, arg, g_rsx.width, g_rsx.height); /* XXV-D pitch */ }
         else if (method == 0x0208 || method == 0x020C || method == 0x0A00 || method == 0x0A04) {}
         else if (method == 0x1800 || method == 0x1810 || method == 0x1818 ||
                  method == 0x1808 || method == 0x1820) {
@@ -927,7 +973,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] XXV flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] XXV-D flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,
