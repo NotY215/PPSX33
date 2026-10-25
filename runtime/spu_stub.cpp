@@ -1,3 +1,4 @@
+// pure real SPU coverage expansion
 // XXV-H depth: SPU ISA + MFC tag completion
 // XXIII-J SPURS completion
 // XXIII-F: SPU/MFC tag update, list-stall ack, atomic HLE
