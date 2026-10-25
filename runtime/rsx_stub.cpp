@@ -1,3 +1,4 @@
+// XXV-D FULL DEPTH (on XXV-E): part1 FIFO/surface/host draw + part2 vertex/depth/blend/viewport
 // XXV-D: surface_bind + present_guest (RSX pipeline start)
 // XXV-FRAME: visible present path (guest geometry still Phase XXV-D+)
 // XXIV-E COLOR_OFFSET present + visible diagnostic
@@ -184,6 +185,102 @@ static bool rsx_ensure_hlsl() {
     ps3rt_log("[rsx] XXIV-C HLSL blit VS/PS ready\n");
     return g_vs_blit && g_ps_blit;
 }
+
+
+// XXV-E/D: solid-color fullscreen/triangle path when no guest tex (still a real GPU draw)
+static ID3D11VertexShader* g_vs_solid = nullptr;
+static ID3D11PixelShader* g_ps_solid = nullptr;
+static ID3D11InputLayout* g_layout_solid = nullptr;
+static ID3D11Buffer* g_vb_tri = nullptr;
+static int g_solid_ready = 0;
+
+static const char* kSolidHLSL = R"(
+struct VSIn { float2 pos : POSITION; float4 col : COLOR0; };
+struct VSOut { float4 pos : SV_POSITION; float4 col : COLOR0; };
+VSOut VSMain(VSIn i) { VSOut o; o.pos = float4(i.pos, 0, 1); o.col = i.col; return o; }
+float4 PSMain(VSOut i) : SV_Target { return i.col; }
+)";
+
+static bool rsx_ensure_solid() {
+    if (g_solid_ready) return g_vs_solid && g_ps_solid;
+    g_solid_ready = 1;
+    if (!g_dev) return false;
+    if (!rsx_ensure_hlsl()) { /* need d3dcompiler load path */ }
+    HMODULE d3dcomp = LoadLibraryA("d3dcompiler_47.dll");
+    if (!d3dcomp) d3dcomp = LoadLibraryA("d3dcompiler_43.dll");
+    if (!d3dcomp) return false;
+    typedef HRESULT (WINAPI *PFN_D3DCompile)(LPCVOID, SIZE_T, LPCSTR, const void*, const void*,
+        LPCSTR, LPCSTR, UINT, UINT, ID3DBlob**, ID3DBlob**);
+    auto pCompile = (PFN_D3DCompile)GetProcAddress(d3dcomp, "D3DCompile");
+    if (!pCompile) return false;
+    ID3DBlob *vsb = nullptr, *psb = nullptr, *err = nullptr;
+    if (FAILED(pCompile(kSolidHLSL, strlen(kSolidHLSL), "solid", nullptr, nullptr, "VSMain", "vs_4_0", 0, 0, &vsb, &err)) || !vsb) {
+        if (err) err->Release();
+        return false;
+    }
+    if (FAILED(pCompile(kSolidHLSL, strlen(kSolidHLSL), "solid", nullptr, nullptr, "PSMain", "ps_4_0", 0, 0, &psb, &err)) || !psb) {
+        if (err) err->Release();
+        vsb->Release();
+        return false;
+    }
+    g_dev->CreateVertexShader(vsb->GetBufferPointer(), vsb->GetBufferSize(), nullptr, &g_vs_solid);
+    g_dev->CreatePixelShader(psb->GetBufferPointer(), psb->GetBufferSize(), nullptr, &g_ps_solid);
+    D3D11_INPUT_ELEMENT_DESC ied[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    };
+    g_dev->CreateInputLayout(ied, 2, vsb->GetBufferPointer(), vsb->GetBufferSize(), &g_layout_solid);
+    vsb->Release(); psb->Release();
+    // Fullscreen-ish triangle with vertex colors (animated pulse via CPU rewrite each present)
+    float tri[] = {
+        -1.f,-1.f,  1,0,0,1,
+         1.f,-1.f,  0,1,0,1,
+         0.f, 1.f,  0,0,1,1,
+    };
+    D3D11_BUFFER_DESC bd{}; bd.ByteWidth = sizeof(tri); bd.Usage = D3D11_USAGE_DYNAMIC;
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    D3D11_SUBRESOURCE_DATA sd{ tri, 0, 0 };
+    g_dev->CreateBuffer(&bd, &sd, &g_vb_tri);
+    ps3rt_log("[rsx] XXV-E solid triangle VS/PS ready\n");
+    return g_vs_solid && g_ps_solid;
+}
+
+static void rsx_draw_solid_triangle() {
+    rsx_apply_viewport_scissor();
+    if (!rsx_ensure_solid() || !g_ctx11 || !g_rtv || !g_vb_tri) return;
+    // pulse colors
+    D3D11_MAPPED_SUBRESOURCE map{};
+    if (SUCCEEDED(g_ctx11->Map(g_vb_tri, 0, D3D11_MAP_WRITE_DISCARD, 0, &map))) {
+        float t = (float)(g_rsx.flip_count % 256) / 255.f;
+        float* v = (float*)map.pData;
+        // 3 verts * (2 pos + 4 col)
+        float cols[3][4] = {
+            { 1.f, t, 0.2f, 1.f },
+            { t, 1.f, 0.2f, 1.f },
+            { 0.2f, t, 1.f, 1.f },
+        };
+        float pos[3][2] = { {-1.f,-1.f},{1.f,-1.f},{0.f,1.f} };
+        for (int i = 0; i < 3; ++i) {
+            v[i*6+0] = pos[i][0]; v[i*6+1] = pos[i][1];
+            v[i*6+2] = cols[i][0]; v[i*6+3] = cols[i][1];
+            v[i*6+4] = cols[i][2]; v[i*6+5] = cols[i][3];
+        }
+        g_ctx11->Unmap(g_vb_tri, 0);
+    }
+    UINT stride = 24, offset = 0;
+    g_ctx11->IASetInputLayout(g_layout_solid);
+    g_ctx11->IASetVertexBuffers(0, 1, &g_vb_tri, &stride, &offset);
+    g_ctx11->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    g_ctx11->VSSetShader(g_vs_solid, nullptr, 0);
+    g_ctx11->PSSetShader(g_ps_solid, nullptr, 0);
+    g_ctx11->OMSetRenderTargets(1, &g_rtv, nullptr);
+    D3D11_VIEWPORT vp{ 0, 0, (float)(g_rsx.width ? g_rsx.width : 1280), (float)(g_rsx.height ? g_rsx.height : 720), 0, 1 };
+    g_ctx11->RSSetViewports(1, &vp);
+    g_ctx11->Draw(3, 0);
+    static int sd = 0;
+    if (sd < 16) { ps3rt_log("[rsx] XXV-E solid triangle draw flip=%llu\n", (unsigned long long)g_rsx.flip_count); ++sd; }
+}
+
 
 static void rsx_draw_textured_quad() {
     if (!rsx_ensure_hlsl() || !g_ctx11 || !g_guest_tex || !g_rtv) return;
@@ -577,26 +674,43 @@ static void rsx_host_present_clear() {
     float gg = ((g_rsx.clear_color >> 8) & 0xFF) / 255.f;
     float bb = (g_rsx.clear_color & 0xFF) / 255.f;
     float col[4] = { rr, gg, bb, 1.f };
-    // Prefer guest framebuffer upload when offset known
-    {
-        uint8_t* m = ps3rt_memory();
-        if (m && (g_rsx.color_offset || g_rsx.tex_offset)) {
-            if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset;
-            if (!g_rsx.tex_width) { g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280; g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720; }
-            rsx_upload_guest_tex(m);
-            rsx_upload_guest_tex(m);
-              rsx_draw_textured_quad();
-              if (!g_hlsl_ready || !g_vs_blit)
-                  rsx_blit_guest_tex_fullscreen(m);
-        }
-    }
+    // XXV-E: clear FIRST, then every draw path, then Present (never draw-before-clear)
     try {
         g_ctx11->OMSetRenderTargets(1, &g_rtv, g_dsv);
         if (g_dss) g_ctx11->OMSetDepthStencilState(g_dss, g_rsx.clear_stencil);
         g_ctx11->ClearRenderTargetView(g_rtv, col);
+        if (g_dsv && (mask & 0x02))
+            g_ctx11->ClearDepthStencilView(g_dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, g_rsx.clear_depth, g_rsx.clear_stencil);
         {
             uint8_t* m = ps3rt_memory();
-            if (m) rsx_present_guest_or_diag(m);
+            bool drew = false;
+            if (m && (g_rsx.color_valid || g_rsx.color_offset || g_rsx.tex_offset)) {
+                if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset;
+                if (!g_rsx.tex_width) {
+                    g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280;
+                    g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720;
+                }
+                if (!g_rsx.tex_pitch && g_rsx.tex_width)
+                    g_rsx.tex_pitch = (g_rsx.tex_width * 4 + 63u) & ~63u;
+                rsx_upload_guest_tex(m);
+                rsx_draw_textured_quad();
+                if (!g_hlsl_ready || !g_vs_blit)
+                    rsx_blit_guest_tex_fullscreen(m);
+                drew = true;
+                static int pg = 0;
+                if (pg < 12) {
+                    ps3rt_log("[rsx] XXV-E present guest/tex off=0x%x %ux%u\n",
+                        g_rsx.tex_offset, g_rsx.tex_width, g_rsx.tex_height);
+                    ++pg;
+                }
+            }
+            if (!drew) {
+                // diagnostic gradient into guest mem then textured, else solid GPU triangle
+                rsx_present_guest_or_diag(m);
+                rsx_draw_solid_triangle();
+            } else {
+                // still issue a solid pass under if alpha fails — skip
+            }
         }
         // XXIII-X: ensure at least one host-visible frame path each present
         {
@@ -681,7 +795,7 @@ static void rsx_host_present_clear() {
               if (!g_hlsl_ready || !g_vs_blit)
                   rsx_blit_guest_tex_fullscreen(m);
           } }
-        bool need_present = true; // XXIV-E: present every flip
+        bool need_present = true; // XXV-E: always Present
         g_rsx.draws_this_frame = 0;
         g_rsx.methods_this_frame = 0; // XXIV-B
         if (need_present && g_swap) {
@@ -772,6 +886,229 @@ static void rsx_present_guest_or_diag(uint8_t* mem) {
     }
 }
 
+// XXV-D FULL DEPTH — pipeline functions (part 1: FIFO + surfaces + present)
+// ============================================================================
+static void rsx_sync_guest_host(uint8_t* mem) {
+    if (!mem) return;
+    if (g_rsx.color_valid && g_rsx.color_offset) {
+        g_rsx.tex_offset = g_rsx.color_offset;
+        if (!g_rsx.tex_width) g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280;
+        if (!g_rsx.tex_height) g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720;
+        if (!g_rsx.tex_pitch) g_rsx.tex_pitch = (g_rsx.tex_width * 4 + 63u) & ~63u;
+    }
+}
+
+static void rsx_draw_host(uint8_t* mem) {
+    rsx_apply_viewport_scissor();
+    rsx_sync_guest_host(mem);
+    if (g_rsx.tex_offset || g_rsx.color_offset) {
+        if (mem) {
+            rsx_upload_guest_tex(mem);
+            rsx_draw_textured_quad();
+            if (!g_hlsl_ready || !g_vs_blit)
+                rsx_blit_guest_tex_fullscreen(mem);
+        }
+    } else {
+        rsx_draw_solid_triangle();
+    }
+    ++g_rsx.draws_this_frame;
+}
+
+// Returns true if method recognized
+static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
+    // Surface / color
+    if (method == 0x0200 || method == 0x200) {
+        rsx_surface_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height);
+        return true;
+    }
+    if (method == 0x0204 || method == 0x204) {
+        g_rsx.color_pitch = arg;
+        if (g_rsx.color_offset)
+            rsx_surface_bind_color(g_rsx.color_offset, arg, g_rsx.width, g_rsx.height);
+        return true;
+    }
+    if (method == 0x0208 || method == 0x208) {
+        // surface format / type
+        static int sf=0; if(sf<8){ps3rt_log("[rsx] XXV-D SURFACE_FORMAT=0x%x\n", arg);++sf;}
+        return true;
+    }
+    if (method == 0x020C || method == 0x20C) {
+        g_rsx.surf_w = (arg >> 16) & 0xFFFF;
+        g_rsx.surf_h = arg & 0xFFFF;
+        if (g_rsx.surf_w) g_rsx.width = g_rsx.surf_w;
+        if (g_rsx.surf_h) g_rsx.height = g_rsx.surf_h;
+        return true;
+    }
+    // Clear
+    if (method == 0x1D8C || method == 0x1d8c) {
+        g_rsx.clear_color = arg; return true;
+    }
+    if (method == 0x1D90 || method == 0x1d90) {
+        g_rsx.clear_mask = arg; return true;
+    }
+    if (method == 0x1D94 || method == 0x1d94) {
+        ++g_rsx.clears;
+        // depth clear value packed
+        return true;
+    }
+    // Texture unit 0
+    if (method == 0x1A00 || method == 0x1840) {
+        g_rsx.tex_offset = arg; g_rsx.tex_units_bound = 1; return true;
+    }
+    if (method == 0x1A04 || method == 0x1844) {
+        g_rsx.tex_format = arg; return true;
+    }
+    if (method == 0x1A08 || method == 0x1848) {
+        g_rsx.tex_width = (arg >> 16) & 0xFFFF;
+        g_rsx.tex_height = arg & 0xFFFF;
+        if (!g_rsx.tex_width) g_rsx.tex_width = 1;
+        if (!g_rsx.tex_height) g_rsx.tex_height = 1;
+        return true;
+    }
+    if (method == 0x1A0C || method == 0x184C) {
+        g_rsx.tex_pitch = arg; return true;
+    }
+    // Viewport / scissor
+    if (method == 0x08C0) {
+        g_rsx.viewport_w = (arg >> 16) ? (arg >> 16) : g_rsx.viewport_w; return true;
+    }
+    if (method == 0x08C4) {
+        g_rsx.viewport_h = (arg >> 16) ? (arg >> 16) : g_rsx.viewport_h; return true;
+    }
+    if (method == 0x08D0) {
+        g_rsx.scissor_x = arg & 0xFFFF; g_rsx.scissor_w = (arg >> 16) & 0xFFFF; return true;
+    }
+    if (method == 0x08D4) {
+        g_rsx.scissor_y = arg & 0xFFFF; g_rsx.scissor_h = (arg >> 16) & 0xFFFF; return true;
+    }
+    // Shader binds (record only — full translate is later depth)
+    if (method == 0x1D60 || method == 0x1D64 || method == 0x1D68) {
+        ++g_rsx.shader_binds;
+        if (method == 0x1D60) { g_rsx.shader_prog = arg; g_rsx.vp_offset = arg; ++g_rsx.vertex_binds; }
+        if (method == 0x1D64 || method == 0x1D68) { g_rsx.fp_offset = arg; g_rsx.fp_control = arg; ++g_rsx.fragment_binds; }
+        return true;
+    }
+    if (method == 0x1D6C) { g_rsx.shader_const_count = arg; return true; }
+    // Vertex array
+    if (method == 0x1680 || method == 0x1684 || method == 0x1688 || method == 0x1690) {
+        g_rsx.vertex_array_mask |= 1u << ((method >> 2) & 7);
+        ++g_rsx.vertex_binds;
+        if (method == 0x1688 || method == 0x1690) g_rsx.vp_offset = arg;
+        return true;
+    }
+    // Begin / draw
+    if (method == 0x1800 || method == 0x1808 || method == 0x1814 || method == 0x1810) {
+        g_rsx.begin_mode = arg;
+        ++g_rsx.draws;
+        return true;
+    }
+    // NOP / reference / semaphore family — acknowledge
+    if (method == 0x0050 || method == 0x0054 || method == 0x0060 || method == 0x0064 ||
+        method == 0x0100 || method == 0x0104) {
+        return true;
+    }
+    return false;
+}
+
+static void rsx_fifo_decode_word(uint8_t* mem, uint32_t method, uint32_t arg) {
+    (void)mem;
+    if (rsx_state_apply_method(method, arg) || rsx_state_apply_method_p2(method, arg)) {
+        ++g_rsx.known_methods;
+        ++g_rsx.methods_seen;
+        ++g_rsx.methods_this_frame;
+        // Issue host draw when guest issues draw-class methods
+        if (method == 0x1800 || method == 0x1808 || method == 0x1814 || method == 0x1810) {
+            rsx_draw_host(mem);
+            static int dg=0;
+            if (dg < 16) {
+                ps3rt_log("[rsx] XXV-D draw method=0x%x arg=0x%x tex=0x%x color=0x%x\n",
+                    method, arg, g_rsx.tex_offset, (unsigned)g_rsx.color_offset);
+                ++dg;
+            }
+        }
+    } else {
+        ++g_rsx.unknown_methods;
+        ++g_rsx.methods_seen;
+        ++g_rsx.methods_this_frame;
+    }
+}
+
+
+
+// ============================================================================
+// XXV-D FULL DEPTH part 2 — vertex state, depth/blend, viewport present
+// ============================================================================
+static uint32_t g_va_offset[8] = {};
+static uint32_t g_va_stride[8] = {};
+static uint32_t g_blend_enable = 0;
+static uint32_t g_depth_test = 0;
+static uint32_t g_depth_mask = 1;
+static uint32_t g_color_mask = 0xF;
+
+static void rsx_apply_viewport_scissor() {
+#if defined(_WIN32)
+    if (!g_ctx11) return;
+    float vw = (float)(g_rsx.viewport_w ? g_rsx.viewport_w : (g_rsx.width ? g_rsx.width : 1280));
+    float vh = (float)(g_rsx.viewport_h ? g_rsx.viewport_h : (g_rsx.height ? g_rsx.height : 720));
+    D3D11_VIEWPORT vp{ 0.f, 0.f, vw, vh, 0.f, 1.f };
+    g_ctx11->RSSetViewports(1, &vp);
+#endif
+}
+
+// Minimal vertex-fetch note: record array offsets for later real geometry
+static void rsx_vertex_fetch_note(uint32_t slot, uint32_t offset, uint32_t stride) {
+    if (slot < 8) {
+        g_va_offset[slot] = offset;
+        g_va_stride[slot] = stride;
+    }
+    static int vn = 0;
+    if (vn < 12) {
+        ps3rt_log("[rsx] XXV-D-p2 vertex_fetch slot=%u off=0x%x stride=%u\n", slot, offset, stride);
+        ++vn;
+    }
+}
+
+static bool rsx_state_apply_method_p2(uint32_t method, uint32_t arg) {
+    // Depth / stencil / blend (record + light host state)
+    if (method == 0x0A00 || method == 0x0A04) { // depth test enable / mask family
+        g_depth_test = arg & 1;
+        if (method == 0x0A04) g_depth_mask = arg & 1;
+        return true;
+    }
+    if (method == 0x0300 || method == 0x0304) {
+        g_blend_enable = arg & 1;
+        return true;
+    }
+    if (method == 0x0310 || method == 0x0314) {
+        g_color_mask = arg;
+        return true;
+    }
+    // Vertex attribute offsets (NV40-ish array)
+    if (method >= 0x1680 && method <= 0x16BC && ((method & 3) == 0)) {
+        uint32_t slot = (method - 0x1680) / 4;
+        if (slot < 8) {
+            rsx_vertex_fetch_note(slot, arg, g_va_stride[slot] ? g_va_stride[slot] : 12);
+            g_rsx.vertex_array_mask |= (1u << slot);
+            ++g_rsx.vertex_binds;
+        }
+        return true;
+    }
+    // Z-offset / depth surface
+    if (method == 0x0210 || method == 0x210) {
+        static int zd=0; if(zd<8){ps3rt_log("[rsx] XXV-D-p2 Z_OFFSET=0x%x\n", arg);++zd;}
+        return true;
+    }
+    if (method == 0x0214 || method == 0x214) {
+        static int zp=0; if(zp<8){ps3rt_log("[rsx] XXV-D-p2 Z_PITCH=0x%x\n", arg);++zp;}
+        return true;
+    }
+    // Semaphore / report
+    if (method == 0x1D00 || method == 0x1D04 || method == 0x1D10) {
+        return true;
+    }
+    return false;
+}
+
 static void rsx_process_fifo(uint8_t* mem) {
     if (!mem || !g_rsx.fifo_addr || !g_rsx.fifo_size) return;
     uint32_t put = g_rsx.put % g_rsx.fifo_size;
@@ -782,152 +1119,28 @@ static void rsx_process_fifo(uint8_t* mem) {
     if (delta < 8) return; // less than one method word pair
     int steps = 0;
     const int kMaxSteps = (int)((delta / 8) + 64);
-    while (get != put && steps < kMaxSteps && steps < 8192) { // XXIV-B bounded by real delta
+    while (get != put && steps < kMaxSteps && steps < 8192) { // XXV-D depth
         uint64_t fa = g_rsx.fifo_addr + get;
         if (fa + 8 > 512ull * 1024 * 1024) break;
         uint32_t hdr = (mem[fa] << 24) | (mem[fa+1] << 16) | (mem[fa+2] << 8) | mem[fa+3];
         uint32_t arg = (mem[fa+4] << 24) | (mem[fa+5] << 16) | (mem[fa+6] << 8) | mem[fa+7];
         uint32_t method = hdr & 0x1FFC;
-        // XXIII-M: JUMP / CALL / RETURN style commands in command buffer
+        // JUMP / CALL style
         if ((hdr & 0xE0000003u) == 0x20000000u) {
-            // JUMP_REL or similar — treat arg as new get offset
             uint32_t target = arg % (g_rsx.fifo_size ? g_rsx.fifo_size : 1);
             get = target;
-            ++g_rsx.methods_seen; ++g_rsx.methods_this_frame; ++g_rsx.methods_this_frame;
             ++steps;
             static int jn = 0;
-            if (jn < 8) { ps3rt_log("[rsx] XXIII-M fifo jump -> 0x%x\n", target); ++jn; }
+            if (jn < 8) { ps3rt_log("[rsx] XXV-D fifo jump -> 0x%x\n", target); ++jn; }
             continue;
         }
-        ++g_rsx.methods_seen; ++g_rsx.methods_this_frame;
-        ++g_rsx.known_methods;
+        // Full method apply + host draw on draw methods
+        rsx_fifo_decode_word(mem, method, arg);
+        // Also accept alternate clear/color encodings not in apply table
         if (method == 0x01D8 || method == 0x1D8) {
             g_rsx.clear_color = arg & 0xFFFFFF;
             ++g_rsx.clears;
         }
-        else if (method == 0x01D4 || method == 0x1D4) {
-            g_rsx.clear_mask = arg;
-            if (arg & 0x02) ++g_rsx.depth_clears;
-            if (arg & 0x04) ++g_rsx.stencil_clears;
-            ++g_rsx.clears;
-        }
-        else if (method == 0x01DC || method == 0x1DC) {
-            g_rsx.clear_depth = (float)(arg & 0xFFFF) / 65535.f;
-            ++g_rsx.depth_clears;
-        }
-        else if (method == 0x01E0 || method == 0x1E0) {
-            g_rsx.clear_stencil = (uint8_t)(arg & 0xFF);
-            ++g_rsx.stencil_clears;
-        }
-        else if (method == 0x0B00 || method == 0x0B04 || method == 0x0B08) {}
-        else if (method == 0x0200 || method == 0x200) {
-            rsx_surface_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height);
-        }
-        else if (method == 0x0204 || method == 0x204) { g_rsx.color_pitch = arg; if (g_rsx.color_offset) rsx_surface_bind_color(g_rsx.color_offset, arg, g_rsx.width, g_rsx.height); /* XXV-D pitch */ }
-        else if (method == 0x0208 || method == 0x020C || method == 0x0A00 || method == 0x0A04) {}
-        else if (method == 0x1800 || method == 0x1810 || method == 0x1818 ||
-                 method == 0x1808 || method == 0x1820) {
-            ++g_rsx.draws;
-            ++g_rsx.draws_this_frame;
-            // XXIII-V: attempt host textured draw when guest issues draw method
-            if (g_rsx.tex_offset || g_rsx.color_offset) {
-                uint8_t* m = ps3rt_memory();
-                if (m) {
-                    if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset;
-                    rsx_upload_guest_tex(m);
-                    rsx_draw_textured_quad();
-                }
-            }
-            if (g_rsx.vp_offset || g_rsx.fp_offset || g_rsx.shader_prog) {
-                static int td = 0;
-                if (td < 16) {
-                    ps3rt_log("[rsx] XXIII-V/T draw vp=0x%x fp=0x%x tex=0x%x\n",
-                        g_rsx.vp_offset ? g_rsx.vp_offset : g_rsx.shader_prog,
-                        g_rsx.fp_offset, g_rsx.tex_offset);
-                    ++td;
-                }
-            }
-            // XXII-G: count textured vs clear-only draws
-            if (g_rsx.tex_units_bound || g_rsx.tex_offset) {
-                static int gdr = 0;
-                if (gdr < 20) { ps3rt_log("[rsx] XXII-G draw textured tex=0x%x\n", g_rsx.tex_offset); ++gdr; }
-            } else {
-                static int gdc = 0;
-                if (gdc < 12) { ps3rt_log("[rsx] XXII-G draw (no tex unit)\n"); ++gdc; }
-            }
-            if (g_rsx.tex_units_bound || g_rsx.tex_offset) {
-                static int stdr = 0;
-                if (stdr < 16) {
-                    ps3rt_log("[rsx] T textured draw tex=0x%x %ux%u fmt=0x%x\n",
-                        g_rsx.tex_offset, g_rsx.tex_width, g_rsx.tex_height, g_rsx.tex_format);
-                    ++stdr;
-                }
-            }
-        }
-        else if (method == 0x1D60 || method == 0x1D64 || method == 0x1D6C ||
-                 method == 0x09B0 || method == 0x09B4 || method == 0x09B8) {
-            ++g_rsx.shader_binds;
-            if (method == 0x1D60 || method == 0x09B0) {
-                g_rsx.shader_prog = arg;
-                g_rsx.vp_offset = arg;
-                ++g_rsx.vertex_binds;
-                static int sv=0; if(sv<10){ps3rt_log("[rsx] XXIII-T/O vertex program ea=0x%x (host translate stub)\n", arg);++sv;}
-            }
-            if (method == 0x1D64 || method == 0x09B4) {
-                ++g_rsx.fragment_binds;
-                g_rsx.fp_offset = arg;
-                g_rsx.fp_control = arg;
-                static int sf=0; if(sf<10){ps3rt_log("[rsx] XXIII-T/O fragment program ea=0x%x (host translate stub)\n", arg);++sf;}
-            }
-            if (method == 0x1D6C) g_rsx.shader_const_count = arg;
-        }
-        else if (method == 0x1680 || method == 0x1684 || method == 0x1688 || method == 0x1690) {
-            g_rsx.vertex_array_mask |= 1u << ((method >> 2) & 7);
-            ++g_rsx.vertex_binds;
-            if (method == 0x1688 || method == 0x1690) g_rsx.vp_offset = arg;
-        }
-        else if (method == 0x1A00 || method == 0x1A04 || method == 0x1A0C ||
-                 method == 0x1840 || method == 0x1844 || method == 0x1A08 ||
-                 method == 0x1848 || method == 0x184C || method == 0x1A10) {
-            ++g_rsx.tex_binds;
-            // L: NV40 texture offset / format / size family
-            if (method == 0x1A00 || method == 0x1840) {
-                g_rsx.tex_offset = arg;
-                g_rsx.tex_units_bound = 1;
-                static int tl=0; if(tl<12){ps3rt_log("[rsx] L TEX_OFFSET=0x%x\n", arg);++tl;}
-            } else if (method == 0x1A04 || method == 0x1844) {
-                g_rsx.tex_format = arg;
-            } else if (method == 0x1A08 || method == 0x1848) {
-                g_rsx.tex_width = (arg >> 16) & 0xFFFF;
-                g_rsx.tex_height = arg & 0xFFFF;
-                if (g_rsx.tex_width == 0) g_rsx.tex_width = 1;
-                if (g_rsx.tex_height == 0) g_rsx.tex_height = 1;
-            } else if (method == 0x1A0C || method == 0x184C) {
-                g_rsx.tex_pitch = arg;
-            }
-        }
-        else if (method == 0x08C0 || method == 0x08C4 || method == 0x08C8 || method == 0x08CC) {
-            if (method == 0x08C0) g_rsx.viewport_w = (arg >> 16) ? (arg >> 16) : g_rsx.viewport_w;
-            if (method == 0x08C4) g_rsx.viewport_h = (arg >> 16) ? (arg >> 16) : g_rsx.viewport_h;
-        }
-        else if (method == 0x08D0 || method == 0x08D4 || method == 0x08D8 || method == 0x08DC) {
-            if (method == 0x08D0) { g_rsx.scissor_x = arg & 0xFFFF; g_rsx.scissor_w = (arg >> 16) & 0xFFFF; }
-            if (method == 0x08D4) { g_rsx.scissor_y = arg & 0xFFFF; g_rsx.scissor_h = (arg >> 16) & 0xFFFF; }
-        }
-        // XXIII-E: more FIFO methods recognized (still HLE — not full shader path)
-        else if (method == 0x0300 || method == 0x0304 || method == 0x0310 || method == 0x0314) {
-            /* color mask / blend enable */ ;
-        }
-        else if (method == 0x0A10 || method == 0x0A14 || method == 0x0A18) {
-            /* depth test / write */ ;
-        }
-        else if (method == 0x0000 || method == 0x0100 || method == 0x0140) {
-            /* nop / semaphore / ref */ ;
-        }
-        else if (method == 0x1714 || method == 0x1718 || method == 0x1728) {
-            /* surface clip */ ;
-        }
-        else { ++g_rsx.unknown_methods; --g_rsx.known_methods; }
         get = (get + 8) % g_rsx.fifo_size;
         ++steps;
     }
@@ -948,6 +1161,10 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
     if (!g_hwnd) rsx_host_init(1280, 720);
     rsx_ensure_hlsl(); // XXIV-C prove HLSL at init
     ps3rt_log("[rsx] init fifo=0x%llx size=0x%x backend=%d\n", (unsigned long long)fifo_addr, g_rsx.fifo_size, g_backend);
+}
+
+PS3RT_API void ps3rt_rsx_set_color_surface(uint32_t offset, uint32_t w, uint32_t h) {
+    rsx_surface_bind_color(offset, w ? ((w*4+63)&~63u) : 0, w, h);
 }
 
 PS3RT_API void ps3rt_rsx_set_put(uint32_t put) {
@@ -973,7 +1190,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] XXV-D flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
+        ps3rt_log("[rsx] XXV-E flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
             g_rsx.depth_clears, g_rsx.stencil_clears,
             g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,

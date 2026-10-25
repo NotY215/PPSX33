@@ -1,3 +1,5 @@
+// XXV-D depth on XXV-E: GCM color seed + denser present
+// XXV-E denser GCM present assist
 // XXIV-D PRX NID quality + return surface
 // XXIV-B GCM put threshold
 // XXIII-X frame assist
@@ -812,7 +814,7 @@ PS3RT_API void ps3rt_progress_hw(void) {
             ++g_gcm_frame_id;
         }
         // XXIII-K: tighter RSX assist cadence (every 32 ticks)
-        if ((s_n & 0x0F) == 0) { // XXIII-M deep: assist every 16 ticks
+        if ((s_n & 0x07) == 0) { // XXV-E: denser flip/present assist
             uint32_t put = g_gcm_control ? rd_be32_guest(g_gcm_control + 0) : 0;
             uint32_t get = g_gcm_control ? rd_be32_guest(g_gcm_control + 4) : 0;
             // XXIV-B: only treat as real guest stream when put moves past minimal residual

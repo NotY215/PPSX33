@@ -1,3 +1,4 @@
+// XXV-E: truthful lift — unsupported returns false; report missing encodings
 #include "ppu_lifter.h"
 #include "ps3_util.h"
 #include <algorithm>
@@ -99,14 +100,13 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
     }
     // XXV-P1: do not claim Implemented for empty emission (GPT audit)
     case 0:
-        o << "/* lift unsupported primary opc=0 */;";
-        return false;
+        key = "opc_0"; o << "/* XXV-E unsupported opc=0 */;"; return false;
     case 1: case 5: case 6: case 9:
-        o << "/* lift unsupported primary */;";
-        return false;
+        key = "opc_" + std::to_string((w >> 26) & 63);
+        o << "/* XXV-E unsupported primary */;"; return false;
     case 2: case 3:
-        o << "/* lift unsupported primary */;";
-        return false;
+        key = "opc_" + std::to_string((w >> 26) & 63);
+        o << "/* XXV-E unsupported primary */;"; return false;
     case 20: {
         unsigned sh = rb, mb = (w >> 6) & 31, me = (w >> 1) & 31;
         uint64_t m = mask64(mb + 32, me + 32);
@@ -329,7 +329,10 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             o << (xo == 339 ? fmt("c.gpr[%u] = %s;", rt, r) : fmt("%s = c.gpr[%u];", r, rt)); return true;
         }
         case 371: o << fmt("c.gpr[%u] = 0;", rt); return true;
-        default: return true;
+        default:
+            key = "xo31_" + std::to_string(xo);
+            o << "/* XXV-E unsupported xo31 */;";
+            return false;
         }
     }
     case 4: {
@@ -389,7 +392,10 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         o << fmt("c.fpr[%u] = c.fpr[%u];", frt, frb); return true;
     }
     default:
-        return true;
+        // XXV-E: unknown primary is Unsupported, not Implemented
+        key = "opc_" + std::to_string((w >> 26) & 63);
+        o << "/* XXV-E unsupported primary */;";
+        return false;
     }
     return true;
 }
@@ -495,7 +501,7 @@ bool lift_elf(const ElfImage& elf, const std::string& dir, LiftStats& st, std::s
     }
     std::ostringstream rep;
     rep << "instructions: " << st.instructions << "\nimplemented: " << st.implemented
-        << "\nunimplemented: " << st.unimplemented << "\nchunks: " << st.chunks << "\n\nmissing opcodes (most useful TODO list):\n";
+        << "\nXXV-E lift status\nunimplemented: " << st.unimplemented << "\nimplemented: " << st.implemented << "\nchunks: " << st.chunks << "\n\nmissing/unsupported encodings (not counted as Implemented):\n";
     std::vector<std::pair<std::string, uint64_t>> sorted(st.missing.begin(), st.missing.end());
     std::sort(sorted.begin(), sorted.end(), [](auto& a, auto& b){ return a.second > b.second; });
     for (auto& kv : sorted) rep << "  " << kv.first << "  x" << kv.second << "\n";
