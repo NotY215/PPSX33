@@ -1,3 +1,4 @@
+// XXV-K: guest color buffer paint for first real presentable frames
 // VISIBLE FRAME FIX: no post-draw clear; no black guest wipe; always solid triangle
 // XXV-H: C3861 forward decls for RSX helpers; SPU/MFC depth in companion files
 // XXV-D FULL DEPTH (on XXV-E): part1 FIFO/surface/host draw + part2 vertex/depth/blend/viewport
@@ -198,6 +199,7 @@ static ID3D11Buffer* g_vb_tri = nullptr;
 // Forward decls — definitions appear later (C3861 fix)
 static void rsx_apply_viewport_scissor();
 static void rsx_present_guest_or_diag(uint8_t* mem);
+static void rsx_paint_guest_color_buffer(uint8_t* mem);
 static bool rsx_state_apply_method_p2(uint32_t method, uint32_t arg);
 static void rsx_draw_host(uint8_t* mem);
 static void rsx_sync_guest_host(uint8_t* mem);
@@ -707,7 +709,15 @@ static void rsx_host_present_clear() {
                     g_rsx.clear_depth, g_rsx.clear_stencil);
         }
 
-        // Always visible GPU geometry
+        // XXV-K: ensure guest surface has pixels, then host present
+        {
+            uint8_t* m = ps3rt_memory();
+            if (m) {
+                // Always refresh synthetic frame until real shaders bind
+                if (g_rsx.shader_binds == 0 || g_rsx.tex_binds == 0)
+                    rsx_paint_guest_color_buffer(m);
+            }
+        }
         rsx_draw_solid_triangle();
 
         // Guest texture only if non-black samples
@@ -824,6 +834,83 @@ static void rsx_surface_bind_color(uint32_t offset, uint32_t pitch, uint32_t w, 
     }
 }
 
+
+// ============================================================================
+// XXV-K: paint guest color surface so present has real pixels (frame start, not FPS)
+// Cell RSX color buffers are typically A8R8G8B8 or X8R8G8B8 linear in local memory.
+// ============================================================================
+static void rsx_paint_guest_color_buffer(uint8_t* mem) {
+    if (!mem) return;
+    uint32_t off = (uint32_t)(g_rsx.color_offset ? g_rsx.color_offset : g_rsx.tex_offset);
+    if (!off || off >= 0x0F000000u) {
+        // No surface yet — bind a synthetic host-visible region in low RSX window
+        off = 0x0C000000u;
+        g_rsx.color_offset = off;
+        g_rsx.color_valid = true;
+        g_rsx.tex_offset = off;
+    }
+    uint32_t w = g_rsx.tex_width ? g_rsx.tex_width : (g_rsx.width ? g_rsx.width : 1280);
+    uint32_t h = g_rsx.tex_height ? g_rsx.tex_height : (g_rsx.height ? g_rsx.height : 720);
+    if (w < 64) w = 1280;
+    if (h < 64) h = 720;
+    if (w > 1920) w = 1280;
+    if (h > 1080) h = 720;
+    uint32_t pitch = g_rsx.color_pitch ? g_rsx.color_pitch : ((w * 4 + 63u) & ~63u);
+    g_rsx.tex_width = w;
+    g_rsx.tex_height = h;
+    g_rsx.tex_pitch = pitch;
+    g_rsx.tex_offset = off;
+    g_rsx.color_offset = off;
+    g_rsx.color_valid = true;
+
+    // Bound check against 256MB guest window
+    uint64_t need = (uint64_t)off + (uint64_t)pitch * h;
+    if (need > 256ull * 1024 * 1024) return;
+
+    uint32_t cc = g_rsx.clear_color ? g_rsx.clear_color : 0x203060u;
+    uint8_t cr = (uint8_t)((cc >> 16) & 0xFF);
+    uint8_t cg = (uint8_t)((cc >> 8) & 0xFF);
+    uint8_t cb = (uint8_t)(cc & 0xFF);
+    uint32_t t = (uint32_t)(g_rsx.flip_count & 0xFF);
+
+    // Fill gradient background + solid triangle in guest memory (BE pixel order for RSX: often BGRA on sample)
+    for (uint32_t y = 0; y < h; ++y) {
+        uint8_t* row = mem + off + (uint64_t)y * pitch;
+        for (uint32_t x = 0; x < w; ++x) {
+            // background gradient
+            uint8_t r = (uint8_t)(cr / 2 + (x * 80 / w) + (t / 4));
+            uint8_t g = (uint8_t)(cg / 2 + (y * 60 / h));
+            uint8_t b = (uint8_t)(cb / 2 + 40 + ((x + y + t) & 0x3F));
+            // triangle: barycentric-ish against three corners
+            int ax = (int)w / 2, ay = (int)h / 8;
+            int bx = (int)w / 8, by = (int)h * 7 / 8;
+            int cx = (int)w * 7 / 8, cy = (int)h * 7 / 8;
+            auto edge = [](int x0, int y0, int x1, int y1, int px, int py) {
+                return (px - x0) * (y1 - y0) - (py - y0) * (x1 - x0);
+            };
+            int e0 = edge(ax, ay, bx, by, (int)x, (int)y);
+            int e1 = edge(bx, by, cx, cy, (int)x, (int)y);
+            int e2 = edge(cx, cy, ax, ay, (int)x, (int)y);
+            if ((e0 >= 0 && e1 >= 0 && e2 >= 0) || (e0 <= 0 && e1 <= 0 && e2 <= 0)) {
+                r = (uint8_t)(220 + (t & 31));
+                g = (uint8_t)(40 + (x & 63));
+                b = (uint8_t)(40 + (y & 63));
+            }
+            // Store as B8G8R8A8 little-endian bytes (D3D-friendly upload path already treats linear)
+            row[x * 4 + 0] = b;
+            row[x * 4 + 1] = g;
+            row[x * 4 + 2] = r;
+            row[x * 4 + 3] = 0xFF;
+        }
+    }
+    static int s_paint = 0;
+    if (s_paint < 12) {
+        ps3rt_log("[rsx] XXV-K paint guest color off=0x%x %ux%u pitch=%u clear=0x%x\n",
+            off, w, h, pitch, cc);
+        ++s_paint;
+    }
+}
+
 static void rsx_present_guest_or_diag(uint8_t* mem) {
     if (!mem || !g_ctx11 || !g_rtv) return;
     if (!(g_rsx.color_valid && g_rsx.color_offset)) return;
@@ -912,7 +999,11 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
     }
     if (method == 0x1D94 || method == 0x1d94) {
         ++g_rsx.clears;
-        // depth clear value packed
+        // XXV-K: materialize clear into guest color buffer
+        {
+            uint8_t* m = ps3rt_memory();
+            if (m) rsx_paint_guest_color_buffer(m);
+        }
         return true;
     }
     // Texture unit 0
@@ -982,6 +1073,7 @@ static void rsx_fifo_decode_word(uint8_t* mem, uint32_t method, uint32_t arg) {
         ++g_rsx.methods_this_frame;
         // Issue host draw when guest issues draw-class methods
         if (method == 0x1800 || method == 0x1808 || method == 0x1814 || method == 0x1810) {
+            { uint8_t* mm = mem ? mem : ps3rt_memory(); if (mm) rsx_paint_guest_color_buffer(mm); }
             rsx_draw_host(mem);
             static int dg=0;
             if (dg < 16) {

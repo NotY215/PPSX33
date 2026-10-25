@@ -1,3 +1,4 @@
+// XXV-L: sticky wild-pc break + LR-first recovery
 // XXV-F full depth: validate_guest_pc, capture_guest_fault, strict/storm
 #include <cstdlib>
 // XXIII-R: PPU control-flow TOC/OPD recovery
@@ -9,6 +10,15 @@ static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, 
                                          uint64_t exclude_pc = 0,
                                          const uint64_t* ban = nullptr, int nban = 0,
                                          const uint64_t* rban = nullptr, int nrban = 0) {
+    // XXV-L: prefer LR when it is a translated address
+    if (c.lr && (c.lr & 3ull) == 0 && pc_in_chunks(c.lr, chunks, n)) {
+        static uint64_t s_lr_sticky = 0;
+        static int s_lr_hits = 0;
+        if (c.lr == s_lr_sticky) ++s_lr_hits; else { s_lr_sticky = c.lr; s_lr_hits = 1; }
+        if (s_lr_hits < 8)
+            return c.lr;
+    }
+
     auto banned = [&](uint64_t p) -> bool {
         if (!p || p == exclude_pc) return true;
         if (p < 0x10100ull) return true;
@@ -282,14 +292,47 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             if (!alt && last_good_ret) alt = last_good_ret;
             if (alt) {
                 static int wild_log = 0;
-                if (wild_log < 12) {
-                    if (entry_toc) c.gpr[2] = entry_toc; // XXIII-R
-                    log_recovery_action("wild-pc", c.pc, alt); ++f_recoveries;
-                    ps3rt_log("[ps3] XXV-F wild-pc 0x%llx -> 0x%llx\n",
-                        (unsigned long long)c.pc, (unsigned long long)alt);
-                    ++wild_log;
+                {
+                    // XXV-L: break sticky recovery to the same alt (e.g. 0x199c78 forever)
+                    static uint64_t s_last_alt = 0;
+                    static int s_same_alt = 0;
+                    if (alt == s_last_alt) ++s_same_alt;
+                    else { s_last_alt = alt; s_same_alt = 1; }
+                    if (s_same_alt >= 6) {
+                        uint64_t lr = c.lr;
+                        if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr != alt) {
+                            if (wild_log < 24)
+                                ps3rt_log("[ps3] XXV-L sticky-alt break via LR 0x%llx (was 0x%llx x%d)\n",
+                                    (unsigned long long)lr, (unsigned long long)alt, s_same_alt);
+                            alt = lr;
+                        } else if (pc_in_chunks(alt + 0x10, chunks, n)) {
+                            alt = alt + 0x10;
+                            if (wild_log < 24)
+                                ps3rt_log("[ps3] XXV-L sticky-alt advance +0x10 -> 0x%llx\n",
+                                    (unsigned long long)alt);
+                        } else {
+                            for (size_t i = 0; i < n; ++i) {
+                                if (chunks[i].start > alt) {
+                                    alt = chunks[i].start;
+                                    if (wild_log < 24)
+                                        ps3rt_log("[ps3] XXV-L sticky-alt next chunk 0x%llx\n",
+                                            (unsigned long long)alt);
+                                    break;
+                                }
+                            }
+                        }
+                        s_same_alt = 0;
+                        s_last_alt = alt;
+                    }
+                    if (wild_log < 16) {
+                        if (entry_toc) c.gpr[2] = entry_toc;
+                        log_recovery_action("wild-pc", c.pc, alt); ++f_recoveries;
+                        ps3rt_log("[ps3] XXV-L wild-pc 0x%llx -> 0x%llx\n",
+                            (unsigned long long)c.pc, (unsigned long long)alt);
+                        ++wild_log;
+                    }
+                    c.pc = alt; c.gpr[3] = 0; continue;
                 }
-                c.pc = alt; c.gpr[3] = 0; continue;
             }
         }
 
