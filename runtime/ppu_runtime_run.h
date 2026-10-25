@@ -293,45 +293,61 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             if (alt) {
                 static int wild_log = 0;
                 {
-                    // XXV-L: break sticky recovery to the same alt (e.g. 0x199c78 forever)
+                    // Sticky recovery kill-switch: ban looping alts, big stride, next chunk
                     static uint64_t s_last_alt = 0;
                     static int s_same_alt = 0;
+                    static int s_sticky_log = 0;
                     if (alt == s_last_alt) ++s_same_alt;
                     else { s_last_alt = alt; s_same_alt = 1; }
-                    if (s_same_alt >= 6) {
+
+                    if (s_same_alt >= 3) {
+                        // Ban the sticky target so recover_return_pc won't re-pick it
+                        // Prefer LR, large stride, then rotate chunks
                         uint64_t lr = c.lr;
-                        if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr != alt) {
-                            if (wild_log < 24)
-                                ps3rt_log("[ps3] XXV-L sticky-alt break via LR 0x%llx (was 0x%llx x%d)\n",
-                                    (unsigned long long)lr, (unsigned long long)alt, s_same_alt);
-                            alt = lr;
-                        } else if (pc_in_chunks(alt + 0x10, chunks, n)) {
-                            alt = alt + 0x10;
-                            if (wild_log < 24)
-                                ps3rt_log("[ps3] XXV-L sticky-alt advance +0x10 -> 0x%llx\n",
-                                    (unsigned long long)alt);
-                        } else {
-                            for (size_t i = 0; i < n; ++i) {
-                                if (chunks[i].start > alt) {
-                                    alt = chunks[i].start;
-                                    if (wild_log < 24)
-                                        ps3rt_log("[ps3] XXV-L sticky-alt next chunk 0x%llx\n",
-                                            (unsigned long long)alt);
+                        uint64_t next = 0;
+                        if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr != alt)
+                            next = lr;
+                        if (!next) {
+                            for (uint64_t stride = 0x40; stride <= 0x1000; stride <<= 1) {
+                                uint64_t cand = alt + stride;
+                                if (pc_in_chunks(cand, chunks, n)) { next = cand; break; }
+                            }
+                        }
+                        if (!next) {
+                            static size_t s_chunk_i = 0;
+                            for (size_t k = 0; k < n; ++k) {
+                                size_t i = (s_chunk_i + k) % n;
+                                if (chunks[i].start != alt && chunks[i].start != s_last_alt) {
+                                    next = chunks[i].start;
+                                    s_chunk_i = i + 1;
                                     break;
                                 }
                             }
                         }
+                        if (!next && n) next = chunks[0].start;
+                        if (next) {
+                            if (s_sticky_log < 12) {
+                                ps3rt_log("[ps3] XXV-L sticky BREAK 0x%llx -> 0x%llx (hits=%d)\n",
+                                    (unsigned long long)alt, (unsigned long long)next, s_same_alt);
+                                ++s_sticky_log;
+                            }
+                            alt = next;
+                        }
                         s_same_alt = 0;
                         s_last_alt = alt;
+                        // poison last_good if it was the sticky one
+                        if (last_good_ret == s_last_alt) last_good_ret = alt;
                     }
-                    if (wild_log < 16) {
+                    static int wild_log2 = 0;
+                    if (wild_log2 < 12) {
                         if (entry_toc) c.gpr[2] = entry_toc;
                         log_recovery_action("wild-pc", c.pc, alt); ++f_recoveries;
                         ps3rt_log("[ps3] XXV-L wild-pc 0x%llx -> 0x%llx\n",
                             (unsigned long long)c.pc, (unsigned long long)alt);
-                        ++wild_log;
+                        ++wild_log2;
                     }
                     c.pc = alt; c.gpr[3] = 0; continue;
+                }
                 }
             }
         }

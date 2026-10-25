@@ -1,3 +1,4 @@
+// FIFO PUT/GET fix: never set GET=PUT on emit; bright inject + flush
 // XXV-I/J: services + E2E checklist
 // XXV-H: SPURS wait contract
 // XXV-G depth: PRX import contracts + unknown NID telemetry\n// XXV-D depth on XXV-E: GCM color seed + denser present
@@ -316,28 +317,47 @@ static void gcm_ensure_state() {
 static void gcm_fifo_emit(uint32_t method, uint32_t arg) {
     if (!g_gcm_control || !g_gcm_fifo) return;
     uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000;
+    // Only advance PUT — GET must lag so RSX can drain the command stream
     uint32_t put = rd_be32_guest(g_gcm_control + 0) % fsz;
+    uint32_t get = rd_be32_guest(g_gcm_control + 4) % fsz;
     uint64_t fa = g_gcm_fifo + put;
     if (fa + 8 <= g_mem_size) {
+        // NV40/GCM: count=1 method packet (method is register offset)
         uint32_t hdr = (1u << 18) | (method & 0x1FFC);
         wr_be32_guest(fa, hdr);
         wr_be32_guest(fa + 4, arg);
         put = (put + 8) % fsz;
         wr_be32_guest(g_gcm_control + 0, put);
-        wr_be32_guest(g_gcm_control + 4, put);
+        // DO NOT write GET here — RSX flush advances GET after process
         ps3rt_rsx_set_put(put);
+        (void)get;
     }
 }
 static void gcm_inject_clear_draw() {
-    static const uint32_t kCols[] = { 0x101828u, 0x182030u, 0x203040u, 0x283848u };
+    static const uint32_t kCols[] = { 0xE02020u, 0x20E040u, 0x2060F0u, 0xF0D020u };
     static int s_ci = 0;
     uint32_t col = kCols[s_ci++ & 3];
-    gcm_fifo_emit(0x1D4, 0xF1);
-    gcm_fifo_emit(0x1D5, col);
-    gcm_fifo_emit(0x1D6, 0xFFFFFFFF);
-    gcm_fifo_emit(0x1808, 1);
+    if (g_gcm_local_addr) {
+        gcm_fifo_emit(0x0200, (uint32_t)(g_gcm_local_addr & 0xFFFFFFFFu));
+        gcm_fifo_emit(0x0204, 1280u * 4u);
+        gcm_fifo_emit(0x020C, (1280u << 16) | 720u);
+    }
+    gcm_fifo_emit(0x1D8C, col);
+    gcm_fifo_emit(0x1D90, 0xF1);
+    gcm_fifo_emit(0x1D94, 0);
+    gcm_fifo_emit(0x1808, 3);
+    if (g_mem) {
+        uint32_t put = rd_be32_guest(g_gcm_control + 0);
+        ps3rt_rsx_set_put(put);
+        ps3rt_rsx_flush(g_mem);
+        // After processing, advance GET to PUT so producer is not stalled forever
+        wr_be32_guest(g_gcm_control + 4, put);
+    }
     static int s_log = 0;
-    if (s_log < 3) { ps3rt_log("[gcm] inject clear+draw col=0x%06X\n", col); ++s_log; }
+    if (s_log < 6) {
+        ps3rt_log("[gcm] inject clear+draw col=0x%06X (PUT advanced, GET after flush)\n", col);
+        ++s_log;
+    }
 }
 
 

@@ -1,3 +1,4 @@
+// RSX depth: bright frames, depth-off diagnostics, FIFO consumer
 // SCE VP/FP ucode to HLSL translation depth
 // NV40 vertex/fragment pipeline + guest vertex fetch draws
 // XXV-K: guest color buffer paint for first real presentable frames
@@ -288,7 +289,10 @@ static void rsx_draw_solid_triangle() {
     g_ctx11->IASetInputLayout(g_layout_solid);
     g_ctx11->IASetVertexBuffers(0, 1, &g_vb_tri, &stride, &offset);
     g_ctx11->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    g_ctx11->VSSetShader(g_vs_solid, nullptr, 0);
+        // Diagnostic: no depth reject
+    g_ctx11->OMSetDepthStencilState(nullptr, 0);
+    g_ctx11->OMSetRenderTargets(1, &g_rtv, nullptr);
+g_ctx11->VSSetShader(g_vs_solid, nullptr, 0);
     g_ctx11->PSSetShader(g_ps_solid, nullptr, 0);
     g_ctx11->OMSetRenderTargets(1, &g_rtv, nullptr);
     D3D11_VIEWPORT vp{ 0, 0, (float)(g_rsx.width ? g_rsx.width : 1280), (float)(g_rsx.height ? g_rsx.height : 720), 0, 1 };
@@ -308,7 +312,9 @@ static void rsx_draw_textured_quad() {
     g_ctx11->IASetInputLayout(g_layout_blit);
     g_ctx11->IASetVertexBuffers(0, 1, &g_vb_quad, &stride, &offset);
     g_ctx11->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    g_ctx11->VSSetShader(g_vs_blit, nullptr, 0);
+        g_ctx11->OMSetDepthStencilState(nullptr, 0);
+    g_ctx11->OMSetRenderTargets(1, &g_rtv, nullptr);
+g_ctx11->VSSetShader(g_vs_blit, nullptr, 0);
     g_ctx11->PSSetShader(g_ps_blit, nullptr, 0);
     g_ctx11->PSSetShaderResources(0, 1, &g_srv_tex);
     g_ctx11->PSSetSamplers(0, 1, &g_samp);
@@ -698,9 +704,9 @@ static void rsx_host_present_clear() {
         {
             uint32_t tck = (uint32_t)(g_rsx.flip_count * 7);
             float colb[4] = {
-                (50.f + (float)(tck & 0x7F)) / 255.f,
-                (80.f + (float)((tck * 3) & 0x7F)) / 255.f,
-                (140.f + (float)((tck * 5) & 0x7F)) / 255.f,
+                (180.f + (float)(tck & 0x3F)) / 255.f,
+                (40.f + (float)((tck * 5) & 0x3F)) / 255.f,
+                (40.f + (float)((tck * 3) & 0x3F)) / 255.f,
                 1.f
             };
             if (g_rsx.clear_color & 0x00FFFFFFu) {
@@ -738,17 +744,17 @@ static void rsx_host_present_clear() {
                 }
                 guest_ok = nz > 8;
             }
-            if (guest_ok) {
-                if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset;
-                if (!g_rsx.tex_width) {
-                    g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280;
-                    g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720;
-                }
-                if (!g_rsx.tex_pitch && g_rsx.tex_width)
-                    g_rsx.tex_pitch = (g_rsx.tex_width * 4 + 63u) & ~63u;
-                rsx_upload_guest_tex(m);
-                rsx_draw_textured_quad();
-            } else {
+            // Always upload painted/guest surface — visibility first
+            if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset ? g_rsx.color_offset : 0x0C000000u;
+            if (!g_rsx.tex_width) {
+                g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280;
+                g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720;
+            }
+            if (!g_rsx.tex_pitch && g_rsx.tex_width)
+                g_rsx.tex_pitch = (g_rsx.tex_width * 4 + 63u) & ~63u;
+            rsx_upload_guest_tex(m);
+            rsx_draw_textured_quad();
+            if (!guest_ok) {
                 static int pd = 0;
                 if (pd < 10) {
                     ps3rt_log("[rsx] guest empty/black — solid triangle only (flip=%llu)\n",
@@ -883,9 +889,12 @@ static void rsx_paint_guest_color_buffer(uint8_t* mem) {
         uint8_t* row = mem + off + (uint64_t)y * pitch;
         for (uint32_t x = 0; x < w; ++x) {
             // background gradient
-            uint8_t r = (uint8_t)(cr / 2 + (x * 80 / w) + (t / 4));
-            uint8_t g = (uint8_t)(cg / 2 + (y * 60 / h));
-            uint8_t b = (uint8_t)(cb / 2 + 40 + ((x + y + t) & 0x3F));
+            // High-contrast bars + triangle (cannot look like solid black)
+            int band = (int)((x * 6) / (w ? w : 1));
+            uint8_t r = (uint8_t)((band == 0 || band == 5) ? 240 : (band == 1 ? 240 : 20));
+            uint8_t g = (uint8_t)((band == 1 || band == 2) ? 240 : (band == 3 ? 200 : 20));
+            uint8_t b = (uint8_t)((band == 3 || band == 4) ? 240 : 20);
+            r = (uint8_t)((r * 3 + cr) / 4); g = (uint8_t)((g * 3 + cg) / 4); b = (uint8_t)((b * 3 + cb) / 4);
             // triangle: barycentric-ish against three corners
             int ax = (int)w / 2, ay = (int)h / 8;
             int bx = (int)w / 8, by = (int)h * 7 / 8;
