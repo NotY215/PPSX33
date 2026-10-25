@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PPSX33</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans-serif'],mono:['JetBrains Mono','monospace']},
+colors:{app:{bg:'#090d14',sidebar:'#0d1117',card:'#161b22',border:'#30363d',hover:'#21262d',accent:'#38bdf8',accentBlue:'#1f6feb',success:'#238636',danger:'#da3633'}},
+boxShadow:{'glow-cyan':'0 0 20px -3px rgba(56,189,248,0.35)','glow-red':'0 0 15px -3px rgba(239,68,68,0.4)'}}}}
+</script>
+<style>
+html,body{height:100%;margin:0}
+body{background:#090d14;color:#e6edf3;font-family:Inter,sans-serif;overflow:hidden;user-select:none}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:#0d1117}
+::-webkit-scrollbar-thumb{background:#21262d;border-radius:4px;border:1px solid #30363d}
+.pulse-glow{animation:pulse-glow 2s cubic-bezier(.4,0,.6,1) infinite}
+@keyframes pulse-glow{0%,100%{opacity:.85;filter:drop-shadow(0 0 8px rgba(56,189,248,.55))}50%{opacity:1;filter:drop-shadow(0 0 16px rgba(56,189,248,.9))}}
+.btn-disabled{opacity:.45;pointer-events:none}
+</style>
+</head>
+<body class="h-screen flex flex-col border border-app-border">
+<header class="h-10 bg-app-sidebar border-b border-app-border flex items-center justify-between px-3 text-xs z-50">
+  <div class="flex items-center gap-2.5">
+    <div class="w-5 h-5 rounded-full bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center shadow-glow-cyan">
+      <i data-lucide="cpu" class="w-3 h-3 text-cyan-400"></i>
+    </div>
+    <span class="font-semibold text-gray-100 tracking-wide flex items-center gap-1.5">
+      PPSX33 <span class="text-gray-500">·</span>
+      <span class="text-gray-400 font-normal">PlayStation 3 Recompiler</span>
+      <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-app-card border border-app-border text-cyan-400 font-mono">v1.0</span>
+    </span>
+  </div>
+  <div class="flex items-center gap-3 font-mono text-[11px]">
+    <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span id="headerStatusText">ENGINE READY</span>
+    </div>
+    <div class="text-gray-400 bg-app-card px-2.5 py-0.5 rounded border border-app-border">
+      Host: <span class="text-cyan-400">D3D11</span>
+      <span class="text-gray-600">|</span>
+      Toolchain: <span class="text-cyan-400">System VS</span>
+    </div>
+  </div>
+</header>
+
+<div class="flex-1 flex overflow-hidden">
+  <aside class="w-72 bg-app-sidebar border-r border-app-border flex flex-col justify-between overflow-y-auto shrink-0">
+    <div class="p-4 space-y-5">
+      <div class="relative flex flex-col items-center justify-center p-5 rounded-xl bg-gradient-to-b from-cyan-950/20 via-app-card to-app-card border border-cyan-500/20">
+        <div class="absolute inset-0 bg-cyan-500/5 blur-xl rounded-xl"></div>
+        <div class="relative w-20 h-20 mb-3 flex items-center justify-center">
+          <div class="absolute inset-0 rounded-full border border-cyan-500/30 border-dashed animate-[spin_12s_linear_infinite]"></div>
+          <div class="absolute inset-1 rounded-full border border-blue-500/40 border-t-transparent animate-[spin_6s_linear_infinite_reverse]"></div>
+          <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-600 to-blue-600 p-0.5 shadow-glow-cyan pulse-glow">
+            <div class="w-full h-full bg-slate-950 rounded-full flex items-center justify-center">
+              <i data-lucide="gamepad-2" class="w-7 h-7 text-cyan-400"></i>
+            </div>
+          </div>
+        </div>
+        <h1 class="text-lg font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-cyan-400 font-mono">PPSX33</h1>
+        <p class="text-[10px] text-cyan-400/70 font-mono tracking-widest uppercase">PS3 Binary Recompiler</p>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-2.5 px-1">
+          <span class="text-[11px] font-bold tracking-wider text-gray-400 uppercase font-mono flex items-center gap-1.5">
+            <i data-lucide="workflow" class="w-3.5 h-3.5 text-cyan-400"></i> Workflow
+          </span>
+          <span class="text-[10px] bg-app-hover px-1.5 py-0.5 rounded text-gray-400 font-mono">8 ACTIONS</span>
+        </div>
+        <div class="space-y-1.5" id="workflowBtns">
+          <button data-action="decrypt" class="wf-btn w-full h-9 px-3 rounded-lg bg-app-card hover:bg-app-hover border border-app-border hover:border-cyan-500/50 text-xs font-medium text-gray-200 flex items-center justify-between transition group active:scale-[0.98]">
+            <span class="flex items-center gap-2"><i data-lucide="lock" class="w-3.5 h-3.5 text-gray-400 group-hover:text-cyan-400"></i>Decrypt EBOOT</span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-600"></i>
+          </button>
+          <button data-action="load" class="wf-btn w-full h-9 px-3 rounded-lg bg-app-card hover:bg-app-hover border border-app-border hover:border-cyan-500/50 text-xs font-medium text-gray-200 flex items-center justify-between transition group active:scale-[0.98]">
+            <span class="flex items-center gap-2"><i data-lucide="file-code" class="w-3.5 h-3.5 text-gray-400 group-hover:text-cyan-400"></i>Load ELF</span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-600"></i>
+          </button>
+          <button data-action="decompile" id="btnDecompile" class="wf-btn w-full h-9 px-3 rounded-lg bg-app-card hover:bg-app-hover border border-app-border hover:border-cyan-500/50 text-xs font-medium text-gray-200 flex items-center justify-between transition group active:scale-[0.98]">
+            <span class="flex items-center gap-2"><i data-lucide="binary" class="w-3.5 h-3.5 text-gray-400 group-hover:text-cyan-400"></i>Decompile</span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-600"></i>
+          </button>
+          <button data-action="build" id="btnBuild" class="wf-btn w-full h-9 px-3 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 border border-cyan-400/30 text-xs font-semibold text-white flex items-center justify-between shadow-glow-cyan transition group active:scale-[0.98]">
+            <span class="flex items-center gap-2"><i data-lucide="hammer" class="w-3.5 h-3.5 text-cyan-200"></i>Build Project</span>
+            <i data-lucide="play" class="w-3.5 h-3.5 text-cyan-200"></i>
+          </button>
+          <button data-action="run" id="btnRun" class="wf-btn w-full h-9 px-3 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-500/30 text-xs font-medium text-emerald-300 flex items-center justify-between transition group active:scale-[0.98]">
+            <span class="flex items-center gap-2"><i data-lucide="play-circle" class="w-3.5 h-3.5 text-emerald-400"></i>Run Executable</span>
+            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-emerald-400"></i>
+          </button>
+          <button data-action="copy" id="btnCopy" class="wf-btn w-full h-9 px-3 rounded-lg bg-app-card hover:bg-app-hover border border-app-border hover:border-cyan-500/50 text-xs font-medium text-gray-200 flex items-center justify-between transition group active:scale-[0.98]">
+            <span class="flex items-center gap-2"><i data-lucide="folder-output" class="w-3.5 h-3.5 text-gray-400 group-hover:text-cyan-400"></i>Copy to Game Folder</span>
+            <i data-lucide="copy" class="w-3.5 h-3.5 text-gray-600"></i>
+          </button>
+          <button data-action="rpcs3" id="btnRpcs3" class="wf-btn w-full h-9 px-3 rounded-lg bg-app-card hover:bg-app-hover border border-app-border hover:border-cyan-500/50 text-xs font-medium text-gray-200 flex items-center justify-between transition group active:scale-[0.98]">
+            <span class="flex items-center gap-2"><i data-lucide="folder-search" class="w-3.5 h-3.5 text-gray-400 group-hover:text-cyan-400"></i>Locate RPCS3…</span>
+            <i data-lucide="hard-drive" class="w-3.5 h-3.5 text-gray-600"></i>
+          </button>
+          <button data-action="cancel" id="btnCancel" class="wf-btn w-full h-9 px-3 rounded-lg bg-app-danger/20 hover:bg-app-danger/30 border border-app-danger/50 text-xs font-medium text-red-400 flex items-center justify-between transition group active:scale-[0.98] shadow-glow-red">
+            <span class="flex items-center gap-2"><i data-lucide="square" class="w-3.5 h-3.5 text-red-400"></i><span id="cancelLabel">Stop / Cancel Build</span></span>
+            <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="h-px bg-app-border"></div>
+      <div class="space-y-3">
+        <span class="text-[11px] font-bold tracking-wider text-gray-400 uppercase font-mono flex items-center gap-1.5 px-1">
+          <i data-lucide="sliders" class="w-3.5 h-3.5 text-cyan-400"></i> Recompiler Settings
+        </span>
+        <div class="space-y-1">
+          <label class="text-[11px] text-gray-400 font-medium">GRAPHICS API</label>
+          <select id="gfxSelect" class="w-full h-8 pl-2.5 pr-8 bg-app-card border border-app-border rounded-lg text-xs font-mono text-gray-200 focus:outline-none focus:border-cyan-500">
+            <option value="d3d11">D3D11 (DirectX 11)</option>
+            <option value="ogl">OpenGL 3.3 (future)</option>
+            <option value="vk">Vulkan (not linked)</option>
+          </select>
+        </div>
+        <div class="space-y-1">
+          <div class="flex justify-between text-[11px] text-gray-400 font-medium">
+            <span>CPU THREADS</span>
+            <span id="threadVal" class="text-cyan-400 font-mono font-bold">4</span>
+          </div>
+          <input type="range" id="threadRange" min="1" max="32" step="1" value="4" class="w-full h-1.5 bg-app-card rounded-lg appearance-none cursor-pointer accent-cyan-400 border border-app-border"/>
+        </div>
+      </div>
+    </div>
+    <div class="p-3 bg-app-card/60 border-t border-app-border text-[11px] font-mono text-gray-400">
+      Toolchain: system Visual Studio · redist = installer + guide only
+    </div>
+  </aside>
+
+  <main class="flex-1 flex flex-col bg-app-bg overflow-hidden">
+    <div class="h-11 bg-app-sidebar border-b border-app-border px-4 flex items-center gap-2">
+      <span class="text-xs font-mono text-gray-500 shrink-0 flex items-center gap-1">
+        <i data-lucide="folder-git-2" class="w-3.5 h-3.5 text-cyan-400"></i> TARGET:
+      </span>
+      <div class="flex-1 bg-app-card border border-app-border rounded-md px-2.5 py-1 text-xs font-mono text-cyan-300/90 overflow-hidden whitespace-nowrap text-ellipsis" id="projectPath">No project loaded</div>
+      <button data-action="browse" class="h-7 px-2.5 bg-app-card hover:bg-app-hover border border-app-border text-xs text-gray-300 rounded flex items-center gap-1.5">
+        <i data-lucide="folder-open" class="w-3 h-3 text-cyan-400"></i> Browse…
+      </button>
+    </div>
+
+    <div class="bg-app-sidebar border-b border-app-border px-4 flex items-center justify-between shrink-0">
+      <div class="flex gap-1" id="tabContainer">
+        <button data-tab="console" class="tab-btn active border-b-2 border-cyan-400 text-cyan-400 bg-app-card/60 px-4 py-2.5 text-xs font-medium flex items-center gap-2">
+          <i data-lucide="terminal" class="w-3.5 h-3.5"></i> Console
+          <span id="logCountBadge" class="ml-1 text-[10px] bg-cyan-950 text-cyan-300 border border-cyan-800 px-1.5 rounded-full font-mono">0</span>
+        </button>
+        <button data-tab="report" class="tab-btn border-b-2 border-transparent text-gray-400 hover:text-gray-200 px-4 py-2.5 text-xs font-medium flex items-center gap-2">
+          <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Report
+        </button>
+        <button data-tab="roadmap" class="tab-btn border-b-2 border-transparent text-gray-400 hover:text-gray-200 px-4 py-2.5 text-xs font-medium flex items-center gap-2">
+          <i data-lucide="map" class="w-3.5 h-3.5"></i> Roadmap
+        </button>
+        <button data-tab="requirements" class="tab-btn border-b-2 border-transparent text-gray-400 hover:text-gray-200 px-4 py-2.5 text-xs font-medium flex items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Requirements
+        </button>
+        <button data-tab="controller" class="tab-btn border-b-2 border-transparent text-gray-400 hover:text-gray-200 px-4 py-2.5 text-xs font-medium flex items-center gap-2">
+          <i data-lucide="gamepad-2" class="w-3.5 h-3.5"></i> Controller
+        </button>
+      </div>
+      <div class="flex items-center gap-2 py-1">
+        <button id="clearLogBtn" class="h-7 w-7 flex items-center justify-center bg-app-card hover:bg-app-hover border border-app-border text-gray-400 rounded" title="Clear">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="flex-1 relative overflow-hidden bg-[#070a0f]">
+      <div id="view-console" class="tab-view absolute inset-0 p-3 overflow-hidden flex flex-col">
+        <div id="consoleLog" class="flex-1 font-mono text-[11px] leading-relaxed overflow-y-auto space-y-0.5 p-3 bg-app-sidebar/80 rounded-lg border border-app-border text-gray-300"></div>
+      </div>
+      <div id="view-report" class="tab-view absolute inset-0 hidden p-6 overflow-y-auto">
+        <pre id="reportText" class="text-xs font-mono text-gray-300 whitespace-pre-wrap">No report yet. Run Decompile / Build.</pre>
+      </div>
+      <div id="view-roadmap" class="tab-view absolute inset-0 hidden p-6 overflow-y-auto">
+        <pre id="roadmapText" class="text-xs font-mono text-gray-300 whitespace-pre-wrap"></pre>
+      </div>
+      <div id="view-requirements" class="tab-view absolute inset-0 hidden p-6 overflow-y-auto">
+        <pre id="reqText" class="text-xs font-mono text-gray-300 whitespace-pre-wrap"></pre>
+      </div>
+      <div id="view-controller" class="tab-view absolute inset-0 hidden p-6 overflow-y-auto">
+        <p class="text-xs text-gray-400 mb-3">Controller mapping is edited in the host after Load / before Build. Use the classic Controller tab host surface when available; mappings lock after build.</p>
+        <button data-action="controller" class="h-9 px-4 rounded-lg bg-app-card border border-app-border text-xs text-cyan-300">Open controller mapping (host)</button>
+      </div>
+    </div>
+
+    <footer class="h-10 bg-app-sidebar border-t border-app-border px-4 flex items-center justify-between text-xs font-mono shrink-0">
+      <div class="flex items-center gap-3">
+        <div id="statusPill" class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-cyan-950 border border-cyan-800 text-cyan-400">
+          <span id="statusSpinner" class="w-2 h-2 rounded-full bg-cyan-400"></span>
+          <span id="statusLabel" class="font-bold text-[11px]">Ready</span>
+        </div>
+        <span id="progressCount" class="text-gray-400"></span>
+      </div>
+      <div class="flex-1 max-w-xs mx-4">
+        <div class="w-full bg-app-card h-2 rounded-full overflow-hidden border border-app-border">
+          <div id="mainProgressBar" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full w-0 transition-all duration-300"></div>
+        </div>
+      </div>
+      <div class="text-[11px] text-gray-500">PPSX33</div>
+    </footer>
+  </main>
+</div>
+
+<script>
+lucide.createIcons();
+let logCount = 0;
+const consoleLog = document.getElementById('consoleLog');
+
+function post(action, data) {
+  const payload = JSON.stringify(Object.assign({ action }, data || {}));
+  if (window.chrome && window.chrome.webview) window.chrome.webview.postMessage(payload);
+}
+
+function appendLog(level, message) {
+  const time = new Date().toLocaleTimeString('en-US', { hour12:false });
+  let tag = 'INFO', cls = 'bg-blue-950 text-cyan-400 border-blue-800';
+  if (level === 'OK' || level === 'SUCCESS') { tag='OK'; cls='bg-emerald-950 text-emerald-400 border-emerald-800'; }
+  else if (level === 'WARN') { tag='WARN'; cls='bg-yellow-950 text-yellow-400 border-yellow-800'; }
+  else if (level === 'ERROR' || level === 'FAIL') { tag='FAIL'; cls='bg-red-950 text-red-400 border-red-800'; }
+  const line = document.createElement('div');
+  line.className = 'flex items-start gap-2 hover:bg-app-hover/50 px-1 py-0.5 rounded log-entry';
+  line.innerHTML = `<span class="text-gray-500 shrink-0">[${time}]</span>
+    <span class="px-1.5 py-0.5 rounded border text-[10px] font-bold shrink-0 ${cls}">${tag}</span>
+    <span class="text-gray-300 break-all">${message.replace(/</g,'&lt;')}</span>`;
+  consoleLog.appendChild(line);
+  consoleLog.scrollTop = consoleLog.scrollHeight;
+  logCount++;
+  document.getElementById('logCountBadge').innerText = String(logCount);
+}
+
+function setEnabled(id, on) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (on) el.classList.remove('btn-disabled'); else el.classList.add('btn-disabled');
+}
+
+function applyState(s) {
+  if (s.projectPath !== undefined) document.getElementById('projectPath').textContent = s.projectPath || 'No project loaded';
+  if (s.status !== undefined) document.getElementById('statusLabel').textContent = s.status;
+  if (s.header !== undefined) document.getElementById('headerStatusText').textContent = s.header;
+  if (s.percent !== undefined) document.getElementById('mainProgressBar').style.width = Math.max(0, Math.min(100, s.percent)) + '%';
+  if (s.progressText !== undefined) document.getElementById('progressCount').textContent = s.progressText || '';
+  if (s.cancelLabel !== undefined) document.getElementById('cancelLabel').textContent = s.cancelLabel;
+  if (s.enable) {
+    setEnabled('btnDecompile', !!s.enable.decompile);
+    setEnabled('btnBuild', !!s.enable.build);
+    setEnabled('btnRun', !!s.enable.run);
+    setEnabled('btnCopy', !!s.enable.copy);
+    setEnabled('btnCancel', !!s.enable.cancel);
+    const gfx = document.getElementById('gfxSelect');
+    if (gfx) gfx.disabled = !s.enable.gfx;
+  }
+  if (s.report !== undefined) document.getElementById('reportText').textContent = s.report;
+  if (s.roadmap !== undefined) document.getElementById('roadmapText').textContent = s.roadmap;
+  if (s.requirements !== undefined) document.getElementById('reqText').textContent = s.requirements;
+}
+
+document.querySelectorAll('[data-action]').forEach(btn => {
+  btn.addEventListener('click', () => post(btn.getAttribute('data-action')));
+});
+document.getElementById('gfxSelect').addEventListener('change', e => post('gfx', { value: e.target.value }));
+document.getElementById('threadRange').addEventListener('input', e => {
+  document.getElementById('threadVal').textContent = e.target.value;
+  post('threads', { value: e.target.value });
+});
+document.getElementById('clearLogBtn').addEventListener('click', () => {
+  consoleLog.innerHTML = ''; logCount = 0;
+  document.getElementById('logCountBadge').innerText = '0';
+});
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.className = 'tab-btn border-b-2 border-transparent text-gray-400 hover:text-gray-200 px-4 py-2.5 text-xs font-medium flex items-center gap-2';
+    });
+    document.querySelectorAll('.tab-view').forEach(v => v.classList.add('hidden'));
+    btn.className = 'tab-btn active border-b-2 border-cyan-400 text-cyan-400 bg-app-card/60 px-4 py-2.5 text-xs font-medium flex items-center gap-2';
+    const id = btn.getAttribute('data-tab');
+    document.getElementById('view-' + id).classList.remove('hidden');
+  });
+});
+
+if (window.chrome && window.chrome.webview) {
+  window.chrome.webview.addEventListener('message', event => {
+    let msg = event.data;
+    if (typeof msg === 'string') { try { msg = JSON.parse(msg); } catch { msg = { type:'log', level:'INFO', text: msg }; } }
+    if (msg.type === 'log') appendLog(msg.level || 'INFO', msg.text || '');
+    else if (msg.type === 'state') applyState(msg);
+  });
+}
+post('ready');
+</script>
+</body>
+</html>

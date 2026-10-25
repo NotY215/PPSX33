@@ -63,6 +63,7 @@ public sealed partial class MainForm
         }
         _projectDir = proj;
         _project.Text = proj;
+        PushState();
         _settings.LastElfPath = path ?? _settings.LastElfPath;
         _settings.LastOutputFolderPath = Path.Combine(proj, "output");
         SaveSettings();

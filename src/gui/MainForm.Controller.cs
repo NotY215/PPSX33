@@ -177,6 +177,7 @@ public sealed partial class MainForm
                 if (_tabs.SelectedTab == _controllerTab) _tabs.SelectedIndex = 0;
                 _tabs.TabPages.Remove(_controllerTab);
             }
+            _controllerMapped = true;
             Append("Controller tab closed — mapping locked for this build.");
         }
         catch { }
