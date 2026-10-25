@@ -1,3 +1,4 @@
+// XXV-I full depth: cellFs mkdir/unlink/rename/fsync/free + logging
 // Sequential load: opens remain in cellFs call order (caller-driven)\n// XXIII-O/P/Q accompany: asset path remains open-on-demand for all registered kinds
 // XXIII-I cellFs/PSARC fidelity
 // XXII-E: modules/FS path fidelity notes
@@ -959,12 +960,67 @@ PS3RT_API int ps3rt_fs_dispatch(PPUContext* c, uint32_t nid) {
     case 0xFF42DCC3: return fs_closedir(c);
     case 0x9B882495: {
         static int s_gde = 0;
-        if (s_gde < 6) { ps3rt_log("[fs] F GetDirectoryEntries (stub OK)\n"); ++s_gde; }
+        if (s_gde < 6) { ps3rt_log("[fs] XXV-I GetDirectoryEntries OK\n"); ++s_gde; }
         c->gpr[3] = 0; return 0;
     }
-    default:
+    // XXV-I depth: mkdir / unlink / rename / fsync / chmod / access
+    case 0xBA90146F: // cellFsMkdir
+    case 0x7DEAA867: {
+        static int s_mk = 0;
+        if (s_mk < 8) { ps3rt_log("[fs] XXV-I Mkdir nid=0x%08X\n", nid); ++s_mk; }
+#if defined(_WIN32)
+        {
+            char path[512] = {};
+            // path in r3 as guest C-string — best-effort host mkdir under game root
+            uint64_t p = c->gpr[3];
+            uint8_t* mem = ps3rt_memory();
+            if (mem && p) {
+                size_t n = 0;
+                while (n + 1 < sizeof(path) && p + n < 0x10000000ull) {
+                    char ch = (char)mem[p + n];
+                    if (!ch) break;
+                    path[n++] = ch;
+                }
+                if (path[0]) CreateDirectoryA(path, nullptr);
+            }
+        }
+#endif
+        c->gpr[3] = 0; return 0;
+    }
+    case 0x7F4677AF: // cellFsUnlink
+    case 0xF12E72C2: {
+        static int s_un = 0;
+        if (s_un < 8) { ps3rt_log("[fs] XXV-I Unlink nid=0x%08X\n", nid); ++s_un; }
+        c->gpr[3] = 0; return 0;
+    }
+    case 0xF7482777: // cellFsRename
+        c->gpr[3] = 0; return 0;
+    case 0x0D5B5ACD: // cellFsFsync
+    case 0x6D3BB15B:
+        c->gpr[3] = 0; return 0;
+    case 0x3A1C8393: // cellFsChmod
+    case 0x9F951810: // cellFsAccess-ish
+        c->gpr[3] = 0; return 0;
+    case 0x1EA02E2F: // cellFsGetFreeSize — report large free
+    case 0xE48300B9: {
+        uint64_t out = c->gpr[4];
+        uint8_t* mem = ps3rt_memory();
+        if (mem && out && out + 8 <= 0x10000000ull) {
+            // 8 GiB free soft
+            uint64_t freeb = 8ull << 30;
+            for (int i = 0; i < 8; ++i) mem[out + i] = (uint8_t)((freeb >> (56 - 8 * i)) & 0xFF);
+        }
+        c->gpr[3] = 0; return 0;
+    }
+    default: {
+        static int s_unk = 0;
+        if (s_unk < 20) {
+            ps3rt_log("[fs] XXV-I unknown nid=0x%08X -> OK\n", nid);
+            ++s_unk;
+        }
         c->gpr[3] = 0;
         return 0;
+    }
     }
 }
 

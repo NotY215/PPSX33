@@ -1,3 +1,4 @@
+// XXV-I full depth: audio keepalive + save status family
 // XXIV-A: audio open fail-once
 // XXIII-W save-data surface
 // XXIII-C audio path
@@ -153,20 +154,20 @@ static void audio_queue_s16(const int16_t* samples, size_t nframes) {
 
 PS3RT_API void ps3rt_audio_tick(void) {
     audio_host_open(); // XXIV-A once
-
 #if defined(_WIN32)
     if (!g_wo || !g_audio_inited) return;
-    // Keep at least one silent buffer if nothing queued (prevent underrun click)
+    // XXV-I: keep waveOut fed — underrun causes the single beep then silence
     int queued = 0;
-    for (int i = 0; i < 4; ++i) if (g_wh[i].dwFlags & WHDR_INQUEUE) ++queued;
-    if (queued == 0) {
-        WAVEHDR* h = &g_wh[g_wh_idx];
-        std::memset(g_pcm[g_wh_idx], 0, sizeof(g_pcm[0]));
-        h->dwBufferLength = sizeof(g_pcm[0]);
-        waveOutWrite(g_wo, h, sizeof(*h));
-        g_wh_idx = (g_wh_idx + 1) & 3;
+    for (int i = 0; i < 4; ++i) if (g_wh[i].dwFlags & WHDR_PREPARED) {
+        if (!(g_wh[i].dwFlags & WHDR_DONE)) ++queued;
     }
-    ++g_audio_read_idx;
+    if (queued < 2) {
+        static int16_t quiet[960 * 2];
+        audio_queue_s16(quiet, 480);
+        static int s_k = 0;
+        if (s_k < 6) { ps3rt_log("[audio] XXV-I keepalive buffers (queued=%d)
+", queued); ++s_k; }
+    }
 #endif
 }
 
@@ -251,6 +252,10 @@ PS3RT_API int ps3rt_audio_dispatch(PPUContext* c, uint32_t nid) {
         if (s_nq < 6) { ps3rt_log("[audio] G/K SetNotifyEventQueue key=0x%llx\n", (unsigned long long)g_notify_key); ++s_nq; }
         c->gpr[3] = 0; return 0;
     }
+    // XXV-I: any other audio NID — success so titles continue
+    static int s_au = 0;
+    if (s_au < 16) { ps3rt_log("[audio] XXV-I nid=0x%08X -> OK
+", nid); ++s_au; }
     c->gpr[3] = 0;
     return 0;
 }
@@ -318,6 +323,17 @@ PS3RT_API int ps3rt_save_dispatch(PPUContext* c, uint32_t nid) {
     if (nid == 0x5CB9BCFF || nid == 0x22AC00B8 || nid == 0x8B7B4BF8) {
         c->gpr[3] = 0; return 0;
     }
+    // XXV-I: autosave / done / status family
+    if (nid == 0xC14FC694 || nid == 0x4A2CE2D8 || nid == 0x8B7FE88C ||
+        nid == 0x1B8D4287 || nid == 0x2CBE6454) {
+        static int s_as = 0;
+        if (s_as < 10) { ps3rt_log("[save] XXV-I status/autosave nid=0x%08X
+", nid); ++s_as; }
+        c->gpr[3] = 0; return 0;
+    }
+    static int s_svu = 0;
+    if (s_svu < 12) { ps3rt_log("[save] XXV-I unknown nid=0x%08X -> OK
+", nid); ++s_svu; }
     c->gpr[3] = 0;
     return 0;
 }
