@@ -1,3 +1,4 @@
+// XXV-H: deeper PPU coverage with G padding; paired with SPU/MFC
 // XXV-G1: expand xo31 coverage (reservations, cache nops, byte-rev, mfcr) + tdi/twi
 // XXV-E: truthful lift — unsupported returns false; report missing encodings
 #include "ppu_lifter.h"
@@ -361,6 +362,8 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             }
         }
         case 371: o << fmt("c.gpr[%u] = 0;", rt); return true;
+        case 331: // isel
+            o << fmt("c.gpr[%u] = (c.cr[%u] & 8) ? c.gpr[%u] : c.gpr[%u];", rt, (w>>23)&7, ra, rb); return true;
         default:
             key = "xo31_" + std::to_string(xo);
             o << "/* XXV-E unsupported xo31 */;";

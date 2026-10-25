@@ -1,3 +1,4 @@
+// XXV-H depth: SPU ISA + MFC tag completion
 // XXIII-J SPURS completion
 // XXIII-F: SPU/MFC tag update, list-stall ack, atomic HLE
 // XXII-C: SPU/MFC fidelity (tag/stall surface)
@@ -131,6 +132,7 @@ static void mfc_list_dma(SPUContext& s, bool is_get) {
 
 }
 
+// XXV-H: uses existing mfc_complete_tag for ordering
 static void mfc_do_dma(SPUContext& s) {
     uint32_t lsa = s.mfc_lsa & 0x3FFFF;
     uint64_t ea = s.mfc_ea;
@@ -811,6 +813,16 @@ static bool spu_step(SPUContext& s) {
         for (int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w),ub=lr128_word(reg(rb),w); float a,b; std::memcpy(&a,&ua,4); std::memcpy(&b,&ub,4);
             float r=(opc11==0x2C4)?a+b:((opc11==0x2C5)?a-b:a*b); uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
     if (opc11 == 0x1B6) { for(int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w); float a; std::memcpy(&a,&ua,4); float r=(a!=0.f)?1.f/a:0.f; uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
+    // XXV-H depth: more SPU arithmetic / logical
+    if (opc11 == 0x0C0) { for (int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)+lr128_word(reg(rb),w)); return true; }
+    if (opc11 == 0x0C8) { for (int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(rb),w)-lr128_word(reg(ra),w)); return true; }
+    if (opc11 == 0x0C4) { for (int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)&lr128_word(reg(rb),w)); return true; }
+    if (opc11 == 0x0C9) { for (int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)^lr128_word(reg(rb),w)); return true; }
+    if (opc11 == 0x0C1) { for (int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)|lr128_word(reg(rb),w)); return true; }
+    if (opc11 == 0x0CC) { int sh=(int)(lr128_word(reg(rb),0)&31); for(int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)<<sh); return true; }
+    if (opc11 == 0x0CD) { int sh=(int)(lr128_word(reg(rb),0)&31); for(int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)>>sh); return true; }
+    if (opc11 == 0x3C4) { for(int w=0;w<4;++w){ int32_t a=(int32_t)lr128_word(reg(ra),w),b=(int32_t)lr128_word(reg(rb),w); sr128_word(reg(rt),w,a>b?0xFFFFFFFFu:0);} return true; }
+    if (opc11 == 0x3C5) { for(int w=0;w<4;++w){ int32_t a=(int32_t)lr128_word(reg(ra),w),b=(int32_t)lr128_word(reg(rb),w); sr128_word(reg(rt),w,a<b?0xFFFFFFFFu:0);} return true; }
 // Unknown — count and continue (skip)
     static int s_unk = 0;
     if (s_unk < 24) {

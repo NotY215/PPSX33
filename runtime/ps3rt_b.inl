@@ -1,3 +1,4 @@
+// XXV-H: SPURS wait contract
 // XXV-G depth: PRX import contracts + unknown NID telemetry\n// XXV-D depth on XXV-E: GCM color seed + denser present
 // XXV-E denser GCM present assist
 // XXIV-D PRX NID quality + return surface
@@ -589,7 +590,11 @@ static int spurs_dispatch(PPUContext* c, uint32_t nid) {
             return 0;
         }
     case 0xC2AC4828: // WaitForWorkload
-        // HLE: always complete
+        // XXV-H SPURS: mark complete; real job drain is still HLE
+        {
+            static int sw = 0;
+            if (sw < 12) { ps3rt_log("[spurs] XXV-H WaitForWorkload OK\n"); ++sw; }
+        }
         c->gpr[3] = 0;
         return 0;
     default:

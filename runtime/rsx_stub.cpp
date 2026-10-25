@@ -1,3 +1,4 @@
+// XXV-H: C3861 forward decls for RSX helpers; SPU/MFC depth in companion files
 // XXV-D FULL DEPTH (on XXV-E): part1 FIFO/surface/host draw + part2 vertex/depth/blend/viewport
 // XXV-D: surface_bind + present_guest (RSX pipeline start)
 // XXV-FRAME: visible present path (guest geometry still Phase XXV-D+)
@@ -192,6 +193,14 @@ static ID3D11VertexShader* g_vs_solid = nullptr;
 static ID3D11PixelShader* g_ps_solid = nullptr;
 static ID3D11InputLayout* g_layout_solid = nullptr;
 static ID3D11Buffer* g_vb_tri = nullptr;
+
+// Forward decls — definitions appear later (C3861 fix)
+static void rsx_apply_viewport_scissor();
+static void rsx_present_guest_or_diag(uint8_t* mem);
+static bool rsx_state_apply_method_p2(uint32_t method, uint32_t arg);
+static void rsx_draw_host(uint8_t* mem);
+static void rsx_sync_guest_host(uint8_t* mem);
+
 static int g_solid_ready = 0;
 
 static const char* kSolidHLSL = R"(
