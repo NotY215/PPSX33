@@ -1,3 +1,4 @@
+// CMDSTREAM: inject VA0 triangle into guest FIFO (real draw path)
 // FIFO PUT/GET fix: never set GET=PUT on emit; bright inject + flush
 // XXV-I/J: services + E2E checklist
 // XXV-H: SPURS wait contract
@@ -334,28 +335,43 @@ static void gcm_fifo_emit(uint32_t method, uint32_t arg) {
     }
 }
 static void gcm_inject_clear_draw() {
+    // Build a real guest command stream: color surface + VA0 triangle + draw
     static const uint32_t kCols[] = { 0x402020u, 0x204028u, 0x202848u, 0x403828u };
     static int s_ci = 0;
     uint32_t col = kCols[s_ci++ & 3];
-    if (g_gcm_local_addr) {
-        gcm_fifo_emit(0x0200, (uint32_t)(g_gcm_local_addr & 0xFFFFFFFFu));
-        gcm_fifo_emit(0x0204, 1280u * 4u);
-        gcm_fifo_emit(0x020C, (1280u << 16) | 720u);
+    uint64_t local = g_gcm_local_addr ? g_gcm_local_addr : 0x84f0000ull;
+    uint32_t color_off = (uint32_t)(local & 0xFFFFFFFFu);
+    // Vertex buffer in local mem: 3x float3 BE positions (clip space)
+    uint32_t vb_off = color_off + 0x800000u; // 8MB into local
+    if (g_mem && vb_off + 48u < g_mem_size) {
+        auto wr_f_be = [&](uint32_t addr, float f) {
+            uint32_t u; std::memcpy(&u, &f, 4);
+            wr_be32_guest(addr, u);
+        };
+        // triangle in NDC
+        wr_f_be(vb_off +  0, -0.8f); wr_f_be(vb_off +  4, -0.8f); wr_f_be(vb_off +  8, 0.f);
+        wr_f_be(vb_off + 12,  0.8f); wr_f_be(vb_off + 16, -0.8f); wr_f_be(vb_off + 20, 0.f);
+        wr_f_be(vb_off + 24,  0.0f); wr_f_be(vb_off + 28,  0.8f); wr_f_be(vb_off + 32, 0.f);
     }
-    gcm_fifo_emit(0x1D8C, col);
+    gcm_fifo_emit(0x0200, color_off);           // COLOR_OFFSET
+    gcm_fifo_emit(0x0204, 1280u * 4u);          // COLOR_PITCH
+    gcm_fifo_emit(0x020C, (1280u << 16) | 720u);
+    gcm_fifo_emit(0x1D8C, col);                 // CLEAR_COLOR
     gcm_fifo_emit(0x1D90, 0xF1);
     gcm_fifo_emit(0x1D94, 0);
-    gcm_fifo_emit(0x1808, 3);
-    if (g_mem) {
+    // Vertex array 0 = position
+    gcm_fifo_emit(0x1680, vb_off);              // VA0 offset
+    gcm_fifo_emit(0x1740, 0x23);                // format: float3-ish
+    gcm_fifo_emit(0x1808, 3);                   // draw 3 verts
+    if (g_mem && g_gcm_control) {
         uint32_t put = rd_be32_guest(g_gcm_control + 0);
         ps3rt_rsx_set_put(put);
         ps3rt_rsx_flush(g_mem);
-        // After processing, advance GET to PUT so producer is not stalled forever
         wr_be32_guest(g_gcm_control + 4, put);
     }
     static int s_log = 0;
-    if (s_log < 6) {
-        ps3rt_log("[gcm] inject clear+draw col=0x%06X (PUT advanced, GET after flush)\n", col);
+    if (s_log < 8) {
+        ps3rt_log("[gcm] inject CMDSTREAM color=0x%x va0=0x%x draw3\n", color_off, vb_off);
         ++s_log;
     }
 }

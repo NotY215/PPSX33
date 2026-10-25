@@ -266,20 +266,28 @@ static bool rsx_ensure_solid() {
 }
 
 static void rsx_draw_solid_triangle() {
-    rsx_apply_viewport_scissor();
+#if defined(_WIN32)
     if (!rsx_ensure_solid() || !g_ctx11 || !g_rtv || !g_vb_tri) return;
-    // pulse colors
+    // Force full window viewport — ignore broken guest scissor/viewport=0
+    float ww = (float)(g_rsx.width > 64 ? g_rsx.width : 1280);
+    float hh = (float)(g_rsx.height > 64 ? g_rsx.height : 720);
+    D3D11_VIEWPORT vp{ 0.f, 0.f, ww, hh, 0.f, 1.f };
+    g_ctx11->RSSetViewports(1, &vp);
+    g_ctx11->RSSetState(nullptr);
+    g_ctx11->OMSetDepthStencilState(nullptr, 0);
+    g_ctx11->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
+    g_ctx11->OMSetRenderTargets(1, &g_rtv, nullptr);
     D3D11_MAPPED_SUBRESOURCE map{};
     if (SUCCEEDED(g_ctx11->Map(g_vb_tri, 0, D3D11_MAP_WRITE_DISCARD, 0, &map))) {
         float t = (float)(g_rsx.flip_count % 256) / 255.f;
         float* v = (float*)map.pData;
-        // 3 verts * (2 pos + 4 col)
         float cols[3][4] = {
-            { 1.f, t, 0.2f, 1.f },
-            { t, 1.f, 0.2f, 1.f },
-            { 0.2f, t, 1.f, 1.f },
+            { 1.f, 0.1f, 0.1f, 1.f },
+            { 0.1f, 1.f, 0.1f, 1.f },
+            { 0.1f, 0.4f, 1.f, 1.f },
         };
-        float pos[3][2] = { {-1.f,-1.f},{1.f,-1.f},{0.f,1.f} };
+        // Large triangle covering most of the screen
+        float pos[3][2] = { {-0.9f,-0.9f},{0.9f,-0.9f},{0.f,0.9f} };
         for (int i = 0; i < 3; ++i) {
             v[i*6+0] = pos[i][0]; v[i*6+1] = pos[i][1];
             v[i*6+2] = cols[i][0]; v[i*6+3] = cols[i][1];
@@ -291,19 +299,17 @@ static void rsx_draw_solid_triangle() {
     g_ctx11->IASetInputLayout(g_layout_solid);
     g_ctx11->IASetVertexBuffers(0, 1, &g_vb_tri, &stride, &offset);
     g_ctx11->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        // Diagnostic: no depth reject
-    g_ctx11->OMSetDepthStencilState(nullptr, 0);
-    g_ctx11->OMSetRenderTargets(1, &g_rtv, nullptr);
-g_ctx11->VSSetShader(g_vs_solid, nullptr, 0);
+    g_ctx11->VSSetShader(g_vs_solid, nullptr, 0);
     g_ctx11->PSSetShader(g_ps_solid, nullptr, 0);
-    g_ctx11->OMSetRenderTargets(1, &g_rtv, nullptr);
-    D3D11_VIEWPORT vp{ 0, 0, (float)(g_rsx.width ? g_rsx.width : 1280), (float)(g_rsx.height ? g_rsx.height : 720), 0, 1 };
-    g_ctx11->RSSetViewports(1, &vp);
     g_ctx11->Draw(3, 0);
     static int sd = 0;
-    if (sd < 16) { ps3rt_log("[rsx] XXV-E solid triangle draw flip=%llu\n", (unsigned long long)g_rsx.flip_count); ++sd; }
+    if (sd < 24) {
+        ps3rt_log("[rsx] solid triangle Draw(3) %ux%u flip=%llu\n",
+            (unsigned)ww, (unsigned)hh, (unsigned long long)g_rsx.flip_count);
+        ++sd;
+    }
+#endif
 }
-
 
 static void rsx_draw_textured_quad() {
     if (!rsx_ensure_hlsl() || !g_ctx11 || !g_guest_tex || !g_rtv) return;
@@ -725,46 +731,22 @@ static void rsx_host_present_clear() {
                     g_rsx.clear_depth, g_rsx.clear_stencil);
         }
 
-                // Port-style present (RPCS3-inspired pipeline order, host D3D):
-        // 1) clear  2) guest color/tex if real content  3) host diagnostic geometry LAST
+                // FORCE-VISIBLE present: purple clear + bars blit + RGB triangle on top
         {
+            float purple[4] = { 0.45f, 0.05f, 0.55f, 1.f };
+            g_ctx11->OMSetRenderTargets(1, &g_rtv, nullptr);
+            g_ctx11->ClearRenderTargetView(g_rtv, purple);
             uint8_t* m = ps3rt_memory();
-            bool real_scene = (g_rsx.shader_binds > 0 && g_rsx.vertex_binds > 0);
-            if (m && !real_scene) {
-                // Diagnostic color bars into guest local mem (not solid inject red)
-                rsx_paint_guest_color_buffer(m);
-            }
             if (m) {
-                uint32_t off = g_rsx.tex_offset ? g_rsx.tex_offset : g_rsx.color_offset;
-                if (!off) off = g_rsx.color_offset;
-                // Variance check: skip fullscreen blit if buffer is nearly uniform (solid clear)
-                int nz = 0, samples = 0;
-                uint32_t first = 0;
-                if (off && off + 4096u < 0x10000000u) {
-                    first = (uint32_t)m[off] | ((uint32_t)m[off+1]<<8) | ((uint32_t)m[off+2]<<16);
-                    for (uint32_t i = 0; i < 4096; i += 16) {
-                        uint32_t px = (uint32_t)m[off+i] | ((uint32_t)m[off+i+1]<<8) | ((uint32_t)m[off+i+2]<<16);
-                        if (px != first) ++nz;
-                        ++samples;
-                    }
-                }
-                bool varied = nz > (samples / 8);
-                if (varied || real_scene) {
-                    if (!g_rsx.tex_offset) g_rsx.tex_offset = off ? off : 0x0C000000u;
-                    if (!g_rsx.tex_width) {
-                        g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280;
-                        g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720;
-                    }
-                    if (!g_rsx.tex_pitch && g_rsx.tex_width)
-                        g_rsx.tex_pitch = (g_rsx.tex_width * 4 + 63u) & ~63u;
-                    rsx_upload_guest_tex(m);
-                    rsx_draw_textured_quad();
-                }
-                // VA geometry draws happen at method decode time; present only composites
+                rsx_paint_guest_color_buffer(m);
+                if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset ? g_rsx.color_offset : 0x84f0000u;
+                if (!g_rsx.tex_width) { g_rsx.tex_width = 1280; g_rsx.tex_height = 720; }
+                if (!g_rsx.tex_pitch) g_rsx.tex_pitch = 1280 * 4;
+                rsx_upload_guest_tex(m);
+                rsx_draw_textured_quad();
             }
+            rsx_draw_solid_triangle();
         }
-        // ALWAYS last: host triangle so a frame is never a flat clear color
-        rsx_draw_solid_triangle();
 
         if (g_hwnd) {
             char title[192];
@@ -1532,11 +1514,24 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
         return true;
     }
     if (method == 0x1D6C) { g_rsx.shader_const_count = arg; return true; }
-    // Vertex array
+    // Vertex array offsets — must record g_va_offset for host geometry fetch
     if (method == 0x1680 || method == 0x1684 || method == 0x1688 || method == 0x1690) {
-        g_rsx.vertex_array_mask |= 1u << ((method >> 2) & 7);
-        ++g_rsx.vertex_binds;
-        if (method == 0x1688 || method == 0x1690) g_rsx.vp_offset = arg;
+        uint32_t slot = 0;
+        if (method == 0x1680) slot = 0;
+        else if (method == 0x1684) slot = 1;
+        else if (method == 0x1688) slot = 2;
+        else slot = 3;
+        if (slot < 8) {
+            g_va_offset[slot] = arg;
+            if (!g_va_stride[slot]) g_va_stride[slot] = 12;
+            g_rsx.vertex_array_mask |= (1u << slot);
+            ++g_rsx.vertex_binds;
+            static int va = 0;
+            if (va < 12) {
+                ps3rt_log("[rsx] VA%u offset=0x%x stride=%u\n", slot, arg, g_va_stride[slot]);
+                ++va;
+            }
+        }
         return true;
     }
     // Begin / draw
