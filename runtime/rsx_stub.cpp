@@ -1,3 +1,4 @@
+// VISIBLE FRAME FIX: no post-draw clear; no black guest wipe; always solid triangle
 // XXV-H: C3861 forward decls for RSX helpers; SPU/MFC depth in companion files
 // XXV-D FULL DEPTH (on XXV-E): part1 FIFO/surface/host draw + part2 vertex/depth/blend/viewport
 // XXV-D: surface_bind + present_guest (RSX pipeline start)
@@ -683,17 +684,46 @@ static void rsx_host_present_clear() {
     float gg = ((g_rsx.clear_color >> 8) & 0xFF) / 255.f;
     float bb = (g_rsx.clear_color & 0xFF) / 255.f;
     float col[4] = { rr, gg, bb, 1.f };
-    // XXV-E: clear FIRST, then every draw path, then Present (never draw-before-clear)
+    // VISIBLE FRAME FIX: one clear, always solid triangle, never black guest wipe
     try {
         g_ctx11->OMSetRenderTargets(1, &g_rtv, g_dsv);
         if (g_dss) g_ctx11->OMSetDepthStencilState(g_dss, g_rsx.clear_stencil);
-        g_ctx11->ClearRenderTargetView(g_rtv, col);
-        if (g_dsv && (mask & 0x02))
-            g_ctx11->ClearDepthStencilView(g_dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, g_rsx.clear_depth, g_rsx.clear_stencil);
+        {
+            uint32_t tck = (uint32_t)(g_rsx.flip_count * 7);
+            float colb[4] = {
+                (50.f + (float)(tck & 0x7F)) / 255.f,
+                (80.f + (float)((tck * 3) & 0x7F)) / 255.f,
+                (140.f + (float)((tck * 5) & 0x7F)) / 255.f,
+                1.f
+            };
+            if (g_rsx.clear_color & 0x00FFFFFFu) {
+                colb[0] = ((g_rsx.clear_color >> 16) & 0xFF) / 255.f;
+                colb[1] = ((g_rsx.clear_color >> 8) & 0xFF) / 255.f;
+                colb[2] = (g_rsx.clear_color & 0xFF) / 255.f;
+            }
+            g_ctx11->ClearRenderTargetView(g_rtv, colb);
+            if (g_dsv && (mask & 0x02))
+                g_ctx11->ClearDepthStencilView(g_dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
+                    g_rsx.clear_depth, g_rsx.clear_stencil);
+        }
+
+        // Always visible GPU geometry
+        rsx_draw_solid_triangle();
+
+        // Guest texture only if non-black samples
         {
             uint8_t* m = ps3rt_memory();
-            bool drew = false;
-            if (m && (g_rsx.color_valid || g_rsx.color_offset || g_rsx.tex_offset)) {
+            bool guest_ok = false;
+            uint32_t off = g_rsx.tex_offset ? g_rsx.tex_offset : g_rsx.color_offset;
+            if (m && off && off + 256u < 0x10000000u) {
+                int nz = 0;
+                for (uint32_t i = 0; i < 256; i += 4) {
+                    uint8_t* p = m + off + i;
+                    if (p[0] | p[1] | p[2]) ++nz;
+                }
+                guest_ok = nz > 8;
+            }
+            if (guest_ok) {
                 if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset;
                 if (!g_rsx.tex_width) {
                     g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280;
@@ -703,118 +733,35 @@ static void rsx_host_present_clear() {
                     g_rsx.tex_pitch = (g_rsx.tex_width * 4 + 63u) & ~63u;
                 rsx_upload_guest_tex(m);
                 rsx_draw_textured_quad();
-                if (!g_hlsl_ready || !g_vs_blit)
-                    rsx_blit_guest_tex_fullscreen(m);
-                drew = true;
-                static int pg = 0;
-                if (pg < 12) {
-                    ps3rt_log("[rsx] XXV-E present guest/tex off=0x%x %ux%u\n",
-                        g_rsx.tex_offset, g_rsx.tex_width, g_rsx.tex_height);
-                    ++pg;
-                }
-            }
-            if (!drew) {
-                // diagnostic gradient into guest mem then textured, else solid GPU triangle
-                rsx_present_guest_or_diag(m);
-                rsx_draw_solid_triangle();
             } else {
-                // still issue a solid pass under if alpha fails — skip
-            }
-        }
-        // XXIII-X: ensure at least one host-visible frame path each present
-        {
-            uint8_t* m = ps3rt_memory();
-            if (m) {
-                if (!g_rsx.tex_offset && g_rsx.color_offset) g_rsx.tex_offset = g_rsx.color_offset;
-                if (!g_rsx.tex_width) {
-                    g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280;
-                    g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720;
-                }
-                // XXIII-Z: align pitch to 64 when missing (RSX-ish)
-                if (!g_rsx.tex_pitch && g_rsx.tex_width)
-                    g_rsx.tex_pitch = (g_rsx.tex_width * 4 + 63) & ~63u;
-                if (g_rsx.tex_offset || g_rsx.color_offset) {
-                    rsx_upload_guest_tex(m);
-                    rsx_draw_textured_quad();
-                } else {
-                    // XXIV-C diagnostic gradient every present when no guest tex into a small CPU buffer uploaded as tex
-                    static std::vector<uint8_t> diag;
-                    uint32_t dw = g_rsx.width ? (g_rsx.width > 640 ? 640u : g_rsx.width) : 320;
-                    uint32_t dh = g_rsx.height ? (g_rsx.height > 360 ? 360u : g_rsx.height) : 180;
-                    diag.resize(dw * dh * 4);
-                    for (uint32_t y = 0; y < dh; ++y)
-                        for (uint32_t x = 0; x < dw; ++x) {
-                            size_t i = ((size_t)y * dw + x) * 4;
-                            diag[i+0] = (uint8_t)(x);
-                            diag[i+1] = (uint8_t)(y * 2);
-                            diag[i+2] = (uint8_t)((g_rsx.flip_count * 3) & 255);
-                            diag[i+3] = 255;
-                        }
-                    // stash at a high guest offset if memory large enough — else skip
-                    uint64_t stash = 0x0F000000ull;
-                    if (stash + diag.size() < 512ull * 1024 * 1024) {
-                        std::memcpy(m + stash, diag.data(), diag.size());
-                        g_rsx.tex_offset = (uint32_t)stash;
-                        g_rsx.tex_width = dw; g_rsx.tex_height = dh; g_rsx.tex_pitch = dw * 4;
-                        rsx_upload_guest_tex(m);
-                        rsx_draw_textured_quad();
-                        static int xf = 0;
-                        if (xf < 16) { ps3rt_log("[rsx] XXIV-C diagnostic frame flip=%llu hlsl=%d\n", (unsigned long long)g_rsx.flip_count, g_hlsl_ready && g_vs_blit ? 1 : 0); ++xf; }
-                    }
+                static int pd = 0;
+                if (pd < 10) {
+                    ps3rt_log("[rsx] guest empty/black — solid triangle only (flip=%llu)\n",
+                        (unsigned long long)g_rsx.flip_count);
+                    ++pd;
                 }
             }
         }
 
-        if (g_dsv) {
-            UINT df = 0;
-            if (mask & 0x02) df |= D3D11_CLEAR_DEPTH;
-            if (mask & 0x04) df |= D3D11_CLEAR_STENCIL;
-            if (!df) df = D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL;
-            g_ctx11->ClearDepthStencilView(g_dsv, df, g_rsx.clear_depth, g_rsx.clear_stencil);
+        if (g_hwnd) {
+            char title[192];
+            const char* gn = ps3rt_get_game_name();
+            std::snprintf(title, sizeof(title), "PPSX33 | %s | flips=%llu draws=%d",
+                (gn && gn[0]) ? gn : "PS3",
+                (unsigned long long)g_rsx.flip_count, g_rsx.draws);
+            SetWindowTextA(g_hwnd, title);
         }
-        if (g_rsx.draws_this_frame > 0 && (g_rsx.tex_units_bound || g_rsx.tex_offset)) {
-            // T: tint clear slightly when textured draws were issued (debug visibility)
-            float t = (float)(g_rsx.flip_count & 7) / 7.f;
-            rr = rr * 0.85f + 0.05f * t;
-            gg = gg * 0.85f + 0.08f;
-            bb = bb * 0.85f + 0.12f;
-        }
-        if (g_rsx.draws_this_frame > 0) {
-            float pr = ((g_rsx.prim_color >> 16) & 0xFF) / 255.f;
-            float pg = ((g_rsx.prim_color >> 8) & 0xFF) / 255.f;
-            float pb = (g_rsx.prim_color & 0xFF) / 255.f;
-            float ov[4] = { col[0] * 0.55f + pr * 0.45f, col[1] * 0.55f + pg * 0.45f, col[2] * 0.55f + pb * 0.45f, 1.f };
-            g_ctx11->ClearRenderTargetView(g_rtv, ov);
-            uint32_t pc = g_rsx.prim_color;
-            uint32_t r8 = (pc >> 16) & 0xFF, g8 = (pc >> 8) & 0xFF, b8 = pc & 0xFF;
-            r8 = (r8 + 1) & 0xFF; g8 = (g8 + 2) & 0xFF; b8 = (b8 + 3) & 0xFF;
-            g_rsx.prim_color = (r8 << 16) | (g8 << 8) | b8;
-        }
-        // Phase XIX: coalesce Present — skip empty frames
-        static uint32_t s_present_skip = 0;
-        // V: upload guest texture when unit bound
-        { uint8_t* m = ps3rt_memory();
-          // XXIII-B: always attempt color/tex present (even when counters say shaders=0)
-          if (m) {
-              if (!g_rsx.tex_offset && g_rsx.color_offset) g_rsx.tex_offset = g_rsx.color_offset;
-              if (!g_rsx.tex_width) { g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280; g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720; }
-              rsx_upload_guest_tex(m);
-              rsx_upload_guest_tex(m);
-              rsx_draw_textured_quad();
-              if (!g_hlsl_ready || !g_vs_blit)
-                  rsx_blit_guest_tex_fullscreen(m);
-          } }
-        bool need_present = true; // XXV-E: always Present
+
         g_rsx.draws_this_frame = 0;
-        g_rsx.methods_this_frame = 0; // XXIV-B
-        if (need_present && g_swap) {
+        g_rsx.methods_this_frame = 0;
+        if (g_swap) {
             g_swap->Present(0, 0);
             static int pf = 0;
             if (pf < 20) {
                 ps3rt_log("[rsx] XXV-FRAME present flip=%llu color=0x%x tex=0x%x draws=%d\n",
                     (unsigned long long)g_rsx.flip_count, g_rsx.clear_color,
                     g_rsx.tex_offset ? g_rsx.tex_offset : g_rsx.color_offset,
-                    g_rsx.draws_this_frame);
+                    g_rsx.draws);
                 ++pf;
             }
         }
@@ -878,22 +825,25 @@ static void rsx_surface_bind_color(uint32_t offset, uint32_t pitch, uint32_t w, 
 }
 
 static void rsx_present_guest_or_diag(uint8_t* mem) {
-    // Prefer guest color buffer; else diagnostic gradient already prepared upstream
     if (!mem || !g_ctx11 || !g_rtv) return;
-    if (g_rsx.color_valid && g_rsx.color_offset) {
-        g_rsx.tex_offset = g_rsx.color_offset;
-        if (!g_rsx.tex_width) g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280;
-        if (!g_rsx.tex_height) g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720;
-        if (!g_rsx.tex_pitch) g_rsx.tex_pitch = (g_rsx.tex_width * 4 + 63u) & ~63u;
-        rsx_upload_guest_tex(mem);
-        rsx_draw_textured_quad();
-        static int pg = 0;
-        if (pg < 16) {
-            ps3rt_log("[rsx] XXV-D present_guest color=0x%x\n", g_rsx.color_offset);
-            ++pg;
+    if (!(g_rsx.color_valid && g_rsx.color_offset)) return;
+    uint32_t off = g_rsx.color_offset;
+    int nz = 0;
+    if (off + 256u < 0x10000000u) {
+        for (uint32_t i = 0; i < 256; i += 4) {
+            uint8_t* p = mem + off + i;
+            if (p[0] | p[1] | p[2]) ++nz;
         }
     }
+    if (nz <= 8) return;
+    g_rsx.tex_offset = g_rsx.color_offset;
+    if (!g_rsx.tex_width) g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280;
+    if (!g_rsx.tex_height) g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720;
+    if (!g_rsx.tex_pitch) g_rsx.tex_pitch = (g_rsx.tex_width * 4 + 63u) & ~63u;
+    rsx_upload_guest_tex(mem);
+    rsx_draw_textured_quad();
 }
+
 
 // XXV-D FULL DEPTH — pipeline functions (part 1: FIFO + surfaces + present)
 // ============================================================================
@@ -910,15 +860,20 @@ static void rsx_sync_guest_host(uint8_t* mem) {
 static void rsx_draw_host(uint8_t* mem) {
     rsx_apply_viewport_scissor();
     rsx_sync_guest_host(mem);
-    if (g_rsx.tex_offset || g_rsx.color_offset) {
-        if (mem) {
+    rsx_draw_solid_triangle();
+    if (mem && (g_rsx.tex_offset || g_rsx.color_offset)) {
+        uint32_t off = g_rsx.tex_offset ? g_rsx.tex_offset : g_rsx.color_offset;
+        int nz = 0;
+        if (off && off + 64u < 0x10000000u) {
+            for (uint32_t i = 0; i < 64; i += 4) {
+                uint8_t* p = mem + off + i;
+                if (p[0] | p[1] | p[2]) ++nz;
+            }
+        }
+        if (nz > 4) {
             rsx_upload_guest_tex(mem);
             rsx_draw_textured_quad();
-            if (!g_hlsl_ready || !g_vs_blit)
-                rsx_blit_guest_tex_fullscreen(mem);
         }
-    } else {
-        rsx_draw_solid_triangle();
     }
     ++g_rsx.draws_this_frame;
 }
