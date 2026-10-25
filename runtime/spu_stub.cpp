@@ -1,3 +1,4 @@
+// full SPU coverage pass
 // Cell SPU ISA expansion — real word/float/compare forms
 // pure real SPU coverage expansion
 // XXV-H depth: SPU ISA + MFC tag completion
@@ -838,6 +839,13 @@ static bool spu_step(SPUContext& s) {
     if (opc11 == 0x1C6) { for(int w=0;w<4;++w){ uint32_t x=lr128_word(reg(ra),w); unsigned n=0; for(int i=0;i<32;i++) n+=(x>>i)&1u; sr128_word(reg(rt),w,n);} return true; }
     if (opc11 == 0x348) { for(int w=0;w<4;++w){ int32_t a=(int16_t)(lr128_word(reg(ra),w)&0xffff),b=(int16_t)(lr128_word(reg(rb),w)&0xffff); sr128_word(reg(rt),w,(uint32_t)(a*b));} return true; }
     if (opc11 == 0x1B8) { for(int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w); float a; std::memcpy(&a,&ua,4); float r=(a>0.f)?1.f/std::sqrt(a):0.f; uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
+    if (opc11 == 0x0D0) { for(int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)+lr128_word(reg(rb),w)); return true; }
+    if (opc11 == 0x0D8) { for(int w=0;w<4;++w) sr128_word(reg(rt),w,(uint32_t)((int32_t)lr128_word(reg(ra),w)*(int32_t)lr128_word(reg(rb),w))); return true; }
+    if (opc11 == 0x3CC) { for(int w=0;w<4;++w){ int32_t a=(int32_t)lr128_word(reg(ra),w),b=(int32_t)lr128_word(reg(rb),w); sr128_word(reg(rt),w,a>=b?0xFFFFFFFFu:0);} return true; }
+    if (opc11 == 0x3CD) { for(int w=0;w<4;++w){ int32_t a=(int32_t)lr128_word(reg(ra),w),b=(int32_t)lr128_word(reg(rb),w); sr128_word(reg(rt),w,a<=b?0xFFFFFFFFu:0);} return true; }
+    if (opc11 == 0x2C7) { for(int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w),ub=lr128_word(reg(rb),w); float a,b; std::memcpy(&a,&ua,4); std::memcpy(&b,&ub,4); float r=(b!=0.f)?a/b:0.f; uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
+    if (opc11 == 0x2C8) { for(int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w); float a; std::memcpy(&a,&ua,4); float r=std::fabs(a); uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
+    if (opc11 == 0x2C9) { for(int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w); float a; std::memcpy(&a,&ua,4); float r=-a; uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
 // Unknown — count and continue (skip)
     static int s_unk = 0;
     if (s_unk < 24) {
