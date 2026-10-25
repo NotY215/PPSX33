@@ -334,7 +334,7 @@ static void gcm_fifo_emit(uint32_t method, uint32_t arg) {
     }
 }
 static void gcm_inject_clear_draw() {
-    static const uint32_t kCols[] = { 0xE02020u, 0x20E040u, 0x2060F0u, 0xF0D020u };
+    static const uint32_t kCols[] = { 0x402020u, 0x204028u, 0x202848u, 0x403828u };
     static int s_ci = 0;
     uint32_t col = kCols[s_ci++ & 3];
     if (g_gcm_local_addr) {

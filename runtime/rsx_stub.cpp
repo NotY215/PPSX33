@@ -1,3 +1,4 @@
+// PORT present: bars+triangle visible; guest blit only if varied; triangle last
 // GEOM: indexed VA draws + attrib format methods
 // RSX depth: bright frames, depth-off diagnostics, FIFO consumer
 // SCE VP/FP ucode to HLSL translation depth
@@ -710,10 +711,13 @@ static void rsx_host_present_clear() {
                 (40.f + (float)((tck * 3) & 0x3F)) / 255.f,
                 1.f
             };
-            if (g_rsx.clear_color & 0x00FFFFFFu) {
+            // Only honor guest clear when shaders are active; else keep neutral backdrop
+            if ((g_rsx.shader_binds > 0) && (g_rsx.clear_color & 0x00FFFFFFu)) {
                 colb[0] = ((g_rsx.clear_color >> 16) & 0xFF) / 255.f;
                 colb[1] = ((g_rsx.clear_color >> 8) & 0xFF) / 255.f;
                 colb[2] = (g_rsx.clear_color & 0xFF) / 255.f;
+            } else {
+                colb[0] = 0.08f; colb[1] = 0.10f; colb[2] = 0.18f;
             }
             g_ctx11->ClearRenderTargetView(g_rtv, colb);
             if (g_dsv && (mask & 0x02))
@@ -721,49 +725,46 @@ static void rsx_host_present_clear() {
                     g_rsx.clear_depth, g_rsx.clear_stencil);
         }
 
-        // XXV-K: ensure guest surface has pixels, then host present
+                // Port-style present (RPCS3-inspired pipeline order, host D3D):
+        // 1) clear  2) guest color/tex if real content  3) host diagnostic geometry LAST
         {
             uint8_t* m = ps3rt_memory();
+            bool real_scene = (g_rsx.shader_binds > 0 && g_rsx.vertex_binds > 0);
+            if (m && !real_scene) {
+                // Diagnostic color bars into guest local mem (not solid inject red)
+                rsx_paint_guest_color_buffer(m);
+            }
             if (m) {
-                // Always refresh synthetic frame until real shaders bind
-                if (g_rsx.shader_binds == 0 || g_rsx.tex_binds == 0)
-                    rsx_paint_guest_color_buffer(m);
+                uint32_t off = g_rsx.tex_offset ? g_rsx.tex_offset : g_rsx.color_offset;
+                if (!off) off = g_rsx.color_offset;
+                // Variance check: skip fullscreen blit if buffer is nearly uniform (solid clear)
+                int nz = 0, samples = 0;
+                uint32_t first = 0;
+                if (off && off + 4096u < 0x10000000u) {
+                    first = (uint32_t)m[off] | ((uint32_t)m[off+1]<<8) | ((uint32_t)m[off+2]<<16);
+                    for (uint32_t i = 0; i < 4096; i += 16) {
+                        uint32_t px = (uint32_t)m[off+i] | ((uint32_t)m[off+i+1]<<8) | ((uint32_t)m[off+i+2]<<16);
+                        if (px != first) ++nz;
+                        ++samples;
+                    }
+                }
+                bool varied = nz > (samples / 8);
+                if (varied || real_scene) {
+                    if (!g_rsx.tex_offset) g_rsx.tex_offset = off ? off : 0x0C000000u;
+                    if (!g_rsx.tex_width) {
+                        g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280;
+                        g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720;
+                    }
+                    if (!g_rsx.tex_pitch && g_rsx.tex_width)
+                        g_rsx.tex_pitch = (g_rsx.tex_width * 4 + 63u) & ~63u;
+                    rsx_upload_guest_tex(m);
+                    rsx_draw_textured_quad();
+                }
+                // VA geometry draws happen at method decode time; present only composites
             }
         }
+        // ALWAYS last: host triangle so a frame is never a flat clear color
         rsx_draw_solid_triangle();
-
-        // Guest texture only if non-black samples
-        {
-            uint8_t* m = ps3rt_memory();
-            bool guest_ok = false;
-            uint32_t off = g_rsx.tex_offset ? g_rsx.tex_offset : g_rsx.color_offset;
-            if (m && off && off + 256u < 0x10000000u) {
-                int nz = 0;
-                for (uint32_t i = 0; i < 256; i += 4) {
-                    uint8_t* p = m + off + i;
-                    if (p[0] | p[1] | p[2]) ++nz;
-                }
-                guest_ok = nz > 8;
-            }
-            // Always upload painted/guest surface — visibility first
-            if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset ? g_rsx.color_offset : 0x0C000000u;
-            if (!g_rsx.tex_width) {
-                g_rsx.tex_width = g_rsx.width ? g_rsx.width : 1280;
-                g_rsx.tex_height = g_rsx.height ? g_rsx.height : 720;
-            }
-            if (!g_rsx.tex_pitch && g_rsx.tex_width)
-                g_rsx.tex_pitch = (g_rsx.tex_width * 4 + 63u) & ~63u;
-            rsx_upload_guest_tex(m);
-            rsx_draw_textured_quad();
-            if (!guest_ok) {
-                static int pd = 0;
-                if (pd < 10) {
-                    ps3rt_log("[rsx] guest empty/black — solid triangle only (flip=%llu)\n",
-                        (unsigned long long)g_rsx.flip_count);
-                    ++pd;
-                }
-            }
-        }
 
         if (g_hwnd) {
             char title[192];
@@ -890,12 +891,15 @@ static void rsx_paint_guest_color_buffer(uint8_t* mem) {
         uint8_t* row = mem + off + (uint64_t)y * pitch;
         for (uint32_t x = 0; x < w; ++x) {
             // background gradient
-            // High-contrast bars + triangle (cannot look like solid black)
+            // Diagnostic bars (ignore solid inject clear — that caused pure red fullscreen)
             int band = (int)((x * 6) / (w ? w : 1));
-            uint8_t r = (uint8_t)((band == 0 || band == 5) ? 240 : (band == 1 ? 240 : 20));
-            uint8_t g = (uint8_t)((band == 1 || band == 2) ? 240 : (band == 3 ? 200 : 20));
-            uint8_t b = (uint8_t)((band == 3 || band == 4) ? 240 : 20);
-            r = (uint8_t)((r * 3 + cr) / 4); g = (uint8_t)((g * 3 + cg) / 4); b = (uint8_t)((b * 3 + cb) / 4);
+            uint8_t r = 20, g = 20, b = 20;
+            if (band == 0) { r = 240; g = 40;  b = 40; }
+            else if (band == 1) { r = 240; g = 200; b = 40; }
+            else if (band == 2) { r = 40;  g = 220; b = 40; }
+            else if (band == 3) { r = 40;  g = 200; b = 240; }
+            else if (band == 4) { r = 40;  g = 40;  b = 240; }
+            else { r = 200; g = 40; b = 200; }
             // triangle: barycentric-ish against three corners
             int ax = (int)w / 2, ay = (int)h / 8;
             int bx = (int)w / 8, by = (int)h * 7 / 8;
