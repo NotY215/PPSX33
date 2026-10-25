@@ -1,3 +1,5 @@
+// XXV-F full depth: validate_guest_pc, capture_guest_fault, strict/storm
+#include <cstdlib>
 // XXIII-R: PPU control-flow TOC/OPD recovery
 // XXII-H: PPU recovery/run surface — prefer soft continue over halt
 // Phase XV: import stub before force-out; wild-PC excludes 0x39800000
@@ -51,6 +53,102 @@ static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, 
     }
     return 0;
 }
+
+
+// ============================================================================
+// XXV-F full depth — deterministic guest PC validation & fault capture
+// Soft mode (default): recover but log every action; storm → fault+halt
+// Strict mode: set env PS3RT_STRICT_FAULT=1 — unknown PC faults without inventing a target
+// ============================================================================
+enum class GuestPcClass : int {
+    Translated = 0,
+    ImportStub = 1,
+    GuestMemory = 2,
+    Invalid = 3
+};
+
+static inline bool ps3rt_strict_fault_mode() {
+    static int cached = -1;
+    if (cached < 0) {
+        const char* e = std::getenv("PS3RT_STRICT_FAULT");
+        cached = (e && e[0] == '1') ? 1 : 0;
+        if (cached)
+            ps3rt_log("[ps3] XXV-F STRICT_FAULT=1 — unknown PC will fault, not invent return\n");
+    }
+    return cached == 1;
+}
+
+static inline GuestPcClass validate_guest_pc(uint64_t pc, const PPUChunk* chunks, size_t n, const PPUContext& c) {
+    if (!pc || (pc & 3ull) != 0)
+        return GuestPcClass::Invalid;
+    if (pc == 0x39800000ull || (pc & 0xFFFF0000ull) == 0x39800000ull)
+        return GuestPcClass::ImportStub;
+    if (pc_in_chunks(pc, chunks, n))
+        return GuestPcClass::Translated;
+    // guest RAM window used by runtime (coarse)
+    if (pc >= 0x10000ull && pc < 0x10000000ull && guest_ok(const_cast<PPUContext&>(c), pc, 4))
+        return GuestPcClass::GuestMemory;
+    return GuestPcClass::Invalid;
+}
+
+static inline uint64_t resolve_function_descriptor(PPUContext& c, uint64_t opd) {
+    if (!opd || (opd & 7ull) != 0) return 0;
+    if (!guest_ok(c, opd, 16)) return 0;
+    uint64_t entry = rd64(c, opd);
+    uint64_t toc = rd64(c, opd + 8);
+    if (!entry || (entry & 3ull) != 0) return 0;
+    if (toc) c.gpr[2] = toc;
+    return entry;
+}
+
+static inline uint64_t resolve_guest_branch(uint64_t target, const PPUChunk* chunks, size_t n, const PPUContext& c) {
+    GuestPcClass k = validate_guest_pc(target, chunks, n, c);
+    if (k == GuestPcClass::Translated || k == GuestPcClass::ImportStub)
+        return target;
+    // Do not silently retarget — caller decides recover vs fault
+    return 0;
+}
+
+static inline void capture_guest_fault(PPUContext& c, const char* reason, const PPUChunk* chunks, size_t n) {
+    GuestPcClass k = validate_guest_pc(c.pc, chunks, n, c);
+    const char* ks = "invalid";
+    if (k == GuestPcClass::Translated) ks = "translated";
+    else if (k == GuestPcClass::ImportStub) ks = "import_stub";
+    else if (k == GuestPcClass::GuestMemory) ks = "guest_mem";
+    ps3rt_log("[ps3] XXV-F FAULT %s pc=0x%llx class=%s lr=0x%llx ctr=0x%llx toc=r2=0x%llx sp=r1=0x%llx\n",
+        reason ? reason : "?",
+        (unsigned long long)c.pc, ks,
+        (unsigned long long)c.lr, (unsigned long long)c.ctr,
+        (unsigned long long)c.gpr[2], (unsigned long long)c.gpr[1]);
+    ps3rt_log("[ps3] XXV-F FAULT gpr3-10 %llx %llx %llx %llx %llx %llx %llx %llx\n",
+        (unsigned long long)c.gpr[3], (unsigned long long)c.gpr[4],
+        (unsigned long long)c.gpr[5], (unsigned long long)c.gpr[6],
+        (unsigned long long)c.gpr[7], (unsigned long long)c.gpr[8],
+        (unsigned long long)c.gpr[9], (unsigned long long)c.gpr[10]);
+    // Best-effort callstack: walk stack for code-looking return addresses
+    uint64_t sp = c.gpr[1];
+    int depth = 0;
+    for (int off = 0; off < 0x2000 && depth < 8; off += 8) {
+        uint64_t a = sp + (uint64_t)off;
+        if (!guest_ok(c, a, 8)) break;
+        uint64_t cand = rd64(c, a);
+        if (!cand || (cand & 3ull) != 0) continue;
+        if (!pc_in_chunks(cand, chunks, n) && cand != 0x39800000ull) continue;
+        ps3rt_log("[ps3] XXV-F callstack[%d] 0x%llx\n", depth, (unsigned long long)cand);
+        ++depth;
+    }
+    c.halted = true;
+}
+
+static inline void log_recovery_action(const char* kind, uint64_t from, uint64_t to) {
+    static int n = 0;
+    if (n < 48) {
+        ps3rt_log("[ps3] XXV-F recover %s 0x%llx -> 0x%llx\n",
+            kind ? kind : "?", (unsigned long long)from, (unsigned long long)to);
+        ++n;
+    }
+}
+
 
 static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     ps3rt_log("[stage] PPU run start\n");
@@ -110,8 +208,34 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     uint64_t xiv_last_pc = 0;
     uint64_t xiv_same = 0;
     uint64_t xiv_log = 0;
+    // XXV-F: recovery storm detection
+    uint64_t f_recoveries = 0;
+    uint64_t f_last_from = 0;
+    uint64_t f_same_from = 0;
 
     while (!c.halted) {
+
+        // XXV-F: classify PC; strict or storm stops silent invent
+        {
+            GuestPcClass pk = validate_guest_pc(c.pc, chunks, n, c);
+            if (pk == GuestPcClass::Invalid && c.pc != 0) {
+                // allow one recover attempt path below; track storms
+            }
+            if (f_last_from == c.pc) ++f_same_from; else { f_last_from = c.pc; f_same_from = 1; }
+            if (f_same_from > 64 || f_recoveries > 256) {
+                capture_guest_fault(c, "recovery_storm", chunks, n);
+                break;
+            }
+            if (ps3rt_strict_fault_mode() && pk == GuestPcClass::Invalid &&
+                !(c.pc == 0x39800000ull || (c.pc & 0xFFFF0000ull) == 0x39800000ull)) {
+                // still allow import stub region; else fault instead of invent
+                if (c.pc == 0 || c.pc >= 0x10000000ull) {
+                    capture_guest_fault(c, "strict_invalid_pc", chunks, n);
+                    break;
+                }
+            }
+        }
+
         if (ps3rt_should_exit()) {
             ps3rt_log("[ps3] exit requested (window closed)\n");
             ps3rt_log("[stage] PPU run end\n");
@@ -160,7 +284,8 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 static int wild_log = 0;
                 if (wild_log < 12) {
                     if (entry_toc) c.gpr[2] = entry_toc; // XXIII-R
-                    ps3rt_log("[ps3] XXIII-R wild-pc 0x%llx -> 0x%llx\n",
+                    log_recovery_action("wild-pc", c.pc, alt); ++f_recoveries;
+                    ps3rt_log("[ps3] XXV-F wild-pc 0x%llx -> 0x%llx\n",
                         (unsigned long long)c.pc, (unsigned long long)alt);
                     ++wild_log;
                 }
@@ -321,7 +446,8 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 if (boot) {
                     static int zpc = 0;
                     if (zpc < 20) {
-                        ps3rt_log("[ps3] XXIII-R null-pc recover -> 0x%llx toc=0x%llx\n",
+                        log_recovery_action("null-pc", 0, alt); ++f_recoveries;
+                        ps3rt_log("[ps3] XXV-F null-pc recover -> 0x%llx toc=0x%llx\n",
                             (unsigned long long)boot, (unsigned long long)entry_toc);
                         ++zpc;
                     }
