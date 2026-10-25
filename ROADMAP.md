@@ -1,6 +1,6 @@
 # PPSX33 Roadmap
 
-**Last updated:** 2026-10-25 (XXV-F full depth + requirements recalculated)  
+**Last updated:** 2026-10-25 (XXV-H depth + RSX C3861 fix)  
 **Scope:** Experimental PlayStation 3 static recompiler — research toolkit, not a retail emulator.
 
 ---
@@ -15,25 +15,24 @@
 | Boot-to-first-pixels | **XXIV** | A–E in tree | [roadmap/XXIV.md](roadmap/XXIV.md) |
 | Truthful exec & pixels | **XXV** | ACTIVE | [roadmap/XXV.md](roadmap/XXV.md) |
 
-**Current focus:** **XXV-F** deterministic faults (pack). Next: **XXV-G** PRX/LV2 contracts.
+**Current focus:** **XXV-H** SPU/MFC/SPURS depth (pack). Next: **XXV-I** game services.
 
 ### XXV subphases
 
 | ID | Status | Work |
 |----|--------|------|
 | **A–E** | DONE (untested) | Audio, present, lifter honesty, RSX host depth |
-| **D** | DONE (untested) | Full depth FIFO/surface/host draw (on E) |
-| **F** | DONE (untested) | `validate_guest_pc`, `capture_guest_fault`, recovery logs, storm halt, `PS3RT_STRICT_FAULT=1` |
-| **G** | PLANNED | PRX/LV2 contracts |
-| **H** | PLANNED | SPU/MFC/SPURS layers |
-| **I** | PLANNED | FS / audio / pad / save |
+| **F** | DONE (untested) | Deterministic faults / recovery visibility |
+| **G** | DONE (untested) | PRX/LV2 contracts, strict import/LV2 env |
+| **H** | DONE (untested) | SPU ISA depth, MFC tag path, SPURS wait; RSX C3861 forward decls |
+| **I** | PLANNED | FS / audio / pad / save services |
 | **J** | PLANNED | End-to-end title checklist |
 
 Detail: [roadmap/XXV.md](roadmap/XXV.md).
 
 ### Requirements
 
-Recalculated for **running generated games** vs **lift/build**: [README.md](README.md#requirements).
+[README.md](README.md#requirements) · [redist/README.txt](redist/README.txt)
 
 ---
 
