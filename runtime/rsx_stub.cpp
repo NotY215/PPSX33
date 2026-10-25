@@ -201,6 +201,16 @@ static ID3D11VertexShader* g_vs_solid = nullptr;
 static ID3D11PixelShader* g_ps_solid = nullptr;
 static ID3D11InputLayout* g_layout_solid = nullptr;
 static ID3D11Buffer* g_vb_tri = nullptr;
+static uint32_t g_va_offset[8] = {};
+static uint32_t g_va_stride[8] = {};
+static uint32_t g_va_size[8] = {};
+static uint32_t g_va_type[8] = {};
+static uint32_t g_index_offset = 0;
+static uint32_t g_index_type = 1;
+static uint32_t g_draw_count = 3;
+static uint32_t g_draw_first = 0;
+static uint32_t g_begin_mode = 0;
+
 
 // Forward decls — definitions appear later (C3861 fix)
 static void rsx_apply_viewport_scissor();
@@ -327,7 +337,7 @@ g_ctx11->VSSetShader(g_vs_blit, nullptr, 0);
     g_ctx11->PSSetShaderResources(0, 1, &g_srv_tex);
     g_ctx11->PSSetSamplers(0, 1, &g_samp);
     g_ctx11->OMSetRenderTargets(1, &g_rtv, nullptr);
-    D3D11_VIEWPORT vp{ 0, 0, (float)g_rsx.width, (float)g_rsx.height, 0, 1 };
+    D3D11_VIEWPORT vp{ 0.f, 0.f, (float)(g_rsx.width>64?g_rsx.width:1280), (float)(g_rsx.height>64?g_rsx.height:720), 0.f, 1.f };
     g_ctx11->RSSetViewports(1, &vp);
     g_ctx11->Draw(6, 0);
     static int sd = 0;
@@ -644,8 +654,8 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
     RegisterClassA(&wc);
     const char* gname = ps3rt_get_game_name();
     char title[256];
-    if (gname && gname[0]) std::snprintf(title, sizeof(title), "%s — PPSX33", gname);
-    else std::snprintf(title, sizeof(title), "PPSX33");
+    if (gname && gname[0]) std::snprintf(title, sizeof(title), "PPSX33 presents %s", gname);
+    else std::snprintf(title, sizeof(title), "PPSX33 presents PS3 Title");
     g_hwnd = CreateWindowExA(0, "PPSX33_RSX", title, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         80, 80, (int)g_rsx.width + 16, (int)g_rsx.height + 39, nullptr, nullptr, wc.hInstance, nullptr);
     if (!g_hwnd) return;
@@ -731,28 +741,42 @@ static void rsx_host_present_clear() {
                     g_rsx.clear_depth, g_rsx.clear_stencil);
         }
 
-                // FORCE-VISIBLE present: purple clear + bars blit + RGB triangle on top
+        // FRAME START: host-visible pipeline every flip
         {
-            float purple[4] = { 0.45f, 0.05f, 0.55f, 1.f };
+            // Bright clear so black never looks like "nothing happened"
+            float base[4] = { 0.12f, 0.14f, 0.28f, 1.f };
             g_ctx11->OMSetRenderTargets(1, &g_rtv, nullptr);
-            g_ctx11->ClearRenderTargetView(g_rtv, purple);
+            g_ctx11->ClearRenderTargetView(g_rtv, base);
+
             uint8_t* m = ps3rt_memory();
             if (m) {
-                rsx_paint_guest_color_buffer(m);
-                if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset ? g_rsx.color_offset : 0x84f0000u;
-                if (!g_rsx.tex_width) { g_rsx.tex_width = 1280; g_rsx.tex_height = 720; }
-                if (!g_rsx.tex_pitch) g_rsx.tex_pitch = 1280 * 4;
+                // Diagnostic bars into guest color until real shaders exist
+                if (g_rsx.shader_binds == 0)
+                    rsx_paint_guest_color_buffer(m);
+                if (!g_rsx.tex_offset)
+                    g_rsx.tex_offset = g_rsx.color_offset ? g_rsx.color_offset : 0x84f0000u;
+                if (!g_rsx.tex_width) {
+                    g_rsx.tex_width = g_rsx.width > 64 ? g_rsx.width : 1280;
+                    g_rsx.tex_height = g_rsx.height > 64 ? g_rsx.height : 720;
+                }
+                if (!g_rsx.tex_pitch)
+                    g_rsx.tex_pitch = g_rsx.tex_width * 4;
                 rsx_upload_guest_tex(m);
                 rsx_draw_textured_quad();
+                // Guest VA geometry from command stream (inject or game)
+                if (g_va_offset[0])
+                    rsx_draw_nv40_geometry(m);
             }
+            // Host RGB triangle always on top — proves raster path
             rsx_draw_solid_triangle();
+            ++g_rsx.draws_this_frame;
         }
 
         if (g_hwnd) {
             char title[192];
             const char* gn = ps3rt_get_game_name();
-            std::snprintf(title, sizeof(title), "PPSX33 | %s | flips=%llu draws=%d",
-                (gn && gn[0]) ? gn : "PS3",
+            std::snprintf(title, sizeof(title), "PPSX33 presents %s  |  flips=%llu  draws=%d",
+                (gn && gn[0]) ? gn : "PS3 Title",
                 (unsigned long long)g_rsx.flip_count, g_rsx.draws);
             SetWindowTextA(g_hwnd, title);
         }
@@ -779,10 +803,10 @@ static void rsx_host_present_clear() {
                 char line[256];
                 const char* gn = ps3rt_get_game_name();
                 std::snprintf(line, sizeof(line),
-                    "%s  |  flips=%llu  draws=%u  PPSX33 XX-N",
-                    (gn && gn[0]) ? gn : "PPSX33",
+                    "PPSX33 presents %s  |  flips=%llu  draws=%u",
+                    (gn && gn[0]) ? gn : "PS3 Title",
                     (unsigned long long)g_rsx.flip_count,
-                    g_rsx.draws_this_frame);
+                    (unsigned)g_rsx.draws);
                 RECT r{ 12, 12, (LONG)g_rsx.width - 12, 48 };
                 DrawTextA(hdc, line, -1, &r, DT_LEFT | DT_TOP | DT_SINGLELINE);
                 // soft shadow line for readability on bright frames
@@ -953,16 +977,7 @@ static void rsx_sync_guest_host(uint8_t* mem) {
 // - Fragment program bind: record ucode; output constant or texture0 sample
 // Full SCE VP/FP ISA translation remains iterative; this path draws real guest verts.
 // ============================================================================
-static uint32_t g_va_offset[8] = {};
-static uint32_t g_va_stride[8] = {};
-static uint32_t g_va_size[8] = {};   // components
-static uint32_t g_va_type[8] = {};   // 2=float etc
-static uint32_t g_draw_count = 0;
-static uint32_t g_index_offset = 0;
-static uint32_t g_index_type = 0; // 1=u16 2=u32
 
-static uint32_t g_draw_first = 0;
-static uint32_t g_begin_mode = 0; // 1=points 2=lines 3=tris ...
 static ID3D11Buffer* g_vb_nv40 = nullptr;
 static ID3D11VertexShader* g_vs_nv40 = nullptr;
 static ID3D11PixelShader* g_ps_nv40 = nullptr;
