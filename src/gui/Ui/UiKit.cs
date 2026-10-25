@@ -7,18 +7,18 @@ namespace PS3Recomp.Gui.Ui;
 internal static class Theme
 {
     // Deep PS3 "XMB" night palette
-    public static readonly Color Void      = Color.FromArgb(6, 8, 18);
-    public static readonly Color Deep      = Color.FromArgb(10, 14, 32);
-    public static readonly Color Ink       = Color.FromArgb(14, 20, 44);
-    public static readonly Color TextPri   = Color.FromArgb(238, 242, 255);
-    public static readonly Color TextSec   = Color.FromArgb(150, 162, 196);
-    public static readonly Color TextDim   = Color.FromArgb(98, 110, 146);
-    public static readonly Color Cyan      = Color.FromArgb(70, 200, 255);
-    public static readonly Color Blue      = Color.FromArgb(70, 130, 255);
-    public static readonly Color Violet    = Color.FromArgb(150, 100, 255);
-    public static readonly Color Success   = Color.FromArgb(80, 220, 160);
-    public static readonly Color Danger    = Color.FromArgb(255, 100, 120);
-    public static readonly Color Console   = Color.FromArgb(9, 13, 28);
+    public static readonly Color Void      = Color.FromArgb(9, 13, 20);
+    public static readonly Color Deep      = Color.FromArgb(13, 17, 23);
+    public static readonly Color Ink       = Color.FromArgb(22, 27, 34);
+    public static readonly Color TextPri   = Color.FromArgb(230, 237, 243);
+    public static readonly Color TextSec   = Color.FromArgb(139, 148, 158);
+    public static readonly Color TextDim   = Color.FromArgb(110, 118, 129);
+    public static readonly Color Cyan      = Color.FromArgb(56, 189, 248);
+    public static readonly Color Blue      = Color.FromArgb(31, 111, 235);
+    public static readonly Color Violet    = Color.FromArgb(163, 113, 247);
+    public static readonly Color Success   = Color.FromArgb(63, 185, 80);
+    public static readonly Color Danger    = Color.FromArgb(248, 81, 73);
+    public static readonly Color Console   = Color.FromArgb(7, 10, 15);
 
     // Face-button colours (triangle / circle / cross / square)
     public static readonly Color PsTriangle = Color.FromArgb(70, 220, 170);

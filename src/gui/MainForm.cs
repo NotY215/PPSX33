@@ -7,13 +7,18 @@ namespace PS3Recomp.Gui;
 
 public sealed partial class MainForm : Form
 {
-    static readonly Color Bg = Color.FromArgb(6, 8, 18);
-    static readonly Color Panel = Color.FromArgb(14, 20, 44);
-    static readonly Color Panel2 = Color.FromArgb(20, 30, 60);
-    static readonly Color TextPri = Color.FromArgb(238, 242, 255);
-    static readonly Color TextSec = Color.FromArgb(150, 162, 196);
-    static readonly Color Accent = Color.FromArgb(38, 112, 210);
-    static readonly Color Danger = Color.FromArgb(210, 55, 78);
+    // Palette aligned with modern dark UI (GitHub-dark + cyan accent)
+    static readonly Color Bg = Color.FromArgb(9, 13, 20);           // #090d14
+    static readonly Color Panel = Color.FromArgb(13, 17, 23);       // #0d1117 sidebar
+    static readonly Color Panel2 = Color.FromArgb(22, 27, 34);      // #161b22 card
+    static readonly Color Border = Color.FromArgb(48, 54, 61);      // #30363d
+    static readonly Color Hover = Color.FromArgb(33, 38, 45);       // #21262d
+    static readonly Color TextPri = Color.FromArgb(230, 237, 243);
+    static readonly Color TextSec = Color.FromArgb(139, 148, 158);
+    static readonly Color Accent = Color.FromArgb(56, 189, 248);    // cyan #38bdf8
+    static readonly Color AccentBlue = Color.FromArgb(31, 111, 235);
+    static readonly Color Success = Color.FromArgb(35, 134, 54);
+    static readonly Color Danger = Color.FromArgb(218, 54, 51);
 
     private readonly Settings _settings = Settings.Load();
     private readonly TextBox _log = new();
@@ -66,13 +71,13 @@ public sealed partial class MainForm : Form
 
     public MainForm()
     {
-        Text = "PPSX33  ·  PlayStation 3 Recompiler  ·  XXIIII";
+        Text = "PPSX33  ·  PlayStation 3 Recompiler";
         StartPosition = FormStartPosition.CenterScreen;
         Size = new Size(1280, 800);
         MinimumSize = new Size(1024, 640);
         BackColor = Bg;
         ForeColor = TextPri;
-        Font = new Font("Segoe UI", 9.5f);
+        Font = new Font("Segoe UI", 9f);
         DoubleBuffered = true;
 
         try
@@ -133,10 +138,10 @@ public sealed partial class MainForm : Form
         StyleBtn(_btnDecrypt, "Decrypt EBOOT", Panel2);
         StyleBtn(_btnLoad, "Load ELF", Panel2);
         StyleBtn(_btnLift, "Decompile", Panel2);
-        StyleBtn(_btnBuild, "Build", Accent);
-        StyleBtn(_btnRun, "Run", Panel2);
-        StyleBtn(_btnCopy, "Copy to game folder", Panel2);
-        StyleBtn(_btnCancel, "Cancel / Stop", Danger);
+        StyleBtn(_btnBuild, "Build Project", AccentBlue);
+        StyleBtn(_btnRun, "Run Executable", Success);
+        StyleBtn(_btnCopy, "Copy to Game Folder", Panel2);
+        StyleBtn(_btnCancel, "Stop / Cancel Build", Danger);
 
         _btnRpcs3 = new Ps3Button();
         StyleBtn(_btnRpcs3, "RPCS3 path…", Panel2);
@@ -154,7 +159,7 @@ public sealed partial class MainForm : Form
 
 
         _gfx.DropDownStyle = ComboBoxStyle.DropDownList;
-        _gfx.Items.AddRange(new object[] { "D3D11", "Vulkan (stub)", "OpenGL (stub)" });
+        _gfx.Items.AddRange(new object[] { "D3D11 (DirectX 11)", "OpenGL 3.3 (future)", "Vulkan (not linked)" });
         _gfx.SelectedIndex = 0;
         _gfx.Enabled = false;
         StyleCombo(_gfx);
@@ -167,7 +172,7 @@ public sealed partial class MainForm : Form
         _eta.ForeColor = TextSec; _eta.AutoSize = true; _eta.Text = "";
 
         railLayout.Controls.Add(_logo, 0, 0);
-        railLayout.Controls.Add(MakeLabel("WORKFLOW"), 0, 1);
+        railLayout.Controls.Add(MakeLabel("WORKFLOW  ·  7 ACTIONS"), 0, 1);
         railLayout.Controls.Add(_btnDecrypt, 0, 2);
         railLayout.Controls.Add(_btnLoad, 0, 3);
         railLayout.Controls.Add(_btnLift, 0, 4);
@@ -176,9 +181,9 @@ public sealed partial class MainForm : Form
         railLayout.Controls.Add(_btnCopy, 0, 7);
         railLayout.Controls.Add(_btnCancel, 0, 8);
         railLayout.Controls.Add(_btnRpcs3, 0, 9);
-        railLayout.Controls.Add(MakeLabel("GRAPHICS"), 0, 10);
+        railLayout.Controls.Add(MakeLabel("GRAPHICS API"), 0, 10);
         railLayout.Controls.Add(_gfx, 0, 11);
-        railLayout.Controls.Add(MakeLabel("THREADS"), 0, 12);
+        railLayout.Controls.Add(MakeLabel("CPU THREADS"), 0, 12);
         railLayout.Controls.Add(_threads, 0, 13);
         railLayout.Controls.Add(_eta, 0, 14);
         rail.Controls.Add(railLayout);
@@ -187,7 +192,7 @@ public sealed partial class MainForm : Form
         right.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
         right.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         right.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-        _project.Text = "PROJECT  /  NO PROJECT LOADED"; _project.ForeColor = TextPri; _project.BackColor = Color.FromArgb(12, 22, 47);
+        _project.Text = "TARGET  /  NO PROJECT LOADED"; _project.ForeColor = TextPri; _project.BackColor = Panel2;
         _project.Dock = DockStyle.Fill; _project.TextAlign = ContentAlignment.MiddleLeft; _project.Padding = new Padding(12, 0, 0, 0);
         StyleTextBox(_log); StyleTextBox(_report); StyleTextBox(_roadmap);
         StyleTextBox(_requirements);
@@ -229,12 +234,12 @@ public sealed partial class MainForm : Form
         AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap); AddTab("Requirements", _requirements);
         BuildControllerTab();
         _status.TextAlign = ContentAlignment.MiddleLeft; _status.Padding = new Padding(8, 0, 0, 0);
-        _status.Dock = DockStyle.Fill; _status.ForeColor = TextSec; _status.BackColor = Color.FromArgb(10, 17, 37);
+        _status.Dock = DockStyle.Fill; _status.ForeColor = TextSec; _status.BackColor = Panel;
         _progress.Dock = DockStyle.Bottom; _progress.Height = 6;
 
         right.Controls.Add(_project, 0, 0);
         right.Controls.Add(_tabs, 0, 1);
-        var statusRow = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(10, 17, 37) };
+        var statusRow = new Panel { Dock = DockStyle.Fill, BackColor = Panel };
         statusRow.Controls.Add(_status);
         statusRow.Controls.Add(_progress);
         right.Controls.Add(statusRow, 0, 2);
@@ -256,6 +261,7 @@ public sealed partial class MainForm : Form
         };
 
         Append("PPSX33 ready · core v1.0.0");
+        Append("Host build uses system Visual Studio (see redist/README.txt) — no bundled compilers.");
         Append("Settings: " + Settings.DataDir);
         UpdateButtons();
         Shown += (_, _) => CheckRpcs3OnStartup();

@@ -13,19 +13,25 @@ public sealed partial class MainForm
         b.BackColor = bg;
         b.ForeColor = TextPri;
         b.Dock = DockStyle.Top;
-        b.Height = 38;
-        b.Margin = new Padding(0, 0, 0, 8);
-        b.Padding = new Padding(8, 0, 8, 0);
+        b.Height = 36;
+        b.Margin = new Padding(0, 0, 0, 6);
+        b.Padding = new Padding(10, 0, 10, 0);
         if (b is Button btn)
         {
             btn.FlatStyle = FlatStyle.Flat;
-            btn.FlatAppearance.BorderSize = 0;
-            btn.TextAlign = ContentAlignment.MiddleCenter;
+            btn.FlatAppearance.BorderSize = 1;
+            btn.FlatAppearance.BorderColor = Color.FromArgb(48, 54, 61);
+            btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(33, 38, 45);
+            btn.TextAlign = ContentAlignment.MiddleLeft;
             btn.Cursor = Cursors.Hand;
+            btn.Font = new Font("Segoe UI", 9f, FontStyle.Regular);
         }
     }
     void StyleTextBox(TextBox t) { t.Multiline = true; t.ScrollBars = ScrollBars.Both; t.Dock = DockStyle.Fill; t.BackColor = Panel; t.ForeColor = TextPri; t.BorderStyle = BorderStyle.None; t.Font = new Font("Consolas", 9f); }
     void StyleCombo(ComboBox c) {
+        c.FlatStyle = FlatStyle.Flat;
+        c.BackColor = Panel2;
+        c.ForeColor = TextPri;
         c.FlatStyle = FlatStyle.Flat;
         c.BackColor = Panel2;
         c.ForeColor = TextPri;

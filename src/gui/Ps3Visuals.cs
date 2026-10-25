@@ -14,7 +14,7 @@ internal sealed class Ps3BackdropPanel : Panel
         DoubleBuffered = true;
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
                  ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
-        BackColor = Color.FromArgb(5, 8, 20);
+        BackColor = Color.FromArgb(9, 13, 20);
         // Rebuild at a steady ~30 Hz during live resizing, then stop after the size settles.
         _resizePaintTimer = new System.Windows.Forms.Timer { Interval = 33 };
         _resizePaintTimer.Tick += (_, _) =>
@@ -137,7 +137,7 @@ internal sealed class Ps3Button : Button
         var g = e.Graphics;
         g.SmoothingMode = SmoothingMode.AntiAlias;
         var rect = new RectangleF(1, 1, Math.Max(1, Width - 3), Math.Max(1, Height - 3));
-        Color baseColor = Enabled ? BackColor : Color.FromArgb(21, 30, 53);
+        Color baseColor = Enabled ? BackColor : Color.FromArgb(33, 38, 45);
         Color top = !_down && _hover && Enabled ? Color.FromArgb(65, 145, 245) : baseColor;
         Color bottom = Enabled ? ControlPaint.Dark(baseColor, .28f) : Color.FromArgb(15, 22, 40);
         using (var path = Rounded(rect, 5))
@@ -185,8 +185,8 @@ internal sealed class Ps3HudLabel : Label
     {
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
                  ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
-        BackColor = Color.FromArgb(12, 22, 47);
-        ForeColor = Color.FromArgb(235, 244, 255);
+        BackColor = Color.FromArgb(22, 27, 34);
+        ForeColor = Color.FromArgb(230, 237, 243);
         Padding = new Padding(12, 0, 8, 0);
     }
 
