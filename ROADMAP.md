@@ -1,6 +1,6 @@
 # PPSX33 Roadmap
 
-**Last updated:** 2026-10-25 (XXV-H depth + RSX C3861 fix)  
+**Last updated:** 2026-10-25 (XXV-I/J services full depth)  
 **Scope:** Experimental PlayStation 3 static recompiler — research toolkit, not a retail emulator.
 
 ---
@@ -15,18 +15,17 @@
 | Boot-to-first-pixels | **XXIV** | A–E in tree | [roadmap/XXIV.md](roadmap/XXIV.md) |
 | Truthful exec & pixels | **XXV** | ACTIVE | [roadmap/XXV.md](roadmap/XXV.md) |
 
-**Current focus:** **XXV-H** SPU/MFC/SPURS depth (pack). Next: **XXV-I** game services.
+**Current focus:** **XXV-I/J** game services (pack). Next: **XXV-K** guest RSX geometry, **XXV-L** wild-pc stability.
 
 ### XXV subphases
 
 | ID | Status | Work |
 |----|--------|------|
-| **A–E** | DONE (untested) | Audio, present, lifter honesty, RSX host depth |
-| **F** | DONE (untested) | Deterministic faults / recovery visibility |
-| **G** | DONE (untested) | PRX/LV2 contracts, strict import/LV2 env |
-| **H** | DONE (untested) | SPU ISA depth, MFC tag path, SPURS wait; RSX C3861 forward decls |
-| **I** | PLANNED | FS / audio / pad / save services |
-| **J** | PLANNED | End-to-end title checklist |
+| **A–H** | DONE (untested) | Lifter, RSX host, faults, PRX/LV2, SPU/MFC |
+| **I** | DONE (untested) | cellFs depth, audio keepalive, pad poll, save lifecycle |
+| **J** | DONE (untested) | End-to-end service checklist log |
+| **K** | PLANNED | Guest RSX geometry (non-black surfaces, shaders) |
+| **L** | PLANNED | Boot stability (wild-pc / import path) |
 
 Detail: [roadmap/XXV.md](roadmap/XXV.md).
 
