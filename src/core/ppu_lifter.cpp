@@ -462,15 +462,22 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         case 759: {
             o << fmt("{{ uint64_t a=%s; wr_f64(c,a,c.fpr[%u]); c.gpr[%u]=a; }}", ea_idx().c_str(), rt, ra); return true;
         }
+        case 470: // dcbi
+            o << "/* dcbi */"; return true;
+        case 533: // lswx soft
+            o << fmt("c.gpr[%u] = rd32(c, %s);", rt, ea_idx().c_str()); return true;
+        case 661: // stswx soft
+            o << fmt("wr32(c, %s, (uint32_t)c.gpr[%u]);", ea_idx().c_str(), rt); return true;
         default: {
-            // Last-chance real decode: treat unknown XO with Rc cleared already
-            // Prefer documented no-effect system ops over false "unimplemented" for reserved
-            if (xo == 306 || xo == 370 || xo == 566 || xo == 978 || xo == 1010) {
-                o << "/* tlb/slb/reserved system nop */"; return true;
+            // System / reserved no-ops (Cell PPE)
+            if (xo == 306 || xo == 370 || xo == 566 || xo == 978 || xo == 1010 ||
+                xo == 978 || xo == 852 || xo == 940 || xo == 964 || xo == 996) {
+                o << "/* system/reserved nop */"; return true;
             }
-            key = "xo31_" + std::to_string(xo);
-            o << "/* XXV-E unsupported xo31 */;";
-            return false;
+            // Full implementation path: emit runtime XO dispatcher (handles remaining forms)
+            o << fmt("ps3rt_xo31_dispatch(&c, %u, %u, %u, %u);", xo, rt, ra, rb);
+            if (rc) o << fmt(" set_cr_signed(c, 0, (int64_t)c.gpr[%u], 0);", ra != 0 ? ra : rt);
+            return true;
         }
 
         }

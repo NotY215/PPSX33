@@ -97,6 +97,7 @@ PS3RT_API void ps3rt_syscall(PPUContext* c);
 PS3RT_API int  ps3rt_prx_import_stub(PPUContext* c, uint64_t pc);
 PS3RT_API void ps3rt_pad_set(uint16_t buttons, int16_t lx, int16_t ly, int16_t rx, int16_t ry);
 PS3RT_API void ps3rt_unimplemented(PPUContext* c, uint32_t opcode, uint64_t pc);
+PS3RT_API void ps3rt_xo31_dispatch(PPUContext* c, unsigned xo, unsigned rt, unsigned ra, unsigned rb);
 PS3RT_API int      ps3rt_init(const char* image_path);
 PS3RT_API uint8_t* ps3rt_memory(void);
 PS3RT_API uint64_t ps3rt_stack_top(void);
