@@ -7,18 +7,25 @@ namespace PS3Recomp.Gui;
 
 public sealed partial class MainForm : Form
 {
-    // Palette aligned with modern dark UI (GitHub-dark + cyan accent)
-    static readonly Color Bg = Color.FromArgb(9, 13, 20);           // #090d14
-    static readonly Color Panel = Color.FromArgb(13, 17, 23);       // #0d1117 sidebar
-    static readonly Color Panel2 = Color.FromArgb(22, 27, 34);      // #161b22 card
-    static readonly Color Border = Color.FromArgb(48, 54, 61);      // #30363d
-    static readonly Color Hover = Color.FromArgb(33, 38, 45);       // #21262d
-    static readonly Color TextPri = Color.FromArgb(230, 237, 243);
-    static readonly Color TextSec = Color.FromArgb(139, 148, 158);
-    static readonly Color Accent = Color.FromArgb(56, 189, 248);    // cyan #38bdf8
-    static readonly Color AccentBlue = Color.FromArgb(31, 111, 235);
-    static readonly Color Success = Color.FromArgb(35, 134, 54);
-    static readonly Color Danger = Color.FromArgb(218, 54, 51);
+    // Colors from test.cs / HTML design system
+    static readonly Color Bg       = Color.FromArgb(0x09, 0x0D, 0x14);
+    static readonly Color Sidebar  = Color.FromArgb(0x0D, 0x11, 0x17);
+    static readonly Color Card     = Color.FromArgb(0x16, 0x1B, 0x22);
+    static readonly Color BorderC  = Color.FromArgb(0x1E, 0x29, 0x3B);
+    static readonly Color Hover    = Color.FromArgb(0x21, 0x26, 0x2D);
+    static readonly Color TextPri  = Color.FromArgb(0xE6, 0xED, 0xF3);
+    static readonly Color TextSec  = Color.FromArgb(0x64, 0x74, 0x8B);
+    static readonly Color Cyan     = Color.FromArgb(0x38, 0xBD, 0xF8);
+    static readonly Color CyanDeep = Color.FromArgb(0x02, 0x84, 0xC7);
+    static readonly Color AccentBlue = Color.FromArgb(0x1F, 0x6F, 0xEB);
+    static readonly Color Success  = Color.FromArgb(0x23, 0x86, 0x36);
+    static readonly Color Danger   = Color.FromArgb(0xDA, 0x36, 0x33);
+
+    // aliases used by partials
+    static readonly Color Panel = Sidebar;
+    static readonly Color Panel2 = Card;
+    static readonly Color Accent = Cyan;
+    static readonly Color TextSecAlias = TextSec;
 
     private readonly Settings _settings = Settings.Load();
     private readonly TextBox _log = new();
@@ -48,12 +55,11 @@ public sealed partial class MainForm : Form
     private int _liftChunks;
     private Ps3Button? _btnRpcs3;
     private readonly Label _eta = new();
-    private bool _controllerHiddenAfterBuild;
+    private bool _controllerMapped;
+    private Label? _headerStatus;
 
-    private const int StallQuietMs = 4000;
-    private const int MaxRunMs = 0;
     private static string RuntimeDir => Path.Combine(AppContext.BaseDirectory, "runtime");
-    private static string CompilersDir => Path.Combine(AppContext.BaseDirectory, "redist"); // docs only; host build uses system VS
+    private static string CompilersDir => Path.Combine(AppContext.BaseDirectory, "redist"); // guide only; VS is system-installed
     private static string ProjectsRoot => Path.Combine(AppContext.BaseDirectory, "projects");
 
     [DllImport("dwmapi.dll")]
@@ -64,17 +70,17 @@ public sealed partial class MainForm : Form
         get
         {
             var cp = base.CreateParams;
-            cp.ExStyle |= 0x02000000;
+            cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED
             return cp;
         }
     }
 
     public MainForm()
     {
-        Text = "PPSX33  ·  PlayStation 3 Recompiler";
+        Text = "PPSX33 · PlayStation 3 Recompiler";
         StartPosition = FormStartPosition.CenterScreen;
-        Size = new Size(1280, 800);
-        MinimumSize = new Size(1024, 640);
+        Size = new Size(1200, 780);
+        MinimumSize = new Size(950, 650);
         BackColor = Bg;
         ForeColor = TextPri;
         Font = new Font("Segoe UI", 9f);
@@ -90,63 +96,110 @@ public sealed partial class MainForm : Form
         }
         catch { }
 
-        var backdrop = new Panel { Dock = DockStyle.Fill, BackColor = Bg, Padding = new Padding(12) };
-        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Bg };
+        // ===== ROOT: sidebar | workspace =====
+        var root = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            BackColor = Bg,
+            Padding = new Padding(0)
+        };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280));
-        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
 
-        var rail = new Panel { Dock = DockStyle.Fill, BackColor = Panel, Padding = new Padding(14) };
-        var railLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 16, BackColor = Panel };
-        for (int i = 0; i < 14; i++)
-            railLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        // ----- LEFT SIDEBAR -----
+        var sidebar = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Sidebar,
+            Padding = new Padding(16),
+            AutoScroll = true
+        };
+        // right border line
+        sidebar.Paint += (_, e) =>
+        {
+            using var pen = new Pen(BorderC, 1);
+            e.Graphics.DrawLine(pen, sidebar.Width - 1, 0, sidebar.Width - 1, sidebar.Height);
+        };
 
-        _logo.Size = new Size(140, 140);
-        _logo.SizeMode = PictureBoxSizeMode.Zoom;
-        _logo.BackColor = Color.Transparent;
-        _logo.Margin = new Padding(8, 4, 8, 12);
+        var rail = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            ColumnCount = 1,
+            BackColor = Sidebar
+        };
+        rail.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+
+        // Logo block
+        var logoPanel = new Panel
+        {
+            Height = 120,
+            Dock = DockStyle.Top,
+            BackColor = Card,
+            Margin = new Padding(0, 0, 0, 16),
+            Padding = new Padding(8)
+        };
+        logoPanel.Paint += (s, e) =>
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            var rect = new Rectangle(8, 8, logoPanel.Width - 16, logoPanel.Height - 16);
+            using var path = Rounded(rect, 12);
+            using var br = new LinearGradientBrush(rect,
+                Color.FromArgb(30, 0x02, 0x84, 0xC7),
+                Color.FromArgb(40, 0x16, 0x1B, 0x22), 90f);
+            g.FillPath(br, path);
+            using var pen = new Pen(Color.FromArgb(80, Cyan), 1);
+            g.DrawPath(pen, path);
+            // ring
+            int cx = logoPanel.Width / 2, cy = 42;
+            using (var ring = new Pen(Color.FromArgb(120, CyanDeep), 2))
+                g.DrawEllipse(ring, cx - 28, cy - 28, 56, 56);
+            using (var ring2 = new Pen(Color.FromArgb(180, Cyan), 1))
+                g.DrawEllipse(ring2, cx - 22, cy - 22, 44, 44);
+            TextRenderer.DrawText(g, "PPSX33",
+                new Font("Segoe UI", 14f, FontStyle.Bold),
+                new Rectangle(0, 72, logoPanel.Width, 22),
+                TextPri, TextFormatFlags.HorizontalCenter);
+            TextRenderer.DrawText(g, "PS3 RECOMPILER",
+                new Font("Segoe UI", 7.5f, FontStyle.Bold),
+                new Rectangle(0, 94, logoPanel.Width, 16),
+                Cyan, TextFormatFlags.HorizontalCenter);
+        };
+
+        _logo.Size = new Size(1, 1);
+        _logo.Visible = false;
         try
         {
-            // Form / taskbar icon (.ico)
-            string[] icoCandidates = {
+            foreach (var ico in new[]
+            {
                 Path.Combine(AppContext.BaseDirectory, "assets", "ppsx33-logo.ico"),
                 Path.Combine(AppContext.BaseDirectory, "ppsx33-logo.ico"),
-                Path.Combine(AppContext.BaseDirectory, "..", "assets", "ppsx33-logo.ico"),
-                Path.Combine(AppContext.BaseDirectory, "..", "..", "assets", "ppsx33-logo.ico"),
-            };
-            foreach (var ico in icoCandidates)
+            })
             {
                 if (!File.Exists(ico)) continue;
                 Icon = new Icon(ico);
                 break;
             }
-            // Rail logo (.png)
-            string[] pngCandidates = {
-                Path.Combine(AppContext.BaseDirectory, "assets", "ppsx33-logo.png"),
-                Path.Combine(AppContext.BaseDirectory, "ppsx33-logo.png"),
-                Path.Combine(AppContext.BaseDirectory, "..", "assets", "ppsx33-logo.png"),
-                Path.Combine(AppContext.BaseDirectory, "..", "..", "assets", "ppsx33-logo.png"),
-            };
-            foreach (var png in pngCandidates)
-            {
-                if (!File.Exists(png)) continue;
-                _logo.Image = Image.FromFile(png);
-                break;
-            }
         }
-        catch { /* missing assets */ }
+        catch { }
 
-        StyleBtn(_btnDecrypt, "Decrypt EBOOT", Panel2);
-        StyleBtn(_btnLoad, "Load ELF", Panel2);
-        StyleBtn(_btnLift, "Decompile", Panel2);
+        StyleBtn(_btnDecrypt, "Decrypt EBOOT", Card);
+        StyleBtn(_btnLoad, "Load ELF", Card);
+        StyleBtn(_btnLift, "Decompile", Card);
         StyleBtn(_btnBuild, "Build Project", AccentBlue);
         StyleBtn(_btnRun, "Run Executable", Success);
-        StyleBtn(_btnCopy, "Copy to Game Folder", Panel2);
+        StyleBtn(_btnCopy, "Copy to Game Folder", Card);
         StyleBtn(_btnCancel, "Stop / Cancel Build", Danger);
 
         _btnRpcs3 = new Ps3Button();
-        StyleBtn(_btnRpcs3, "RPCS3 path…", Panel2);
-        _btnRpcs3.Click += (_, _) => {
-            using var ofd = new OpenFileDialog {
+        StyleBtn(_btnRpcs3, "RPCS3 path…", Card);
+        _btnRpcs3.Click += (_, _) =>
+        {
+            using var ofd = new OpenFileDialog
+            {
                 Title = "Locate RPCS3.exe",
                 Filter = "RPCS3|RPCS3.exe|Executables|*.exe|All|*.*"
             };
@@ -156,7 +209,6 @@ public sealed partial class MainForm : Form
             UpdateRpcs3Button();
             Append("RPCS3 path set: " + _settings.Rpcs3Path);
         };
-
 
         _gfx.DropDownStyle = ComboBoxStyle.DropDownList;
         _gfx.Items.AddRange(new object[] { "D3D11 (DirectX 11)", "OpenGL 3.3 (future)", "Vulkan (not linked)" });
@@ -169,85 +221,152 @@ public sealed partial class MainForm : Form
         _threads.SelectedItem = Math.Min(4, Environment.ProcessorCount).ToString();
         StyleCombo(_threads);
 
-        _eta.ForeColor = TextSec; _eta.AutoSize = true; _eta.Text = "";
+        _eta.ForeColor = TextSec;
+        _eta.AutoSize = true;
+        _eta.Text = "";
 
-        railLayout.Controls.Add(_logo, 0, 0);
-        railLayout.Controls.Add(MakeLabel("WORKFLOW  ·  7 ACTIONS"), 0, 1);
-        railLayout.Controls.Add(_btnDecrypt, 0, 2);
-        railLayout.Controls.Add(_btnLoad, 0, 3);
-        railLayout.Controls.Add(_btnLift, 0, 4);
-        railLayout.Controls.Add(_btnBuild, 0, 5);
-        railLayout.Controls.Add(_btnRun, 0, 6);
-        railLayout.Controls.Add(_btnCopy, 0, 7);
-        railLayout.Controls.Add(_btnCancel, 0, 8);
-        railLayout.Controls.Add(_btnRpcs3, 0, 9);
-        railLayout.Controls.Add(MakeLabel("GRAPHICS API"), 0, 10);
-        railLayout.Controls.Add(_gfx, 0, 11);
-        railLayout.Controls.Add(MakeLabel("CPU THREADS"), 0, 12);
-        railLayout.Controls.Add(_threads, 0, 13);
-        railLayout.Controls.Add(_eta, 0, 14);
-        rail.Controls.Add(railLayout);
+        int r = 0;
+        void AddRail(Control c)
+        {
+            rail.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            rail.Controls.Add(c, 0, r++);
+        }
 
-        var right = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Bg };
-        right.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-        right.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        right.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-        _project.Text = "TARGET  /  NO PROJECT LOADED"; _project.ForeColor = TextPri; _project.BackColor = Panel2;
-        _project.Dock = DockStyle.Fill; _project.TextAlign = ContentAlignment.MiddleLeft; _project.Padding = new Padding(12, 0, 0, 0);
-        StyleTextBox(_log); StyleTextBox(_report); StyleTextBox(_roadmap);
+        AddRail(logoPanel);
+        AddRail(SectionLabel("WORKFLOW", "7 ACTIONS"));
+        AddRail(_btnDecrypt);
+        AddRail(_btnLoad);
+        AddRail(_btnLift);
+        AddRail(_btnBuild);
+        AddRail(_btnRun);
+        AddRail(_btnCopy);
+        AddRail(_btnCancel);
+        if (_btnRpcs3 != null) AddRail(_btnRpcs3);
+        AddRail(SectionLabel("RECOMPILER SETTINGS", null));
+        AddRail(MakeLabel("GRAPHICS API"));
+        AddRail(_gfx);
+        AddRail(MakeLabel("CPU THREADS"));
+        AddRail(_threads);
+        AddRail(_eta);
+
+        // header status under settings
+        _headerStatus = new Label
+        {
+            Text = "ENGINE READY",
+            ForeColor = Cyan,
+            BackColor = Color.FromArgb(20, 0x23, 0x86, 0x36),
+            AutoSize = false,
+            Height = 22,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Dock = DockStyle.Top,
+            Margin = new Padding(0, 12, 0, 0),
+            Font = new Font("Consolas", 8f, FontStyle.Bold)
+        };
+        AddRail(_headerStatus);
+
+        sidebar.Controls.Add(rail);
+
+        // ----- RIGHT WORKSPACE -----
+        var right = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            BackColor = Bg,
+            Padding = new Padding(0)
+        };
+        right.RowStyles.Add(new RowStyle(SizeType.Absolute, 44)); // path banner
+        right.RowStyles.Add(new RowStyle(SizeType.Percent, 100f)); // tabs
+        right.RowStyles.Add(new RowStyle(SizeType.Absolute, 40)); // status
+
+        // Path banner
+        var pathBar = new Panel { Dock = DockStyle.Fill, BackColor = Sidebar, Padding = new Padding(12, 8, 12, 8) };
+        pathBar.Paint += (_, e) =>
+        {
+            using var pen = new Pen(BorderC, 1);
+            e.Graphics.DrawLine(pen, 0, pathBar.Height - 1, pathBar.Width, pathBar.Height - 1);
+        };
+        _project.Text = "TARGET  /  NO PROJECT LOADED";
+        _project.ForeColor = TextPri;
+        _project.BackColor = Card;
+        _project.Dock = DockStyle.Fill;
+        pathBar.Controls.Add(_project);
+
+        // Tabs + console styling
+        StyleTextBox(_log);
+        StyleTextBox(_report);
+        StyleTextBox(_roadmap);
         StyleTextBox(_requirements);
+
         _requirements.Text =
-            "PPSX33 - Host requirements (research toolkit)\r\n" +
+            "PPSX33 — Requirements to run a recompiled game\r\n" +
             "========================================\r\n\r\n" +
-            "REQUIRED\r\n" +
-            "  Disk type     HDD or SSD (SSD preferred for game data)\r\n" +
-            "  RAM           8 GB system memory\r\n" +
-            "  GPU           Any GPU with a WDDM driver (integrated OK)\r\n" +
-            "  VRAM          Shared or dedicated; enough for a D3D11 swap chain\r\n" +
-            "  Monitor       1280x720 or higher\r\n" +
-            "  Graphics API  Direct3D 11 Feature Level 10_0+\r\n" +
-            "  OS            Windows 10 or later (x64)\r\n\r\n" +
-            "RECOMMENDED\r\n" +
-            "  Disk type     SSD / NVMe\r\n" +
+            "Required\r\n" +
+            "  OS            64-bit Windows 10/11\r\n" +
+            "  Disk type     SSD recommended\r\n" +
+            "  RAM           8 GB minimum\r\n" +
+            "  GPU           D3D11 Feature Level 11_0\r\n" +
+            "  VRAM          Shared or dedicated\r\n" +
+            "  Graphics API  D3D11 (current host path)\r\n" +
+            "  Toolchain     Visual Studio Community (see redist/README.txt)\r\n\r\n" +
+            "Recommended\r\n" +
             "  RAM           16 GB or more\r\n" +
-            "  GPU           Discrete GPU, D3D11 Feature Level 11_0\r\n" +
+            "  GPU           Discrete GPU, D3D11 FL11_0\r\n" +
             "  VRAM          2 GB or more dedicated\r\n" +
             "  Monitor       1920x1080\r\n" +
-            "  Graphics API  D3D11 FL11_0; future OpenGL 3.3/2.1 fallback\r\n\r\n" +
-            "Commercial playability is not guaranteed at any host specification.\r\n";
+            "  Graphics API  D3D11; future OpenGL 3.3/2.1 fallback\r\n\r\n" +
+            "Commercial playability is not guaranteed.\r\n";
 
         _roadmap.Text =
-            "PPSX33 - Roadmap\r\n" +
+            "PPSX33 — Architecture Roadmap\r\n" +
             "========================================\r\n\r\n" +
             "PHASE 1 — I–XXII (see roadmap/)\r\n" +
-            "  XXII  Pipeline correctness (DONE)\r\n\r\n" +
-            "PHASE XXIII — EXECUTION REALITY (ACTIVE)\r\n" +
-            "  A–Q   Surface work (in tree; test pending)\r\n" +
-            "  R–T   Control-flow, workers, HLSL blit path\r\n" +
-            "  U–W   DXT, host draw, save/sysutil\r\n" +
-            "  X–Z   Frame path, shader surface, tiling note\r\n" +
-            "  X+    Golden tests / full shader ISA (planned)\r\n\r\n" +
-            "Workflow: Load ELF → Decompile → Map → Build →\r\n" +
-            "Copy to USRDIR → Run from USRDIR.\r\n";
+            "  XXII  Pipeline correctness\r\n\r\n" +
+            "PHASE XXIII — Execution reality (active)\r\n" +
+            "  Guest-driven FIFO, VA/draw path, shader translation\r\n\r\n" +
+            "PHASE XXIV+ — Audio HLE, deeper SPU/MFC, compatibility\r\n\r\n" +
+            "Workflow: Decrypt/Load ELF → Decompile → Build →\r\n" +
+            "Copy to USRDIR → Run from USRDIR.\r\n" +
+            "Host toolchain: system Visual Studio (redist is installer+guide only).\r\n";
 
-        _tabs.Dock = DockStyle.Fill; _tabs.DrawMode = TabDrawMode.OwnerDrawFixed; _tabs.ItemSize = new Size(110, 32); _tabs.SizeMode = TabSizeMode.Fixed; _tabs.DrawItem += DrawPs3Tab;
-        AddTab("Console", _log); AddTab("Report", _report); AddTab("Roadmap", _roadmap); AddTab("Requirements", _requirements);
+        _tabs.Dock = DockStyle.Fill;
+        _tabs.DrawMode = TabDrawMode.OwnerDrawFixed;
+        _tabs.ItemSize = new Size(120, 32);
+        _tabs.SizeMode = TabSizeMode.Fixed;
+        _tabs.DrawItem += DrawPs3Tab;
+        _tabs.BackColor = Bg;
+        AddTab("Console", _log);
+        AddTab("Report", _report);
+        AddTab("Roadmap", _roadmap);
+        AddTab("Requirements", _requirements);
         BuildControllerTab();
-        _status.TextAlign = ContentAlignment.MiddleLeft; _status.Padding = new Padding(8, 0, 0, 0);
-        _status.Dock = DockStyle.Fill; _status.ForeColor = TextSec; _status.BackColor = Panel;
-        _progress.Dock = DockStyle.Bottom; _progress.Height = 6;
 
-        right.Controls.Add(_project, 0, 0);
-        right.Controls.Add(_tabs, 0, 1);
-        var statusRow = new Panel { Dock = DockStyle.Fill, BackColor = Panel };
+        _status.TextAlign = ContentAlignment.MiddleLeft;
+        _status.Padding = new Padding(10, 0, 0, 0);
+        _status.Dock = DockStyle.Fill;
+        _status.ForeColor = TextSec;
+        _status.BackColor = Sidebar;
+        _status.Text = "Ready";
+        _progress.Dock = DockStyle.Bottom;
+        _progress.Height = 4;
+        _progress.Style = ProgressBarStyle.Continuous;
+
+        var statusRow = new Panel { Dock = DockStyle.Fill, BackColor = Sidebar };
+        statusRow.Paint += (_, e) =>
+        {
+            using var pen = new Pen(BorderC, 1);
+            e.Graphics.DrawLine(pen, 0, 0, statusRow.Width, 0);
+        };
         statusRow.Controls.Add(_status);
         statusRow.Controls.Add(_progress);
+
+        right.Controls.Add(pathBar, 0, 0);
+        right.Controls.Add(_tabs, 0, 1);
         right.Controls.Add(statusRow, 0, 2);
 
-        root.Controls.Add(rail, 0, 0);
+        root.Controls.Add(sidebar, 0, 0);
         root.Controls.Add(right, 1, 0);
-        backdrop.Controls.Add(root);
-        Controls.Add(backdrop);
+        Controls.Add(root);
 
         _btnDecrypt.Click += async (_, _) => await DecryptEbootAndLoad();
         _btnLoad.Click += (_, _) => LoadElf(null);
@@ -255,17 +374,64 @@ public sealed partial class MainForm : Form
         _btnBuild.Click += async (_, _) => await BuildWithProgress();
         _btnRun.Click += async (_, _) => await RunGame();
         _btnCopy.Click += (_, _) => CopyToGameFolder();
-        _btnCancel.Click += async (_, _) => {
+        _btnCancel.Click += async (_, _) =>
+        {
             if (_building && !_buildCancelRequested) await ConfirmCancelBuildAsync();
             else StopGame();
         };
 
         Append("PPSX33 ready · core v1.0.0");
-        Append("Host build uses system Visual Studio (see redist/README.txt) — no bundled compilers.");
         Append("Settings: " + Settings.DataDir);
+        Append("Host build uses system Visual Studio (redist/ = installer + guide only).");
         UpdateButtons();
         Shown += (_, _) => CheckRpcs3OnStartup();
         FormClosing += (_, _) => CleanupAllProjectWorkFolders();
+    }
+
+    static GraphicsPath Rounded(Rectangle r, int radius)
+    {
+        int d = radius * 2;
+        var p = new GraphicsPath();
+        p.AddArc(r.X, r.Y, d, d, 180, 90);
+        p.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+        p.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+        p.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
+        p.CloseFigure();
+        return p;
+    }
+
+    Label SectionLabel(string title, string? badge)
+    {
+        var p = new Panel { Height = 22, Dock = DockStyle.Top, Margin = new Padding(0, 8, 0, 6), BackColor = Sidebar };
+        var t = new Label
+        {
+            Text = title,
+            ForeColor = TextSec,
+            Font = new Font("Consolas", 8f, FontStyle.Bold),
+            AutoSize = true,
+            Location = new Point(0, 2),
+            BackColor = Sidebar
+        };
+        p.Controls.Add(t);
+        if (!string.IsNullOrEmpty(badge))
+        {
+            var b = new Label
+            {
+                Text = badge,
+                ForeColor = TextSec,
+                Font = new Font("Consolas", 7f),
+                AutoSize = true,
+                BackColor = Hover,
+                Padding = new Padding(4, 1, 4, 1)
+            };
+            p.Controls.Add(b);
+            p.Resize += (_, _) => { b.Left = Math.Max(t.Right + 8, p.Width - b.Width - 2); b.Top = 2; };
+        }
+        // SectionLabel returns Label for rail AutoSize — wrap as label height
+        var host = new Label { Height = 22, Dock = DockStyle.Top, BackColor = Sidebar, Text = "" };
+        host.Controls.Add(p);
+        p.Dock = DockStyle.Fill;
+        return host;
     }
 
     /// <summary>On app exit: delete codebase/ and input/ under every projects/* folder; keep output/.</summary>

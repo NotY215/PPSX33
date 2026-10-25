@@ -14,24 +14,21 @@ public sealed partial class MainForm
         b.ForeColor = TextPri;
         b.Dock = DockStyle.Top;
         b.Height = 36;
-        b.Margin = new Padding(0, 0, 0, 6);
-        b.Padding = new Padding(10, 0, 10, 0);
+        b.Margin = new Padding(0, 3, 0, 3);
+        b.Padding = new Padding(12, 0, 12, 0);
         if (b is Button btn)
         {
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 1;
-            btn.FlatAppearance.BorderColor = Color.FromArgb(48, 54, 61);
-            btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(33, 38, 45);
+            btn.FlatAppearance.BorderColor = Color.FromArgb(0x33, 0x41, 0x55);
+            btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(0x02, 0x84, 0xC7);
             btn.TextAlign = ContentAlignment.MiddleLeft;
             btn.Cursor = Cursors.Hand;
             btn.Font = new Font("Segoe UI", 9f, FontStyle.Regular);
         }
     }
-    void StyleTextBox(TextBox t) { t.Multiline = true; t.ScrollBars = ScrollBars.Both; t.Dock = DockStyle.Fill; t.BackColor = Panel; t.ForeColor = TextPri; t.BorderStyle = BorderStyle.None; t.Font = new Font("Consolas", 9f); }
+    void StyleTextBox(TextBox t) { t.Multiline = true; t.ScrollBars = ScrollBars.Both; t.Dock = DockStyle.Fill; t.BackColor = Color.FromArgb(7, 10, 15); t.ForeColor = TextPri; t.BorderStyle = BorderStyle.None; t.Font = new Font("Consolas", 9f); }
     void StyleCombo(ComboBox c) {
-        c.FlatStyle = FlatStyle.Flat;
-        c.BackColor = Panel2;
-        c.ForeColor = TextPri;
         c.FlatStyle = FlatStyle.Flat;
         c.BackColor = Panel2;
         c.ForeColor = TextPri;
@@ -49,7 +46,12 @@ public sealed partial class MainForm
         bool sel = (e.State & DrawItemState.Selected) != 0;
         using var br = new SolidBrush(sel ? Panel2 : Panel);
         g.FillRectangle(br, e.Bounds);
-        TextRenderer.DrawText(g, tab.Text, Font, e.Bounds, sel ? TextPri : TextSec, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+        if (sel)
+        {
+            using var pen = new Pen(Color.FromArgb(0x38, 0xBD, 0xF8), 2);
+            g.DrawLine(pen, e.Bounds.Left + 8, e.Bounds.Bottom - 2, e.Bounds.Right - 8, e.Bounds.Bottom - 2);
+        }
+        TextRenderer.DrawText(g, tab.Text, Font, e.Bounds, sel ? Color.FromArgb(0x38, 0xBD, 0xF8) : TextSec, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
     }
     void Append(string s) {
         if (IsDisposed) return;
@@ -58,7 +60,9 @@ public sealed partial class MainForm
     }
     void SetStatus(string s, bool busy = false, int? percent = null, string? eta = null) {
         if (InvokeRequired) { BeginInvoke(() => SetStatus(s, busy, percent, eta)); return; }
-        _status.Text = string.IsNullOrEmpty(eta) ? s : s + "  \u00b7  " + eta;
+        _status.Text = string.IsNullOrEmpty(eta) ? s : s + "  ·  " + eta;
+        if (_headerStatus != null)
+            _headerStatus.Text = busy ? "WORKING" : (s.Length > 28 ? s[..28] : s);
         if (percent.HasValue) { _progress.Style = ProgressBarStyle.Continuous; _progress.Value = Math.Clamp(percent.Value, 0, 100); }
         else if (busy) _progress.Style = ProgressBarStyle.Marquee;
         else { _progress.Style = ProgressBarStyle.Continuous; _progress.Value = 0; }
