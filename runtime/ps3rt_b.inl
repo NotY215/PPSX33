@@ -1,4 +1,4 @@
-// XXV-D depth on XXV-E: GCM color seed + denser present
+// XXV-G depth: PRX import contracts + unknown NID telemetry\n// XXV-D depth on XXV-E: GCM color seed + denser present
 // XXV-E denser GCM present assist
 // XXIV-D PRX NID quality + return surface
 // XXIV-B GCM put threshold
@@ -70,6 +70,29 @@ static PrxMod g_prx_mods[32];
 static uint32_t g_prx_mod_seq = 1;
 static PrxExport g_prx_exports[128];
 static int g_prx_export_n = 0;
+// XXV-G: import contract telemetry
+struct PrxImportHit { uint32_t nid; uint32_t hits; int status; }; // status: 0=ok 1=stub 2=unknown
+static PrxImportHit g_prx_hits[256];
+static int g_prx_hit_n = 0;
+static int g_prx_unknown_n = 0;
+static void prx_note_hit(uint32_t nid, int status) {
+    for (int i = 0; i < g_prx_hit_n; ++i) {
+        if (g_prx_hits[i].nid == nid) { g_prx_hits[i].hits++; g_prx_hits[i].status = status; return; }
+    }
+    if (g_prx_hit_n < 256) {
+        g_prx_hits[g_prx_hit_n++] = { nid, 1u, status };
+    }
+}
+static int prx_strict_imports() {
+    static int c = -1;
+    if (c < 0) {
+        const char* e = std::getenv("PS3RT_STRICT_IMPORT");
+        c = (e && e[0] == '1') ? 1 : 0;
+        if (c) ps3rt_log("[prx] XXV-G STRICT_IMPORT=1 — unknown NID returns CELL_ENOSYS\n");
+    }
+    return c;
+}
+
 
 static void prx_bind_export(uint32_t nid, uint64_t ea) {
     for (int i = 0; i < g_prx_export_n; ++i)
@@ -662,6 +685,7 @@ static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
         }
         // S: track first hit per module name as "loaded"
         if (e->module) prx_mod_load(e->module);
+        prx_note_hit(maybe_nid, e ? 1 : 2);
         c->gpr[3] = 0; return 0;
     }
     // No NID table hit — still honour module kind (XX-H)
@@ -672,7 +696,20 @@ static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
     if (kind == 4) { return ps3rt_audio_dispatch(c, maybe_nid); }
     if (kind == 5) { return spurs_dispatch(c, maybe_nid); }
     if (kind == 11) { return ps3rt_save_dispatch(c, maybe_nid); }
-    if (kind == 8) { pad_poll_host(); c->gpr[3] = 0; return 0; }
+    if (kind == 8) { pad_poll_host(); c->gpr[3] = 0; prx_note_hit(maybe_nid, 1); return 0; }
+    // XXV-G: unknown import contract
+    prx_note_hit(maybe_nid, 2);
+    ++g_prx_unknown_n;
+    static int s_unk = 0;
+    if (s_unk < 40) {
+        ps3rt_log("[prx] XXV-G UNKNOWN nid=0x%08X kind=%d (total_unknown=%d)\n",
+            maybe_nid, kind, g_prx_unknown_n);
+        ++s_unk;
+    }
+    if (prx_strict_imports()) {
+        c->gpr[3] = 0x80010005ull; // CELL_ENOSYS
+        return (int)0x80010005;
+    }
     c->gpr[3] = 0; return 0;
 }
 

@@ -101,8 +101,12 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
     }
     // XXV-P1: do not claim Implemented for empty emission (GPT audit)
     case 0:
+        // XXV-G: all-zero word in text is padding, not an unknown ISA op
+        if (w == 0) { o << "/* zero padding nop */"; return true; }
         key = "opc_0"; o << "/* XXV-E unsupported opc=0 */;"; return false;
     case 1: case 5: case 6: case 9:
+        // illegal primary on Cell; all-zero secondary bits → padding
+        if ((w & 0x03FFFFFF) == 0) { o << "/* pad primary */"; return true; }
         key = "opc_" + std::to_string((w >> 26) & 63);
         o << "/* XXV-E unsupported primary */;"; return false;
     case 2: case 3: {
@@ -440,7 +444,10 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         if (xo10 == 264) { o << fmt("c.fpr[%u] = std::fabs(c.fpr[%u]);", frt, frb); return true; }
         if (xo10 == 846) { o << fmt("{ int64_t i; std::memcpy(&i, &c.fpr[%u], 8); c.fpr[%u] = (double)i; }", frb, frt); return true; }
         if (xo10 == 814 || xo10 == 815) { o << fmt("{ int64_t i = (int64_t)c.fpr[%u]; std::memcpy(&c.fpr[%u], &i, 8); }", frb, frt); return true; }
-        o << fmt("c.fpr[%u] = c.fpr[%u];", frt, frb); return true;
+        // XXV-G depth FP: frsp-like / fctidz variants already partial; remaining soft-copy
+        if (xo10 == 12 || xo10 == 8) { o << fmt("c.fpr[%u] = (double)(float)c.fpr[%u];", frt, frb); return true; }
+        if (xo10 == 72 || xo10 == 40) { o << fmt("c.fpr[%u] = %sc.fpr[%u];", frt, (xo10==40)?"-":"", frb); return true; }
+        o << fmt("c.fpr[%u] = c.fpr[%u]; /* fp soft */", frt, frb); return true;
     }
     default:
         // XXV-E: unknown primary is Unsupported, not Implemented

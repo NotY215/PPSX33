@@ -89,3 +89,92 @@ case 1: case 3:
 // H: sys_fs_* LV2-level
 case 801: case 802: case 803: case 804: case 808: case 809: case 811:
     c->gpr[3] = 0; break;
+
+
+
+// ============================================================================
+// XXV-G depth — LV2 contracts (documented errors, not silent success for all)
+// CELL_OK = 0; CELL_ENOSYS = 0x80010005; CELL_EINVAL = 0x80010002
+// ============================================================================
+
+// sys_process_* (common boot)
+case 1: case 2: case 3: case 4: case 5: case 6: case 7: case 8: case 9:
+case 10: case 11: case 12: case 13: case 14: case 15: case 16: case 17:
+case 18: case 19: case 20: case 21: case 22: case 23: case 24: case 25:
+    {
+        static int s_proc = 0;
+        if (s_proc < 16) {
+            ps3rt_log("[lv2] XXV-G process sc=%llu -> OK\n", (unsigned long long)(c->gpr[11] & 0xFFFFFFFFull));
+            ++s_proc;
+        }
+        c->gpr[3] = 0; break;
+    }
+
+// sys_memory_allocate / free / get_page_attribute (approx numbers used by many titles)
+case 348: case 349: case 350: case 351: case 352: case 353: case 354: case 355:
+case 356: case 357: case 358: case 359: case 360: case 361: case 362:
+    {
+        // allocate-style: write a guest pointer if r4 is out-ptr
+        uint64_t out = r4;
+        if (out && out + 4 <= g_mem_size) {
+            static uint32_t s_heap = 0x20000000u;
+            uint32_t blk = s_heap;
+            s_heap += 0x10000u;
+            if (s_heap > 0x28000000u) s_heap = 0x20000000u;
+            wr_be32_guest(out, blk);
+        }
+        c->gpr[3] = 0; break;
+    }
+
+// sys_fs open/read/write/close/lseek/stat (subset; detailed FS is cellFs HLE)
+case 801: case 802: case 803: case 804: case 805: case 806: case 807: case 808:
+case 809: case 810: case 811: case 812: case 813: case 814: case 815: case 816:
+    {
+        static int s_fs = 0;
+        if (s_fs < 20) {
+            ps3rt_log("[lv2] XXV-G fs sc=%llu r3=0x%llx -> OK/stub\n",
+                (unsigned long long)(c->gpr[11] & 0xFFFFFFFFull), (unsigned long long)r3);
+            ++s_fs;
+        }
+        c->gpr[3] = 0; break;
+    }
+
+// sys_prx_load_module / start / stop / unload (approx)
+case 480: case 481: case 482: case 483: case 484: case 485: case 486: case 487:
+case 488: case 490: case 492: case 493: case 494: case 495: case 496: case 497:
+    {
+        static int s_prx = 0;
+        if (s_prx < 20) {
+            ps3rt_log("[lv2] XXV-G sys_prx sc=%llu -> OK\n", (unsigned long long)(c->gpr[11] & 0xFFFFFFFFull));
+            ++s_prx;
+        }
+        // Prefer module id in *r3 when looks like out pointer
+        if (r3 && r3 + 4 <= g_mem_size) {
+            static uint32_t s_mid = 0x1000;
+            wr_be32_guest(r3, ++s_mid);
+        }
+        c->gpr[3] = 0; break;
+    }
+
+// sys_ss / game data / unknown high — ENOSYS when strict
+case 870: case 871: case 872: case 873: case 874: case 875: case 876: case 877:
+case 878: case 879: case 880:
+    {
+        static int s_strict = -1;
+        if (s_strict < 0) {
+            const char* e = std::getenv("PS3RT_STRICT_LV2");
+            s_strict = (e && e[0]=='1') ? 1 : 0;
+        }
+        if (s_strict) {
+            c->gpr[3] = 0x80010005ull; // CELL_ENOSYS
+            static int s_e = 0;
+            if (s_e < 12) {
+                ps3rt_log("[lv2] XXV-G ENOSYS sc=%llu (STRICT)\n", (unsigned long long)(c->gpr[11] & 0xFFFFFFFFull));
+                ++s_e;
+            }
+        } else {
+            c->gpr[3] = 0;
+        }
+        break;
+    }
+
