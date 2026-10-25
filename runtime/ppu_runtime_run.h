@@ -446,7 +446,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 if (boot) {
                     static int zpc = 0;
                     if (zpc < 20) {
-                        log_recovery_action("null-pc", 0, alt); ++f_recoveries;
+                        log_recovery_action("null-pc", 0, boot); ++f_recoveries;
                         ps3rt_log("[ps3] XXV-F null-pc recover -> 0x%llx toc=0x%llx\n",
                             (unsigned long long)boot, (unsigned long long)entry_toc);
                         ++zpc;
