@@ -252,6 +252,16 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
     }
     case 31: {
         unsigned xo = (w >> 1) & 0x3FF;
+        // Cell/PPE: many arith XO forms set OE (bit 512). Normalize so addo→add, etc.
+        {
+            static const uint16_t oe_ok[] = {
+                8,10,40,104,136,138,200,202,232,233,234,235,266,457,459,489,491,75,11,9,73
+            };
+            if (xo & 512) {
+                unsigned base = xo & ~512u;
+                for (uint16_t k : oe_ok) if (k == base) { xo = base; break; }
+            }
+        }
         switch (xo) {
         case 266: o << fmt("c.gpr[%u] = c.gpr[%u] + c.gpr[%u];", rt, ra, rb); rc0(rt); return true;
         case 40: o << fmt("c.gpr[%u] = c.gpr[%u] - c.gpr[%u];", rt, rb, ra); rc0(rt); return true;
@@ -402,6 +412,33 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             o << "/* eieio */"; return true;
         case 978: // tlbia
             o << "/* tlbia */"; return true;
+        // full ISA gap fill
+        case 9: // mulhdu — high 64 of 64x64 unsigned
+            o << fmt("{{ uint64_t a=c.gpr[%u],b=c.gpr[%u]; "
+                     "uint64_t a_lo=a&0xffffffffull,a_hi=a>>32,b_lo=b&0xffffffffull,b_hi=b>>32; "
+                     "uint64_t p0=a_lo*b_lo,p1=a_lo*b_hi,p2=a_hi*b_lo,p3=a_hi*b_hi; "
+                     "uint64_t m=(p0>>32)+ (p1&0xffffffffull)+(p2&0xffffffffull); "
+                     "c.gpr[%u]=p3+(p1>>32)+(p2>>32)+(m>>32); }}", ra, rb, rt); rc0(rt); return true;
+        case 73: // mulhd — signed high half (portable)
+            o << fmt("{{ int64_t sa=(int64_t)c.gpr[%u], sb=(int64_t)c.gpr[%u]; "
+                     "bool neg=(sa<0)!=(sb<0); uint64_t a=(uint64_t)(sa<0?-sa:sa), b=(uint64_t)(sb<0?-sb:sb); "
+                     "uint64_t a0=a&0xffffffffull,a1=a>>32,b0=b&0xffffffffull,b1=b>>32; "
+                     "uint64_t p0=a0*b0, p1=a0*b1, p2=a1*b0, p3=a1*b1; "
+                     "uint64_t c0=(p0>>32)+(p1&0xffffffffull)+(p2&0xffffffffull); "
+                     "uint64_t hi=p3+(p1>>32)+(p2>>32)+(c0>>32); "
+                     "c.gpr[%u]=neg?(uint64_t)(-(int64_t)hi):hi; }}", ra, rb, rt); rc0(rt); return true;
+        case 341: // lwax
+            o << fmt("c.gpr[%u] = (uint64_t)(int64_t)(int32_t)rd32(c, %s);", rt, ea_idx().c_str()); return true;
+        case 373: // lwaux
+            o << fmt("{ uint64_t a = %s; c.gpr[%u] = (uint64_t)(int64_t)(int32_t)rd32(c, a); c.gpr[%u] = a; }", ea_idx().c_str(), rt, ra); return true;
+        case 918: // lhbrx
+            o << fmt("{ uint16_t v = rd16(c, %s); c.gpr[%u] = (uint16_t)(((v & 0xff) << 8) | ((v >> 8) & 0xff)); }", ea_idx().c_str(), rt); return true;
+        case 277: // lbarx soft
+            o << fmt("c.gpr[%u] = rd8(c, %s);", rt, ea_idx().c_str()); return true;
+        case 157: // stbcx.
+            o << fmt("wr8(c, %s, (uint8_t)c.gpr[%u]); c.cr[0] = 2;", ea_idx().c_str(), rt); return true;
+        case 1010:
+            o << "/* dst/dcbt hint */"; return true;
         default:
             key = "xo31_" + std::to_string(xo);
             o << "/* XXV-E unsupported xo31 */;";
@@ -605,11 +642,15 @@ bool lift_elf(const ElfImage& elf, const std::string& dir, LiftStats& st, std::s
         if (!write_file(fs::path(dir) / "guest_image.bin", img)) { err = "Cannot write guest_image.bin"; return false; }
     }
     std::ostringstream rep;
-    rep << "instructions: " << st.instructions << "\nimplemented: " << st.implemented
-        << "\nXXV-E lift status\nunimplemented: " << st.unimplemented << "\nimplemented: " << st.implemented << "\nchunks: " << st.chunks << "\n\nmissing/unsupported encodings (not counted as Implemented):\n";
+    rep << "Instructions: " << st.instructions
+        << "  translated: " << st.implemented
+        << "  unimplemented: " << st.unimplemented
+        << "  chunks: " << st.chunks << "\n";
+    rep << "missing/unsupported encodings (not Implemented):\n";
     std::vector<std::pair<std::string, uint64_t>> sorted(st.missing.begin(), st.missing.end());
     std::sort(sorted.begin(), sorted.end(), [](auto& a, auto& b){ return a.second > b.second; });
     for (auto& kv : sorted) rep << "  " << kv.first << "  x" << kv.second << "\n";
+    if (sorted.empty()) rep << "  (none)\n";
     write_file(fs::path(dir) / "lift_report.txt", rep.str());
     return true;
 }
