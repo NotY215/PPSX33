@@ -1,3 +1,4 @@
+// XXV-G1b: deeper SPU arithmetic/logical coverage
 // XXIII-J SPURS completion
 // XXIII-F: SPU/MFC tag update, list-stall ack, atomic HLE
 // XXII-C: SPU/MFC fidelity (tag/stall surface)
@@ -811,6 +812,31 @@ static bool spu_step(SPUContext& s) {
         for (int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w),ub=lr128_word(reg(rb),w); float a,b; std::memcpy(&a,&ua,4); std::memcpy(&b,&ub,4);
             float r=(opc11==0x2C4)?a+b:((opc11==0x2C5)?a-b:a*b); uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
     if (opc11 == 0x1B6) { for(int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w); float a; std::memcpy(&a,&ua,4); float r=(a!=0.f)?1.f/a:0.f; uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
+    // XXV-G1b SPU depth — more arithmetic / logical / compare
+    if (opc11 == 0x0C0) { // a (word add)
+        for (int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)+lr128_word(reg(rb),w)); return true; }
+    if (opc11 == 0x0C8) { // sf (word subtract from)
+        for (int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(rb),w)-lr128_word(reg(ra),w)); return true; }
+    if (opc11 == 0x0C4) { // and
+        for (int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)&lr128_word(reg(rb),w)); return true; }
+    if (opc11 == 0x0C1) { // or (alt)
+        for (int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)|lr128_word(reg(rb),w)); return true; }
+    if (opc11 == 0x0C9) { // xor
+        for (int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)^lr128_word(reg(rb),w)); return true; }
+    if (opc11 == 0x0C5) { // orx-like nor
+        for (int w=0;w<4;++w) sr128_word(reg(rt),w,~(lr128_word(reg(ra),w)|lr128_word(reg(rb),w))); return true; }
+    if (opc11 == 0x0CC) { // shli variant via rb low bits
+        int sh = (int)(lr128_word(reg(rb),0) & 31);
+        for (int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)<<sh); return true; }
+    if (opc11 == 0x0CD) {
+        int sh = (int)(lr128_word(reg(rb),0) & 31);
+        for (int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)>>sh); return true; }
+    if (opc11 == 0x3C4) { // cgti-ish signed >
+        for (int w=0;w<4;++w){ int32_t a=(int32_t)lr128_word(reg(ra),w),b=(int32_t)lr128_word(reg(rb),w); sr128_word(reg(rt),w,a>b?0xFFFFFFFFu:0);} return true; }
+    if (opc11 == 0x3C5) {
+        for (int w=0;w<4;++w){ int32_t a=(int32_t)lr128_word(reg(ra),w),b=(int32_t)lr128_word(reg(rb),w); sr128_word(reg(rt),w,a<b?0xFFFFFFFFu:0);} return true; }
+    if (opc11 == 0x346) { // ila-style already elsewhere; mpy
+        for (int w=0;w<4;++w){ int32_t a=(int16_t)lr128_word(reg(ra),w),b=(int16_t)lr128_word(reg(rb),w); sr128_word(reg(rt),w,(uint32_t)(a*b));} return true; }
 // Unknown — count and continue (skip)
     static int s_unk = 0;
     if (s_unk < 24) {
