@@ -6,31 +6,30 @@
 
 | ID | Status | Focus | Files |
 |----|--------|-------|-------|
-| **A–B** | DONE (untested) | Audio host; visible present | `audio_save.cpp`, `rsx_stub.cpp` |
-| **C / E** | DONE (untested) | Lifter honesty; present order; solid triangle | `ppu_lifter.cpp`, `rsx_stub.cpp` |
-| **D** | DONE (untested) | Full depth FIFO/surface/host draw (on E) | `rsx_stub.cpp`, `ps3rt_b.inl` |
+| **A–E** | DONE (untested) | Audio, present, lifter honesty, RSX host depth | `audio_save.cpp`, `rsx_stub.cpp`, `ppu_lifter.cpp` |
 | **F** | DONE (untested) | Deterministic faults / recovery visibility | `ppu_runtime_run.h` |
-| **G–J** | PLANNED | PRX/LV2, SPU/MFC, services, E2E | |
+| **G** | DONE (untested) | PRX/LV2 contracts; strict import/LV2 | `ps3rt_b.inl`, `lv2_syscalls.inl` |
+| **H** | DONE (untested) | SPU/MFC/SPURS depth; RSX C3861 fix | `spu_stub.cpp`, `rsx_stub.cpp`, `ppu_lifter.cpp` |
+| **I** | PLANNED | FS / audio / pad / save services | |
+| **J** | PLANNED | End-to-end title checklist | |
 
-### XXV-F full depth
+### XXV-H depth
 
-| API | Role |
-|-----|------|
-| `validate_guest_pc` | translated / import_stub / guest_mem / invalid |
-| `resolve_function_descriptor` | OPD entry + TOC → r2 |
-| `resolve_guest_branch` | accept only classified targets (no silent retarget) |
-| `capture_guest_fault` | PC/LR/CTR/TOC/SP/GPRs + stack walk; sets `halted` |
-| `log_recovery_action` | every soft recovery logged |
-| Storm limit | same-PC / total recoveries → fault + halt |
-| Strict mode | env `PS3RT_STRICT_FAULT=1` — invalid PC faults instead of inventing return |
+| Area | Work |
+|------|------|
+| RSX | Forward decls for `rsx_apply_viewport_scissor`, `rsx_present_guest_or_diag`, `rsx_state_apply_method_p2` (fixes C3861) |
+| SPU | Extra word add/sub/and/or/xor/shift/compare before unknown fallback |
+| MFC | `mfc_complete_tag` on DMA paths |
+| SPURS | WaitForWorkload contract log |
+| PPU | Zero-padding lift; isel when applicable |
 
-Default remains soft-continue for experiment; strict is opt-in. Recovery is never silent.
+### Optional env
 
-### Log signals (F)
-
-- `[ps3] XXV-F recover …`
-- `[ps3] XXV-F FAULT …` / `callstack[n]`
-- `[ps3] XXV-F STRICT_FAULT=1` at run start when enabled
+| Variable | Effect |
+|----------|--------|
+| `PS3RT_STRICT_FAULT=1` | Invalid PC faults (F) |
+| `PS3RT_STRICT_IMPORT=1` | Unknown NID → CELL_ENOSYS (G) |
+| `PS3RT_STRICT_LV2=1` | Selected LV2 → ENOSYS (G) |
 
 ## Related
 
