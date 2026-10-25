@@ -6,30 +6,28 @@
 
 | ID | Status | Focus | Files |
 |----|--------|-------|-------|
-| **A–E** | DONE (untested) | Audio, present, lifter honesty, RSX host depth | `audio_save.cpp`, `rsx_stub.cpp`, `ppu_lifter.cpp` |
-| **F** | DONE (untested) | Deterministic faults / recovery visibility | `ppu_runtime_run.h` |
-| **G** | DONE (untested) | PRX/LV2 contracts; strict import/LV2 | `ps3rt_b.inl`, `lv2_syscalls.inl` |
-| **H** | DONE (untested) | SPU/MFC/SPURS depth; RSX C3861 fix | `spu_stub.cpp`, `rsx_stub.cpp`, `ppu_lifter.cpp` |
-| **I** | PLANNED | FS / audio / pad / save services | |
-| **J** | PLANNED | End-to-end title checklist | |
+| **A–H** | DONE (untested) | Lifter, RSX host, faults, PRX/LV2, SPU/MFC | various |
+| **I** | DONE (untested) | FS / audio / pad / save full service depth | `assets.cpp`, `audio_save.cpp`, `ps3rt_b.inl` |
+| **J** | DONE (untested) | End-to-end service checklist | `ps3rt_b.inl` |
+| **K** | PLANNED | Guest RSX geometry | `rsx_stub.cpp` |
+| **L** | PLANNED | Boot stability (wild-pc / imports) | `ppu_runtime_run.h` |
 
-### XXV-H depth
+### XXV-I depth
 
 | Area | Work |
 |------|------|
-| RSX | Forward decls for `rsx_apply_viewport_scissor`, `rsx_present_guest_or_diag`, `rsx_state_apply_method_p2` (fixes C3861) |
-| SPU | Extra word add/sub/and/or/xor/shift/compare before unknown fallback |
-| MFC | `mfc_complete_tag` on DMA paths |
-| SPURS | WaitForWorkload contract log |
-| PPU | Zero-padding lift; isel when applicable |
+| cellFs | open/read/write/close/lseek/stat + mkdir/unlink/rename/fsync/GetFreeSize |
+| Audio | waveOut keepalive buffers so output is not a single prove-tone |
+| Save | create/list/load/delete + status/autosave NID family |
+| Pad | GetData surface + poll each time slice |
 
-### Optional env
+### XXV-J
 
-| Variable | Effect |
-|----------|--------|
-| `PS3RT_STRICT_FAULT=1` | Invalid PC faults (F) |
-| `PS3RT_STRICT_IMPORT=1` | Unknown NID → CELL_ENOSYS (G) |
-| `PS3RT_STRICT_LV2=1` | Selected LV2 → ENOSYS (G) |
+After GCM init, logs once: boot_mem, gcm, pad, flips, PPU/SPU slices, remaining K/L.
+
+### Why GOW still has no real scene
+
+Runtime log: `shaders=0`, black guest surfaces, repeated wild-pc recovery. That is **K** (geometry) and **L** (control flow), not I/J service stubs.
 
 ## Related
 
