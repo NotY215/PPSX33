@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-25_14-29-40.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-25_14-29-40.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-25_14-53-43.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-25_14-53-43.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -187,20 +187,20 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] Phase M touch-progress n=57344
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0xe02020
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0xe02020
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0xe02020
+[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x402020
+[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x402020
+[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x402020
 [rsx] XXV-E solid triangle VS/PS ready
 [rsx] XXV-E solid triangle draw flip=0
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
 [rsx] XXV-D draw method=0x1808 arg=0x3 tex=0x84f0000 color=0x84f0000
-[gcm] inject clear+draw col=0xE02020 (PUT advanced, GET after flush)
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0xe02020
-[rsx] XXV-E solid triangle draw flip=1
+[gcm] inject clear+draw col=0x402020 (PUT advanced, GET after flush)
+[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x402020
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-FRAME present flip=1 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-E solid triangle draw flip=1
+[rsx] XXV-FRAME present flip=1 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #1 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
 [ps3] Phase M touch-progress n=65536
 [ps3] Phase M touch-progress n=73728
@@ -208,53 +208,53 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] Phase M touch-progress n=90112
 [ps3] Phase M touch-progress n=98304
 [gcm] XXIV-B guest put=0x38 get=0x38
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0xe02020
-[rsx] XXV-E solid triangle draw flip=2
+[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x402020
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-FRAME present flip=2 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-E solid triangle draw flip=2
+[rsx] XXV-FRAME present flip=2 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #2 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
 [gcm] XXIV-B guest put=0x38 get=0x38
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0xe02020
-[rsx] XXV-E solid triangle draw flip=3
+[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x402020
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-FRAME present flip=3 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-E solid triangle draw flip=3
+[rsx] XXV-FRAME present flip=3 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #3 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
 [gcm] XXIV-B guest put=0x38 get=0x38
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0xe02020
-[rsx] XXV-E solid triangle draw flip=4
+[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x402020
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-FRAME present flip=4 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-E solid triangle draw flip=4
+[rsx] XXV-FRAME present flip=4 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #4 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
 [gcm] XXIV-B guest put=0x38 get=0x38
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0xe02020
-[rsx] XXV-E solid triangle draw flip=5
+[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x402020
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-FRAME present flip=5 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-E solid triangle draw flip=5
+[rsx] XXV-FRAME present flip=5 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #5 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
 [gcm] XXIV-B guest put=0x38 get=0x38
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0xe02020
-[rsx] XXV-E solid triangle draw flip=6
+[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x402020
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-FRAME present flip=6 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-E solid triangle draw flip=6
+[rsx] XXV-FRAME present flip=6 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #6 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
 [gcm] XXIV-B guest put=0x38 get=0x38
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0xe02020
-[rsx] XXV-E solid triangle draw flip=7
+[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x402020
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-FRAME present flip=7 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-E solid triangle draw flip=7
+[rsx] XXV-FRAME present flip=7 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #7 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
 [gcm] XXIV-B guest put=0x38 get=0x38
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0xe02020
-[rsx] XXV-E solid triangle draw flip=8
+[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x402020
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-FRAME present flip=8 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-E solid triangle draw flip=8
+[rsx] XXV-FRAME present flip=8 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #8 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
 [e2e] XXV-J checklist
 [e2e]   boot_mem=OK gcm=1 pad_init=0
@@ -262,51 +262,51 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [e2e]   fs/audio/save/pad services installed (I)
 [e2e]   remaining: guest RSX geometry (K), wild-pc stability (L)
 [gcm] XXIV-B guest put=0x38 get=0x38
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0xe02020
-[rsx] XXV-E solid triangle draw flip=9
+[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x402020
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-FRAME present flip=9 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-E solid triangle draw flip=9
+[rsx] XXV-FRAME present flip=9 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #9 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
 [gcm] XXIV-B guest put=0x38 get=0x38
-[rsx] XXV-E solid triangle draw flip=10
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-FRAME present flip=10 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-E solid triangle draw flip=10
+[rsx] XXV-FRAME present flip=10 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #10 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
 [gcm] XXIV-B guest put=0x38 get=0x38
-[rsx] XXV-E solid triangle draw flip=11
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-FRAME present flip=11 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-E solid triangle draw flip=11
+[rsx] XXV-FRAME present flip=11 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #11 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
 [gcm] XXIV-B guest put=0x38 get=0x38
-[rsx] XXV-E solid triangle draw flip=12
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXV-FRAME present flip=12 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-E solid triangle draw flip=12
+[rsx] XXV-FRAME present flip=12 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #12 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
 [gcm] XXIV-B guest put=0x38 get=0x38
+[rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXV-E solid triangle draw flip=13
-[rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXV-FRAME present flip=13 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-FRAME present flip=13 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #13 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
+[rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXV-E solid triangle draw flip=14
-[rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXV-FRAME present flip=14 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-FRAME present flip=14 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #14 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
-[rsx] XXV-E solid triangle draw flip=15
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXV-FRAME present flip=15 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-E solid triangle draw flip=15
+[rsx] XXV-FRAME present flip=15 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #15 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
-[rsx] XXV-FRAME present flip=16 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-FRAME present flip=16 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #16 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
-[rsx] XXV-FRAME present flip=17 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-FRAME present flip=17 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #17 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
-[rsx] XXV-FRAME present flip=18 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-FRAME present flip=18 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #18 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
-[rsx] XXV-FRAME present flip=19 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-FRAME present flip=19 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #19 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
-[rsx] XXV-FRAME present flip=20 color=0xe02020 tex=0x84f0000 draws=1
+[rsx] XXV-FRAME present flip=20 color=0x402020 tex=0x84f0000 draws=1
 [rsx] XXV-E flip #20 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
 [rsx] XXV-E flip #21 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
 [rsx] XXV-E flip #22 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x720
@@ -326,7 +326,7 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [time] XXIII-K ppu=3072 spu=2304 rsx_flips=383 phase=0
 [time] XXIII-K ppu=4096 spu=3072 rsx_flips=511 phase=0
 [rsx] XXV-E flip #513 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[gcm] inject clear+draw col=0x20E040 (PUT advanced, GET after flush)
+[gcm] inject clear+draw col=0x204028 (PUT advanced, GET after flush)
 [time] XXIII-K ppu=5120 spu=3840 rsx_flips=639 phase=0
 [time] XXIII-K ppu=6144 spu=4608 rsx_flips=767 phase=0
 [rsx] XXV-E flip #769 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
@@ -359,43 +359,6 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XXV-E flip #5377 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
 [rsx] XXV-E flip #5633 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
 [rsx] XXV-E flip #5889 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #6145 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #6401 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #6657 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #6913 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #7169 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #7425 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #7681 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #7937 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #8193 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #8449 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #8705 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #8961 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #9217 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #9473 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #9729 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #9985 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #10241 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #10497 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #10753 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #11009 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #11265 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #11521 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #11777 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #12033 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #12289 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[ps3] XXV-F recover null-pc 0x0 -> 0x33723c
-[ps3] XXV-F null-pc recover -> 0x33723c toc=0x52d6c8
-[ps3] heartbeat steps=262144 pc=0x33723c lr=0x0 r2=0x52d6c8 pokes=0 nrban=0
-[rsx] XXV-E flip #12545 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #12801 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #13057 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #13313 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #13569 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #13825 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #14081 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #14337 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
-[rsx] XXV-E flip #14593 draws=1 clears=1 depth=0 stencil=0 shaders=0 tex=0 methods=0 known=7 unknown=0 1280x729
 [rsx] window closed by user — exiting
 [ps3rt] force exit
 
