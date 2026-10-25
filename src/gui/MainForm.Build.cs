@@ -53,26 +53,48 @@ public sealed partial class MainForm
         }
         TextRenderer.DrawText(g, tab.Text, Font, e.Bounds, sel ? Color.FromArgb(0x38, 0xBD, 0xF8) : TextSec, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
     }
-    void Append(string s) {
+    void Append(string s)
+    {
         if (IsDisposed) return;
         if (InvokeRequired) { BeginInvoke(() => Append(s)); return; }
-        string line = s.TrimEnd();
-        _log.AppendText(line + Environment.NewLine);
-        string level = "INFO";
-        if (line.Contains("fail", StringComparison.OrdinalIgnoreCase) || line.Contains("error", StringComparison.OrdinalIgnoreCase)) level = "ERROR";
-        else if (line.Contains("success", StringComparison.OrdinalIgnoreCase) || line.Contains("OK", StringComparison.Ordinal)) level = "OK";
-        else if (line.Contains("warn", StringComparison.OrdinalIgnoreCase)) level = "WARN";
-        PostToWeb(new { type = "log", level, text = line });
-    }
         _log.AppendText(s.TrimEnd() + Environment.NewLine);
     }
-    void SetStatus(string s, bool busy = false, int? percent = null, string? eta = null) {
-        if (InvokeRequired) { BeginInvoke(() => SetStatus(s, busy, percent, eta)); return; }
-        _status.Text = string.IsNullOrEmpty(eta) ? s : s + "  ·  " + eta;
-        if (percent.HasValue) { _progress.Style = ProgressBarStyle.Continuous; _progress.Value = Math.Clamp(percent.Value, 0, 100); }
-        else if (busy) _progress.Style = ProgressBarStyle.Marquee;
-        else { _progress.Style = ProgressBarStyle.Continuous; _progress.Value = 0; }
-        PushState();
+
+    void SetStatus(string s, bool busy = false, int? percent = null, string? eta = null)
+    {
+        if (InvokeRequired)
+        {
+            BeginInvoke(() => SetStatus(s, busy, percent, eta));
+            return;
+        }
+
+        _status.Text = string.IsNullOrEmpty(eta) ? s : (s + " - " + eta);
+
+        if (_headerStatus != null)
+        {
+            string header = busy ? "WORKING" : s;
+            if (header.Length > 28)
+                header = header.Substring(0, 28);
+            _headerStatus.Text = header;
+        }
+
+        if (percent.HasValue)
+        {
+            _progress.Style = ProgressBarStyle.Continuous;
+            int v = percent.Value;
+            if (v < 0) v = 0;
+            if (v > 100) v = 100;
+            _progress.Value = v;
+        }
+        else if (busy)
+        {
+            _progress.Style = ProgressBarStyle.Marquee;
+        }
+        else
+        {
+            _progress.Style = ProgressBarStyle.Continuous;
+            _progress.Value = 0;
+        }
     }
     void UpdateButtons() {
         bool locked = _busy || _building;
@@ -89,7 +111,6 @@ public sealed partial class MainForm
         _gfx.Enabled = _gfxUnlocked && !locked;
         _threads.Enabled = !locked;
         if (_btnRpcs3 != null) _btnRpcs3.Enabled = !locked;
-        PushState();
     }
     void SaveSettings() { try { _settings.Save(); } catch { } }
     void UpdateRpcs3Button() {
