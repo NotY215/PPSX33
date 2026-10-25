@@ -890,19 +890,14 @@ PS3RT_API void ps3rt_progress_hw(void) {
         static int s_e2e = 0;
         if (!s_e2e && g_gcm_inited && g_time_ppu_slices > 64) {
             s_e2e = 1;
-            ps3rt_log("[e2e] XXV-J checklist
-");
-            ps3rt_log("[e2e]   boot_mem=OK gcm=%d pad_init=%d
-", g_gcm_inited ? 1 : 0, g_pad_inited ? 1 : 0);
-            ps3rt_log("[e2e]   flips=%llu ppu_slices=%llu spu_ticks=%llu
-",
+            ps3rt_log("[e2e] XXV-J checklist\n");
+            ps3rt_log("[e2e]   boot_mem=OK gcm=%d pad_init=%d\n", g_gcm_inited ? 1 : 0, g_pad_inited ? 1 : 0);
+            ps3rt_log("[e2e]   flips=%llu ppu_slices=%llu spu_ticks=%llu\n",
                 (unsigned long long)g_time_rsx_flips,
                 (unsigned long long)g_time_ppu_slices,
                 (unsigned long long)g_time_spu_ticks);
-            ps3rt_log("[e2e]   fs/audio/save/pad services installed (I)
-");
-            ps3rt_log("[e2e]   remaining: guest RSX geometry (K), wild-pc stability (L)
-");
+            ps3rt_log("[e2e]   fs/audio/save/pad services installed (I)\n");
+            ps3rt_log("[e2e]   remaining: guest RSX geometry (K), wild-pc stability (L)\n");
         }
     }
     if ((g_time_ppu_slices & 0x3FF) == 0) {

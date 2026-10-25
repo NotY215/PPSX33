@@ -1,3 +1,4 @@
+// SCE VP/FP ucode to HLSL translation depth
 // NV40 vertex/fragment pipeline + guest vertex fetch draws
 // XXV-K: guest color buffer paint for first real presentable frames
 // VISIBLE FRAME FIX: no post-draw clear; no black guest wipe; always solid triangle
@@ -13,6 +14,7 @@
 #include "ppu_runtime.h"
 #include <mutex>
 #include <cstring>
+#include <cstdarg>
 #include <cstdio>
 #include <vector>
 #include <cstdint>
@@ -967,6 +969,267 @@ static ID3D11VertexShader* g_vs_nv40 = nullptr;
 static ID3D11PixelShader* g_ps_nv40 = nullptr;
 static ID3D11InputLayout* g_layout_nv40 = nullptr;
 static int g_nv40_ready = 0;
+
+// ============================================================================
+// SCE / NV40 Vertex Program + Fragment Program → HLSL (depth translation)
+// Ucode is loaded from guest local memory at vp_offset / fp_offset.
+// Supported VP ops: MOV MUL ADD MAD DP3 DP4 RCP RSQ MIN MAX SLT LIT END
+// Supported FP ops: MOV MUL ADD MAD DP3 DP4 TEX TXP RCP RSQ END
+// Unknown ops become HLSL comments; program still compiles for frame path.
+// ============================================================================
+static ID3D11VertexShader* g_vs_sce = nullptr;
+static ID3D11PixelShader*  g_ps_sce = nullptr;
+static ID3D11InputLayout*  g_layout_sce = nullptr;
+static uint32_t g_last_vp_off = 0, g_last_fp_off = 0;
+static int g_sce_ready = 0;
+
+static uint32_t rsx_rd32_be(const uint8_t* mem, uint32_t off) {
+    return ((uint32_t)mem[off] << 24) | ((uint32_t)mem[off+1] << 16) |
+           ((uint32_t)mem[off+2] << 8) | (uint32_t)mem[off+3];
+}
+
+// Map NV40-ish source index to HLSL identifier
+static void sce_src_name(char* out, size_t n, int reg_type, int reg_idx, int swz) {
+    // reg_type: 0=temp 1=input 2=const 3=zero/one
+    const char* swizzle = "xyzw";
+    char s[5] = {0};
+    for (int i = 0; i < 4; ++i) s[i] = swizzle[(swz >> (6 - i*2)) & 3];
+    if (reg_type == 1) std::snprintf(out, n, "v%d.%s", reg_idx & 15, s);
+    else if (reg_type == 2) std::snprintf(out, n, "c[%d].%s", reg_idx & 255, s);
+    else if (reg_type == 3) std::snprintf(out, n, "float4(0,0,0,1).%s", s);
+    else std::snprintf(out, n, "r%d.%s", reg_idx & 31, s);
+}
+
+static int sce_translate_vp_to_hlsl(const uint8_t* mem, uint32_t off, char* out, size_t out_sz) {
+    if (!mem || !out || off + 16 >= 0x10000000u) return -1;
+    size_t pos = 0;
+    auto emit = [&](const char* fmt, ...) {
+        va_list ap; va_start(ap, fmt);
+        int n = std::vsnprintf(out + pos, out_sz > pos ? out_sz - pos : 0, fmt, ap);
+        va_end(ap);
+        if (n > 0) pos += (size_t)n;
+        if (pos >= out_sz) pos = out_sz - 1;
+    };
+    emit("cbuffer SCEConsts : register(b0) { float4 c[256]; };\n");
+    emit("struct VSIn { float4 p : POSITION; float4 n : NORMAL; float4 t : TEXCOORD0; float4 c0 : COLOR0; };\n");
+    emit("struct VSOut { float4 pos : SV_POSITION; float4 col : COLOR0; float2 uv : TEXCOORD0; };\n");
+    emit("VSOut VSMain(VSIn vin) {\n");
+    emit("  float4 r0=0,r1=0,r2=0,r3=0,r4=0,r5=0,r6=0,r7=0;\n");
+    emit("  float4 r8=0,r9=0,r10=0,r11=0,r12=0,r13=0,r14=0,r15=0;\n");
+    emit("  float4 v0=vin.p, v1=vin.n, v2=vin.t, v3=vin.c0;\n");
+    emit("  float4 o0=float4(0,0,0,1), o1=0, o2=0, o3=0, o4=0, o5=0, o6=0, o7=0;\n");
+
+    // Walk up to 256 instructions (16 bytes each common packing) or until END
+    int ended = 0;
+    for (int i = 0; i < 256 && !ended; ++i) {
+        uint32_t a = off + (uint32_t)i * 16u;
+        if (a + 16 > 0x10000000u) break;
+        uint32_t w0 = rsx_rd32_be(mem, a);
+        uint32_t w1 = rsx_rd32_be(mem, a + 4);
+        uint32_t w2 = rsx_rd32_be(mem, a + 8);
+        uint32_t w3 = rsx_rd32_be(mem, a + 12);
+        // Heuristic decode: opcode in top of w0 (NV40 VP uses several layouts)
+        uint32_t opc = (w0 >> 24) & 0xFF;
+        int dst = (w0 >> 16) & 0x1F;
+        int s0 = (w1 >> 24) & 0xFF;
+        int s1 = (w1 >> 16) & 0xFF;
+        int s2 = (w1 >> 8) & 0xFF;
+        int sw0 = (w2 >> 24) & 0xFF;
+        int sw1 = (w2 >> 16) & 0xFF;
+        int sw2 = (w2 >> 8) & 0xFF;
+        char A[48], B[48], C[48], D[32];
+        auto regn = [&](char* o, size_t n, int enc, int sw) {
+            int type = (enc >> 6) & 3;
+            int idx = enc & 63;
+            sce_src_name(o, n, type, idx, sw);
+        };
+        regn(A, sizeof A, s0, sw0);
+        regn(B, sizeof B, s1, sw1);
+        regn(C, sizeof C, s2, sw2);
+        std::snprintf(D, sizeof D, "r%d", dst & 15);
+
+        // END / EXIT tokens (common patterns)
+        if (opc == 0x00 && w1 == 0 && w2 == 0 && w3 == 0 && i > 0) { ended = 1; break; }
+        if (opc == 0x01 || opc == 0x13 || (w0 == 0x00000001u)) {
+            // treat as possible END after some ops — only if mostly zero
+            if ((w1|w2|w3) == 0 && i > 2) { ended = 1; break; }
+        }
+
+        switch (opc) {
+        case 0x10: case 0x01: // MOV-ish
+            emit("  %s = %s;\n", D, A); break;
+        case 0x11: case 0x04: // MUL
+            emit("  %s = %s * %s;\n", D, A, B); break;
+        case 0x12: case 0x02: // ADD
+            emit("  %s = %s + %s;\n", D, A, B); break;
+        case 0x14: case 0x03: // MAD
+            emit("  %s = %s * %s + %s;\n", D, A, B, C); break;
+        case 0x15: case 0x05: // DP3
+            emit("  %s = dot(%s.xyz, %s.xyz).xxxx;\n", D, A, B); break;
+        case 0x16: case 0x06: // DP4
+            emit("  %s = dot(%s, %s).xxxx;\n", D, A, B); break;
+        case 0x17: case 0x07: // RCP
+            emit("  %s = rcp(%s);\n", D, A); break;
+        case 0x18: case 0x08: // RSQ
+            emit("  %s = rsqrt(max(%s, 1e-8));\n", D, A); break;
+        case 0x19: case 0x09: // MIN
+            emit("  %s = min(%s, %s);\n", D, A, B); break;
+        case 0x1A: case 0x0A: // MAX
+            emit("  %s = max(%s, %s);\n", D, A, B); break;
+        case 0x1B: case 0x0B: // SLT
+            emit("  %s = (%s < %s) ? 1.0 : 0.0;\n", D, A, B); break;
+        case 0x1C: // LIT soft
+            emit("  %s = float4(1, max(%s.y,0), (%s.y>0)?pow(max(%s.w,0),%s.w):0, 1);\n", D, A, A, A, A); break;
+        default:
+            // result-to-output map: high dst into o#
+            if (dst >= 16) emit("  o%d = %s; // opc=0x%02x\n", dst & 7, A, opc);
+            else emit("  // vp opc=0x%02x dst=r%d %s %s %s\n", opc, dst, A, B, C);
+            break;
+        }
+        // Attribute write heuristics: when opcode writes position-like
+        if ((w3 & 0xF0000000u) == 0x10000000u) emit("  o0 = %s;\n", D);
+        if ((w3 & 0xF0000000u) == 0x20000000u) emit("  o1 = %s;\n", D);
+    }
+    // Safety: if never wrote position, pass through input
+    emit("  if (all(o0 == float4(0,0,0,1))) o0 = float4(v0.xy, 0, 1);\n");
+    emit("  VSOut o; o.pos = o0; o.col = o1; o.uv = o2.xy; return o;\n}\n");
+    return (int)pos;
+}
+
+static int sce_translate_fp_to_hlsl(const uint8_t* mem, uint32_t off, char* out, size_t out_sz) {
+    if (!mem || !out || off + 16 >= 0x10000000u) return -1;
+    size_t pos = 0;
+    auto emit = [&](const char* fmt, ...) {
+        va_list ap; va_start(ap, fmt);
+        int n = std::vsnprintf(out + pos, out_sz > pos ? out_sz - pos : 0, fmt, ap);
+        va_end(ap);
+        if (n > 0) pos += (size_t)n;
+        if (pos >= out_sz) pos = out_sz - 1;
+    };
+    emit("cbuffer SCEConstsPS : register(b0) { float4 fc[64]; };\n");
+    emit("Texture2D tex0 : register(t0);\nSamplerState samp0 : register(s0);\n");
+    emit("struct PSIn { float4 pos : SV_POSITION; float4 col : COLOR0; float2 uv : TEXCOORD0; };\n");
+    emit("float4 PSMain(PSIn pin) : SV_Target {\n");
+    emit("  float4 r0=0,r1=0,r2=0,r3=0,r4=0,r5=0,r6=0,r7=0;\n");
+    emit("  float4 t0 = tex0.Sample(samp0, pin.uv);\n");
+    emit("  float4 f0 = pin.col;\n");
+    emit("  float4 ocol = f0;\n");
+    int ended = 0;
+    for (int i = 0; i < 128 && !ended; ++i) {
+        uint32_t a = off + (uint32_t)i * 16u;
+        if (a + 16 > 0x10000000u) break;
+        uint32_t w0 = rsx_rd32_be(mem, a);
+        uint32_t w1 = rsx_rd32_be(mem, a + 4);
+        uint32_t opc = (w0 >> 24) & 0xFF;
+        int dst = (w0 >> 16) & 0x1F;
+        if (opc == 0 && w1 == 0 && i > 0) { ended = 1; break; }
+        switch (opc) {
+        case 0x01: case 0x10: emit("  r%d = f0;\n", dst & 7); break;
+        case 0x04: case 0x11: emit("  r%d = r%d * r%d;\n", dst&7, (w1>>24)&7, (w1>>16)&7); break;
+        case 0x02: case 0x12: emit("  r%d = r%d + r%d;\n", dst&7, (w1>>24)&7, (w1>>16)&7); break;
+        case 0x03: case 0x14: emit("  r%d = r%d * r%d + r%d;\n", dst&7, (w1>>24)&7, (w1>>16)&7, (w1>>8)&7); break;
+        case 0x17: case 0x42: // TEX
+            emit("  r%d = t0;\n", dst & 7); break;
+        case 0x18: case 0x43: // TXP
+            emit("  r%d = tex0.Sample(samp0, pin.uv);\n", dst & 7); break;
+        case 0x07: emit("  r%d = rcp(r%d);\n", dst&7, (w1>>24)&7); break;
+        case 0x08: emit("  r%d = rsqrt(max(r%d,1e-8));\n", dst&7, (w1>>24)&7); break;
+        case 0x05: emit("  r%d = dot(r%d.xyz,r%d.xyz).xxxx;\n", dst&7, (w1>>24)&7, (w1>>16)&7); break;
+        case 0x06: emit("  r%d = dot(r%d,r%d).xxxx;\n", dst&7, (w1>>24)&7, (w1>>16)&7); break;
+        default:
+            if (opc) emit("  // fp opc=0x%02x\n", opc);
+            break;
+        }
+        if ((w0 & 0x00000040u) != 0) emit("  ocol = r%d;\n", dst & 7);
+    }
+    emit("  if (all(ocol == f0) && any(t0.rgb > 0.01)) ocol = t0;\n");
+    emit("  return float4(ocol.rgb, 1);\n}\n");
+    return (int)pos;
+}
+
+static bool rsx_compile_sce_shaders(uint8_t* mem) {
+#if defined(_WIN32)
+    if (!g_dev || !mem) return false;
+    uint32_t vpo = g_rsx.vp_offset;
+    uint32_t fpo = g_rsx.fp_offset;
+    if (!vpo && !fpo) return false;
+    if (vpo == g_last_vp_off && fpo == g_last_fp_off && g_vs_sce && g_ps_sce) return true;
+
+    static char vs_src[65536];
+    static char ps_src[32768];
+    vs_src[0] = ps_src[0] = 0;
+    int vl = 0, pl = 0;
+    if (vpo) vl = sce_translate_vp_to_hlsl(mem, vpo, vs_src, sizeof(vs_src));
+    if (fpo) pl = sce_translate_fp_to_hlsl(mem, fpo, ps_src, sizeof(ps_src));
+    if (vl <= 0) {
+        // fallback minimal VS
+        std::snprintf(vs_src, sizeof(vs_src),
+            "struct VSIn{float3 p:POSITION;float2 u:TEXCOORD0;};"
+            "struct VSOut{float4 pos:SV_POSITION;float2 uv:TEXCOORD0;float4 col:COLOR0;};"
+            "VSOut VSMain(VSIn i){VSOut o;o.pos=float4(i.p.xy,0,1);o.uv=i.u;o.col=float4(1,1,1,1);return o;}");
+    }
+    if (pl <= 0) {
+        std::snprintf(ps_src, sizeof(ps_src),
+            "Texture2D tex0:register(t0);SamplerState s0:register(s0);"
+            "struct PSIn{float4 pos:SV_POSITION;float2 uv:TEXCOORD0;float4 col:COLOR0;};"
+            "float4 PSMain(PSIn i):SV_Target{float4 t=tex0.Sample(s0,i.uv);return any(t.rgb>0.01)?t:i.col;}");
+    }
+
+    HMODULE d3dcomp = LoadLibraryA("d3dcompiler_47.dll");
+    if (!d3dcomp) d3dcomp = LoadLibraryA("d3dcompiler_43.dll");
+    if (!d3dcomp) return false;
+    typedef HRESULT (WINAPI *PFN_D3DCompile)(LPCVOID, SIZE_T, LPCSTR, const void*, const void*,
+        LPCSTR, LPCSTR, UINT, UINT, ID3DBlob**, ID3DBlob**);
+    auto pCompile = (PFN_D3DCompile)GetProcAddress(d3dcomp, "D3DCompile");
+    if (!pCompile) return false;
+
+    ID3DBlob *vsb=nullptr, *psb=nullptr, *err=nullptr;
+    HRESULT hrV = pCompile(vs_src, strlen(vs_src), "sce_vp", nullptr, nullptr, "VSMain", "vs_4_0", 0, 0, &vsb, &err);
+    if (FAILED(hrV) || !vsb) {
+        if (err) {
+            static int se=0;
+            if (se < 6) { ps3rt_log("[rsx] SCE VP HLSL fail: %s\n", (char*)err->GetBufferPointer()); ++se; }
+            err->Release(); err=nullptr;
+        }
+        // keep previous / fallback
+        return false;
+    }
+    if (err) { err->Release(); err=nullptr; }
+    HRESULT hrP = pCompile(ps_src, strlen(ps_src), "sce_fp", nullptr, nullptr, "PSMain", "ps_4_0", 0, 0, &psb, &err);
+    if (FAILED(hrP) || !psb) {
+        if (err) {
+            static int se=0;
+            if (se < 6) { ps3rt_log("[rsx] SCE FP HLSL fail: %s\n", (char*)err->GetBufferPointer()); ++se; }
+            err->Release();
+        }
+        vsb->Release();
+        return false;
+    }
+    if (g_vs_sce) { g_vs_sce->Release(); g_vs_sce=nullptr; }
+    if (g_ps_sce) { g_ps_sce->Release(); g_ps_sce=nullptr; }
+    if (g_layout_sce) { g_layout_sce->Release(); g_layout_sce=nullptr; }
+    g_dev->CreateVertexShader(vsb->GetBufferPointer(), vsb->GetBufferSize(), nullptr, &g_vs_sce);
+    g_dev->CreatePixelShader(psb->GetBufferPointer(), psb->GetBufferSize(), nullptr, &g_ps_sce);
+    D3D11_INPUT_ELEMENT_DESC ied[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    };
+    // SCE VS may use different input — create layout best-effort
+    g_dev->CreateInputLayout(ied, 2, vsb->GetBufferPointer(), vsb->GetBufferSize(), &g_layout_sce);
+    vsb->Release(); psb->Release();
+    g_last_vp_off = vpo; g_last_fp_off = fpo; g_sce_ready = 1;
+    static int sok=0;
+    if (sok < 8) {
+        ps3rt_log("[rsx] SCE VP/FP translated+compiled vp=0x%x fp=0x%x vs_len=%d ps_len=%d\n",
+            vpo, fpo, vl, pl);
+        ++sok;
+    }
+    return g_vs_sce && g_ps_sce;
+#else
+    (void)mem; return false;
+#endif
+}
+
 static const char* kNv40HLSL = R"(
 struct VSIn { float3 pos : POSITION; float2 uv : TEXCOORD0; };
 struct VSOut { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
@@ -1088,8 +1351,14 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
     g_ctx11->IASetVertexBuffers(0, 1, &g_vb_nv40, &stride_b, &offset_b);
     g_ctx11->IASetInputLayout(g_layout_nv40);
     g_ctx11->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    g_ctx11->VSSetShader(g_vs_nv40, nullptr, 0);
-    g_ctx11->PSSetShader(g_ps_nv40, nullptr, 0);
+    if (g_vs_sce && g_ps_sce) {
+        g_ctx11->VSSetShader(g_vs_sce, nullptr, 0);
+        g_ctx11->PSSetShader(g_ps_sce, nullptr, 0);
+        if (g_layout_sce) g_ctx11->IASetInputLayout(g_layout_sce);
+    } else {
+        g_ctx11->VSSetShader(g_vs_nv40, nullptr, 0);
+        g_ctx11->PSSetShader(g_ps_nv40, nullptr, 0);
+    }
     if (g_guest_srv) {
         g_ctx11->PSSetShaderResources(0, 1, &g_guest_srv);
         if (g_samp) g_ctx11->PSSetSamplers(0, 1, &g_samp);
@@ -1230,6 +1499,12 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
                 ps3rt_log("[rsx] NV40 bind FP ucode @ 0x%x\n", arg);
                 ++sf;
             }
+        }
+        
+        {
+            uint8_t* m = ps3rt_memory();
+            if (m && (g_rsx.vp_offset || g_rsx.fp_offset))
+                rsx_compile_sce_shaders(m);
         }
         return true;
     }
