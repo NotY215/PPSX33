@@ -6,28 +6,21 @@
 
 | ID | Status | Focus | Files |
 |----|--------|-------|-------|
-| **A–H** | DONE (untested) | Lifter, RSX host, faults, PRX/LV2, SPU/MFC | various |
-| **I** | DONE (untested) | FS / audio / pad / save full service depth | `assets.cpp`, `audio_save.cpp`, `ps3rt_b.inl` |
-| **J** | DONE (untested) | End-to-end service checklist | `ps3rt_b.inl` |
-| **K** | PLANNED | Guest RSX geometry | `rsx_stub.cpp` |
-| **L** | PLANNED | Boot stability (wild-pc / imports) | `ppu_runtime_run.h` |
+| **A–J** | DONE (untested) | Through services + E2E checklist | various |
+| **K** | DONE (untested) | Guest color paint → first presentable frames | `rsx_stub.cpp` |
+| **L** | DONE (untested) | Sticky wild-pc break + LR-first recovery | `ppu_runtime_run.h` |
 
-### XXV-I depth
+### XXV-K (start frame rendering)
 
-| Area | Work |
-|------|------|
-| cellFs | open/read/write/close/lseek/stat + mkdir/unlink/rename/fsync/GetFreeSize |
-| Audio | waveOut keepalive buffers so output is not a single prove-tone |
-| Save | create/list/load/delete + status/autosave NID family |
-| Pad | GetData surface + poll each time slice |
+RSX path paints the guest color surface (gradient + triangle) on clear/draw/present while shaders are unbound, then uploads non-black pixels to D3D11. Goal is a **visible frame**, not stable FPS. Host solid triangle remains as fallback.
 
-### XXV-J
+### XXV-L (boot control flow)
 
-After GCM init, logs once: boot_mem, gcm, pad, flips, PPU/SPU slices, remaining K/L.
+Wild-pc recovery no longer sticks on one alternate PC. After six identical alts: try LR, then +0x10, then next translated chunk. `recover_return_pc` prefers LR when it is in a translated chunk.
 
-### Why GOW still has no real scene
+### Follow-on (not K/L)
 
-Runtime log: `shaders=0`, black guest surfaces, repeated wild-pc recovery. That is **K** (geometry) and **L** (control flow), not I/J service stubs.
+Full NV40 vertex/fragment program translation and title-driven FIFO geometry remain next once a painted frame is confirmed on screen.
 
 ## Related
 

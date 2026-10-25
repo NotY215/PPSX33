@@ -1,6 +1,6 @@
 # PPSX33 Roadmap
 
-**Last updated:** 2026-10-25 (XXV-I/J services full depth)  
+**Last updated:** 2026-10-25 (XXV-K/L frame start + wild-pc)  
 **Scope:** Experimental PlayStation 3 static recompiler — research toolkit, not a retail emulator.
 
 ---
@@ -15,17 +15,15 @@
 | Boot-to-first-pixels | **XXIV** | A–E in tree | [roadmap/XXIV.md](roadmap/XXIV.md) |
 | Truthful exec & pixels | **XXV** | ACTIVE | [roadmap/XXV.md](roadmap/XXV.md) |
 
-**Current focus:** **XXV-I/J** game services (pack). Next: **XXV-K** guest RSX geometry, **XXV-L** wild-pc stability.
+**Current focus:** **XXV-K** guest frames + **XXV-L** wild-pc (pack).
 
 ### XXV subphases
 
 | ID | Status | Work |
 |----|--------|------|
-| **A–H** | DONE (untested) | Lifter, RSX host, faults, PRX/LV2, SPU/MFC |
-| **I** | DONE (untested) | cellFs depth, audio keepalive, pad poll, save lifecycle |
-| **J** | DONE (untested) | End-to-end service checklist log |
-| **K** | PLANNED | Guest RSX geometry (non-black surfaces, shaders) |
-| **L** | PLANNED | Boot stability (wild-pc / import path) |
+| **A–J** | DONE (untested) | Through services + E2E checklist |
+| **K** | DONE (untested) | Guest color buffer paint → first presentable frames |
+| **L** | DONE (untested) | Sticky wild-pc break + LR-first recovery |
 
 Detail: [roadmap/XXV.md](roadmap/XXV.md).
 
