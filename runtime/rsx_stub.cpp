@@ -1,3 +1,4 @@
+// NV40 vertex/fragment pipeline + guest vertex fetch draws
 // XXV-K: guest color buffer paint for first real presentable frames
 // VISIBLE FRAME FIX: no post-draw clear; no black guest wipe; always solid triangle
 // XXV-H: C3861 forward decls for RSX helpers; SPU/MFC depth in companion files
@@ -200,6 +201,8 @@ static ID3D11Buffer* g_vb_tri = nullptr;
 static void rsx_apply_viewport_scissor();
 static void rsx_present_guest_or_diag(uint8_t* mem);
 static void rsx_paint_guest_color_buffer(uint8_t* mem);
+static bool rsx_ensure_nv40_pipeline();
+static void rsx_draw_nv40_geometry(uint8_t* mem);
 static bool rsx_state_apply_method_p2(uint32_t method, uint32_t arg);
 static void rsx_draw_host(uint8_t* mem);
 static void rsx_sync_guest_host(uint8_t* mem);
@@ -944,25 +947,198 @@ static void rsx_sync_guest_host(uint8_t* mem) {
     }
 }
 
+
+// ============================================================================
+// NV40 vertex / fragment path (frame rendering start)
+// - Vertex: fetch attribute 0 (position) from guest arrays when bound
+// - Vertex program bind: record ucode offset; apply identity clip-space transform
+// - Fragment program bind: record ucode; output constant or texture0 sample
+// Full SCE VP/FP ISA translation remains iterative; this path draws real guest verts.
+// ============================================================================
+static uint32_t g_va_offset[8] = {};
+static uint32_t g_va_stride[8] = {};
+static uint32_t g_va_size[8] = {};   // components
+static uint32_t g_va_type[8] = {};   // 2=float etc
+static uint32_t g_draw_count = 0;
+static uint32_t g_draw_first = 0;
+static uint32_t g_begin_mode = 0; // 1=points 2=lines 3=tris ...
+static ID3D11Buffer* g_vb_nv40 = nullptr;
+static ID3D11VertexShader* g_vs_nv40 = nullptr;
+static ID3D11PixelShader* g_ps_nv40 = nullptr;
+static ID3D11InputLayout* g_layout_nv40 = nullptr;
+static int g_nv40_ready = 0;
+static const char* kNv40HLSL = R"(
+struct VSIn { float3 pos : POSITION; float2 uv : TEXCOORD0; };
+struct VSOut { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
+VSOut VSMain(VSIn i) {
+  VSOut o;
+  o.pos = float4(i.pos.xy, 0.0, 1.0);
+  o.uv = i.uv;
+  return o;
+}
+Texture2D tex0 : register(t0);
+SamplerState samp0 : register(s0);
+float4 PSMain(VSOut i) : SV_Target {
+  // Prefer textured fragment when SRV bound; else magenta diagnostic
+  float4 t = tex0.Sample(samp0, i.uv);
+  if (t.a > 0.01 || any(t.rgb > 0.01)) return t;
+  return float4(0.9, 0.2, 0.7, 1);
+}
+)";
+
+static bool rsx_ensure_nv40_pipeline() {
+    if (g_nv40_ready) return g_vs_nv40 && g_ps_nv40 && g_layout_nv40;
+    g_nv40_ready = 1;
+#if defined(_WIN32)
+    if (!g_dev) return false;
+    HMODULE d3dcomp = LoadLibraryA("d3dcompiler_47.dll");
+    if (!d3dcomp) d3dcomp = LoadLibraryA("d3dcompiler_43.dll");
+    if (!d3dcomp) return false;
+    typedef HRESULT (WINAPI *PFN_D3DCompile)(LPCVOID, SIZE_T, LPCSTR, const void*, const void*,
+        LPCSTR, LPCSTR, UINT, UINT, ID3DBlob**, ID3DBlob**);
+    auto pCompile = (PFN_D3DCompile)GetProcAddress(d3dcomp, "D3DCompile");
+    if (!pCompile) return false;
+    ID3DBlob *vsb = nullptr, *psb = nullptr, *err = nullptr;
+    if (FAILED(pCompile(kNv40HLSL, strlen(kNv40HLSL), "nv40", nullptr, nullptr, "VSMain", "vs_4_0", 0, 0, &vsb, &err)) || !vsb) {
+        if (err) { ps3rt_log("[rsx] NV40 VS compile fail\n"); err->Release(); }
+        return false;
+    }
+    if (FAILED(pCompile(kNv40HLSL, strlen(kNv40HLSL), "nv40", nullptr, nullptr, "PSMain", "ps_4_0", 0, 0, &psb, &err)) || !psb) {
+        if (err) { err->Release(); }
+        vsb->Release();
+        return false;
+    }
+    g_dev->CreateVertexShader(vsb->GetBufferPointer(), vsb->GetBufferSize(), nullptr, &g_vs_nv40);
+    g_dev->CreatePixelShader(psb->GetBufferPointer(), psb->GetBufferSize(), nullptr, &g_ps_nv40);
+    D3D11_INPUT_ELEMENT_DESC ied[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    };
+    g_dev->CreateInputLayout(ied, 2, vsb->GetBufferPointer(), vsb->GetBufferSize(), &g_layout_nv40);
+    vsb->Release(); psb->Release();
+    D3D11_BUFFER_DESC bd{};
+    bd.ByteWidth = 65536;
+    bd.Usage = D3D11_USAGE_DYNAMIC;
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    g_dev->CreateBuffer(&bd, nullptr, &g_vb_nv40);
+    ps3rt_log("[rsx] NV40 VS/PS pipeline ready (guest vertex fetch)\n");
+    return g_vs_nv40 && g_ps_nv40 && g_vb_nv40;
+#else
+    return false;
+#endif
+}
+
+static void rsx_draw_nv40_geometry(uint8_t* mem) {
+#if defined(_WIN32)
+    if (!mem || !g_ctx11 || !g_rtv) return;
+    if (!rsx_ensure_nv40_pipeline()) {
+        rsx_draw_solid_triangle();
+        return;
+    }
+    // Prefer attribute 0 as position
+    uint32_t off = g_va_offset[0];
+    uint32_t stride = g_va_stride[0] ? g_va_stride[0] : 16;
+    uint32_t count = g_draw_count ? g_draw_count : 3;
+    if (count > 2048) count = 2048;
+    if (!off || off + (uint64_t)stride * count >= 0x10000000ull) {
+        // No VA — still issue solid so frame is not empty
+        rsx_draw_solid_triangle();
+        return;
+    }
+    D3D11_MAPPED_SUBRESOURCE map{};
+    if (FAILED(g_ctx11->Map(g_vb_nv40, 0, D3D11_MAP_WRITE_DISCARD, 0, &map))) return;
+    float* dst = (float*)map.pData;
+    uint32_t first = g_draw_first;
+    for (uint32_t i = 0; i < count; ++i) {
+        uint32_t addr = off + (first + i) * stride;
+        // Guest is BE floats often for RSX vertex data on Cell — try BE then LE
+        auto rd_f = [&](uint32_t a) -> float {
+            if (a + 4 > 0x10000000u) return 0.f;
+            uint32_t w = ((uint32_t)mem[a] << 24) | ((uint32_t)mem[a+1] << 16) |
+                         ((uint32_t)mem[a+2] << 8) | (uint32_t)mem[a+3];
+            float f; std::memcpy(&f, &w, 4);
+            // Heuristic: if absurd, try LE
+            if (f != f || f > 1e6f || f < -1e6f) {
+                std::memcpy(&f, mem + a, 4);
+            }
+            return f;
+        };
+        float x = rd_f(addr + 0);
+        float y = rd_f(addr + 4);
+        float z = (stride >= 12) ? rd_f(addr + 8) : 0.f;
+        // Normalize common 0..viewport ranges into clip
+        if (x > 1.5f || y > 1.5f) {
+            float vw = g_rsx.viewport_w ? (float)g_rsx.viewport_w : (float)(g_rsx.width ? g_rsx.width : 1280);
+            float vh = g_rsx.viewport_h ? (float)g_rsx.viewport_h : (float)(g_rsx.height ? g_rsx.height : 720);
+            x = (x / vw) * 2.f - 1.f;
+            y = 1.f - (y / vh) * 2.f;
+        }
+        dst[i * 5 + 0] = x;
+        dst[i * 5 + 1] = y;
+        dst[i * 5 + 2] = z;
+        dst[i * 5 + 3] = (float)i / (float)(count ? count : 1);
+        dst[i * 5 + 4] = 0.5f;
+    }
+    g_ctx11->Unmap(g_vb_nv40, 0);
+
+    rsx_apply_viewport_scissor();
+    g_ctx11->OMSetRenderTargets(1, &g_rtv, g_dsv);
+    UINT stride_b = 20, offset_b = 0;
+    g_ctx11->IASetVertexBuffers(0, 1, &g_vb_nv40, &stride_b, &offset_b);
+    g_ctx11->IASetInputLayout(g_layout_nv40);
+    g_ctx11->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    g_ctx11->VSSetShader(g_vs_nv40, nullptr, 0);
+    g_ctx11->PSSetShader(g_ps_nv40, nullptr, 0);
+    if (g_guest_srv) {
+        g_ctx11->PSSetShaderResources(0, 1, &g_guest_srv);
+        if (g_samp) g_ctx11->PSSetSamplers(0, 1, &g_samp);
+    }
+    UINT draw_n = (count / 3) * 3;
+    if (draw_n < 3) draw_n = count >= 3 ? 3 : count;
+    if (draw_n >= 3) {
+        g_ctx11->Draw(draw_n, 0);
+        ++g_rsx.draws;
+        ++g_rsx.draws_this_frame;
+        static int sd = 0;
+        if (sd < 16) {
+            ps3rt_log("[rsx] NV40 draw verts=%u first=%u va0=0x%x stride=%u vp=0x%x fp=0x%x\n",
+                draw_n, first, off, stride, g_rsx.vp_offset, g_rsx.fp_offset);
+            ++sd;
+        }
+    } else {
+        rsx_draw_solid_triangle();
+    }
+#else
+    (void)mem;
+#endif
+}
+
 static void rsx_draw_host(uint8_t* mem) {
     rsx_apply_viewport_scissor();
     rsx_sync_guest_host(mem);
-    rsx_draw_solid_triangle();
-    if (mem && (g_rsx.tex_offset || g_rsx.color_offset)) {
-        uint32_t off = g_rsx.tex_offset ? g_rsx.tex_offset : g_rsx.color_offset;
-        int nz = 0;
-        if (off && off + 64u < 0x10000000u) {
-            for (uint32_t i = 0; i < 64; i += 4) {
-                uint8_t* p = mem + off + i;
-                if (p[0] | p[1] | p[2]) ++nz;
+    // NV40: draw guest vertices when VA0 present; else paint + solid
+    if (mem && g_va_offset[0]) {
+        rsx_draw_nv40_geometry(mem);
+    } else {
+        if (mem) rsx_paint_guest_color_buffer(mem);
+        rsx_draw_solid_triangle();
+        if (mem && (g_rsx.tex_offset || g_rsx.color_offset)) {
+            uint32_t off = g_rsx.tex_offset ? g_rsx.tex_offset : g_rsx.color_offset;
+            int nz = 0;
+            if (off && off + 64u < 0x10000000u) {
+                for (uint32_t i = 0; i < 64; i += 4) {
+                    uint8_t* p = mem + off + i;
+                    if (p[0] | p[1] | p[2]) ++nz;
+                }
+            }
+            if (nz > 4) {
+                rsx_upload_guest_tex(mem);
+                rsx_draw_textured_quad();
             }
         }
-        if (nz > 4) {
-            rsx_upload_guest_tex(mem);
-            rsx_draw_textured_quad();
-        }
+        ++g_rsx.draws_this_frame;
     }
-    ++g_rsx.draws_this_frame;
 }
 
 // Returns true if method recognized
@@ -1039,8 +1215,22 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
     // Shader binds (record only — full translate is later depth)
     if (method == 0x1D60 || method == 0x1D64 || method == 0x1D68) {
         ++g_rsx.shader_binds;
-        if (method == 0x1D60) { g_rsx.shader_prog = arg; g_rsx.vp_offset = arg; ++g_rsx.vertex_binds; }
-        if (method == 0x1D64 || method == 0x1D68) { g_rsx.fp_offset = arg; g_rsx.fp_control = arg; ++g_rsx.fragment_binds; }
+        if (method == 0x1D60) {
+            g_rsx.shader_prog = arg; g_rsx.vp_offset = arg; ++g_rsx.vertex_binds;
+            static int sv = 0;
+            if (sv < 12) {
+                ps3rt_log("[rsx] NV40 bind VP ucode @ 0x%x\n", arg);
+                ++sv;
+            }
+        }
+        if (method == 0x1D64 || method == 0x1D68) {
+            g_rsx.fp_offset = arg; g_rsx.fp_control = arg; ++g_rsx.fragment_binds;
+            static int sf = 0;
+            if (sf < 12) {
+                ps3rt_log("[rsx] NV40 bind FP ucode @ 0x%x\n", arg);
+                ++sf;
+            }
+        }
         return true;
     }
     if (method == 0x1D6C) { g_rsx.shader_const_count = arg; return true; }
@@ -1053,7 +1243,14 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
     }
     // Begin / draw
     if (method == 0x1800 || method == 0x1808 || method == 0x1814 || method == 0x1810) {
+        g_begin_mode = arg;
         g_rsx.begin_mode = arg;
+        if (method == 0x1814 || method == 0x1808) {
+            // count or packed first/count
+            if (arg > 0 && arg < 65536) g_draw_count = arg;
+            else if ((arg >> 24) > 0) g_draw_count = arg & 0xFFFFFF;
+            if (g_draw_count == 0) g_draw_count = 3;
+        }
         ++g_rsx.draws;
         return true;
     }
@@ -1094,8 +1291,6 @@ static void rsx_fifo_decode_word(uint8_t* mem, uint32_t method, uint32_t arg) {
 // ============================================================================
 // XXV-D FULL DEPTH part 2 — vertex state, depth/blend, viewport present
 // ============================================================================
-static uint32_t g_va_offset[8] = {};
-static uint32_t g_va_stride[8] = {};
 static uint32_t g_blend_enable = 0;
 static uint32_t g_depth_test = 0;
 static uint32_t g_depth_mask = 1;

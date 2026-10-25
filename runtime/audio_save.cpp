@@ -165,8 +165,7 @@ PS3RT_API void ps3rt_audio_tick(void) {
         static int16_t quiet[960 * 2];
         audio_queue_s16(quiet, 480);
         static int s_k = 0;
-        if (s_k < 6) { ps3rt_log("[audio] XXV-I keepalive buffers (queued=%d)
-", queued); ++s_k; }
+        if (s_k < 6) { ps3rt_log("[audio] XXV-I keepalive buffers (queued=%d)\n", queued); ++s_k; }
     }
 #endif
 }
@@ -254,8 +253,7 @@ PS3RT_API int ps3rt_audio_dispatch(PPUContext* c, uint32_t nid) {
     }
     // XXV-I: any other audio NID — success so titles continue
     static int s_au = 0;
-    if (s_au < 16) { ps3rt_log("[audio] XXV-I nid=0x%08X -> OK
-", nid); ++s_au; }
+    if (s_au < 16) { ps3rt_log("[audio] XXV-I nid=0x%08X -> OK\n", nid); ++s_au; }
     c->gpr[3] = 0;
     return 0;
 }
@@ -327,13 +325,11 @@ PS3RT_API int ps3rt_save_dispatch(PPUContext* c, uint32_t nid) {
     if (nid == 0xC14FC694 || nid == 0x4A2CE2D8 || nid == 0x8B7FE88C ||
         nid == 0x1B8D4287 || nid == 0x2CBE6454) {
         static int s_as = 0;
-        if (s_as < 10) { ps3rt_log("[save] XXV-I status/autosave nid=0x%08X
-", nid); ++s_as; }
+        if (s_as < 10) { ps3rt_log("[save] XXV-I status/autosave nid=0x%08X\n", nid); ++s_as; }
         c->gpr[3] = 0; return 0;
     }
     static int s_svu = 0;
-    if (s_svu < 12) { ps3rt_log("[save] XXV-I unknown nid=0x%08X -> OK
-", nid); ++s_svu; }
+    if (s_svu < 12) { ps3rt_log("[save] XXV-I unknown nid=0x%08X -> OK\n", nid); ++s_svu; }
     c->gpr[3] = 0;
     return 0;
 }
