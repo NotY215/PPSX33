@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
-# End-to-end smoke test on Linux/macOS/MSYS: ELF -> lift -> build -> run. Expects "OK".
-set -e
+set -euo pipefail
 cd "$(dirname "$0")/.."
-python3 tests/make_test_elf.py /tmp/ps3_test.elf
-g++ -std=c++17 src/cli/ps3_cli.cpp src/core/ps3core_api.cpp src/core/project.cpp src/core/elf_loader.cpp \
-    src/core/ppu_lifter.cpp src/core/ps3_util.c -o /tmp/ps3_cli
-rm -rf /tmp/ps3_root
-/tmp/ps3_cli /tmp/ps3_root SmokeTest /tmp/ps3_test.elf runtime ""
-cd /tmp/ps3_root/SmokeTest/output
-./game 2>/dev/null | grep -qx OK && echo "SMOKE TEST PASSED" || { echo "SMOKE TEST FAILED"; exit 1; }
+[[ -x build/dist/ps3_cli ]] || { echo "ERROR: build/dist/ps3_cli missing"; exit 1; }
+echo "[1/4] Generating test ELF..."
+python3 tests/make_test_elf.py build/test.elf
+echo "[2/4] Lift + build..."
+rm -rf build/smoke_root
+build/dist/ps3_cli build/smoke_root SmokeTest build/test.elf runtime redist
+echo "[3/4] Run..."
+( cd build/smoke_root/SmokeTest/output && ./game > ../../../smoke_out.txt 2>&1 || ./game.exe > ../../../smoke_out.txt 2>&1 )
+echo "[4/4] Check OK..."
+grep -qx "OK" build/smoke_out.txt
+echo "SMOKE TEST PASSED"

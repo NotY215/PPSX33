@@ -1,5 +1,5 @@
 @echo off
-REM Single command that builds EVERYTHING (native + GUI) into build\dist
+REM Build native core + GUI into build\dist (uses system VS for game rebuilds)
 setlocal
 cd /d "%~dp0.."
 
@@ -13,7 +13,7 @@ if errorlevel 1 exit /b 1
 echo.
 echo ============================================
 echo   Build finished.
-echo   Run the UI with:
-echo     build\dist\PS3Recomp.exe
+echo   Run:  build\dist\PS3Recomp.exe
+echo   VS setup: build\dist\redist\README.txt
 echo ============================================
 exit /b 0

@@ -48,7 +48,7 @@ public sealed partial class MainForm : Form
     private const int StallQuietMs = 4000;
     private const int MaxRunMs = 0;
     private static string RuntimeDir => Path.Combine(AppContext.BaseDirectory, "runtime");
-    private static string CompilersDir => Path.Combine(AppContext.BaseDirectory, "Compilers-files");
+    private static string CompilersDir => Path.Combine(AppContext.BaseDirectory, "redist"); // docs only; host build uses system VS
     private static string ProjectsRoot => Path.Combine(AppContext.BaseDirectory, "projects");
 
     [DllImport("dwmapi.dll")]

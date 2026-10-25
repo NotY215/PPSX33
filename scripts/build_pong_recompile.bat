@@ -1,5 +1,6 @@
 @echo off
-REM Compile PS3 PPC64 Pong ELF, then lift and recompile it through PPSX33.
+REM Compile PS3 PPC64 Pong ELF, then lift and recompile through PPSX33.
+REM Requires: PSL1GHT, ppu-gcc, and system Visual Studio (see redist/README.txt).
 setlocal
 cd /d "%~dp0.."
 if "%PSL1GHT%"=="" (
@@ -15,8 +16,9 @@ if not exist build\pong mkdir build\pong
 echo [1/3] Compile PS3 PPU/VMX source to ELF...
 ppu-gcc -O2 -Wall -Wextra -maltivec -mabi=altivec -I"%PSL1GHT%\ppu\include" tests\games\pong\pong.c -L"%PSL1GHT%\ppu\lib" -lrsx -lgcm_sys -lsysutil -lio -lm -o build\pong\pong.elf
 if errorlevel 1 exit /b 1
-echo [2/3] Lift and build using PPSX33...
-build\dist\ps3_cli.exe build\pong\project Pong build\pong\pong.elf runtime Compilers-files
+echo [2/3] Lift and build using PPSX33 (system VS via redist docs)...
+REM 5th arg is legacy compilers_dir; pass redist (no bundled cl.exe)
+build\dist\ps3_cli.exe build\pong\project Pong build\pong\pong.elf runtime redist
 if errorlevel 1 exit /b 1
 echo [3/3] Verify generated output...
 if exist build\pong\project\Pong\output\game.exe (

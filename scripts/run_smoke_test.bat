@@ -11,9 +11,9 @@ if not exist build\dist\ps3_cli.exe (
 echo [1/4] Generating test ELF...
 python tests\make_test_elf.py build\test.elf || exit /b 1
 
-echo [2/4] Creating project + lifting + building...
+echo [2/4] Creating project + lifting + building (system VS / redist)...
 if exist build\smoke_root rmdir /s /q build\smoke_root
-build\dist\ps3_cli.exe build\smoke_root SmokeTest build\test.elf runtime Compilers-files
+build\dist\ps3_cli.exe build\smoke_root SmokeTest build\test.elf runtime redist
 if errorlevel 1 (
     echo SMOKE TEST FAILED at lift/build stage
     exit /b 1

@@ -37,7 +37,7 @@ add_executable(ps3_cli src/cli/ps3_cli.cpp)
 target_link_libraries(ps3_cli PRIVATE ps3core)
 
 # ------------------------------------------------------------------
-# Copy runtime sources + optional Compilers-files into dist/
+# Copy runtime sources + redist (VS install guide; no bundled compilers)
 # ------------------------------------------------------------------
 add_custom_target(copy_runtime ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -46,25 +46,18 @@ add_custom_target(copy_runtime ALL
     COMMENT "Copying runtime/ sources"
 )
 
-# Compilers-files: use scripts/copy_compilers.bat (repo file, always exit 0).
-# Never delete dest (locks from AV / Explorer / cl.exe). Never fail the build.
-if(EXISTS "${CMAKE_SOURCE_DIR}/Compilers-files")
-    if(WIN32 AND EXISTS "${CMAKE_SOURCE_DIR}/scripts/copy_compilers.bat")
-        add_custom_command(TARGET copy_runtime POST_BUILD
-            COMMAND "${CMAKE_SOURCE_DIR}/scripts/copy_compilers.bat"
-                    "${CMAKE_SOURCE_DIR}/Compilers-files"
-                    "${CMAKE_BINARY_DIR}/dist/Compilers-files"
-            COMMENT "Copying Compilers-files (best-effort)"
-            VERBATIM
-        )
-    elseif(NOT WIN32)
-        add_custom_command(TARGET copy_runtime POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    "${CMAKE_SOURCE_DIR}/Compilers-files"
-                    "${CMAKE_BINARY_DIR}/dist/Compilers-files"
-            COMMENT "Copying Compilers-files"
-        )
-    endif()
+# Ship redist/ next to the app (README + VS Community install notes).
+# Compilers-files is intentionally NOT copied — toolchain is system VS.
+if(EXISTS "${CMAKE_SOURCE_DIR}/redist")
+    add_custom_command(TARGET copy_runtime POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_SOURCE_DIR}/redist"
+                "${CMAKE_BINARY_DIR}/dist/redist"
+        COMMENT "Copying redist/ (VS setup guide)"
+        VERBATIM
+    )
+else()
+    message(STATUS "redist/ not found — dist will ship without redist docs")
 endif()
 
 # ------------------------------------------------------------------
@@ -93,4 +86,5 @@ else()
 endif()
 
 message(STATUS "Output directory: ${CMAKE_BINARY_DIR}/dist")
+message(STATUS "Toolchain: system Visual Studio (see dist/redist/README.txt) — no Compilers-files")
 message(STATUS "After build, run:  ${CMAKE_BINARY_DIR}/dist/PS3Recomp.exe")
