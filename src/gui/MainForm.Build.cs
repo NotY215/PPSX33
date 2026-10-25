@@ -111,6 +111,7 @@ public sealed partial class MainForm
         _gfx.Enabled = _gfxUnlocked && !locked;
         _threads.Enabled = !locked;
         if (_btnRpcs3 != null) _btnRpcs3.Enabled = !locked;
+        try { PushState(); } catch { }
     }
     void SaveSettings() { try { _settings.Save(); } catch { } }
     void UpdateRpcs3Button() {

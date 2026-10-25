@@ -50,6 +50,7 @@ public sealed partial class MainForm : Form
     private int _liftChunks;
     private bool _controllerMapped;
     private bool _controllerHiddenAfterBuild;
+    private Label? _headerStatus; // optional host label; HTML header used when WebView UI is active
 
     private static string RuntimeDir => Path.Combine(AppContext.BaseDirectory, "runtime");
     private static string CompilersDir => Path.Combine(AppContext.BaseDirectory, "redist");
@@ -297,6 +298,8 @@ public sealed partial class MainForm : Form
                 ["run"] = _canRun && !locked,
                 ["copy"] = _canCopy && !locked,
                 ["cancel"] = locked || _gameProc != null,
+                // controllerMapped reserved for future UI badge
+                ["controllerMapped"] = _controllerMapped,
                 ["gfx"] = _gfxUnlocked && !locked
             }
         });
