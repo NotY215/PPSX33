@@ -1,3 +1,4 @@
+// GEOM: indexed VA draws + attrib format methods
 // RSX depth: bright frames, depth-off diagnostics, FIFO consumer
 // SCE VP/FP ucode to HLSL translation depth
 // NV40 vertex/fragment pipeline + guest vertex fetch draws
@@ -971,6 +972,9 @@ static uint32_t g_va_stride[8] = {};
 static uint32_t g_va_size[8] = {};   // components
 static uint32_t g_va_type[8] = {};   // 2=float etc
 static uint32_t g_draw_count = 0;
+static uint32_t g_index_offset = 0;
+static uint32_t g_index_type = 0; // 1=u16 2=u32
+
 static uint32_t g_draw_first = 0;
 static uint32_t g_begin_mode = 0; // 1=points 2=lines 3=tris ...
 static ID3D11Buffer* g_vb_nv40 = nullptr;
@@ -1314,7 +1318,6 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
     uint32_t count = g_draw_count ? g_draw_count : 3;
     if (count > 2048) count = 2048;
     if (!off || off + (uint64_t)stride * count >= 0x10000000ull) {
-        // No VA — still issue solid so frame is not empty
         rsx_draw_solid_triangle();
         return;
     }
@@ -1322,20 +1325,27 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
     if (FAILED(g_ctx11->Map(g_vb_nv40, 0, D3D11_MAP_WRITE_DISCARD, 0, &map))) return;
     float* dst = (float*)map.pData;
     uint32_t first = g_draw_first;
+    auto rd_f = [&](uint32_t a) -> float {
+        if (a + 4 > 0x10000000u) return 0.f;
+        uint32_t w = ((uint32_t)mem[a] << 24) | ((uint32_t)mem[a+1] << 16) |
+                     ((uint32_t)mem[a+2] << 8) | (uint32_t)mem[a+3];
+        float f; std::memcpy(&f, &w, 4);
+        if (f != f || f > 1e6f || f < -1e6f) std::memcpy(&f, mem + a, 4);
+        return f;
+    };
     for (uint32_t i = 0; i < count; ++i) {
-        uint32_t addr = off + (first + i) * stride;
-        // Guest is BE floats often for RSX vertex data on Cell — try BE then LE
-        auto rd_f = [&](uint32_t a) -> float {
-            if (a + 4 > 0x10000000u) return 0.f;
-            uint32_t w = ((uint32_t)mem[a] << 24) | ((uint32_t)mem[a+1] << 16) |
-                         ((uint32_t)mem[a+2] << 8) | (uint32_t)mem[a+3];
-            float f; std::memcpy(&f, &w, 4);
-            // Heuristic: if absurd, try LE
-            if (f != f || f > 1e6f || f < -1e6f) {
-                std::memcpy(&f, mem + a, 4);
+        uint32_t vi = first + i;
+        // Indexed path: resolve vertex index from index array
+        if (g_index_offset && g_index_offset + vi * 2 < 0x10000000u) {
+            if (g_index_type == 2 && g_index_offset + vi * 4 < 0x10000000u) {
+                vi = rsx_rd32_be(mem, g_index_offset + vi * 4);
+            } else {
+                vi = ((uint32_t)mem[g_index_offset + vi * 2] << 8) |
+                     (uint32_t)mem[g_index_offset + vi * 2 + 1];
             }
-            return f;
-        };
+        }
+        uint32_t addr = off + vi * stride;
+        // Guest is BE floats often for RSX vertex data on Cell — try BE then LE
         float x = rd_f(addr + 0);
         float y = rd_f(addr + 4);
         float z = (stride >= 12) ? rd_f(addr + 8) : 0.f;
@@ -1635,6 +1645,27 @@ static bool rsx_state_apply_method_p2(uint32_t method, uint32_t arg) {
     }
     if (method == 0x0214 || method == 0x214) {
         static int zp=0; if(zp<8){ps3rt_log("[rsx] XXV-D-p2 Z_PITCH=0x%x\n", arg);++zp;}
+        return true;
+    }
+    // Index array (NV40 INDEX_ARRAY_OFFSET / FORMAT)
+    if (method == 0x181C || method == 0x1820) {
+        g_index_offset = arg;
+        static int si=0;
+        if (si < 8) { ps3rt_log("[rsx] INDEX_ARRAY off=0x%x\n", arg); ++si; }
+        return true;
+    }
+    if (method == 0x1824 || method == 0x1714) {
+        g_index_type = (arg & 0x10) ? 2 : 1;
+        return true;
+    }
+    // Vertex attrib format: size/type in low bits
+    if (method >= 0x1740 && method <= 0x17BC && ((method & 3) == 0)) {
+        uint32_t slot = (method - 0x1740) / 4;
+        if (slot < 8) {
+            g_va_size[slot] = (arg >> 4) & 0xF;
+            g_va_type[slot] = arg & 0xF;
+            if (!g_va_stride[slot]) g_va_stride[slot] = (g_va_size[slot] ? g_va_size[slot] : 3) * 4;
+        }
         return true;
     }
     // Semaphore / report

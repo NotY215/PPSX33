@@ -291,64 +291,57 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             uint64_t alt = recover_return_pc(c, chunks, n, c.pc, nullptr, 0, nullptr, 0);
             if (!alt && last_good_ret) alt = last_good_ret;
             if (alt) {
-                static int wild_log = 0;
-                {
-                    // Sticky recovery kill-switch: ban looping alts, big stride, next chunk
-                    static uint64_t s_last_alt = 0;
-                    static int s_same_alt = 0;
-                    static int s_sticky_log = 0;
-                    if (alt == s_last_alt) ++s_same_alt;
-                    else { s_last_alt = alt; s_same_alt = 1; }
-
-                    if (s_same_alt >= 3) {
-                        // Ban the sticky target so recover_return_pc won't re-pick it
-                        // Prefer LR, large stride, then rotate chunks
-                        uint64_t lr = c.lr;
-                        uint64_t next = 0;
-                        if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr != alt)
-                            next = lr;
-                        if (!next) {
-                            for (uint64_t stride = 0x40; stride <= 0x1000; stride <<= 1) {
-                                uint64_t cand = alt + stride;
-                                if (pc_in_chunks(cand, chunks, n)) { next = cand; break; }
-                            }
+                // Sticky recovery: ban loops without +0x10 spam
+                static uint64_t s_last_alt = 0;
+                static int s_same_alt = 0;
+                static int s_sticky_log = 0;
+                if (alt == s_last_alt) ++s_same_alt;
+                else { s_last_alt = alt; s_same_alt = 1; }
+                if (s_same_alt >= 3) {
+                    uint64_t next = 0;
+                    uint64_t lr = c.lr;
+                    if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr != alt)
+                        next = lr;
+                    if (!next) {
+                        for (uint64_t stride = 0x40; stride <= 0x1000; stride <<= 1) {
+                            uint64_t cand = alt + stride;
+                            if (pc_in_chunks(cand, chunks, n)) { next = cand; break; }
                         }
-                        if (!next) {
-                            static size_t s_chunk_i = 0;
-                            for (size_t k = 0; k < n; ++k) {
-                                size_t i = (s_chunk_i + k) % n;
-                                if (chunks[i].start != alt && chunks[i].start != s_last_alt) {
-                                    next = chunks[i].start;
-                                    s_chunk_i = i + 1;
-                                    break;
-                                }
-                            }
-                        }
-                        if (!next && n) next = chunks[0].start;
-                        if (next) {
-                            if (s_sticky_log < 12) {
-                                ps3rt_log("[ps3] XXV-L sticky BREAK 0x%llx -> 0x%llx (hits=%d)\n",
-                                    (unsigned long long)alt, (unsigned long long)next, s_same_alt);
-                                ++s_sticky_log;
-                            }
-                            alt = next;
-                        }
-                        s_same_alt = 0;
-                        s_last_alt = alt;
-                        // poison last_good if it was the sticky one
-                        if (last_good_ret == s_last_alt) last_good_ret = alt;
                     }
-                    static int wild_log2 = 0;
-                    if (wild_log2 < 12) {
-                        if (entry_toc) c.gpr[2] = entry_toc;
-                        log_recovery_action("wild-pc", c.pc, alt); ++f_recoveries;
-                        ps3rt_log("[ps3] XXV-L wild-pc 0x%llx -> 0x%llx\n",
-                            (unsigned long long)c.pc, (unsigned long long)alt);
-                        ++wild_log2;
+                    if (!next && n) {
+                        static size_t s_chunk_i = 0;
+                        for (size_t k = 0; k < n; ++k) {
+                            size_t i = (s_chunk_i + k) % n;
+                            if (chunks[i].start != alt) {
+                                next = chunks[i].start;
+                                s_chunk_i = i + 1;
+                                break;
+                            }
+                        }
                     }
-                    c.pc = alt; c.gpr[3] = 0; continue;
+                    if (next) {
+                        if (s_sticky_log < 12) {
+                            ps3rt_log("[ps3] XXV-L sticky BREAK 0x%llx -> 0x%llx (hits=%d)\n",
+                                (unsigned long long)alt, (unsigned long long)next, s_same_alt);
+                            ++s_sticky_log;
+                        }
+                        add_ban(alt);
+                        alt = next;
+                    }
+                    s_same_alt = 0;
+                    s_last_alt = alt;
                 }
+                static int wild_log2 = 0;
+                if (wild_log2 < 12) {
+                    if (entry_toc) c.gpr[2] = entry_toc;
+                    log_recovery_action("wild-pc", c.pc, alt); ++f_recoveries;
+                    ps3rt_log("[ps3] XXV-L wild-pc 0x%llx -> 0x%llx\n",
+                        (unsigned long long)c.pc, (unsigned long long)alt);
+                    ++wild_log2;
                 }
+                c.pc = alt;
+                c.gpr[3] = 0;
+                continue;
             }
         }
 
