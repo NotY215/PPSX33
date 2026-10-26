@@ -13,7 +13,3 @@
 - NV40 vertex colors; ignore near-clear textures
 - Present: geometry after clear, no covering blit when VA draws
 - Inject: larger triangle, depth/blend off methods
-
-## Honest status
-
-Inject triangle is a **seed** until title advances PUT/GET with real GCM.

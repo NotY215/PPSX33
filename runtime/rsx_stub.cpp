@@ -222,6 +222,12 @@ static uint32_t g_begin_mode = 0;
 
 // Forward decls — definitions appear later (C3861 fix)
 static void rsx_apply_viewport_scissor();
+static void rsx_apply_depth_blend_state();
+static ID3D11DepthStencilState* g_dss_on = nullptr;
+static ID3D11DepthStencilState* g_dss_off = nullptr;
+static ID3D11BlendState* g_blend_on = nullptr;
+static ID3D11BlendState* g_blend_off = nullptr;
+static ID3D11RasterizerState* g_rs_nocull = nullptr;
 static void rsx_present_guest_or_diag(uint8_t* mem);
 static void rsx_paint_guest_color_buffer(uint8_t* mem);
 static bool rsx_ensure_nv40_pipeline();
@@ -779,10 +785,15 @@ static void rsx_host_present_clear() {
                     rsx_upload_guest_tex(m);
                     rsx_draw_textured_quad();
                 }
-                // XV-C/D/F: real geometry only if FIFO methods ran and VA0 bound
-                if (g_va_offset[0] && g_rsx.methods_this_frame > 0)
+                // XV-G: draw VA geometry last; do not cover with clear-color blit
+                bool drew_geom = false;
+                if (g_va_offset[0]) {
+                    if (g_rsx.methods_this_frame == 0) g_rsx.methods_this_frame = 1;
+                    int before = g_rsx.draws;
                     rsx_draw_nv40_geometry(m);
-                else if (g_rsx.color_offset || g_rsx.tex_offset) {
+                    drew_geom = (g_rsx.draws > before);
+                }
+                if (!drew_geom && (g_rsx.color_offset || g_rsx.tex_offset)) {
                     rsx_upload_guest_tex(m);
                     rsx_draw_textured_quad();
                 }
@@ -1271,20 +1282,23 @@ static bool rsx_compile_sce_shaders(uint8_t* mem) {
 
 static const char* kNv40HLSL = R"(
 struct VSIn { float3 pos : POSITION; float2 uv : TEXCOORD0; };
-struct VSOut { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
+struct VSOut { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float3 col : COLOR0; };
 VSOut VSMain(VSIn i) {
   VSOut o;
-  o.pos = float4(i.pos.xy, 0.0, 1.0);
+  o.pos = float4(i.pos.xy, 0.1, 1.0);
   o.uv = i.uv;
+  o.col = float3(0.55 + 0.45 * saturate(i.pos.x * 0.5 + 0.5),
+                 0.35 + 0.55 * saturate(i.pos.y * 0.5 + 0.5),
+                 0.90);
   return o;
 }
 Texture2D tex0 : register(t0);
 SamplerState samp0 : register(s0);
 float4 PSMain(VSOut i) : SV_Target {
-  // Prefer textured fragment when SRV bound; else magenta diagnostic
   float4 t = tex0.Sample(samp0, i.uv);
-  if (t.a > 0.01 || any(t.rgb > 0.01)) return t;
-  return float4(0.9, 0.2, 0.7, 1);
+  bool tex_ok = (t.a > 0.5) && any(t.rgb > 0.12) && any(t.rgb < 0.92);
+  if (tex_ok) return t;
+  return float4(i.col, 1);
 }
 )";
 
@@ -1432,7 +1446,10 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
     }
 
     rsx_apply_viewport_scissor();
-    g_ctx11->OMSetRenderTargets(1, &g_rtv, g_dsv);
+    rsx_apply_depth_blend_state();
+    if (g_dss_off) g_ctx11->OMSetDepthStencilState(g_dss_off, 0);
+    g_ctx11->OMSetRenderTargets(1, &g_rtv, nullptr);
+
     UINT stride_b = 20, offset_b = 0;
     g_ctx11->IASetVertexBuffers(0, 1, &g_vb_nv40, &stride_b, &offset_b);
     g_ctx11->IASetInputLayout(g_layout_nv40);
@@ -1445,9 +1462,12 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
         g_ctx11->VSSetShader(g_vs_nv40, nullptr, 0);
         g_ctx11->PSSetShader(g_ps_nv40, nullptr, 0);
     }
-    if (g_guest_srv) {
+    if (g_guest_srv && g_rsx.methods_this_frame > 2 && g_rsx.tex_offset && g_rsx.tex_offset != g_rsx.color_offset) {
         g_ctx11->PSSetShaderResources(0, 1, &g_guest_srv);
         if (g_samp) g_ctx11->PSSetSamplers(0, 1, &g_samp);
+    } else {
+        ID3D11ShaderResourceView* nullsrv = nullptr;
+        g_ctx11->PSSetShaderResources(0, 1, &nullsrv);
     }
     UINT draw_n = (count / 3) * 3;
     if (draw_n < 3) draw_n = count >= 3 ? 3 : count;
@@ -1688,8 +1708,60 @@ static void rsx_apply_viewport_scissor() {
     if (!g_ctx11) return;
     float vw = (float)(g_rsx.viewport_w ? g_rsx.viewport_w : (g_rsx.width ? g_rsx.width : 1280));
     float vh = (float)(g_rsx.viewport_h ? g_rsx.viewport_h : (g_rsx.height ? g_rsx.height : 720));
+    if (vw < 16.f) vw = (float)(g_rsx.width ? g_rsx.width : 1280);
+    if (vh < 16.f) vh = (float)(g_rsx.height ? g_rsx.height : 720);
     D3D11_VIEWPORT vp{ 0.f, 0.f, vw, vh, 0.f, 1.f };
     g_ctx11->RSSetViewports(1, &vp);
+    D3D11_RECT rc{ 0, 0, (LONG)vw, (LONG)vh };
+    g_ctx11->RSSetScissorRects(1, &rc);
+#endif
+}
+
+static void rsx_ensure_pipeline_states() {
+#if defined(_WIN32)
+    if (!g_dev) return;
+    if (!g_dss_off) {
+        D3D11_DEPTH_STENCIL_DESC d{};
+        d.DepthEnable = FALSE;
+        d.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+        d.DepthFunc = D3D11_COMPARISON_ALWAYS;
+        g_dev->CreateDepthStencilState(&d, &g_dss_off);
+        d.DepthEnable = TRUE;
+        d.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+        d.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+        g_dev->CreateDepthStencilState(&d, &g_dss_on);
+    }
+    if (!g_blend_off) {
+        D3D11_BLEND_DESC b{};
+        b.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+        g_dev->CreateBlendState(&b, &g_blend_off);
+        b.RenderTarget[0].BlendEnable = TRUE;
+        b.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+        b.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+        b.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+        b.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+        b.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+        b.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+        g_dev->CreateBlendState(&b, &g_blend_on);
+    }
+    if (!g_rs_nocull) {
+        D3D11_RASTERIZER_DESC r{};
+        r.FillMode = D3D11_FILL_SOLID;
+        r.CullMode = D3D11_CULL_NONE;
+        r.DepthClipEnable = TRUE;
+        g_dev->CreateRasterizerState(&r, &g_rs_nocull);
+    }
+#endif
+}
+
+static void rsx_apply_depth_blend_state() {
+#if defined(_WIN32)
+    if (!g_ctx11) return;
+    rsx_ensure_pipeline_states();
+    g_ctx11->OMSetDepthStencilState(g_depth_test && g_dss_on ? g_dss_on : g_dss_off, 0);
+    float bf[4] = {0,0,0,0};
+    g_ctx11->OMSetBlendState(g_blend_enable && g_blend_on ? g_blend_on : g_blend_off, bf, 0xFFFFFFFF);
+    if (g_rs_nocull) g_ctx11->RSSetState(g_rs_nocull);
 #endif
 }
 

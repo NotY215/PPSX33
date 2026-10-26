@@ -348,10 +348,10 @@ static void gcm_inject_clear_draw() {
             uint32_t u; std::memcpy(&u, &f, 4);
             wr_be32_guest(addr, u);
         };
-        // triangle in NDC
-        wr_f_be(vb_off +  0, -0.8f); wr_f_be(vb_off +  4, -0.8f); wr_f_be(vb_off +  8, 0.f);
-        wr_f_be(vb_off + 12,  0.8f); wr_f_be(vb_off + 16, -0.8f); wr_f_be(vb_off + 20, 0.f);
-        wr_f_be(vb_off + 24,  0.0f); wr_f_be(vb_off + 28,  0.8f); wr_f_be(vb_off + 32, 0.f);
+        // XV-G large NDC triangle (visible seed until real GCM)
+        wr_f_be(vb_off +  0, -0.95f); wr_f_be(vb_off +  4, -0.95f); wr_f_be(vb_off +  8, 0.1f);
+        wr_f_be(vb_off + 12,  0.95f); wr_f_be(vb_off + 16, -0.95f); wr_f_be(vb_off + 20, 0.1f);
+        wr_f_be(vb_off + 24,  0.00f); wr_f_be(vb_off + 28,  0.95f); wr_f_be(vb_off + 32, 0.1f);
     }
     gcm_fifo_emit(0x0200, color_off);           // COLOR_OFFSET
     gcm_fifo_emit(0x0204, 1280u * 4u);          // COLOR_PITCH
@@ -360,8 +360,10 @@ static void gcm_inject_clear_draw() {
     gcm_fifo_emit(0x1D90, 0xF1);
     gcm_fifo_emit(0x1D94, 0);
     // Vertex array 0 = position
+    gcm_fifo_emit(0x0A00, 0);                   // depth test OFF
+    gcm_fifo_emit(0x0300, 0);                   // blend OFF
     gcm_fifo_emit(0x1680, vb_off);              // VA0 offset
-    gcm_fifo_emit(0x1740, 0x23);                // format: float3-ish
+    gcm_fifo_emit(0x1740, 0x23);                // format: float3
     gcm_fifo_emit(0x1808, 3);                   // draw 3 verts
     if (g_mem && g_gcm_control) {
         uint32_t put = rd_be32_guest(g_gcm_control + 0);
