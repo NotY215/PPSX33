@@ -18,22 +18,36 @@ PPSX33 is not a complete PS3 emulator. PPU translation, correct instruction sema
 
 | Area | Status |
 | --- | --- |
-| ELF64 / analysis / lift | In tree; **XXV-E** unknown encodings not counted Implemented |
-| Runtime | Experimental; commercial playability not established |
-| RSX | Host D3D11 present + FIFO/surface depth (**XXV-D**); not full shader ISA |
-| PPU run | Soft recovery with logs; **XXV-F** fault capture + optional strict mode |
-| Phase XXV | **Active** — [roadmap/XXV.md](roadmap/XXV.md) |
+| ELF64 / analysis / lift | In tree; large titles still report many unimplemented encodings |
+| Runtime | Experimental; commercial playability **not** established |
+| RSX host present | D3D11 window, FIFO decode, surface bind, **seed** frame (color bars + triangle) |
+| RSX game geometry | **Not started** as title output; GCM PUT stays stalled on GOW3 logs |
+| PPU run | Soft recovery, sticky BREAK, import stubs; many unknown NIDs |
+| Phase focus | **XV** real rendering path; see [roadmap/XV.md](roadmap/XV.md) |
 
-### Phase XXV
+### What works today (evidence from GOW3 run logs)
+
+- Guest image load, PSARC scan, D3D11 host window titled `PPSX33 presents GOW3`
+- Seed present: rainbow bars + large triangle (inject + guest color paint)
+- Flip counter and draw counters advance
+
+### What does **not** work yet (same evidence)
+
+- Real game meshes, textures, or menus from GOW3 command streams
+- GCM FIFO often idle (`put == get`); inject path supplies seed draws
+- PRX import path previously accepted **allocation sizes** as NIDs (fixed in XV-J)
+- Sticky wild-PC recovery can still loop; HARD escape added in XV-J
+
+### Phase XV (rendering)
 
 | ID | Status | Focus |
 |----|--------|--------|
-| **A–E** | DONE (untested) | Audio, present, lifter honesty, RSX host depth |
-| **D** | DONE (untested) | Full depth FIFO/surface/host draw |
-| **F** | DONE (untested) | `validate_guest_pc`, `capture_guest_fault`, storm halt, `PS3RT_STRICT_FAULT` |
-| **G–J** | PLANNED | PRX/LV2, SPU/MFC, services, E2E |
+| A-H | Done / in tree | Metrics, FIFO jump, present order, textures, depth/blend, stable seed |
+| **I** | In tree | One seed composition per flip; inject throttle; per-frame counters |
+| **J** | In tree (this update) | NID filter (reject sizes), sticky HARD escape |
+| **K+** | Next | Real GCM from title after boot/import advances |
 
-Detail: [ROADMAP.md](ROADMAP.md) · [roadmap/XXV.md](roadmap/XXV.md).
+Detail: [ROADMAP.md](ROADMAP.md) · [roadmap/XV.md](roadmap/XV.md).
 
 ## Requirements
 
@@ -78,13 +92,3 @@ scripts\build_all.bat
 ```
 
 Output is placed in `build\dist\`.
-
-## Developer documentation
-
-- [Roadmap](ROADMAP.md) · [Phase XXV](roadmap/XXV.md)
-- [Contributor workflow](CONTRIBUTING.md)
-- [Developer guide](docs/DEVELOPER_GUIDE.md)
-
----
-
-*No proprietary keys or copyrighted game assets are included.*
