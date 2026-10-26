@@ -1,15 +1,18 @@
 # Phase XV — Real rendering
 
-## Log diagnosis (19:51)
+## Screenshots
 
-- `put=get` — game FIFO idle
-- Inject draws 3 verts then fullscreen clear-color blit covers them
-- Depth/texture bind could reject or recolor geometry
+1. **Colorful triangle + bars** — inject + `paint_guest_color_buffer` working (seed frame).
+2. **Black at high flip** — often swap-chain resize (720→729) or clear/blit of empty guest color.
 
-## XV-G
+## XV-H (this pack)
 
-- Viewport + scissor full window
-- D3D11 depth/blend/rasterizer states; depth off for early draws
-- NV40 vertex colors; ignore near-clear textures
-- Present: geometry after clear, no covering blit when VA draws
-- Inject: larger triangle, depth/blend off methods
+- Harden resize + RTV recreate (prevent black Present)
+- Never pure-black clear
+- Every idle frame: repaint guest bars+triangle → blit → NV40 on top
+- Host NDC seed triangle if VA read fails
+- Solid diagnostic only as last resort
+
+## Next (real title geometry)
+
+Game must advance GCM PUT past GET with real vertex arrays (not inject-only).

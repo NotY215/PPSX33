@@ -899,7 +899,9 @@ PS3RT_API void ps3rt_progress_hw(void) {
             uint32_t put = g_gcm_control ? rd_be32_guest(g_gcm_control + 0) : 0;
             uint32_t get = g_gcm_control ? rd_be32_guest(g_gcm_control + 4) : 0;
             // XXIV-B: only treat as real guest stream when put moves past minimal residual
-            if (put <= 0x20 && get <= 0x20) {
+            // XV-H: seed when FIFO stalled (put==get) OR still in residual range.
+            // Real game stream only when put advances beyond get with substantial traffic.
+            if (put == get || put <= 0x80) {
                 gcm_inject_clear_draw();
             } else {
                 static int s_guest = 0;

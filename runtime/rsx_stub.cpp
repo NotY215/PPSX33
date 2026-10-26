@@ -708,15 +708,26 @@ static void rsx_host_present_clear() {
     if (!g_hwnd) rsx_host_init(g_rsx.width, g_rsx.height);
     RECT rc; if (g_hwnd && GetClientRect(g_hwnd, &rc)) {
         uint32_t nw = (uint32_t)(rc.right - rc.left), nh = (uint32_t)(rc.bottom - rc.top);
-        if (nw > 0 && nh > 0 && (nw != g_rsx.width || nh != g_rsx.height)) {
+        if (nw > 64 && nh > 64 && (nw != g_rsx.width || nh != g_rsx.height)) {
             g_rsx.width = nw; g_rsx.height = nh;
+            // Must release RTV before ResizeBuffers; recreate or present goes black
             if (g_rtv) { g_rtv->Release(); g_rtv = nullptr; }
-            if (g_swap) g_swap->ResizeBuffers(0, nw, nh, DXGI_FORMAT_UNKNOWN, 0);
-            ID3D11Texture2D* bb = nullptr;
-            if (g_swap) g_swap->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&bb);
-            if (bb && g_dev) { g_dev->CreateRenderTargetView(bb, nullptr, &g_rtv); bb->Release(); }
             rsx_release_depth();
+            HRESULT hr = E_FAIL;
+            if (g_swap) hr = g_swap->ResizeBuffers(0, nw, nh, DXGI_FORMAT_UNKNOWN, 0);
+            ID3D11Texture2D* bb = nullptr;
+            if (SUCCEEDED(hr) && g_swap)
+                g_swap->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&bb);
+            if (bb && g_dev) {
+                g_dev->CreateRenderTargetView(bb, nullptr, &g_rtv);
+                bb->Release();
+            }
             rsx_ensure_depth(g_rsx.width, g_rsx.height);
+            static int rz = 0;
+            if (rz < 8) {
+                ps3rt_log("[rsx] XV-H resize %ux%u rtv=%s\n", nw, nh, g_rtv ? "ok" : "FAIL");
+                ++rz;
+            }
         }
     }
     if (!g_rtv) return;
@@ -734,6 +745,7 @@ static void rsx_host_present_clear() {
     float rr = ((g_rsx.clear_color >> 16) & 0xFF) / 255.f;
     float gg = ((g_rsx.clear_color >> 8) & 0xFF) / 255.f;
     float bb = (g_rsx.clear_color & 0xFF) / 255.f;
+    if (rr+gg+bb < 0.05f) { rr = 0.08f; gg = 0.09f; bb = 0.14f; }
     float col[4] = { rr, gg, bb, 1.f };
     // VISIBLE FRAME FIX: one clear, always solid triangle, never black guest wipe
     try {
@@ -785,23 +797,34 @@ static void rsx_host_present_clear() {
                     rsx_upload_guest_tex(m);
                     rsx_draw_textured_quad();
                 }
-                // XV-G: draw VA geometry last; do not cover with clear-color blit
-                bool drew_geom = false;
-                if (g_va_offset[0]) {
-                    if (g_rsx.methods_this_frame == 0) g_rsx.methods_this_frame = 1;
-                    int before = g_rsx.draws;
-                    rsx_draw_nv40_geometry(m);
-                    drew_geom = (g_rsx.draws > before);
+                // XV-H stable frame while game FIFO idle:
+                // 1) seed colorful guest color buffer  2) blit it  3) draw VA triangle on top
+                if (g_rsx.methods_this_frame < 8 && g_rsx.color_offset) {
+                    rsx_paint_guest_color_buffer(m);
                 }
-                if (!drew_geom && (g_rsx.color_offset || g_rsx.tex_offset)) {
+                if (g_rsx.color_offset || g_rsx.tex_offset) {
+                    if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset;
+                    if (!g_rsx.tex_width) {
+                        g_rsx.tex_width = g_rsx.width > 64 ? g_rsx.width : 1280;
+                        g_rsx.tex_height = g_rsx.height > 64 ? g_rsx.height : 720;
+                    }
                     rsx_upload_guest_tex(m);
                     rsx_draw_textured_quad();
                 }
+                if (g_va_offset[0]) {
+                    if (g_rsx.methods_this_frame == 0) g_rsx.methods_this_frame = 1;
+                    rsx_draw_nv40_geometry(m);
+                }
             }
-            // Diagnostic triangle ONLY when no guest draw was submitted this frame
+            // XV-H: if frame is still empty, force visible solid (never pure black)
             if (g_rsx.draws_guest_frame == guest_before) {
                 rsx_draw_solid_triangle();
                 ++g_rsx.draws_diagnostic;
+            }
+            // Always finish with inject VA geometry on top while FIFO idle (methods low)
+            if (m && g_va_offset[0] && g_rsx.methods_this_frame < 4) {
+                if (g_rsx.methods_this_frame == 0) g_rsx.methods_this_frame = 1;
+                rsx_draw_nv40_geometry(m);
             }
             ++g_rsx.draws_this_frame;
         }
@@ -1361,10 +1384,11 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
     uint32_t count = g_draw_count ? g_draw_count : 3;
     if (count > 4096) count = 4096;
     if (!off0 || off0 + (uint64_t)stride0 * (count + g_draw_first) >= 0x10000000ull) {
-        rsx_draw_solid_triangle();
-        ++g_rsx.draws_diagnostic;
-        return;
+        // XV-H: still draw a host-side NDC triangle so the window never goes blank
+        off0 = 0; // mark invalid; fall through to seed
     }
+    bool seed_ndc = (!off0);
+    if (seed_ndc) count = 3;
 
     auto rd_f = [&](uint32_t a) -> float {
         if (a + 4 > 0x10000000u) return 0.f;
@@ -1395,13 +1419,23 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
     if (FAILED(g_ctx11->Map(g_vb_nv40, 0, D3D11_MAP_WRITE_DISCARD, 0, &map))) return;
     float* dst = (float*)map.pData;
     uint32_t max_vi = 0;
+    static const float kSeed[9] = {
+        -0.9f,-0.9f,0.1f,  0.9f,-0.9f,0.1f,  0.f,0.9f,0.1f
+    };
     for (uint32_t i = 0; i < count; ++i) {
         uint32_t vi = resolve_index(i);
         if (vi > max_vi) max_vi = vi;
+        float x, y, z;
+        if (seed_ndc || !off0) {
+            x = kSeed[(i % 3) * 3 + 0];
+            y = kSeed[(i % 3) * 3 + 1];
+            z = kSeed[(i % 3) * 3 + 2];
+        } else {
         uint32_t addr = off0 + vi * stride0;
-        float x = rd_f(addr + 0);
-        float y = rd_f(addr + 4);
-        float z = (stride0 >= 12) ? rd_f(addr + 8) : 0.f;
+        x = rd_f(addr + 0);
+        y = rd_f(addr + 4);
+        z = (stride0 >= 12) ? rd_f(addr + 8) : 0.f;
+        }
         float vw = g_rsx.viewport_w ? (float)g_rsx.viewport_w : (float)(g_rsx.width ? g_rsx.width : 1280);
         float vh = g_rsx.viewport_h ? (float)g_rsx.viewport_h : (float)(g_rsx.height ? g_rsx.height : 720);
         if (x > 1.5f || y > 1.5f || x < -1.5f || y < -1.5f) {
