@@ -64,6 +64,7 @@ struct RsxState {
     int draws_this_frame = 0;
     int draws_guest = 0;
     int draws_diagnostic = 0;
+    int draws_guest_frame = 0;
     int packets_decoded = 0;
     int fifo_bytes_consumed = 0;
     // A: surface
@@ -745,47 +746,55 @@ static void rsx_host_present_clear() {
                     g_rsx.clear_depth, g_rsx.clear_stencil);
         }
 
-        // FRAME START: host-visible pipeline every flip
+        // PHASE XV: guest-driven present — diagnostic only if no guest geometry
         {
-            // Bright clear so black never looks like "nothing happened"
-            float base[4] = { 0.12f, 0.14f, 0.28f, 1.f };
-            g_ctx11->OMSetRenderTargets(1, &g_rtv, nullptr);
+            float base[4] = { 0.06f, 0.07f, 0.12f, 1.f };
+            g_ctx11->OMSetRenderTargets(1, &g_rtv, g_dsv);
             g_ctx11->ClearRenderTargetView(g_rtv, base);
+            if (g_dsv)
+                g_ctx11->ClearDepthStencilView(g_dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
 
             uint8_t* m = ps3rt_memory();
+            int guest_before = g_rsx.draws_guest_frame;
             if (m) {
-                // Diagnostic bars into guest color until real shaders exist
-                if (g_rsx.shader_binds == 0)
-                    rsx_paint_guest_color_buffer(m);
-                if (!g_rsx.tex_offset)
-                    g_rsx.tex_offset = g_rsx.color_offset ? g_rsx.color_offset : 0x84f0000u;
-                if (!g_rsx.tex_width) {
-                    g_rsx.tex_width = g_rsx.width > 64 ? g_rsx.width : 1280;
-                    g_rsx.tex_height = g_rsx.height > 64 ? g_rsx.height : 720;
+                // Prefer real color surface / textures when bound
+                if (g_rsx.color_offset || g_rsx.tex_offset) {
+                    if (!g_rsx.tex_offset)
+                        g_rsx.tex_offset = g_rsx.color_offset;
+                    if (!g_rsx.tex_width) {
+                        g_rsx.tex_width = g_rsx.width > 64 ? g_rsx.width : 1280;
+                        g_rsx.tex_height = g_rsx.height > 64 ? g_rsx.height : 720;
+                    }
+                    if (!g_rsx.tex_pitch)
+                        g_rsx.tex_pitch = g_rsx.tex_width * 4;
+                    rsx_upload_guest_tex(m);
+                    rsx_draw_textured_quad();
                 }
-                if (!g_rsx.tex_pitch)
-                    g_rsx.tex_pitch = g_rsx.tex_width * 4;
-                rsx_upload_guest_tex(m);
-                rsx_draw_textured_quad();
-                // Guest VA geometry from command stream (inject or game)
+                // Guest VA geometry from FIFO / GCM
                 if (g_va_offset[0])
                     rsx_draw_nv40_geometry(m);
+                else if (g_rsx.color_offset)
+                    rsx_paint_guest_color_buffer(m);
             }
-            // Host RGB triangle always on top — proves raster path
-            rsx_draw_solid_triangle(); /* diagnostic */
+            // Diagnostic triangle ONLY when no guest draw was submitted this frame
+            if (g_rsx.draws_guest_frame == guest_before) {
+                rsx_draw_solid_triangle();
+                ++g_rsx.draws_diagnostic;
+            }
             ++g_rsx.draws_this_frame;
         }
 
         if (g_hwnd) {
             char title[192];
             const char* gn = ps3rt_get_game_name();
-            std::snprintf(title, sizeof(title), "PPSX33 presents %s  |  flips=%llu  draws=%d",
+            std::snprintf(title, sizeof(title), "PPSX33 presents %s  |  flips=%llu  guest=%d diag=%d",
                 (gn && gn[0]) ? gn : "PS3 Title",
-                (unsigned long long)g_rsx.flip_count, g_rsx.draws);
+                (unsigned long long)g_rsx.flip_count, g_rsx.draws_guest, g_rsx.draws_diagnostic);
             SetWindowTextA(g_hwnd, title);
         }
 
         g_rsx.draws_this_frame = 0;
+        g_rsx.draws_guest_frame = 0;
         g_rsx.methods_this_frame = 0;
         if (g_swap) {
             g_swap->Present(0, 0);
@@ -1393,7 +1402,7 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
         g_ctx11->Draw(draw_n, 0);
         ++g_rsx.draws;
         ++g_rsx.draws_this_frame;
-        ++g_rsx.draws_guest;
+        ++g_rsx.draws_guest; ++g_rsx.draws_guest_frame;
         static int sd = 0;
         if (sd < 16) {
             ps3rt_log("[rsx] NV40 draw verts=%u first=%u va0=0x%x stride=%u vp=0x%x fp=0x%x\n",
@@ -1785,11 +1794,10 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] XXV-E flip #%llu draws=%d clears=%d depth=%d stencil=%d shaders=%d tex=%d methods=%d known=%d unknown=%d %ux%u\n",
-            (unsigned long long)g_rsx.flip_count, g_rsx.draws, g_rsx.clears,
-            g_rsx.depth_clears, g_rsx.stencil_clears,
-            g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,
-            g_rsx.methods_this_frame, g_rsx.known_methods, g_rsx.unknown_methods,
+        ps3rt_log("[rsx] XV flip #%llu guest=%d diag=%d draws=%d shaders=%d tex=%d methods=%d packets=%d %ux%u\n",
+            (unsigned long long)g_rsx.flip_count, g_rsx.draws_guest, g_rsx.draws_diagnostic,
+            g_rsx.draws, g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,
+            g_rsx.methods_this_frame, g_rsx.packets_decoded,
             g_rsx.width, g_rsx.height);
     }
 }
