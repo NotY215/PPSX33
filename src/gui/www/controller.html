@@ -47,8 +47,8 @@
         }
 
         .controller-part.active {
-            filter: drop-shadow(0 0 14px rgba(239, 68, 68, 1)) drop-shadow(0 0 22px rgba(239, 68, 68, 0.8)) !important;
-            fill: #ef4444 !important;
+            filter: brightness(1.6) !important;
+            outline: 2px solid #ef4444;
         }
 
         /* Leader Line & Badge Glowing Effects */
@@ -1098,11 +1098,11 @@
                 liveLastKey.textContent = pressedKey === ' ' ? 'Space' : pressedKey;
 
                 let matchedBtn = null;
+                // Match ONLY by KeyboardEvent.code so Left/Right Shift & Ctrl never alias
                 Object.keys(currentMappings).forEach(btnKey => {
                     const m = currentMappings[btnKey];
-                    if (m && (m.key.toLowerCase() === pressedKey.toLowerCase() || m.code === pressedCode)) {
-                        matchedBtn = btnKey;
-                    }
+                    if (!m) return;
+                    if (m.code && m.code === pressedCode) matchedBtn = btnKey;
                 });
 
                 if (matchedBtn) {
@@ -1114,7 +1114,7 @@
                         const svgElem = document.getElementById(svgId);
                         if (svgElem) {
                             svgElem.classList.add('active');
-                            setTimeout(() => svgElem.classList.remove('active'), 250);
+                            requestAnimationFrame(() => setTimeout(() => svgElem.classList.remove('active'), 120));
                         }
                     }
 
@@ -1122,7 +1122,7 @@
                     const badgeElem = document.getElementById(`badge_${matchedBtn}`);
                     if (badgeElem) {
                         badgeElem.classList.add('active-badge');
-                        setTimeout(() => badgeElem.classList.remove('active-badge'), 250);
+                        requestAnimationFrame(() => setTimeout(() => badgeElem.classList.remove('active-badge'), 120));
                     }
                 } else {
                     liveLastAction.textContent = 'Unmapped Input';
@@ -1133,12 +1133,31 @@
         // Assign Key Logic
         function assignNewKey(btnKey, key, code) {
             if (!btnKey) return;
-            const label = key === ' ' ? 'Space' : key.length === 1 ? key.toUpperCase() : key;
+            // Distinct labels for left/right modifiers (fixes L2/R2/L3/R3 glow aliasing)
+            const CODE_LABEL = {
+                'ShiftLeft': 'Shift Left', 'ShiftRight': 'Shift Right',
+                'ControlLeft': 'Ctrl Left', 'ControlRight': 'Ctrl Right',
+                'AltLeft': 'Alt Left', 'AltRight': 'Alt Right',
+                'MetaLeft': 'Meta Left', 'MetaRight': 'Meta Right',
+                'Numpad8': 'Num+8', 'Numpad5': 'Num+5', 'Numpad4': 'Num+4', 'Numpad6': 'Num+6',
+                'ArrowUp': 'Up', 'ArrowDown': 'Down', 'ArrowLeft': 'Left', 'ArrowRight': 'Right',
+                'Space': 'Space', 'Backspace': 'Backspace'
+            };
+            const HOST_KEY = {
+                'ShiftLeft': 'LShiftKey', 'ShiftRight': 'RShiftKey',
+                'ControlLeft': 'LControlKey', 'ControlRight': 'RControlKey',
+                'Numpad8': 'NumPad8', 'Numpad5': 'NumPad5', 'Numpad4': 'NumPad4', 'Numpad6': 'NumPad6',
+                'ArrowUp': 'Up', 'ArrowDown': 'Down', 'ArrowLeft': 'Left', 'ArrowRight': 'Right',
+                'Space': 'Space', 'Backspace': 'Backspace'
+            };
+            let label = CODE_LABEL[code] || (key === ' ' ? 'Space' : key.length === 1 ? key.toUpperCase() : key);
+            let hostKey = HOST_KEY[code] || (code && code.startsWith('Key') && code.length === 4 ? code.slice(3) : label);
 
             currentMappings[btnKey] = {
-                key: key,
+                key: hostKey,
                 code: code,
-                label: label
+                label: label,
+                hostKey: hostKey
             };
 
             presetSelect.value = 'custom';
@@ -1281,7 +1300,7 @@
                 if (!e) return;
                 let k = e.code && codeMap[e.code] ? codeMap[e.code] : (e.label || e.key || '');
                 if (e.code && e.code.startsWith('Key') && e.code.length===4) k = e.code.slice(3);
-                flat[id] = k;
+                flat[id] = (e.hostKey || k);
             });
             return flat;
         }

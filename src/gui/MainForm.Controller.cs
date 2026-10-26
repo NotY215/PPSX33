@@ -10,6 +10,7 @@ public sealed partial class MainForm
     private TabPage? _controllerTab;
     private WebView2? _controllerWeb;
     private bool _controllerWebReady;
+    private bool _controllerNavDone;
 
     void BuildControllerTab()
     {
@@ -21,7 +22,11 @@ public sealed partial class MainForm
             BackColor = Color.FromArgb(9, 13, 22)
         };
 
-        _controllerWeb = new WebView2 { Dock = DockStyle.Fill };
+        _controllerWeb = new WebView2
+        {
+            Dock = DockStyle.Fill,
+            DefaultBackgroundColor = Color.FromArgb(9, 13, 22)
+        };
         _controllerPanel.Controls.Add(_controllerWeb);
 
         _controllerTab = new TabPage("Controller")
@@ -40,27 +45,41 @@ public sealed partial class MainForm
         if (_controllerWeb == null) return;
         try
         {
-            await _controllerWeb.EnsureCoreWebView2Async();
+            var env = await CoreWebView2Environment.CreateAsync(null, Path.Combine(Path.GetTempPath(), "PPSX33WebView2"));
+            await _controllerWeb.EnsureCoreWebView2Async(env);
             _controllerWeb.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
             _controllerWeb.CoreWebView2.Settings.IsStatusBarEnabled = false;
+            _controllerWeb.CoreWebView2.Settings.AreDevToolsEnabled = false;
+            // Disable smooth scroll animation thrash in embedded host
+            try { await _controllerWeb.CoreWebView2.ExecuteScriptAsync("document.documentElement.style.scrollBehavior='auto'"); } catch { }
+
             _controllerWeb.CoreWebView2.WebMessageReceived += ControllerWeb_Message;
+            _controllerWeb.CoreWebView2.NavigationCompleted += (_, args) =>
+            {
+                _controllerNavDone = args.IsSuccess;
+                if (args.IsSuccess)
+                    BeginInvoke(() => { _controllerWebReady = true; PushKeyMapToWeb(); });
+            };
+
             string htmlPath = Path.Combine(AppContext.BaseDirectory, "www", "controller.html");
             if (!File.Exists(htmlPath))
                 htmlPath = Path.Combine(AppContext.BaseDirectory, "src", "gui", "www", "controller.html");
+
             if (File.Exists(htmlPath))
-                _controllerWeb.Source = new Uri(htmlPath);
+            {
+                // file:/// URI — avoid invalid range from relative Source
+                var uri = new Uri(htmlPath);
+                _controllerWeb.CoreWebView2.Navigate(uri.AbsoluteUri);
+            }
             else
             {
-                // navigate to embedded minimal note
                 _controllerWeb.NavigateToString("<html><body style='background:#090d16;color:#fff;font-family:sans-serif;padding:24px'>controller.html missing from output www/</body></html>");
+                _controllerWebReady = true;
             }
-            _controllerWebReady = true;
-            PushKeyMapToWeb();
         }
         catch (Exception ex)
         {
             Append("Controller WebView2 failed: " + ex.Message + " (install WebView2 Runtime)");
-            // fallback label
             var lab = new Label
             {
                 Dock = DockStyle.Fill,
@@ -76,13 +95,36 @@ public sealed partial class MainForm
     {
         try
         {
-            string json = e.TryGetWebMessageAsString() ?? e.WebMessageAsJson;
+            // Object postMessage → WebMessageAsJson. TryGetWebMessageAsString throws
+            // "Value does not fall within the expected range" when payload is not a string.
+            string json;
+            try { json = e.WebMessageAsJson; }
+            catch
+            {
+                try { json = e.TryGetWebMessageAsString(); }
+                catch (Exception ex2)
+                {
+                    BeginInvoke(() => Append("Controller message error: " + ex2.Message));
+                    return;
+                }
+            }
+            if (string.IsNullOrWhiteSpace(json)) return;
+
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
+            // Some hosts wrap once
+            if (root.ValueKind == JsonValueKind.String)
+            {
+                var inner = root.GetString();
+                if (string.IsNullOrEmpty(inner)) return;
+                using var doc2 = JsonDocument.Parse(inner);
+                root = doc2.RootElement.Clone();
+            }
+
             string type = root.TryGetProperty("type", out var t) ? t.GetString() ?? "" : "";
             if (type == "ready")
             {
-                BeginInvoke(PushKeyMapToWeb);
+                if (_controllerNavDone) BeginInvoke(PushKeyMapToWeb);
                 return;
             }
             if (type == "save" && root.TryGetProperty("map", out var mapEl))
@@ -93,11 +135,16 @@ public sealed partial class MainForm
                 BeginInvoke(() => { Append("Controller mapping saved from WebView."); UpdateButtons(); });
                 return;
             }
-            if (type == "bind" && root.TryGetProperty("id", out var idEl) && root.TryGetProperty("key", out var keyEl))
+            if (type == "bind")
             {
-                ApplyOneBind(idEl.GetString() ?? "", keyEl.GetString() ?? "");
-                _settings.KeyMap ??= KeyMap.Defaults();
-                SaveSettings();
+                string id = root.TryGetProperty("id", out var idEl) ? idEl.GetString() ?? "" : "";
+                string key = root.TryGetProperty("key", out var keyEl) ? keyEl.GetString() ?? "" : "";
+                if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(key))
+                {
+                    ApplyOneBind(id, key);
+                    _settings.KeyMap ??= KeyMap.Defaults();
+                    SaveSettings();
+                }
             }
         }
         catch (Exception ex)
@@ -108,8 +155,9 @@ public sealed partial class MainForm
 
     void PushKeyMapToWeb()
     {
-        if (_controllerWeb?.CoreWebView2 == null || !_controllerWebReady) return;
+        if (_controllerWeb?.CoreWebView2 == null || !_controllerWebReady || !_controllerNavDone) return;
         var km = _settings.KeyMap ?? KeyMap.Defaults();
+        // Prefer distinct L/R modifier names so HTML can match by code
         var map = new Dictionary<string, string>
         {
             ["dpad_up"] = km.DpadUp, ["dpad_down"] = km.DpadDown,
@@ -124,25 +172,51 @@ public sealed partial class MainForm
             ["rs_left"] = km.RightStickLeft, ["rs_right"] = km.RightStickRight,
             ["l3"] = km.L3, ["r3"] = km.R3
         };
-        var payload = JsonSerializer.Serialize(new { type = "setMap", map });
-        try { _controllerWeb.CoreWebView2.PostWebMessageAsJson(payload); } catch { }
+        try
+        {
+            var payload = JsonSerializer.Serialize(new { type = "setMap", map });
+            _controllerWeb.CoreWebView2.PostWebMessageAsJson(payload);
+        }
+        catch (Exception ex)
+        {
+            Append("Controller push map failed: " + ex.Message);
+        }
     }
 
     void ApplyMapElement(JsonElement mapEl)
     {
         var km = _settings.KeyMap ?? KeyMap.Defaults();
         string G(string id) => mapEl.TryGetProperty(id, out var v) ? (v.GetString() ?? "") : "";
-        km.DpadUp = G("dpad_up"); km.DpadDown = G("dpad_down");
-        km.DpadLeft = G("dpad_left"); km.DpadRight = G("dpad_right");
-        km.Triangle = G("triangle"); km.Circle = G("circle");
-        km.Cross = G("cross"); km.Square = G("square");
-        km.L1 = G("l1"); km.R1 = G("r1"); km.L2 = G("l2"); km.R2 = G("r2");
-        km.Select = G("select"); km.Start = G("start"); km.PsButton = G("ps");
-        km.LeftStickUp = G("ls_up"); km.LeftStickDown = G("ls_down");
-        km.LeftStickLeft = G("ls_left"); km.LeftStickRight = G("ls_right");
-        km.RightStickUp = G("rs_up"); km.RightStickDown = G("rs_down");
-        km.RightStickLeft = G("rs_left"); km.RightStickRight = G("rs_right");
-        km.L3 = G("l3"); km.R3 = G("r3");
+        void Set(string id, Action<string> set)
+        {
+            var s = G(id);
+            if (!string.IsNullOrEmpty(s)) set(s);
+        }
+        Set("dpad_up", s => km.DpadUp = s);
+        Set("dpad_down", s => km.DpadDown = s);
+        Set("dpad_left", s => km.DpadLeft = s);
+        Set("dpad_right", s => km.DpadRight = s);
+        Set("triangle", s => km.Triangle = s);
+        Set("circle", s => km.Circle = s);
+        Set("cross", s => km.Cross = s);
+        Set("square", s => km.Square = s);
+        Set("l1", s => km.L1 = s);
+        Set("r1", s => km.R1 = s);
+        Set("l2", s => km.L2 = s);
+        Set("r2", s => km.R2 = s);
+        Set("select", s => km.Select = s);
+        Set("start", s => km.Start = s);
+        Set("ps", s => km.PsButton = s);
+        Set("ls_up", s => km.LeftStickUp = s);
+        Set("ls_down", s => km.LeftStickDown = s);
+        Set("ls_left", s => km.LeftStickLeft = s);
+        Set("ls_right", s => km.LeftStickRight = s);
+        Set("rs_up", s => km.RightStickUp = s);
+        Set("rs_down", s => km.RightStickDown = s);
+        Set("rs_left", s => km.RightStickLeft = s);
+        Set("rs_right", s => km.RightStickRight = s);
+        Set("l3", s => km.L3 = s);
+        Set("r3", s => km.R3 = s);
         _settings.KeyMap = km;
         SaveSettings();
     }

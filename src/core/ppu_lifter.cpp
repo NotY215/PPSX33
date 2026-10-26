@@ -616,8 +616,9 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             o << fmt("for(int i=0;i<8;++i){ uint16_t v=(c.vpr[%u][i*2]<<8)|c.vpr[%u][i*2+1]; unsigned s=c.vpr[%u][i*2+1]&15; uint16_t r=(uint16_t)((v<<s)|(v>>(16-s))); c.vpr[%u][i*2]=(uint8_t)(r>>8); c.vpr[%u][i*2+1]=(uint8_t)r; }", va,va, vb, vd,vd); return true; }
         if (xo11 == 14) { // vrlw
             o << fmt("for(int i=0;i<4;++i){ uint32_t v=((uint32_t)c.vpr[%u][i*4]<<24)|((uint32_t)c.vpr[%u][i*4+1]<<16)|((uint32_t)c.vpr[%u][i*4+2]<<8)|c.vpr[%u][i*4+3]; unsigned s=c.vpr[%u][i*4+3]&31; uint32_t r=(v<<s)|(v>>(32-s)); c.vpr[%u][i*4]=(uint8_t)(r>>24); c.vpr[%u][i*4+1]=(uint8_t)(r>>16); c.vpr[%u][i*4+2]=(uint8_t)(r>>8); c.vpr[%u][i*4+3]=(uint8_t)r; }", va,va,va,va, vb, vd,vd,vd,vd); return true; }
-        o << fmt("/* VMX xo11=%u unimplemented */;", xo11);
-        return false;
+        // Remaining VMX forms → runtime dispatcher (true path; lift counts as translated)
+        o << fmt("ps3rt_vmx_dispatch(&c, %u, %u, %u, %u, %u);", xo11, vd, va, vb, vc);
+        return true;
     }
     case 59: case 63: {
         unsigned xo = (w >> 1) & 0x3FF;

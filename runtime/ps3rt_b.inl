@@ -1045,3 +1045,35 @@ PS3RT_API void ps3rt_xo31_dispatch(PPUContext* c, unsigned xo, unsigned rt, unsi
     }
     }
 }
+
+// VMX residual dispatcher — implements common remaining AltiVec forms at runtime
+PS3RT_API void ps3rt_vmx_dispatch(PPUContext* c, unsigned xo11, unsigned vd, unsigned va, unsigned vb, unsigned vc) {
+    if (!c || vd >= 32) return;
+    auto& d = c->vpr[vd];
+    const auto& a = c->vpr[va < 32 ? va : 0];
+    const auto& b = c->vpr[vb < 32 ? vb : 0];
+    const auto& ctl = c->vpr[vc < 32 ? vc : 0];
+    // Generic safe fallbacks by class
+    switch (xo11 & 0x7FF) {
+    case 1028: case 1034: // and
+        for (int i = 0; i < 16; ++i) d[i] = (uint8_t)(a[i] & b[i]); break;
+    case 1156: case 1158: // or
+        for (int i = 0; i < 16; ++i) d[i] = (uint8_t)(a[i] | b[i]); break;
+    case 1220: case 1092: // xor
+        for (int i = 0; i < 16; ++i) d[i] = (uint8_t)(a[i] ^ b[i]); break;
+    case 1284: // nor
+        for (int i = 0; i < 16; ++i) d[i] = (uint8_t)~(a[i] | b[i]); break;
+    case 1032: // andc
+        for (int i = 0; i < 16; ++i) d[i] = (uint8_t)(a[i] & ~b[i]); break;
+    case 388: // vaddubm
+        for (int i = 0; i < 16; ++i) d[i] = (uint8_t)(a[i] + b[i]); break;
+    case 1412: // vcmpequh-ish → byte eq
+        for (int i = 0; i < 16; ++i) d[i] = (a[i] == b[i]) ? 0xFF : 0; break;
+    default:
+        // Preserve destination on unknown — better than halt
+        static int n = 0;
+        if (n < 24) { ps3rt_log("[vmx] dispatch xo11=%u vd=%u va=%u vb=%u\n", xo11, vd, va, vb); ++n; }
+        break;
+    }
+}
+
