@@ -8,17 +8,17 @@
     <AssemblyName>PS3Recomp</AssemblyName>
     <RootNamespace>PS3Recomp.Gui</RootNamespace>
     <LangVersion>latest</LangVersion>
-    <!-- Allow restore/validate on non-Windows CI (submit-nuget / Linux runners) -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <WebView2EnableWinForms>true</WebView2EnableWinForms>
     <WebView2EnableWpf>false</WebView2EnableWpf>
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
     <ApplicationIcon>$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico</ApplicationIcon>
     <OutputPath>$(MSBuildThisFileDirectory)..\..\build\dist\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2849.39" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2849.39" GeneratePathProperty="true" />
   </ItemGroup>
   <ItemGroup>
     <None Include="www\**\*" CopyToOutputDirectory="PreserveNewest" />
@@ -39,12 +39,14 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <!-- Strip WPF WebView2 assembly so WindowsBase 5.0 is not pulled (MSB3277) -->
-  <Target Name="RemoveWebView2Wpf" AfterTargets="ResolvePackageAssets" BeforeTargets="ResolveAssemblyReferences;ResolveLockFileReferences">
+  <Target Name="StripWebView2Wpf" AfterTargets="ResolvePackageAssets;ResolveAssemblyReferences" BeforeTargets="FindReferenceAssembliesForReferences;ResolveLockFileReferences">
     <ItemGroup>
-      <ReferencePath Remove="@(ReferencePath)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
+      <ReferencePath Remove="@(ReferencePath)" Condition="$([System.String]::Copy('%(Identity)').Contains('WebView2.Wpf'))" />
       <Reference Remove="Microsoft.Web.WebView2.Wpf" />
-      <ResolvedCompileFileDefinition Remove="@(ResolvedCompileFileDefinition)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
+      <ResolvedCompileFileDefinition Remove="@(ResolvedCompileFileDefinition)" Condition="$([System.String]::Copy('%(Identity)').Contains('WebView2.Wpf'))" />
+      <RuntimeCopyLocalItems Remove="@(RuntimeCopyLocalItems)" Condition="$([System.String]::Copy('%(Identity)').Contains('WebView2.Wpf'))" />
+      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('WebView2.Wpf'))" />
+      <_ReferencesFromPackage Remove="@(_ReferencesFromPackage)" Condition="$([System.String]::Copy('%(Identity)').Contains('WebView2.Wpf'))" />
     </ItemGroup>
   </Target>
 </Project>
