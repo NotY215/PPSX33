@@ -1410,7 +1410,7 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
             bd.Usage = D3D11_USAGE_DYNAMIC;
             bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
             bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-            g_dev11->CreateBuffer(&bd, nullptr, &g_ib_nv40);
+            g_dev->CreateBuffer(&bd, nullptr, &g_ib_nv40);
         }
         if (g_ib_nv40) {
             D3D11_MAPPED_SUBRESOURCE im{};
@@ -1777,10 +1777,32 @@ static void rsx_process_fifo(uint8_t* mem) {
         if (count == 0) count = 1;
         uint32_t subch = (hdr >> 13) & 7;
         (void)subch;
-        // Jump / call / return class bits (simplified)
-        if ((hdr & 0xE0000003u) == 0x20000000u) {
-            // JUMP
-            get = hdr & 0x1FFFFFFCu;
+        // XV-B depth: JUMP / CALL / RETURN
+        static uint32_t s_fifo_ret = 0;
+        if ((hdr & 0xE0000003u) == 0x20000000u || (hdr & 0x3) == 0x1) {
+            uint32_t target = hdr & 0x1FFFFFFCu;
+            get = target;
+            g_rsx.get = get;
+            ++g_rsx.packets_decoded;
+            ++steps;
+            static int jn = 0;
+            if (jn < 12) { ps3rt_log("[rsx] XV-B JUMP -> 0x%x\n", target); ++jn; }
+            continue;
+        }
+        if ((hdr & 0x3) == 0x2) { // CALL
+            s_fifo_ret = (get + 4) % (g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000u);
+            uint32_t target = hdr & 0x1FFFFFFCu;
+            get = target;
+            g_rsx.get = get;
+            ++g_rsx.packets_decoded;
+            ++steps;
+            static int cn = 0;
+            if (cn < 12) { ps3rt_log("[rsx] XV-B CALL -> 0x%x\n", target); ++cn; }
+            continue;
+        }
+        if ((hdr & 0xE0000003u) == 0x00020000u || hdr == 0x20000u) { // RETURN
+            if (s_fifo_ret) { get = s_fifo_ret; s_fifo_ret = 0; }
+            else get = (get + 4) % (g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000u);
             g_rsx.get = get;
             ++g_rsx.packets_decoded;
             ++steps;

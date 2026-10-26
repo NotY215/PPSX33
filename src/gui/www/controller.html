@@ -47,8 +47,8 @@
         }
 
         .controller-part.active {
-            filter: brightness(1.6) !important;
-            outline: 2px solid #ef4444;
+            filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.95)) drop-shadow(0 0 20px rgba(239, 68, 68, 0.55)) !important;
+            opacity: 1 !important;
         }
 
         /* Leader Line & Badge Glowing Effects */
@@ -131,7 +131,7 @@
                     <span class="hidden sm:inline">Configure Binds</span>
                 </a>
 
-                <button id="exportBtn" title="Export JSON" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+                <button id="exportBtn" title="Export JSON" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5 sticky top-0 z-50">
                     <i class="fa-solid fa-download text-sky-400"></i>
                     <span class="hidden md:inline">Export</span>
                 </button>
@@ -863,7 +863,7 @@
                 ls_down: { key: 's', code: 'KeyS', label: 'S' },
                 ls_left: { key: 'a', code: 'KeyA', label: 'A' },
                 ls_right: { key: 'd', code: 'KeyD', label: 'D' },
-                l3: { key: 'Shift', code: 'ShiftLeft', label: 'Shift' },
+                l3: { key: 'LShiftKey', code: 'ShiftLeft', label: 'Shift Left' },
                 rs_up: { key: 'ArrowUp', code: 'ArrowUp', label: 'Up Arrow' },
                 rs_down: { key: 'ArrowDown', code: 'ArrowDown', label: 'Down Arrow' },
                 rs_left: { key: 'ArrowLeft', code: 'ArrowLeft', label: 'Left Arrow' },
@@ -908,8 +908,8 @@
                 circle: { key: ' ', code: 'Space', label: 'Space' },
                 l1: { key: 'q', code: 'KeyQ', label: 'Q' },
                 r1: { key: 'e', code: 'KeyE', label: 'E' },
-                l2: { key: 'Control', code: 'ControlLeft', label: 'Ctrl' },
-                r2: { key: 'Shift', code: 'ShiftLeft', label: 'Shift' },
+                l2: { key: 'LControlKey', code: 'ControlLeft', label: 'Ctrl Left' },
+                r2: { key: 'LShiftKey', code: 'ShiftLeft', label: 'Shift Left' },
                 select: { key: 'm', code: 'KeyM', label: 'M' },
                 start: { key: 'Escape', code: 'Escape', label: 'Esc' },
                 ps: { key: 'Home', code: 'Home', label: 'Home' },
@@ -1085,7 +1085,13 @@
                         closeModal();
                     } else {
                         e.preventDefault();
-                        assignNewKey(activeModalTargetKey, e.key, e.code);
+                        e.stopPropagation();
+                        // Always prefer e.code for modifiers (ShiftLeft/ShiftRight/ControlLeft/...)
+                        let code = e.code || '';
+                        if (!code && e.key === 'Shift') code = e.location === 2 ? 'ShiftRight' : 'ShiftLeft';
+                        if (!code && (e.key === 'Control' || e.key === 'Ctrl')) code = e.location === 2 ? 'ControlRight' : 'ControlLeft';
+                        if (!code && e.key === 'Alt') code = e.location === 2 ? 'AltRight' : 'AltLeft';
+                        assignNewKey(activeModalTargetKey, e.key, code);
                         closeModal();
                     }
                     return;
@@ -1114,7 +1120,7 @@
                         const svgElem = document.getElementById(svgId);
                         if (svgElem) {
                             svgElem.classList.add('active');
-                            requestAnimationFrame(() => setTimeout(() => svgElem.classList.remove('active'), 120));
+                            setTimeout(() => svgElem.classList.remove('active'), 280);
                         }
                     }
 
@@ -1122,7 +1128,7 @@
                     const badgeElem = document.getElementById(`badge_${matchedBtn}`);
                     if (badgeElem) {
                         badgeElem.classList.add('active-badge');
-                        requestAnimationFrame(() => setTimeout(() => badgeElem.classList.remove('active-badge'), 120));
+                        setTimeout(() => badgeElem.classList.remove('active-badge'), 280);
                     }
                 } else {
                     liveLastAction.textContent = 'Unmapped Input';
@@ -1324,10 +1330,27 @@
             window.chrome?.webview?.addEventListener('message', (ev) => {
                 const d = ev.data;
                 if (!d || d.type !== 'setMap' || !d.map) return;
+                const HOST_TO_CODE = {
+                    'LShiftKey':'ShiftLeft','RShiftKey':'ShiftRight',
+                    'LControlKey':'ControlLeft','RControlKey':'ControlRight',
+                    'LMenu':'AltLeft','RMenu':'AltRight',
+                    'NumPad8':'Numpad8','NumPad5':'Numpad5','NumPad4':'Numpad4','NumPad6':'Numpad6',
+                    'Up':'ArrowUp','Down':'ArrowDown','Left':'ArrowLeft','Right':'ArrowRight',
+                    'Space':'Space','Backspace':'Backspace'
+                };
+                const CODE_TO_LABEL = {
+                    'ShiftLeft':'Shift Left','ShiftRight':'Shift Right',
+                    'ControlLeft':'Ctrl Left','ControlRight':'Ctrl Right',
+                    'AltLeft':'Alt Left','AltRight':'Alt Right',
+                    'Numpad8':'Num+8','Numpad5':'Num+5','Numpad4':'Num+4','Numpad6':'Num+6',
+                    'ArrowUp':'Up','ArrowDown':'Down','ArrowLeft':'Left','ArrowRight':'Right'
+                };
                 Object.keys(d.map).forEach(id => {
                     if (!BUTTON_NAMES[id]) return;
-                    const label = d.map[id];
-                    currentMappings[id] = { key: label, code: label, label: label };
+                    const host = d.map[id] || '';
+                    const code = HOST_TO_CODE[host] || (host.length===1 ? 'Key'+host.toUpperCase() : host);
+                    const label = CODE_TO_LABEL[code] || host;
+                    currentMappings[id] = { key: host, code: code, label: label, hostKey: host };
                 });
                 updateAllUI();
             });
