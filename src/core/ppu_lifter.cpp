@@ -584,6 +584,19 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             unsigned shb = (w >> 6) & 15;
             o << fmt("{{ uint8_t t[16]; for(int i=0;i<16;++i){ int s=i+%u; t[i]=s<16?c.vpr[%u][s]:c.vpr[%u][s-16]; } std::memcpy(c.vpr[%u],t,16); }}", shb, va, vb, vd); return true; }
         // Honest residual
+        // GOW gap: more common AltiVec
+        if (xo11 == 70) { // vaddfp
+            o << fmt("for(int i=0;i<4;++i){ float a,b,r; std::memcpy(&a,&c.vpr[%u][i*4],4); std::memcpy(&b,&c.vpr[%u][i*4],4); r=a+b; std::memcpy(&c.vpr[%u][i*4],&r,4); }", va, vb, vd); return true; }
+        if (xo11 == 74) { // vsubfp
+            o << fmt("for(int i=0;i<4;++i){ float a,b,r; std::memcpy(&a,&c.vpr[%u][i*4],4); std::memcpy(&b,&c.vpr[%u][i*4],4); r=a-b; std::memcpy(&c.vpr[%u][i*4],&r,4); }", va, vb, vd); return true; }
+        if (xo11 == 90) { // vmaddfp approx a*b+c simplified a*b
+            o << fmt("for(int i=0;i<4;++i){ float a,b,r; std::memcpy(&a,&c.vpr[%u][i*4],4); std::memcpy(&b,&c.vpr[%u][i*4],4); r=a*b; std::memcpy(&c.vpr[%u][i*4],&r,4); }", va, vb, vd); return true; }
+        if (xo11 == 966) { // vsl
+            o << fmt("for(int i=0;i<4;++i){ uint32_t a=((uint32_t)c.vpr[%u][i*4]<<24)|((uint32_t)c.vpr[%u][i*4+1]<<16)|((uint32_t)c.vpr[%u][i*4+2]<<8)|c.vpr[%u][i*4+3]; unsigned s=c.vpr[%u][i*4+3]&0x1f; uint32_t r=a<<s; c.vpr[%u][i*4]=(uint8_t)(r>>24); c.vpr[%u][i*4+1]=(uint8_t)(r>>16); c.vpr[%u][i*4+2]=(uint8_t)(r>>8); c.vpr[%u][i*4+3]=(uint8_t)r; }", va,va,va,va, vb, vd,vd,vd,vd); return true; }
+        if (xo11 == 974) { // vsr
+            o << fmt("for(int i=0;i<4;++i){ uint32_t a=((uint32_t)c.vpr[%u][i*4]<<24)|((uint32_t)c.vpr[%u][i*4+1]<<16)|((uint32_t)c.vpr[%u][i*4+2]<<8)|c.vpr[%u][i*4+3]; unsigned s=c.vpr[%u][i*4+3]&0x1f; uint32_t r=a>>s; c.vpr[%u][i*4]=(uint8_t)(r>>24); c.vpr[%u][i*4+1]=(uint8_t)(r>>16); c.vpr[%u][i*4+2]=(uint8_t)(r>>8); c.vpr[%u][i*4+3]=(uint8_t)r; }", va,va,va,va, vb, vd,vd,vd,vd); return true; }
+        if (xo11 == 1222) { // vcmpeqfp
+            o << fmt("for(int i=0;i<4;++i){ float a,b; std::memcpy(&a,&c.vpr[%u][i*4],4); std::memcpy(&b,&c.vpr[%u][i*4],4); uint32_t r=(a==b)?0xffffffffu:0; c.vpr[%u][i*4]=(uint8_t)(r>>24); c.vpr[%u][i*4+1]=(uint8_t)(r>>16); c.vpr[%u][i*4+2]=(uint8_t)(r>>8); c.vpr[%u][i*4+3]=(uint8_t)r; }", va, vb, vd,vd,vd,vd); return true; }
         o << fmt("/* VMX xo11=%u unimplemented */;", xo11);
         return false;
     }
