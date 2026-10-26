@@ -182,6 +182,25 @@ static const NidEntry kNidTable[] = {
     { 0xC47D0812, "cellSysutil", "cellSysutilRegisterCallback", 3 },
     { 0x9D98AFA0, "cellSysutil", "cellSysutilCheckCallback", 3 },
     { 0x189A74DA, "cellSysutil", "cellSysutilUnregisterCallback", 3 },
+    // XV-L boot HLE NIDs
+    { 0x40E895D3, "cellSysutil", "cellSysutilGetSystemParamInt", 7 },
+    { 0x1E14A55D, "cellSysutil", "cellSysutilGetSystemParamInt_alt", 7 },
+    { 0x938013A3, "cellSysutil", "cellSysutilGetSystemParamString", 7 },
+    { 0xCFDD8E87, "cellSysmodule", "cellSysmoduleIsLoaded", 3 },
+    { 0x3A52CF82, "cellSysmodule", "cellSysmoduleLoadModuleEx", 3 },
+    { 0x5A59E273, "cellSysmodule", "cellSysmoduleUnloadModuleEx", 3 },
+    { 0x1C936E6D, "cellPad", "cellPadInit", 8 },
+    { 0x0D5F2C14, "cellPad", "cellPadEnd", 8 },
+    { 0x3733EA3C, "cellPad", "cellPadGetData", 8 },
+    { 0x89FF8792, "cellPad", "cellPadGetDataExtra", 8 },
+    { 0xA703A51D, "cellPad", "cellPadGetInfo2", 8 },
+    { 0x3F797DFF, "cellPad", "cellPadClearBuf", 8 },
+    { 0x9A1D1B1A, "cellRtc", "cellRtcGetCurrentClockLocalTime", 0 },
+    { 0x32B8C8A0, "cellRtc", "cellRtcGetCurrentTick", 0 },
+    { 0x2F85C0E5, "cellSync", "cellSyncMutexInitialize", 0 },
+    { 0xA6696A7D, "cellSync", "cellSyncMutexLock", 0 },
+    { 0xA8A6D976, "cellSync", "cellSyncMutexUnlock", 0 },
+
 };
 
 static constexpr int kNidTableCount = (int)(sizeof(kNidTable) / sizeof(kNidTable[0]));

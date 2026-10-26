@@ -41,28 +41,33 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     if (!c) return;
     uint64_t num = c->gpr[11];
     uint64_t r3 = c->gpr[3], r4 = c->gpr[4], r5 = c->gpr[5], r6 = c->gpr[6];
+    (void)r6;
     static int sys_log = 0;
-    if (sys_log < 80) { ps3rt_log("[lv2] sc %llu r3=%llx r4=%llx r5=%llx r6=%llx\n", (unsigned long long)num, (unsigned long long)r3, (unsigned long long)r4, (unsigned long long)r5, (unsigned long long)r6); ++sys_log; }
+    if (sys_log < 120) {
+        ps3rt_log("[lv2] sc %llu r3=%llx r4=%llx r5=%llx r6=%llx\n",
+            (unsigned long long)num, (unsigned long long)r3, (unsigned long long)r4,
+            (unsigned long long)r5, (unsigned long long)c->gpr[6]);
+        ++sys_log;
+    }
     switch ((uint32_t)num) {
-    case 0: case 1: c->halted = true; c->gpr[3] = 0; break;
+    case 0:
+        c->halted = true; c->gpr[3] = 0; break;
     case 3:
         ps3rt_request_exit();
         c->halted = true; c->gpr[3] = 0; break;
-    case 14: case 15: case 141: case 142:
-    case 871: case 872: case 25602: c->gpr[3] = 0; break;
-    case 128: {
-        static uint32_t qid = 0x1000;
-        if (r3 && r3 + 4 <= g_mem_size) wr_be32_guest(r3, ++qid);
+    case 14: case 15: case 25602:
+        c->gpr[3] = 0; break;
+#include "lv2_syscalls.inl"
+    default: {
+        static int s_def = 0;
+        if (s_def < 40) {
+            ps3rt_log("[lv2] XV-L unhandled sc %u -> 0\n", (unsigned)num);
+            ++s_def;
+        }
         c->gpr[3] = 0; break;
     }
-    case 143: { static uint32_t fid = 0x8000; if (r3 && r3+4 <= g_mem_size) wr_be32_guest(r3, ++fid); c->gpr[3] = 0; break; }
-    case 348: case 349: case 350: case 352: {
-        uint64_t a = guest_alloc(r4 ? r4 : 0x1000, r5 ? r5 : 0x1000);
-        if (r3 && r3 + 8 <= g_mem_size) wr_be64_guest(r3, a);
-        c->gpr[3] = a ? 0 : (uint64_t)-1; break;
     }
-    default: c->gpr[3] = 0; break;
-    }
+}
 }
 
 static int g_prx_log = 0;
@@ -704,17 +709,40 @@ static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
         if (kind == 5) { return spurs_dispatch(c, e->nid); }
         if (kind == 11) { return ps3rt_save_dispatch(c, e->nid); }
         if (kind == 3 || (e->module && std::strstr(e->module, "Sysmodule"))) {
-            // S: sysmodule load/unload/isLoaded
             if (e->nid == 0x3A495ADE || e->nid == 0xCFDD8E87 || e->nid == 0x3A52CF82) {
-                // Z: attempt ELF load by module name / path in r3
                 char mname[128] = {};
                 uint64_t pea = c->gpr[3];
-                if (pea && g_mem && pea < g_mem_size) {
+                if (pea && g_mem && pea < g_mem_size && pea > 0x10000) {
                     size_t n = 0;
                     while (n + 1 < sizeof(mname) && pea + n < g_mem_size) {
                         char ch = (char)g_mem[pea + n];
                         if (!ch) break;
                         mname[n++] = ch;
+                    }
+                }
+                if (!mname[0]) {
+                    uint32_t mid = (uint32_t)c->gpr[3];
+                    const char* mapn = "sysmodule";
+                    switch (mid) {
+                    case 0x0003: mapn = "cellRtc"; break;
+                    case 0x0005: mapn = "cellFs"; break;
+                    case 0x0008: mapn = "cellAudio"; break;
+                    case 0x000a: mapn = "cellFont"; break;
+                    case 0x0011: mapn = "cellSpurs"; break;
+                    case 0x001c: mapn = "cellSync"; break;
+                    case 0x0021: mapn = "cellSysutil"; break;
+                    case 0x0040: mapn = "cellResc"; break;
+                    case 0x0050: mapn = "cellPamf"; break;
+                    case 0x005a: mapn = "cellAtrac"; break;
+                    case 0x0070: mapn = "cellSail"; break;
+                    case 0x0078: mapn = "cellVdec"; break;
+                    default: break;
+                    }
+                    std::strncpy(mname, mapn, sizeof(mname)-1);
+                    static int s_mid = 0;
+                    if (s_mid < 24) {
+                        ps3rt_log("[prx] XV-L sysmoduleLoad id=0x%x -> %s\n", mid, mname);
+                        ++s_mid;
                     }
                 }
                 if (!mname[0] && e->name) std::strncpy(mname, e->name, sizeof(mname)-1);
