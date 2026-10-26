@@ -62,6 +62,10 @@ struct RsxState {
     uint8_t clear_stencil = 0;
     uint32_t prim_color = 0x4060A0;
     int draws_this_frame = 0;
+    int draws_guest = 0;
+    int draws_diagnostic = 0;
+    int packets_decoded = 0;
+    int fifo_bytes_consumed = 0;
     // A: surface
     int color_blits = 0;
     uint64_t color_offset = 0;
@@ -768,7 +772,7 @@ static void rsx_host_present_clear() {
                     rsx_draw_nv40_geometry(m);
             }
             // Host RGB triangle always on top — proves raster path
-            rsx_draw_solid_triangle();
+            rsx_draw_solid_triangle(); /* diagnostic */
             ++g_rsx.draws_this_frame;
         }
 
@@ -1310,7 +1314,7 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
 #if defined(_WIN32)
     if (!mem || !g_ctx11 || !g_rtv) return;
     if (!rsx_ensure_nv40_pipeline()) {
-        rsx_draw_solid_triangle();
+        rsx_draw_solid_triangle(); /* diagnostic */
         return;
     }
     // Prefer attribute 0 as position
@@ -1319,7 +1323,7 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
     uint32_t count = g_draw_count ? g_draw_count : 3;
     if (count > 2048) count = 2048;
     if (!off || off + (uint64_t)stride * count >= 0x10000000ull) {
-        rsx_draw_solid_triangle();
+        rsx_draw_solid_triangle(); /* diagnostic */
         return;
     }
     D3D11_MAPPED_SUBRESOURCE map{};
@@ -1389,6 +1393,7 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
         g_ctx11->Draw(draw_n, 0);
         ++g_rsx.draws;
         ++g_rsx.draws_this_frame;
+        ++g_rsx.draws_guest;
         static int sd = 0;
         if (sd < 16) {
             ps3rt_log("[rsx] NV40 draw verts=%u first=%u va0=0x%x stride=%u vp=0x%x fp=0x%x\n",
@@ -1396,7 +1401,7 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
             ++sd;
         }
     } else {
-        rsx_draw_solid_triangle();
+        rsx_draw_solid_triangle(); /* diagnostic */
     }
 #else
     (void)mem;
@@ -1411,7 +1416,7 @@ static void rsx_draw_host(uint8_t* mem) {
         rsx_draw_nv40_geometry(mem);
     } else {
         if (mem) rsx_paint_guest_color_buffer(mem);
-        rsx_draw_solid_triangle();
+        rsx_draw_solid_triangle(); /* diagnostic */
         if (mem && (g_rsx.tex_offset || g_rsx.color_offset)) {
             uint32_t off = g_rsx.tex_offset ? g_rsx.tex_offset : g_rsx.color_offset;
             int nz = 0;
@@ -1691,40 +1696,50 @@ static bool rsx_state_apply_method_p2(uint32_t method, uint32_t arg) {
 
 static void rsx_process_fifo(uint8_t* mem) {
     if (!mem || !g_rsx.fifo_addr || !g_rsx.fifo_size) return;
-    uint32_t put = g_rsx.put % g_rsx.fifo_size;
-    uint32_t get = g_rsx.get % g_rsx.fifo_size;
-    // XXIV-B: no drain when empty or only tiny residual (e.g. put=get=0x20)
+    uint32_t base = (uint32_t)(g_rsx.fifo_addr & 0xffffffffu);
+    if (base == 0 || base >= 0x10000000u) return;
+    uint32_t put = g_rsx.put;
+    uint32_t get = g_rsx.get;
     if (put == get) return;
-    uint32_t delta = (put >= get) ? (put - get) : (g_rsx.fifo_size - get + put);
-    if (delta < 8) return; // less than one method word pair
-    int steps = 0;
-    const int kMaxSteps = (int)((delta / 8) + 64);
-    while (get != put && steps < kMaxSteps && steps < 8192) { // XXV-D depth
-        uint64_t fa = g_rsx.fifo_addr + get;
-        if (fa + 8 > 512ull * 1024 * 1024) break;
-        uint32_t hdr = (mem[fa] << 24) | (mem[fa+1] << 16) | (mem[fa+2] << 8) | mem[fa+3];
-        uint32_t arg = (mem[fa+4] << 24) | (mem[fa+5] << 16) | (mem[fa+6] << 8) | mem[fa+7];
-        uint32_t method = hdr & 0x1FFC;
-        // JUMP / CALL style
+    // Bound walk; support method count in header (NV-style)
+    uint32_t steps = 0;
+    const uint32_t kMax = 0x10000;
+    while (get != put && steps < kMax) {
+        uint32_t off = base + (get % (g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000u));
+        if (off + 8u >= 0x10000000u) break;
+        uint32_t hdr = (uint32_t)mem[off] | ((uint32_t)mem[off+1] << 8) | ((uint32_t)mem[off+2] << 16) | ((uint32_t)mem[off+3] << 24);
+        // BE words on RSX pushbuffer — prefer BE load
+        hdr = ((hdr & 0xff) << 24) | ((hdr & 0xff00) << 8) | ((hdr >> 8) & 0xff00) | ((hdr >> 24) & 0xff);
+        uint32_t method = hdr & 0x1FFCu;
+        uint32_t count = ((hdr >> 18) & 0x7FFu);
+        if (count == 0) count = 1;
+        uint32_t subch = (hdr >> 13) & 7;
+        (void)subch;
+        // Jump / call / return class bits (simplified)
         if ((hdr & 0xE0000003u) == 0x20000000u) {
-            uint32_t target = arg % (g_rsx.fifo_size ? g_rsx.fifo_size : 1);
-            get = target;
+            // JUMP
+            get = hdr & 0x1FFFFFFCu;
+            g_rsx.get = get;
+            ++g_rsx.packets_decoded;
             ++steps;
-            static int jn = 0;
-            if (jn < 8) { ps3rt_log("[rsx] XXV-D fifo jump -> 0x%x\n", target); ++jn; }
             continue;
         }
-        // Full method apply + host draw on draw methods
-        rsx_fifo_decode_word(mem, method, arg);
-        // Also accept alternate clear/color encodings not in apply table
-        if (method == 0x01D8 || method == 0x1D8) {
-            g_rsx.clear_color = arg & 0xFFFFFF;
-            ++g_rsx.clears;
+        get = (get + 4) % (g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000u);
+        for (uint32_t i = 0; i < count && get != put && steps < kMax; ++i) {
+            uint32_t aoff = base + (get % (g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000u));
+            if (aoff + 4u >= 0x10000000u) break;
+            uint32_t arg = (uint32_t)mem[aoff] | ((uint32_t)mem[aoff+1] << 8) | ((uint32_t)mem[aoff+2] << 16) | ((uint32_t)mem[aoff+3] << 24);
+            arg = ((arg & 0xff) << 24) | ((arg & 0xff00) << 8) | ((arg >> 8) & 0xff00) | ((arg >> 24) & 0xff);
+            get = (get + 4) % (g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000u);
+            rsx_fifo_decode_word(mem, method + (i * 4), arg);
+            ++g_rsx.methods_this_frame;
+            ++g_rsx.methods_seen;
+            g_rsx.fifo_bytes_consumed += 4;
+            ++steps;
         }
-        get = (get + 8) % g_rsx.fifo_size;
-        ++steps;
+        ++g_rsx.packets_decoded;
+        g_rsx.get = get;
     }
-    g_rsx.get = get;
 }
 
 PS3RT_API void ps3rt_set_graphics_backend(int backend) {

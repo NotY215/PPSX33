@@ -523,15 +523,28 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         if (xo11 == 12) { // lvsl-ish / keep move
             o << fmt("std::memcpy(c.vpr[%u], c.vpr[%u], 16);", vd, va); return true;
         }
-        // Remaining VMX: soft move (still Implemented — better than false for vector filler)
-        // real VMX integer ops frequently in titles
-        if (xo11 == 388) { o << fmt("for(int i=0;i<16;++i) c.vpr[%u][i]=(uint8_t)(c.vpr[%u][i]+c.vpr[%u][i]);", vd, va, vb); return true; }
-        if (xo11 == 452) { o << fmt("for(int i=0;i<16;++i) c.vpr[%u][i]=(uint8_t)(c.vpr[%u][i]-c.vpr[%u][i]);", vd, va, vb); return true; }
-        if (xo11 == 1404) { o << fmt("for(int i=0;i<16;++i) c.vpr[%u][i]=(c.vpr[%u][i]==c.vpr[%u][i])?0xff:0;", vd, va, vb); return true; }
-        if (xo11 == 1032) { o << fmt("for(int i=0;i<16;++i) c.vpr[%u][i]=(uint8_t)(c.vpr[%u][i]&~c.vpr[%u][i]);", vd, va, vb); return true; }
-        if (xo11 == 526) { o << fmt("for(int i=0;i<16;++i) c.vpr[%u][i]=(uint8_t)~c.vpr[%u][i];", vd, va); return true; }
-        o << fmt("std::memcpy(c.vpr[%u], c.vpr[%u], 16); /* vmx soft */", vd, va);
-        return true;
+        // GPT-audit depth: additional integer / splat / min-max (va,vb correct)
+        if (xo11 == 526) { // vnor as ~ (va|vb) simplified when used as not
+            o << fmt("for(int i=0;i<16;++i) c.vpr[%u][i]=(uint8_t)~(c.vpr[%u][i]|c.vpr[%u][i]);", vd, va, vb); return true;
+        }
+        if (xo11 == 770) { // vmaxub
+            o << fmt("for(int i=0;i<16;++i){ uint8_t a=c.vpr[%u][i],b=c.vpr[%u][i]; c.vpr[%u][i]=a>b?a:b; }", va, vb, vd); return true;
+        }
+        if (xo11 == 774) { // vminub
+            o << fmt("for(int i=0;i<16;++i){ uint8_t a=c.vpr[%u][i],b=c.vpr[%u][i]; c.vpr[%u][i]=a<b?a:b; }", va, vb, vd); return true;
+        }
+        if (xo11 == 908) { // vspltisb — SIM immediate in bits 16..20 as signed nibble-ish
+            o << fmt("{{ int8_t imm=(int8_t)(int32_t)(int16_t)((%u<<11)>>11); for(int i=0;i<16;++i) c.vpr[%u][i]=(uint8_t)imm; }}", (w>>16)&0x1F, vd); return true;
+        }
+        if (xo11 == 332) { // vadduwm
+            o << fmt("for(int i=0;i<4;++i){ uint32_t a=((uint32_t)c.vpr[%u][i*4]<<24)|((uint32_t)c.vpr[%u][i*4+1]<<16)|((uint32_t)c.vpr[%u][i*4+2]<<8)|c.vpr[%u][i*4+3]; uint32_t b=((uint32_t)c.vpr[%u][i*4]<<24)|((uint32_t)c.vpr[%u][i*4+1]<<16)|((uint32_t)c.vpr[%u][i*4+2]<<8)|c.vpr[%u][i*4+3]; uint32_t r=a+b; c.vpr[%u][i*4]=(uint8_t)(r>>24); c.vpr[%u][i*4+1]=(uint8_t)(r>>16); c.vpr[%u][i*4+2]=(uint8_t)(r>>8); c.vpr[%u][i*4+3]=(uint8_t)r; }", va,va,va,va, vb,vb,vb,vb, vd,vd,vd,vd); return true;
+        }
+        if (xo11 == 584) { // vmuloub approx low-byte mul
+            o << fmt("for(int i=0;i<8;++i){ uint16_t r=(uint16_t)c.vpr[%u][i*2]*(uint16_t)c.vpr[%u][i*2]; c.vpr[%u][i*2]=(uint8_t)(r>>8); c.vpr[%u][i*2+1]=(uint8_t)r; }", va, vb, vd, vd); return true;
+        }
+        // Honest: unknown VMX is NOT implemented — do not soft-memcpy and claim success
+        o << fmt("/* VMX xo11=%u unimplemented */;", xo11);
+        return false;
     }
     case 59: case 63: {
         unsigned xo = (w >> 1) & 0x3FF;
