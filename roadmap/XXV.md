@@ -25,3 +25,7 @@ Full NV40 vertex/fragment program translation and title-driven FIFO geometry rem
 ## Related
 
 [ROADMAP.md](../ROADMAP.md) · [XXIV.md](XXIV.md)
+
+## Related
+
+- Host UI moved to **XXVI** (native WinForms; WebView2 removed).

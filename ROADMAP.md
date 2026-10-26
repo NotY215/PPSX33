@@ -1,6 +1,6 @@
 # PPSX33 Roadmap
 
-**Last updated:** 2026-10-25 (XXV-K/L frame start + wild-pc)  
+**Last updated:** 2026-10-26  
 **Scope:** Experimental PlayStation 3 static recompiler — research toolkit, not a retail emulator.
 
 ---
@@ -14,18 +14,29 @@
 | Execution reality | **XXIII** | IN TREE | [roadmap/XXIII.md](roadmap/XXIII.md) |
 | Boot-to-first-pixels | **XXIV** | A–E in tree | [roadmap/XXIV.md](roadmap/XXIV.md) |
 | Truthful exec & pixels | **XXV** | ACTIVE | [roadmap/XXV.md](roadmap/XXV.md) |
+| Host UX | **XXVI** | ACTIVE | Native WinForms UI (WebView2 removed) |
 
-**Current focus:** **XXV-K** guest frames + **XXV-L** wild-pc (pack).
+**Current focus:** Guest-driven frames (XXV) + native host UI (XXVI).
 
 ### XXV subphases
 
 | ID | Status | Work |
 |----|--------|------|
-| **A–J** | DONE (untested) | Through services + E2E checklist |
-| **K** | DONE (untested) | Guest color buffer paint → first presentable frames |
-| **L** | DONE (untested) | Sticky wild-pc break + LR-first recovery |
+| **A–J** | DONE (untested) | Services + E2E checklist |
+| **K** | DONE (untested) | Guest color buffer → presentable frames |
+| **L** | DONE (untested) | Sticky wild-pc + LR-first recovery |
+| **M+** | PLANNED | Real RSX geometry / shader IR (no diagnostic-only draws) |
 
-Detail: [roadmap/XXV.md](roadmap/XXV.md).
+### XXVI — Native UI (host)
+
+| ID | Status | Work |
+|----|--------|------|
+| **A** | DONE | Drop WebView2; pure WinForms shell |
+| **B** | DONE | Website palette, logo PNG, animated ring, workflow rail |
+| **C** | IN TREE | Owner-draw tabs, status/progress, Locate RPCS3 |
+| **D** | PLANNED | Deeper motion / reduced-overdraw polish |
+
+Detail: [roadmap/XXV.md](roadmap/XXV.md) · [roadmap/XXVI.md](roadmap/XXVI.md)
 
 ### Requirements
 

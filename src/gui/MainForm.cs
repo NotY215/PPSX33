@@ -1,45 +1,49 @@
 using System.Diagnostics;
+using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.Json;
-using Microsoft.Web.WebView2.Core;
-using Microsoft.Web.WebView2.WinForms;
 
 namespace PS3Recomp.Gui;
 
 public sealed partial class MainForm : Form
 {
-    static readonly Color Bg = Color.FromArgb(9, 13, 20);
-    static readonly Color Panel = Color.FromArgb(13, 17, 23);
-    static readonly Color Panel2 = Color.FromArgb(22, 27, 34);
-    static readonly Color TextPri = Color.FromArgb(230, 237, 243);
-    static readonly Color TextSec = Color.FromArgb(100, 116, 139);
-    static readonly Color Accent = Color.FromArgb(56, 189, 248);
-    static readonly Color Danger = Color.FromArgb(218, 54, 51);
+    // Website palette
+    static readonly Color Bg = Color.FromArgb(0x09, 0x0D, 0x14);
+    static readonly Color Panel = Color.FromArgb(0x0D, 0x11, 0x17);
+    static readonly Color Panel2 = Color.FromArgb(0x16, 0x1B, 0x22);
+    static readonly Color BorderC = Color.FromArgb(0x30, 0x36, 0x3D);
+    static readonly Color Hover = Color.FromArgb(0x21, 0x26, 0x2D);
+    static readonly Color TextPri = Color.FromArgb(0xE6, 0xED, 0xF3);
+    static readonly Color TextSec = Color.FromArgb(0x8B, 0x94, 0x9E);
+    static readonly Color Accent = Color.FromArgb(0x38, 0xBD, 0xF8);
+    static readonly Color AccentBlue = Color.FromArgb(0x1F, 0x6F, 0xEB);
+    static readonly Color Success = Color.FromArgb(0x23, 0x86, 0x36);
+    static readonly Color Danger = Color.FromArgb(0xDA, 0x36, 0x33);
 
     private readonly Settings _settings = Settings.Load();
-    private readonly TextBox _log = new() { Visible = false };
-    private readonly TextBox _report = new() { Visible = false };
-    private readonly TextBox _roadmap = new() { Visible = false };
-    private readonly TextBox _requirements = new() { Visible = false };
-    private readonly Ps3HudLabel _project = new() { Visible = false };
-    private readonly Label _status = new() { Visible = false };
-    private readonly ProgressBar _progress = new() { Visible = false };
-    private readonly Ps3Button _btnDecrypt = new() { Visible = false };
-    private readonly Ps3Button _btnLoad = new() { Visible = false };
-    private readonly Ps3Button _btnLift = new() { Visible = false };
-    private readonly Ps3Button _btnBuild = new() { Visible = false };
-    private readonly Ps3Button _btnRun = new() { Visible = false };
-    private readonly Ps3Button _btnCopy = new() { Visible = false };
-    private readonly Ps3Button _btnCancel = new() { Visible = false };
-    private readonly ComboBox _gfx = new() { Visible = false };
-    private readonly ComboBox _threads = new() { Visible = false };
-    private readonly TabControl _tabs = new() { Visible = false };
-    private readonly PictureBox _logo = new() { Visible = false };
-    private readonly Label _eta = new() { Visible = false };
+    private readonly TextBox _log = new();
+    private readonly TextBox _report = new();
+    private readonly TextBox _roadmap = new();
+    private readonly TextBox _requirements = new();
+    private readonly Ps3HudLabel _project = new();
+    private readonly Label _status = new();
+    private readonly ProgressBar _progress = new();
+    private readonly Ps3Button _btnDecrypt = new();
+    private readonly Ps3Button _btnLoad = new();
+    private readonly Ps3Button _btnLift = new();
+    private readonly Ps3Button _btnBuild = new();
+    private readonly Ps3Button _btnRun = new();
+    private readonly Ps3Button _btnCopy = new();
+    private readonly Ps3Button _btnCancel = new();
+    private readonly ComboBox _gfx = new();
+    private readonly ComboBox _threads = new();
+    private readonly TabControl _tabs = new();
+    private readonly PictureBox _logo = new();
+    private readonly Label _eta = new();
     private Ps3Button? _btnRpcs3;
-    private WebView2? _web;
-    private bool _webReady;
+    private Label? _headerStatus;
+    private Panel? _logoRingPanel;
+    private System.Windows.Forms.Timer? _animTimer;
+    private float _ringAngle;
 
     private string? _projectDir;
     private CancellationTokenSource? _cts;
@@ -50,7 +54,6 @@ public sealed partial class MainForm : Form
     private int _liftChunks;
     private bool _controllerMapped;
     private bool _controllerHiddenAfterBuild;
-    private Label? _headerStatus; // optional host label; HTML header used when WebView UI is active
 
     private static string RuntimeDir => Path.Combine(AppContext.BaseDirectory, "runtime");
     private static string CompilersDir => Path.Combine(AppContext.BaseDirectory, "redist");
@@ -59,16 +62,27 @@ public sealed partial class MainForm : Form
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
+    protected override CreateParams CreateParams
+    {
+        get
+        {
+            var cp = base.CreateParams;
+            cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED — smoother paint
+            return cp;
+        }
+    }
+
     public MainForm()
     {
         Text = "PPSX33 · PlayStation 3 Recompiler";
         StartPosition = FormStartPosition.CenterScreen;
-        Size = new Size(1200, 780);
-        MinimumSize = new Size(950, 650);
+        Size = new Size(1280, 800);
+        MinimumSize = new Size(1024, 640);
         BackColor = Bg;
         ForeColor = TextPri;
         Font = new Font("Segoe UI", 9f);
         DoubleBuffered = true;
+        SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
 
         try
         {
@@ -80,6 +94,7 @@ public sealed partial class MainForm : Form
         }
         catch { }
 
+        // Window icon from png/ico
         try
         {
             foreach (var ico in new[]
@@ -88,165 +103,345 @@ public sealed partial class MainForm : Form
                 Path.Combine(AppContext.BaseDirectory, "ppsx33-logo.ico"),
             })
             {
-                if (!File.Exists(ico)) continue;
-                Icon = new Icon(ico);
-                break;
+                if (File.Exists(ico)) { Icon = new Icon(ico); break; }
             }
         }
         catch { }
 
-        // Hidden control surface for partials / controller tab host
-        var hidden = new Panel { Visible = false, Size = new Size(1, 1) };
-        _btnRpcs3 = new Ps3Button { Visible = false };
+        var root = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            BackColor = Bg,
+            Padding = Padding.Empty
+        };
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 288));
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+
+        // ===== SIDEBAR =====
+        var sidebar = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Panel,
+            Padding = new Padding(14),
+            AutoScroll = true
+        };
+        sidebar.Paint += (_, e) =>
+        {
+            using var pen = new Pen(BorderC);
+            e.Graphics.DrawLine(pen, sidebar.ClientSize.Width - 1, 0, sidebar.ClientSize.Width - 1, sidebar.ClientSize.Height);
+        };
+
+        var rail = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            ColumnCount = 1,
+            BackColor = Panel
+        };
+        rail.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+
+        // Logo card with PNG + animated ring
+        _logoRingPanel = new Panel
+        {
+            Height = 132,
+            Dock = DockStyle.Top,
+            BackColor = Panel2,
+            Margin = new Padding(0, 0, 0, 12)
+        };
+        _logoRingPanel.Paint += PaintLogoCard;
+        _logo.Size = new Size(56, 56);
+        _logo.SizeMode = PictureBoxSizeMode.Zoom;
+        _logo.BackColor = Color.Transparent;
+        try
+        {
+            foreach (var png in new[]
+            {
+                Path.Combine(AppContext.BaseDirectory, "assets", "ppsx33-logo.png"),
+                Path.Combine(AppContext.BaseDirectory, "ppsx33-logo.png"),
+                Path.Combine(AppContext.BaseDirectory, "..", "assets", "ppsx33-logo.png"),
+            })
+            {
+                if (!File.Exists(png)) continue;
+                _logo.Image = Image.FromFile(png);
+                break;
+            }
+        }
+        catch { }
+        _logoRingPanel.Controls.Add(_logo);
+        _logoRingPanel.Resize += (_, _) =>
+        {
+            if (_logoRingPanel == null) return;
+            _logo.Left = (_logoRingPanel.ClientSize.Width - _logo.Width) / 2;
+            _logo.Top = 22;
+        };
+
+        _animTimer = new System.Windows.Forms.Timer { Interval = 33 }; // ~30fps
+        _animTimer.Tick += (_, _) =>
+        {
+            _ringAngle = (_ringAngle + 3f) % 360f;
+            _logoRingPanel?.Invalidate();
+        };
+        _animTimer.Start();
+
+        StyleBtn(_btnDecrypt, "Decrypt EBOOT", Panel2);
+        StyleBtn(_btnLoad, "Load ELF", Panel2);
+        StyleBtn(_btnLift, "Decompile", Panel2);
+        StyleBtn(_btnBuild, "Build Project", AccentBlue);
+        StyleBtn(_btnRun, "Run Executable", Success);
+        StyleBtn(_btnCopy, "Copy to Game Folder", Panel2);
+        StyleBtn(_btnCancel, "Stop / Cancel Build", Danger);
+
+        _btnRpcs3 = new Ps3Button();
+        StyleBtn(_btnRpcs3, "Locate RPCS3…", Panel2);
+        _btnRpcs3.Click += (_, _) => LocateRpcs3();
+
+        _gfx.DropDownStyle = ComboBoxStyle.DropDownList;
         _gfx.Items.AddRange(new object[] { "D3D11 (DirectX 11)", "OpenGL 3.3 (future)", "Vulkan (not linked)" });
         _gfx.SelectedIndex = 0;
-        for (int i = 1; i <= Environment.ProcessorCount; i++) _threads.Items.Add(i.ToString());
-        _threads.SelectedItem = Math.Min(4, Environment.ProcessorCount).ToString();
+        _gfx.Enabled = false;
+        StyleCombo(_gfx);
+
+        // Threads: ComboBox is reliable; range mirrored for UX
+        _threads.DropDownStyle = ComboBoxStyle.DropDownList;
+        int maxT = Math.Max(1, Environment.ProcessorCount);
+        for (int i = 1; i <= maxT; i++) _threads.Items.Add(i.ToString());
+        _threads.SelectedItem = Math.Min(4, maxT).ToString();
+        StyleCombo(_threads);
+
+        _eta.ForeColor = TextSec;
+        _eta.AutoSize = true;
+        _eta.Text = "";
+        _eta.Margin = new Padding(0, 4, 0, 0);
+
+        _headerStatus = new Label
+        {
+            Text = "ENGINE READY",
+            ForeColor = Accent,
+            BackColor = Color.FromArgb(28, Success),
+            Height = 24,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Dock = DockStyle.Top,
+            Font = new Font("Consolas", 8f, FontStyle.Bold),
+            Margin = new Padding(0, 10, 0, 0)
+        };
+
+        int row = 0;
+        void Add(Control c)
+        {
+            rail.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            rail.Controls.Add(c, 0, row++);
+        }
+
+        Add(_logoRingPanel);
+        Add(MakeSection("WORKFLOW", "8 ACTIONS"));
+        Add(_btnDecrypt);
+        Add(_btnLoad);
+        Add(_btnLift);
+        Add(_btnBuild);
+        Add(_btnRun);
+        Add(_btnCopy);
+        Add(_btnRpcs3);
+        Add(_btnCancel);
+        Add(MakeSection("RECOMPILER SETTINGS", null));
+        Add(MakeLabel("GRAPHICS API"));
+        Add(_gfx);
+        Add(MakeLabel("CPU THREADS"));
+        Add(_threads);
+        Add(_eta);
+        Add(_headerStatus);
+
+        var footerHint = new Label
+        {
+            Text = "Toolchain: system VS · redist = installer + guide",
+            ForeColor = TextSec,
+            Font = new Font("Consolas", 7.5f),
+            AutoSize = false,
+            Height = 28,
+            Dock = DockStyle.Top,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Margin = new Padding(0, 8, 0, 0)
+        };
+        Add(footerHint);
+        sidebar.Controls.Add(rail);
+
+        // ===== RIGHT =====
+        var right = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            BackColor = Bg
+        };
+        right.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
+        right.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+        right.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+
+        var pathBar = new Panel { Dock = DockStyle.Fill, BackColor = Panel, Padding = new Padding(12, 8, 12, 8) };
+        pathBar.Paint += (_, e) =>
+        {
+            using var pen = new Pen(BorderC);
+            e.Graphics.DrawLine(pen, 0, pathBar.Height - 1, pathBar.Width, pathBar.Height - 1);
+        };
+        _project.Text = "TARGET  /  NO PROJECT LOADED";
+        _project.ForeColor = TextPri;
+        _project.BackColor = Panel2;
+        _project.Dock = DockStyle.Fill;
+        pathBar.Controls.Add(_project);
+
+        StyleTextBox(_log);
+        StyleTextBox(_report);
+        StyleTextBox(_roadmap);
+        StyleTextBox(_requirements);
         _requirements.Text = BuildRequirementsText();
         _roadmap.Text = BuildRoadmapText();
-        hidden.Controls.Add(_tabs);
-        Controls.Add(hidden);
+
+        _tabs.Dock = DockStyle.Fill;
+        _tabs.DrawMode = TabDrawMode.OwnerDrawFixed;
+        _tabs.ItemSize = new Size(118, 32);
+        _tabs.SizeMode = TabSizeMode.Fixed;
+        _tabs.DrawItem += DrawPs3Tab;
+        _tabs.BackColor = Bg;
+        AddTab("Console", _log);
+        AddTab("Report", _report);
+        AddTab("Roadmap", _roadmap);
+        AddTab("Requirements", _requirements);
         BuildControllerTab();
 
-        _web = new WebView2 { Dock = DockStyle.Fill };
-        Controls.Add(_web);
-        _web.BringToFront();
-        Load += async (_, _) => await InitWebAsync();
+        _status.Text = "Ready";
+        _status.TextAlign = ContentAlignment.MiddleLeft;
+        _status.Padding = new Padding(10, 0, 0, 0);
+        _status.Dock = DockStyle.Fill;
+        _status.ForeColor = TextSec;
+        _status.BackColor = Panel;
+        _progress.Dock = DockStyle.Bottom;
+        _progress.Height = 5;
+        _progress.Style = ProgressBarStyle.Continuous;
 
-        Shown += (_, _) => CheckRpcs3OnStartup();
-        FormClosing += (_, _) => CleanupAllProjectWorkFolders();
-    }
-
-    async Task InitWebAsync()
-    {
-        if (_web == null) return;
-        try
+        var statusRow = new Panel { Dock = DockStyle.Fill, BackColor = Panel };
+        statusRow.Paint += (_, e) =>
         {
-            await _web.EnsureCoreWebView2Async();
-            _web.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
-            _web.CoreWebView2.Settings.IsStatusBarEnabled = false;
-            _web.CoreWebView2.WebMessageReceived += OnWebMessage;
-            string www = Path.Combine(AppContext.BaseDirectory, "www", "index.html");
-            if (!File.Exists(www))
-                www = Path.Combine(AppContext.BaseDirectory, "src", "gui", "www", "index.html");
-            if (File.Exists(www))
-                _web.Source = new Uri(www);
-            else
+            using var pen = new Pen(BorderC);
+            e.Graphics.DrawLine(pen, 0, 0, statusRow.Width, 0);
+        };
+        statusRow.Controls.Add(_status);
+        statusRow.Controls.Add(_progress);
+
+        right.Controls.Add(pathBar, 0, 0);
+        right.Controls.Add(_tabs, 0, 1);
+        right.Controls.Add(statusRow, 0, 2);
+
+        root.Controls.Add(sidebar, 0, 0);
+        root.Controls.Add(right, 1, 0);
+        Controls.Add(root);
+
+        _btnDecrypt.Click += async (_, _) => await DecryptEbootAndLoad();
+        _btnLoad.Click += (_, _) => LoadElf(null);
+        _btnLift.Click += async (_, _) => await RunStep("Decompiling", ct => Native.Lift(_projectDir!, out _), afterLift: true);
+        _btnBuild.Click += async (_, _) => await BuildWithProgress();
+        _btnRun.Click += async (_, _) => await RunGame();
+        _btnCopy.Click += (_, _) => CopyToGameFolder();
+        _btnCancel.Click += async (_, _) =>
+        {
+            if (_building && !_buildCancelRequested) await ConfirmCancelBuildAsync();
+            else StopGame();
+        };
+
+        Append("PPSX33 ready · core v1.0.0");
+        Append("Settings: " + Settings.DataDir);
+        Append("Host build uses system Visual Studio (redist/ = installer + guide only).");
+        Append("UI: native WinForms (no WebView2).");
+        UpdateButtons();
+        Shown += (_, _) =>
+        {
+            CheckRpcs3OnStartup();
+            if (_logoRingPanel != null)
             {
-                _web.NavigateToString("<html><body style='background:#090d14;color:#e6edf3;font-family:sans-serif;padding:24px'>UI www/index.html missing.</body></html>");
+                _logo.Left = (_logoRingPanel.ClientSize.Width - _logo.Width) / 2;
+                _logo.Top = 22;
             }
-            _webReady = true;
-            Append("PPSX33 ready · core v1.0.0");
-            Append("Settings: " + Settings.DataDir);
-            Append("Host build uses system Visual Studio (redist/ = installer + guide only).");
-            PushState();
-            PostState(new Dictionary<string, object?>
-            {
-                ["roadmap"] = _roadmap.Text,
-                ["requirements"] = _requirements.Text
-            });
-        }
-        catch (Exception ex)
+        };
+        FormClosing += (_, _) =>
         {
-            MessageBox.Show(this,
-                "WebView2 failed to start. Install the Evergreen WebView2 Runtime.\n\n" + ex.Message,
-                "PPSX33", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
+            _animTimer?.Stop();
+            _animTimer?.Dispose();
+            CleanupAllProjectWorkFolders();
+        };
     }
 
-    void OnWebMessage(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+    void PaintLogoCard(object? sender, PaintEventArgs e)
     {
-        string raw = e.TryGetWebMessageAsString() ?? e.WebMessageAsJson;
-        try
+        var g = e.Graphics;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        var panel = (Panel)sender!;
+        var rect = new Rectangle(6, 6, panel.Width - 12, panel.Height - 12);
+        using (var path = RoundRect(rect, 12))
+        using (var br = new LinearGradientBrush(rect,
+                   Color.FromArgb(40, 0x02, 0x84, 0xC7),
+                   Color.FromArgb(50, 0x16, 0x1B, 0x22), 90f))
         {
-            using var doc = JsonDocument.Parse(raw);
-            var root = doc.RootElement;
-            string action = root.TryGetProperty("action", out var a) ? a.GetString() ?? "" : "";
-            BeginInvoke(async () => await HandleUiAction(action, root));
+            g.FillPath(br, path);
+            using var pen = new Pen(Color.FromArgb(90, Accent));
+            g.DrawPath(pen, path);
         }
-        catch { }
+
+        int cx = panel.Width / 2;
+        int cy = 50;
+        // rotating dashed outer ring
+        using (var pen = new Pen(Color.FromArgb(140, Accent), 1.5f) { DashStyle = DashStyle.Dash })
+        {
+            g.TranslateTransform(cx, cy);
+            g.RotateTransform(_ringAngle);
+            g.DrawEllipse(pen, -34, -34, 68, 68);
+            g.ResetTransform();
+        }
+        using (var pen = new Pen(Color.FromArgb(160, AccentBlue), 1.5f))
+        {
+            g.TranslateTransform(cx, cy);
+            g.RotateTransform(-_ringAngle * 1.4f);
+            g.DrawArc(pen, -28, -28, 56, 56, 0, 270);
+            g.ResetTransform();
+        }
+
+        TextRenderer.DrawText(g, "PPSX33",
+            new Font("Segoe UI", 13f, FontStyle.Bold),
+            new Rectangle(0, 88, panel.Width, 20),
+            TextPri, TextFormatFlags.HorizontalCenter);
+        TextRenderer.DrawText(g, "PS3 BINARY RECOMPILER",
+            new Font("Segoe UI", 7f, FontStyle.Bold),
+            new Rectangle(0, 108, panel.Width, 16),
+            Accent, TextFormatFlags.HorizontalCenter);
     }
 
-    async Task HandleUiAction(string action, JsonElement root)
+    static GraphicsPath RoundRect(Rectangle r, int radius)
     {
-        switch (action)
+        int d = radius * 2;
+        var p = new GraphicsPath();
+        p.AddArc(r.X, r.Y, d, d, 180, 90);
+        p.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+        p.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+        p.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
+        p.CloseFigure();
+        return p;
+    }
+
+    Label MakeSection(string title, string? badge)
+    {
+        var host = new Label
         {
-            case "ready":
-                PushState();
-                break;
-            case "decrypt":
-                await DecryptEbootAndLoad();
-                break;
-            case "load":
-            case "browse":
-                LoadElf(null);
-                break;
-            case "decompile":
-                await RunStep("Decompiling", ct => Native.Lift(_projectDir!, out _), afterLift: true);
-                break;
-            case "build":
-                await BuildWithProgress();
-                break;
-            case "run":
-                await RunGame();
-                break;
-            case "copy":
-                CopyToGameFolder();
-                break;
-            case "cancel":
-                if (_building && !_buildCancelRequested) await ConfirmCancelBuildAsync();
-                else StopGame();
-                break;
-            case "rpcs3":
-                LocateRpcs3();
-                break;
-            case "controller":
-                if (_controllerTab != null)
-                {
-                    // Show classic controller tab in a dialog-sized form host
-                    using var f = new Form
-                    {
-                        Text = "Controller mapping",
-                        Size = new Size(520, 480),
-                        StartPosition = FormStartPosition.CenterParent,
-                        BackColor = Panel
-                    };
-                    if (_controllerPanel != null)
-                    {
-                        var p = _controllerPanel;
-                        if (p.Parent != null) p.Parent.Controls.Remove(p);
-                        p.Dock = DockStyle.Fill;
-                        p.Visible = true;
-                        f.Controls.Add(p);
-                        f.ShowDialog(this);
-                        // re-home
-                        f.Controls.Remove(p);
-                        if (_controllerTab != null)
-                        {
-                            _controllerTab.Controls.Add(p);
-                        }
-                    }
-                }
-                break;
-            case "gfx":
-                if (root.TryGetProperty("value", out var gv))
-                {
-                    string v = gv.GetString() ?? "d3d11";
-                    int idx = v switch { "ogl" => 1, "vk" => 2, _ => 0 };
-                    if (idx < _gfx.Items.Count) _gfx.SelectedIndex = idx;
-                    Append("Graphics API set: " + _gfx.SelectedItem);
-                }
-                break;
-            case "threads":
-                if (root.TryGetProperty("value", out var tv) && int.TryParse(tv.GetString(), out int n))
-                {
-                    string s = n.ToString();
-                    if (_threads.Items.Contains(s)) _threads.SelectedItem = s;
-                    Append("CPU threads: " + s);
-                }
-                break;
-        }
-        PushState();
+            Height = 22,
+            Dock = DockStyle.Top,
+            BackColor = Panel,
+            Text = title,
+            ForeColor = TextSec,
+            Font = new Font("Consolas", 8f, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleLeft,
+            Margin = new Padding(0, 8, 0, 4)
+        };
+        if (!string.IsNullOrEmpty(badge))
+            host.Text = title + "   " + badge;
+        return host;
     }
 
     void LocateRpcs3()
@@ -263,59 +458,44 @@ public sealed partial class MainForm : Form
         Append("RPCS3 path set: " + _settings.Rpcs3Path);
     }
 
-    void PostToWeb(object payload)
-    {
-        if (_web?.CoreWebView2 == null || !_webReady) return;
-        try
-        {
-            string json = JsonSerializer.Serialize(payload);
-            if (InvokeRequired) BeginInvoke(() => _web.CoreWebView2.PostWebMessageAsJson(json));
-            else _web.CoreWebView2.PostWebMessageAsJson(json);
-        }
-        catch { }
-    }
-
-    void PostState(Dictionary<string, object?> extra)
-    {
-        var d = new Dictionary<string, object?>(extra) { ["type"] = "state" };
-        PostToWeb(d);
-    }
-
+    /// <summary>No-op bridge kept for partials that call PushState after WebView removal.</summary>
     void PushState()
     {
+        if (_headerStatus == null) return;
         bool locked = _busy || _building;
-        PostState(new Dictionary<string, object?>
-        {
-            ["projectPath"] = string.IsNullOrEmpty(_projectDir) ? (_project.Text ?? "No project loaded") : _projectDir,
-            ["status"] = _status.Text ?? "Ready",
-            ["header"] = locked ? "WORKING" : "ENGINE READY",
-            ["percent"] = _progress.Style == ProgressBarStyle.Continuous ? _progress.Value : 0,
-            ["cancelLabel"] = _building ? "Stop / Cancel Build" : "Stop Game",
-            ["enable"] = new Dictionary<string, bool>
-            {
-                ["decompile"] = _canLift && !locked,
-                ["build"] = _canBuild && !locked,
-                ["run"] = _canRun && !locked,
-                ["copy"] = _canCopy && !locked,
-                ["cancel"] = locked || _gameProc != null,
-                // controllerMapped reserved for future UI badge
-                ["controllerMapped"] = _controllerMapped,
-                ["gfx"] = _gfxUnlocked && !locked
-            }
-        });
+        _headerStatus.Text = locked ? "WORKING" : "ENGINE READY";
+        _headerStatus.ForeColor = locked ? Color.FromArgb(0xF0, 0xB4, 0x00) : Accent;
     }
 
     static string BuildRequirementsText() =>
         "PPSX33 — Requirements\r\n" +
-        "Required: Win10/11 x64, D3D11 FL11_0, 8GB RAM, system Visual Studio Community\r\n" +
-        "Recommended: 16GB RAM, discrete GPU, 2GB+ VRAM, SSD\r\n" +
-        "redist/ ships VS installer + guide only — no bundled compilers.\r\n";
+        "========================================\r\n\r\n" +
+        "Required\r\n" +
+        "  OS            64-bit Windows 10/11\r\n" +
+        "  Disk          SSD recommended\r\n" +
+        "  RAM           8 GB minimum\r\n" +
+        "  GPU           D3D11 Feature Level 11_0\r\n" +
+        "  Graphics API  D3D11 (current)\r\n" +
+        "  Toolchain     Visual Studio Community (see redist/README.txt)\r\n\r\n" +
+        "Recommended\r\n" +
+        "  RAM           16 GB+\r\n" +
+        "  GPU           Discrete, 2 GB+ VRAM\r\n" +
+        "  Monitor       1920x1080\r\n" +
+        "  Future API    OpenGL 3.3 / 2.1 fallback\r\n";
 
     static string BuildRoadmapText() =>
-        "PPSX33 Roadmap\r\n" +
-        "PHASE 1–XXII core pipeline\r\n" +
-        "XXIII execution reality / guest FIFO / draw path\r\n" +
-        "Workflow: Decrypt/Load → Decompile → Build → Copy → Run\r\n";
+        "PPSX33 — Roadmap\r\n" +
+        "========================================\r\n\r\n" +
+        "PHASE 1 — I–XXII core pipeline (TESTING / DONE bands)\r\n" +
+        "XXIII  Execution reality\r\n" +
+        "XXIV   Boot-to-first-pixels\r\n" +
+        "XXV    Truthful exec and guest frames (ACTIVE)\r\n" +
+        "  A–J  services / E2E checklist\r\n" +
+        "  K    guest color buffer → presentable frames\r\n" +
+        "  L    wild-pc / sticky recovery\r\n" +
+        "XXVI   (planned) pure host UI polish + deeper RSX\r\n\r\n" +
+        "Workflow: Decrypt/Load → Decompile → Build → Copy → Run\r\n" +
+        "See ROADMAP.md and roadmap/*.md for full subphases.\r\n";
 
     void CleanupAllProjectWorkFolders()
     {
