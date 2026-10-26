@@ -1003,9 +1003,9 @@ static int g_nv40_ready = 0;
 // ============================================================================
 // SCE / NV40 Vertex Program + Fragment Program → HLSL (depth translation)
 // Ucode is loaded from guest local memory at vp_offset / fp_offset.
-// Supported VP ops: MOV MUL ADD MAD DP3 DP4 RCP RSQ MIN MAX SLT LIT END
-// Supported FP ops: MOV MUL ADD MAD DP3 DP4 TEX TXP RCP RSQ END
-// Unknown ops become HLSL comments; program still compiles for frame path.
+// XV-E: Supported VP ops: MOV MUL ADD MAD DP3 DP4 RCP RSQ MIN MAX SLT LIT END
+// XV-E: Supported FP ops: MOV MUL ADD MAD DP3 DP4 TEX TXP RCP RSQ END
+// XV-E fail-closed: unknown ops logged; if zero real ops decoded, translation returns 0 (no fake success).
 // ============================================================================
 static ID3D11VertexShader* g_vs_sce = nullptr;
 static ID3D11PixelShader*  g_ps_sce = nullptr;
@@ -1031,6 +1031,7 @@ static void sce_src_name(char* out, size_t n, int reg_type, int reg_idx, int swz
 }
 
 static int sce_translate_vp_to_hlsl(const uint8_t* mem, uint32_t off, char* out, size_t out_sz) {
+    int real_ops = 0; // XV-E
     if (!mem || !out || off + 16 >= 0x10000000u) return -1;
     size_t pos = 0;
     auto emit = [&](const char* fmt, ...) {

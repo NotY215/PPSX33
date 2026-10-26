@@ -11,6 +11,7 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <WebView2EnableWinForms>true</WebView2EnableWinForms>
     <WebView2EnableWpf>false</WebView2EnableWpf>
+    <!-- Demote residual assembly-version unification noise after Wpf strip -->
     <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
     <ApplicationIcon>$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico</ApplicationIcon>
     <OutputPath>$(MSBuildThisFileDirectory)..\..\build\dist\</OutputPath>
@@ -39,6 +40,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <!-- Remove WPF WebView2 from every resolution bag that feeds MSB3277 -->
   <Target Name="StripWebView2Wpf" AfterTargets="ResolvePackageAssets;ResolveAssemblyReferences" BeforeTargets="FindReferenceAssembliesForReferences;ResolveLockFileReferences">
     <ItemGroup>
       <ReferencePath Remove="@(ReferencePath)" Condition="$([System.String]::Copy('%(Identity)').Contains('WebView2.Wpf'))" />

@@ -846,6 +846,18 @@ static bool spu_step(SPUContext& s) {
     if (opc11 == 0x2C7) { for(int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w),ub=lr128_word(reg(rb),w); float a,b; std::memcpy(&a,&ua,4); std::memcpy(&b,&ub,4); float r=(b!=0.f)?a/b:0.f; uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
     if (opc11 == 0x2C8) { for(int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w); float a; std::memcpy(&a,&ua,4); float r=std::fabs(a); uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
     if (opc11 == 0x2C9) { for(int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w); float a; std::memcpy(&a,&ua,4); float r=-a; uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
+// XV depth: additional SPU RR / RI forms (Cell Broadband Engine Architecture)
+    if (opc11 == 0x0C6) { for(int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)*lr128_word(reg(rb),w)); return true; }
+    if (opc11 == 0x0C7) { for(int w=0;w<4;++w){ uint32_t b=lr128_word(reg(rb),w); sr128_word(reg(rt),w,b?lr128_word(reg(ra),w)/b:0); } return true; }
+    if (opc11 == 0x0C8) { for(int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)==lr128_word(reg(rb),w)?0xFFFFFFFFu:0); return true; }
+    if (opc11 == 0x0C9) { for(int w=0;w<4;++w) sr128_word(reg(rt),w,lr128_word(reg(ra),w)!=lr128_word(reg(rb),w)?0xFFFFFFFFu:0); return true; }
+    if (opc11 == 0x140) { for(int w=0;w<4;++w){ uint32_t a=lr128_word(reg(ra),w); sr128_word(reg(rt),w,a<<((lr128_word(reg(rb),w))&31)); } return true; }
+    if (opc11 == 0x141) { for(int w=0;w<4;++w){ uint32_t a=lr128_word(reg(ra),w); sr128_word(reg(rt),w,a>>((lr128_word(reg(rb),w))&31)); } return true; }
+    if (opc11 == 0x142) { for(int w=0;w<4;++w){ int32_t a=(int32_t)lr128_word(reg(ra),w); sr128_word(reg(rt),w,(uint32_t)(a>>((lr128_word(reg(rb),w))&31))); } return true; }
+    if (opc11 == 0x1CC) { for(int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w),ub=lr128_word(reg(rb),w); float a,b; std::memcpy(&a,&ua,4); std::memcpy(&b,&ub,4); float r=a+b; uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
+    if (opc11 == 0x1CD) { for(int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w),ub=lr128_word(reg(rb),w); float a,b; std::memcpy(&a,&ua,4); std::memcpy(&b,&ub,4); float r=a-b; uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
+    if (opc11 == 0x1CE) { for(int w=0;w<4;++w){ uint32_t ua=lr128_word(reg(ra),w),ub=lr128_word(reg(rb),w); float a,b; std::memcpy(&a,&ua,4); std::memcpy(&b,&ub,4); float r=a*b; uint32_t ur; std::memcpy(&ur,&r,4); sr128_word(reg(rt),w,ur);} return true; }
+    if (opc11 == 0x350) { /* stop */ s.running=false; s.stop_status=lr128_word(reg(ra),0)&0x3FFF; return true; }
 // Unknown — count and continue (skip)
     static int s_unk = 0;
     if (s_unk < 24) {
