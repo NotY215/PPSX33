@@ -1,15 +1,17 @@
 # Phase XV - Real rendering
 
-## Confirmed (GOW3 logs + screenshots)
-- Host seed frame: color bars + triangle
-- Not game geometry
+## Log 21:25 (before XV-K)
+- `get=0x803c8` vs `put=0x3c8` (GET far ahead)
+- `methods~131072` / `packets~65536` every flip (FIFO walk cap from false JUMP)
+- Cause: JUMP matched `(hdr & 3)==1` on normal method headers
 
-## XV-J
-- PRX NID recovery rejects size/pointer-shaped values
-- Prefer NID table hits for register candidates
-- Sticky BREAK: region ban + HARD escape to another chunk
+## XV-K
+- JUMP only on `(hdr & 0xE0000003)==0x20000000`
+- CALL only on proper encoding; targets mod fifo_size
+- PUT/GET always mod fifo_size; resync if ring distance > half
+- Tighter process cap (0x800)
+- Inject throttled until real stream heuristic
+- Skip UNKNOWN log for nid 0
 
-## Next
-- Map remaining true unknown NIDs after filter
-- Advance boot until GCM PUT moves with title-authored methods
-- Disable seed when real method stream is active
+## Still not game geometry
+Seed remains until title authors a real GCM stream after boot.
