@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- NETSDK1100: Linux CI / submit-nuget must restore net8.0-windows GUI project -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+</Project>

@@ -8,6 +8,7 @@
     <AssemblyName>PS3Recomp</AssemblyName>
     <RootNamespace>PS3Recomp.Gui</RootNamespace>
     <LangVersion>latest</LangVersion>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <WebView2EnableWinForms>true</WebView2EnableWinForms>
     <WebView2EnableWpf>false</WebView2EnableWpf>
     <ApplicationIcon>$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico</ApplicationIcon>
@@ -37,10 +38,11 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <Target Name="RemoveWebView2Wpf" BeforeTargets="ResolveAssemblyReferences">
+  <Target Name="RemoveWebView2Wpf" AfterTargets="ResolvePackageAssets" BeforeTargets="ResolveAssemblyReferences;ResolveLockFileReferences">
     <ItemGroup>
       <ReferencePath Remove="@(ReferencePath)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
       <Reference Remove="Microsoft.Web.WebView2.Wpf" />
+      <ResolvedCompileFileDefinition Remove="@(ResolvedCompileFileDefinition)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
     </ItemGroup>
   </Target>
 </Project>
