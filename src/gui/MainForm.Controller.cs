@@ -52,7 +52,7 @@ public sealed partial class MainForm
         catch { }
         root.Controls.Add(art);
 
-        var km = _settings.Keys ?? KeyMap.Defaults();
+        var km = _settings.KeyMap ?? KeyMap.Defaults();
 
         // Helper local factory for binding chips
         Button Chip(string prop, string caption, string value, int x, int y, int w = 88)
@@ -169,12 +169,12 @@ public sealed partial class MainForm
         };
         reset.Click += (_, _) =>
         {
-            _settings.Keys = KeyMap.Defaults();
+            _settings.KeyMap = KeyMap.Defaults();
             SaveSettings();
             foreach (var kv in _keyButtons)
             {
                 var prop = kv.Key;
-                var val = typeof(KeyMap).GetProperty(prop)?.GetValue(_settings.Keys)?.ToString() ?? "";
+                var val = typeof(KeyMap).GetProperty(prop)?.GetValue(_settings.KeyMap)?.ToString() ?? "";
                 kv.Value.Text = PrettyKey(val);
             }
             Append("Controller map reset to defaults.");
@@ -255,14 +255,14 @@ public sealed partial class MainForm
 
     void SaveKeyMapFromButtons()
     {
-        var km = _settings.Keys ?? KeyMap.Defaults();
+        var km = _settings.KeyMap ?? KeyMap.Defaults();
         foreach (var kv in _keyButtons)
         {
             string prop = kv.Key;
             string text = kv.Value.Tag is string t && t.Contains('|') ? t.Split('|')[1] : InversePretty(kv.Value.Text);
             typeof(KeyMap).GetProperty(prop)?.SetValue(km, text);
         }
-        _settings.Keys = km;
+        _settings.KeyMap = km;
         SaveSettings();
         _controllerMapped = true;
     }
@@ -292,5 +292,25 @@ public sealed partial class MainForm
             Append("Controller tab closed — mapping locked for this build.");
         }
         catch { }
+    }
+
+    /// <summary>Write pad_map.json into project output for the runtime (XInput/keyboard map).</summary>
+    void WritePadMapForRuntime()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(_projectDir)) return;
+            string outDir = Path.Combine(_projectDir, "output");
+            Directory.CreateDirectory(outDir);
+            var km = _settings.KeyMap ?? KeyMap.Defaults();
+            string path = Path.Combine(outDir, "pad_map.json");
+            var json = System.Text.Json.JsonSerializer.Serialize(km, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(path, json);
+            Append("Wrote pad_map.json → " + path);
+        }
+        catch (Exception ex)
+        {
+            Append("pad_map write failed: " + ex.Message);
+        }
     }
 }

@@ -214,6 +214,9 @@ static uint32_t g_index_offset = 0;
 static uint32_t g_index_type = 1;
 static uint32_t g_draw_count = 3;
 static uint32_t g_draw_first = 0;
+#if defined(_WIN32)
+static ID3D11Buffer* g_ib_nv40 = nullptr;
+#endif
 static uint32_t g_begin_mode = 0;
 
 
@@ -1323,22 +1326,23 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
 #if defined(_WIN32)
     if (!mem || !g_ctx11 || !g_rtv) return;
     if (!rsx_ensure_nv40_pipeline()) {
-        rsx_draw_solid_triangle(); /* diagnostic */
+        rsx_draw_solid_triangle();
+        ++g_rsx.draws_diagnostic;
         return;
     }
-    // Prefer attribute 0 as position
-    uint32_t off = g_va_offset[0];
-    uint32_t stride = g_va_stride[0] ? g_va_stride[0] : 16;
+    // XV-D: multi-attribute fetch — VA0 position required; VA1 color/uv optional
+    uint32_t off0 = g_va_offset[0];
+    uint32_t stride0 = g_va_stride[0] ? g_va_stride[0] : 16;
+    uint32_t off1 = g_va_offset[1];
+    uint32_t stride1 = g_va_stride[1] ? g_va_stride[1] : stride0;
     uint32_t count = g_draw_count ? g_draw_count : 3;
-    if (count > 2048) count = 2048;
-    if (!off || off + (uint64_t)stride * count >= 0x10000000ull) {
-        rsx_draw_solid_triangle(); /* diagnostic */
+    if (count > 4096) count = 4096;
+    if (!off0 || off0 + (uint64_t)stride0 * (count + g_draw_first) >= 0x10000000ull) {
+        rsx_draw_solid_triangle();
+        ++g_rsx.draws_diagnostic;
         return;
     }
-    D3D11_MAPPED_SUBRESOURCE map{};
-    if (FAILED(g_ctx11->Map(g_vb_nv40, 0, D3D11_MAP_WRITE_DISCARD, 0, &map))) return;
-    float* dst = (float*)map.pData;
-    uint32_t first = g_draw_first;
+
     auto rd_f = [&](uint32_t a) -> float {
         if (a + 4 > 0x10000000u) return 0.f;
         uint32_t w = ((uint32_t)mem[a] << 24) | ((uint32_t)mem[a+1] << 16) |
@@ -1347,36 +1351,76 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
         if (f != f || f > 1e6f || f < -1e6f) std::memcpy(&f, mem + a, 4);
         return f;
     };
-    for (uint32_t i = 0; i < count; ++i) {
-        uint32_t vi = first + i;
-        // Indexed path: resolve vertex index from index array
-        if (g_index_offset && g_index_offset + vi * 2 < 0x10000000u) {
-            if (g_index_type == 2 && g_index_offset + vi * 4 < 0x10000000u) {
-                vi = rsx_rd32_be(mem, g_index_offset + vi * 4);
-            } else {
-                vi = ((uint32_t)mem[g_index_offset + vi * 2] << 8) |
-                     (uint32_t)mem[g_index_offset + vi * 2 + 1];
-            }
+    auto resolve_index = [&](uint32_t i) -> uint32_t {
+        uint32_t vi = g_draw_first + i;
+        if (!g_index_offset) return vi;
+        if (g_index_type == 2) {
+            uint32_t a = g_index_offset + vi * 4;
+            if (a + 4 > 0x10000000u) return vi;
+            return rsx_rd32_be(mem, a);
         }
-        uint32_t addr = off + vi * stride;
-        // Guest is BE floats often for RSX vertex data on Cell — try BE then LE
+        uint32_t a = g_index_offset + vi * 2;
+        if (a + 2 > 0x10000000u) return vi;
+        // Prefer BE halfword; fallback LE
+        uint32_t be = ((uint32_t)mem[a] << 8) | (uint32_t)mem[a + 1];
+        uint32_t le = (uint32_t)mem[a] | ((uint32_t)mem[a + 1] << 8);
+        return (be < 65536 && be > 0) ? be : le;
+    };
+
+    // Host vertex format: pos.xyz + attr (u or color scalar) + pad — 5 floats
+    D3D11_MAPPED_SUBRESOURCE map{};
+    if (FAILED(g_ctx11->Map(g_vb_nv40, 0, D3D11_MAP_WRITE_DISCARD, 0, &map))) return;
+    float* dst = (float*)map.pData;
+    uint32_t max_vi = 0;
+    for (uint32_t i = 0; i < count; ++i) {
+        uint32_t vi = resolve_index(i);
+        if (vi > max_vi) max_vi = vi;
+        uint32_t addr = off0 + vi * stride0;
         float x = rd_f(addr + 0);
         float y = rd_f(addr + 4);
-        float z = (stride >= 12) ? rd_f(addr + 8) : 0.f;
-        // Normalize common 0..viewport ranges into clip
-        if (x > 1.5f || y > 1.5f) {
-            float vw = g_rsx.viewport_w ? (float)g_rsx.viewport_w : (float)(g_rsx.width ? g_rsx.width : 1280);
-            float vh = g_rsx.viewport_h ? (float)g_rsx.viewport_h : (float)(g_rsx.height ? g_rsx.height : 720);
+        float z = (stride0 >= 12) ? rd_f(addr + 8) : 0.f;
+        float vw = g_rsx.viewport_w ? (float)g_rsx.viewport_w : (float)(g_rsx.width ? g_rsx.width : 1280);
+        float vh = g_rsx.viewport_h ? (float)g_rsx.viewport_h : (float)(g_rsx.height ? g_rsx.height : 720);
+        if (x > 1.5f || y > 1.5f || x < -1.5f || y < -1.5f) {
             x = (x / vw) * 2.f - 1.f;
             y = 1.f - (y / vh) * 2.f;
+        }
+        float a1 = (float)i / (float)(count ? count : 1);
+        if (off1 && off1 + vi * stride1 + 4 < 0x10000000u) {
+            // second attribute: take first float as generic varying
+            a1 = rd_f(off1 + vi * stride1);
         }
         dst[i * 5 + 0] = x;
         dst[i * 5 + 1] = y;
         dst[i * 5 + 2] = z;
-        dst[i * 5 + 3] = (float)i / (float)(count ? count : 1);
+        dst[i * 5 + 3] = a1;
         dst[i * 5 + 4] = 0.5f;
     }
     g_ctx11->Unmap(g_vb_nv40, 0);
+
+    // XV-D: when indices present, also upload a host index buffer (0..count-1 sequential after expand)
+    // Vertices already expanded through resolve_index into VB, so Draw non-indexed is correct.
+    // Additionally try native DrawIndexed if we can build IB of original indices into compacted VB.
+    bool used_indexed = false;
+    if (g_index_offset && count >= 3) {
+        if (!g_ib_nv40) {
+            D3D11_BUFFER_DESC bd{};
+            bd.ByteWidth = 4096 * sizeof(uint32_t);
+            bd.Usage = D3D11_USAGE_DYNAMIC;
+            bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+            bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            g_dev11->CreateBuffer(&bd, nullptr, &g_ib_nv40);
+        }
+        if (g_ib_nv40) {
+            D3D11_MAPPED_SUBRESOURCE im{};
+            if (SUCCEEDED(g_ctx11->Map(g_ib_nv40, 0, D3D11_MAP_WRITE_DISCARD, 0, &im))) {
+                uint32_t* idst = (uint32_t*)im.pData;
+                for (uint32_t i = 0; i < count; ++i) idst[i] = i; // VB already expanded
+                g_ctx11->Unmap(g_ib_nv40, 0);
+                used_indexed = true;
+            }
+        }
+    }
 
     rsx_apply_viewport_scissor();
     g_ctx11->OMSetRenderTargets(1, &g_rtv, g_dsv);
@@ -1399,23 +1443,31 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
     UINT draw_n = (count / 3) * 3;
     if (draw_n < 3) draw_n = count >= 3 ? 3 : count;
     if (draw_n >= 3) {
-        g_ctx11->Draw(draw_n, 0);
+        if (used_indexed && g_ib_nv40) {
+            g_ctx11->IASetIndexBuffer(g_ib_nv40, DXGI_FORMAT_R32_UINT, 0);
+            g_ctx11->DrawIndexed(draw_n, 0, 0);
+        } else {
+            g_ctx11->Draw(draw_n, 0);
+        }
         ++g_rsx.draws;
         ++g_rsx.draws_this_frame;
-        ++g_rsx.draws_guest; ++g_rsx.draws_guest_frame;
+        ++g_rsx.draws_guest;
+        ++g_rsx.draws_guest_frame;
         static int sd = 0;
-        if (sd < 16) {
-            ps3rt_log("[rsx] NV40 draw verts=%u first=%u va0=0x%x stride=%u vp=0x%x fp=0x%x\n",
-                draw_n, first, off, stride, g_rsx.vp_offset, g_rsx.fp_offset);
+        if (sd < 24) {
+            ps3rt_log("[rsx] XV-D draw verts=%u idx=%s va0=0x%x va1=0x%x stride0=%u max_vi=%u\n",
+                draw_n, g_index_offset ? "yes" : "no", off0, off1, stride0, max_vi);
             ++sd;
         }
     } else {
-        rsx_draw_solid_triangle(); /* diagnostic */
+        rsx_draw_solid_triangle();
+        ++g_rsx.draws_diagnostic;
     }
 #else
     (void)mem;
 #endif
 }
+
 
 static void rsx_draw_host(uint8_t* mem) {
     rsx_apply_viewport_scissor();
