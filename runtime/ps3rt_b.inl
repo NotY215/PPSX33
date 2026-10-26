@@ -1055,22 +1055,41 @@ PS3RT_API void ps3rt_vmx_dispatch(PPUContext* c, unsigned xo11, unsigned vd, uns
     const auto& ctl = c->vpr[vc < 32 ? vc : 0];
     // Generic safe fallbacks by class
     switch (xo11 & 0x7FF) {
-    case 1028: case 1034: // and
+    case 1028: case 1034: // vand
         for (int i = 0; i < 16; ++i) d[i] = (uint8_t)(a[i] & b[i]); break;
-    case 1156: case 1158: // or
+    case 1156: case 1158: // vor
         for (int i = 0; i < 16; ++i) d[i] = (uint8_t)(a[i] | b[i]); break;
-    case 1220: case 1092: // xor
+    case 1220: case 1092: // vxor
         for (int i = 0; i < 16; ++i) d[i] = (uint8_t)(a[i] ^ b[i]); break;
-    case 1284: // nor
+    case 1284: // vnor
         for (int i = 0; i < 16; ++i) d[i] = (uint8_t)~(a[i] | b[i]); break;
-    case 1032: // andc
+    case 1032: // vandc
         for (int i = 0; i < 16; ++i) d[i] = (uint8_t)(a[i] & ~b[i]); break;
     case 388: // vaddubm
         for (int i = 0; i < 16; ++i) d[i] = (uint8_t)(a[i] + b[i]); break;
-    case 1412: // vcmpequh-ish → byte eq
+    case 1408: case 1412: // vcmpequb / h
         for (int i = 0; i < 16; ++i) d[i] = (a[i] == b[i]) ? 0xFF : 0; break;
+    case 1476: // vcmpequw bytes-as-words eq soft
+        for (int i = 0; i < 16; ++i) d[i] = (a[i] == b[i]) ? 0xFF : 0; break;
+    case 770: case 518: // vmaxub
+        for (int i = 0; i < 16; ++i) d[i] = a[i] > b[i] ? a[i] : b[i]; break;
+    case 774: case 522: // vminub
+        for (int i = 0; i < 16; ++i) d[i] = a[i] < b[i] ? a[i] : b[i]; break;
+    case 1030: // vavgub
+        for (int i = 0; i < 16; ++i) d[i] = (uint8_t)(((unsigned)a[i] + (unsigned)b[i] + 1u) >> 1); break;
+    case 70: // vaddfp soft per 4 floats BE
+        for (int i = 0; i < 4; ++i) {
+            float fa, fb, fr; std::memcpy(&fa, &a[i*4], 4); std::memcpy(&fb, &b[i*4], 4);
+            fr = fa + fb; std::memcpy(&d[i*4], &fr, 4);
+        } break;
+    case 74: // vsubfp
+        for (int i = 0; i < 4; ++i) {
+            float fa, fb, fr; std::memcpy(&fa, &a[i*4], 4); std::memcpy(&fb, &b[i*4], 4);
+            fr = fa - fb; std::memcpy(&d[i*4], &fr, 4);
+        } break;
+    case 12: case 76: // lvsl/lvsr soft copy
+        std::memcpy(d, a, 16); break;
     default:
-        // Preserve destination on unknown — better than halt
         static int n = 0;
         if (n < 24) { ps3rt_log("[vmx] dispatch xo11=%u vd=%u va=%u vb=%u\n", xo11, vd, va, vb); ++n; }
         break;
