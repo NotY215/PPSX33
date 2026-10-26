@@ -456,29 +456,31 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         fs::path bat = out / "build_msvc.bat";
         {
             std::ofstream f(bat);
-            f << "@echo on\n";
+            f << "@echo off\n";
+            f << "setlocal EnableExtensions\n";
             f << "echo === PPSX33 MSVC build ===\n";
             f << "echo BUILD_TOTAL=" << build_total << "\n";
             f << "echo cwd=%CD%\n";
+            // Shrink PATH before vcvars — avoids CMD "The input line is too long"
+            f << "set \"PATH=%SystemRoot%\\system32;%SystemRoot%;%SystemRoot%\\System32\\Wbem\"\n";
             f << "set \"VSWHERE=%ProgramFiles(x86)%\\Microsoft Visual Studio\\Installer\\vswhere.exe\"\n";
             f << "set \"VSINSTALL=\"\n";
             f << "if exist \"%VSWHERE%\" for /f \"usebackq delims=\" %%i in (`\"%VSWHERE%\" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set \"VSINSTALL=%%i\"\n";
             if (!vcvars.empty()) {
                 f << "if defined VSINSTALL (\n";
                 f << "  echo vswhere install=%VSINSTALL%\n";
-                f << "  call \"%VSINSTALL%\\VC\\Auxiliary\\Build\\vcvars64.bat\"\n";
+                f << "  call \"%VSINSTALL%\\VC\\Auxiliary\\Build\\vcvars64.bat\" >nul\n";
                 f << ") else (\n";
                 f << "  echo vcvars=" << vcvars << "\n";
-                f << "  call " << q(vcvars) << "\n";
+                f << "  call " << q(vcvars) << " >nul\n";
                 f << ")\n";
             } else {
-                f << "if defined VSINSTALL call \"%VSINSTALL%\\VC\\Auxiliary\\Build\\vcvars64.bat\"\n";
-                f << "if not defined VSINSTALL echo WARNING: no vswhere/vcvars — using PATH/bundled cl\n";
+                f << "if defined VSINSTALL call \"%VSINSTALL%\\VC\\Auxiliary\\Build\\vcvars64.bat\" >nul\n";
+                f << "if not defined VSINSTALL echo WARNING: no vswhere/vcvars\n";
             }
             f << "echo post-vcvars OK\n";
             std::string cl = bundled_cl.empty() ? "cl" : q(bundled_cl);
             f << "echo cl=" << cl << "\n";
-            f << "where cl 2>nul\n";
             f << "where cl >nul 2>&1\n";
             f << "if errorlevel 1 (\n";
             f << "  echo ERROR: cl.exe not on PATH after vcvars\n";
@@ -487,8 +489,16 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             f << "if not exist src\\ps3rt.cpp (echo MISSING src\\ps3rt.cpp & exit /b 1)\n";
             f << "if not exist obj mkdir obj\n";
             f << "if exist build_cancel.flag del /f /q build_cancel.flag\n";
-            std::string cflags = "/nologo /O2 /EHsc /std:c++17 /bigobj /FS /I src /DPS3RT_BUILD_DLL=1";
-            std::string gflags = "/nologo /O2 /EHsc /std:c++17 /bigobj /FS /I src";
+            {
+                std::ofstream cf(out / "cl_rt.rsp");
+                cf << "/nologo\n/O2\n/EHsc\n/std:c++17\n/bigobj\n/FS\n/Isrc\n/DPS3RT_BUILD_DLL=1\n";
+            }
+            {
+                std::ofstream cf(out / "cl_game.rsp");
+                cf << "/nologo\n/O2\n/EHsc\n/std:c++17\n/bigobj\n/FS\n/Isrc\n";
+            }
+            std::string cflags = "@cl_rt.rsp";
+            std::string gflags = "@cl_game.rsp";
             auto cancel_chk = [&]() {
                 f << "if exist build_cancel.flag (echo BUILD_CANCELLED & exit /b 130)\n";
             };
@@ -524,7 +534,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         live_log("MSVC: out=" + out.string() + "\n");
         auto prev = fs::current_path(ec);
         fs::current_path(out, ec);
-        int rc = run_cmd("cmd /c \"build_msvc.bat 2>&1\"", log);
+        int rc = run_cmd("cmd /d /c build_msvc.bat", log);
         fs::current_path(prev, ec);
         if (rc != 0) {
             if (rc == 130 || g_build_cancel_requested.load()) {

@@ -51,4 +51,16 @@
       <_ReferencesFromPackage Remove="@(_ReferencesFromPackage)" Condition="$([System.String]::Copy('%(Identity)').Contains('WebView2.Wpf'))" />
     </ItemGroup>
   </Target>
+  <Target Name="DeleteWpfWebView2" AfterTargets="Publish;Build">
+    <ItemGroup>
+      <_Junk Include="$(OutputPath)Microsoft.Web.WebView2.Wpf.dll" />
+      <_Junk Include="$(OutputPath)Microsoft.Web.WebView2.Wpf.xml" />
+      <_Junk Include="$(OutputPath)Microsoft.Web.WebView2.Core.xml" />
+      <_Junk Include="$(OutputPath)Microsoft.Web.WebView2.WinForms.xml" />
+      <_Junk Include="$(OutputPath)ps3core.exp" />
+      <_Junk Include="$(OutputPath)ps3core.lib" />
+    </ItemGroup>
+    <Delete Files="@(_Junk)" ContinueOnError="true" />
+  </Target>
 </Project>
+
