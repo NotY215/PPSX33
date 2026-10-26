@@ -8,6 +8,7 @@
     <AssemblyName>PS3Recomp</AssemblyName>
     <RootNamespace>PS3Recomp.Gui</RootNamespace>
     <LangVersion>latest</LangVersion>
+    <!-- Allow restore/validate on non-Windows CI (submit-nuget / Linux runners) -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <WebView2EnableWinForms>true</WebView2EnableWinForms>
     <WebView2EnableWpf>false</WebView2EnableWpf>
@@ -38,6 +39,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <!-- Strip WPF WebView2 assembly so WindowsBase 5.0 is not pulled (MSB3277) -->
   <Target Name="RemoveWebView2Wpf" AfterTargets="ResolvePackageAssets" BeforeTargets="ResolveAssemblyReferences;ResolveLockFileReferences">
     <ItemGroup>
       <ReferencePath Remove="@(ReferencePath)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />

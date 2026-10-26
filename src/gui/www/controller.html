@@ -1,208 +1,1320 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>PPSX33 · DualShock 3 Mapper</title>
-<style>
-  :root { --bg:#090d16; --card:#131b2e; --line:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --rose:#ef4444; --ok:#10b981; }
-  * { box-sizing: border-box; }
-  html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font-family: Inter, Segoe UI, system-ui, sans-serif; overflow:hidden; }
-  .wrap { display:flex; flex-direction:column; height:100%; }
-  header { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 14px; border-bottom:1px solid var(--line); background:rgba(15,23,42,.92); }
-  header h1 { margin:0; font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px; }
-  header h1 span { font-size:10px; color:#fb7185; border:1px solid rgba(251,113,133,.25); background:rgba(251,113,133,.1); padding:2px 8px; border-radius:999px; font-family:ui-monospace,monospace; }
-  .tools { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
-  select, button { background:#0f172a; color:var(--text); border:1px solid #334155; border-radius:10px; padding:6px 10px; font-size:12px; cursor:pointer; }
-  button.primary { background:#e11d48; border-color:#e11d48; color:#fff; font-weight:600; }
-  button.sky { background:#0c4a6e; border-color:#0369a1; }
-  button.ok { background:#064e3b; border-color:#059669; }
-  main { flex:1; overflow:auto; padding:12px; }
-  .card { background:rgba(19,27,46,.85); border:1px solid #1e293b; border-radius:20px; padding:12px; position:relative; }
-  .status { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:12px; color:var(--muted); }
-  .dot { width:8px; height:8px; border-radius:50%; background:var(--ok); box-shadow:0 0 8px var(--ok); display:inline-block; margin-right:6px; }
-  kbd { background:#1e293b; border:1px solid #334155; border-radius:6px; padding:1px 6px; color:#fb7185; font-family:ui-monospace,monospace; }
-  .stage { position:relative; max-width:960px; margin:0 auto; }
-  svg { width:100%; height:auto; display:block; filter: drop-shadow(0 20px 30px rgba(0,0,0,.55)); }
-  .controller-part { cursor:pointer; transition: filter .15s, opacity .15s; }
-  .controller-part:hover { filter: drop-shadow(0 0 8px rgba(56,189,248,.9)); opacity:.95; }
-  .controller-part.active { filter: drop-shadow(0 0 14px rgba(239,68,68,1)) !important; }
-  .badge { position:absolute; min-width:64px; padding:4px 8px; border-radius:10px; border:1px solid #334155; background:rgba(15,23,42,.92); font-size:11px; font-family:ui-monospace,monospace; cursor:pointer; transition: .15s; user-select:none; }
-  .badge:hover, .badge.active-badge { border-color:var(--rose); box-shadow:0 0 16px rgba(239,68,68,.45); background:rgba(239,68,68,.15); transform:scale(1.04); }
-  .badge b { color:var(--muted); font-weight:600; margin-right:6px; }
-  .badge i { color:var(--accent); font-style:normal; font-weight:700; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px; margin-top:14px; }
-  .row { display:flex; justify-content:space-between; align-items:center; background:#0f172a; border:1px solid #1e293b; border-radius:12px; padding:8px 10px; font-size:12px; cursor:pointer; }
-  .row:hover { border-color:var(--accent); }
-  .row span { color:var(--muted); }
-  .row strong { color:#f8fafc; font-family:ui-monospace,monospace; }
-  .modal { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:50; }
-  .modal.show { display:flex; }
-  .modal .box { width:min(380px,92vw); background:#0f172a; border:1px solid #334155; border-radius:16px; padding:18px; text-align:center; animation: pulse 1.2s infinite ease-in-out; }
-  @keyframes pulse { 0%,100%{ box-shadow:0 0 16px rgba(56,189,248,.25);} 50%{ box-shadow:0 0 28px rgba(56,189,248,.7);} }
-  .toast { position:fixed; bottom:16px; left:50%; transform:translateX(-50%) translateY(40px); opacity:0; transition:.25s; background:#0f172a; border:1px solid #334155; padding:8px 14px; border-radius:12px; font-size:12px; z-index:60; }
-  .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PS3 Controller Keyboard Mapping Studio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        psBlue: '#00439C',
+                        psRed: '#E52521',
+                        psGreen: '#00A152',
+                        psPink: '#DC143C',
+                        darkBg: '#090d16',
+                        cardBg: '#131b2e',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Smooth Scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Interactive SVG Controller Effects */
+        .controller-part {
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .controller-part:hover {
+            filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.9));
+            opacity: 0.95;
+        }
+
+        .controller-part.active {
+            filter: drop-shadow(0 0 14px rgba(239, 68, 68, 1)) drop-shadow(0 0 22px rgba(239, 68, 68, 0.8)) !important;
+            fill: #ef4444 !important;
+        }
+
+        /* Leader Line & Badge Glowing Effects */
+        .callout-badge {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .callout-badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+            border-color: #38bdf8;
+        }
+
+        .callout-badge.active-badge {
+            border-color: #ef4444 !important;
+            background-color: rgba(239, 68, 68, 0.2) !important;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.6) !important;
+        }
+
+        /* Modal Pulse Animation */
+        @keyframes modalPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(56, 189, 248, 0.3); }
+            50% { box-shadow: 0 0 35px rgba(56, 189, 248, 0.8); }
+        }
+
+        .listening-active {
+            animation: modalPulse 1.2s infinite ease-in-out;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
 </head>
-<body>
-<div class="wrap">
-  <header>
-    <h1>DualShock 3 Mapper <span>PPSX33</span></h1>
-    <div class="tools">
-      <select id="preset">
-        <option value="rpcs3">RPCS3 / PPSX33 Default</option>
-        <option value="fps">FPS / Shooter</option>
-        <option value="fighting">Fighting (Arcade)</option>
-        <option value="racing">Racing</option>
-        <option value="custom">Custom</option>
-      </select>
-      <button class="ok" id="btnSave">Save to app</button>
-      <button class="sky" id="btnReset">Reset</button>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-rose-500 selection:text-white">
+
+    <!-- Top Header Navigation -->
+    <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Brand -->
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-600 to-red-500 flex items-center justify-center shadow-lg shadow-rose-600/30">
+                    <i class="fa-solid fa-gamepad text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
+                        DualShock 3 Mapper
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 font-mono uppercase">PS3 Studio</span>
+                    </h1>
+                </div>
+            </div>
+
+            <!-- Global Action Controls & Presets -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <div class="flex items-center space-x-2 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60">
+                    <label for="presetSelect" class="text-xs text-slate-400 font-medium pl-2 hidden md:inline">Preset:</label>
+                    <select id="presetSelect" class="bg-slate-900 text-xs sm:text-sm font-semibold text-rose-400 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-rose-500 border border-slate-700 cursor-pointer">
+                        <option value="rpcs3">RPCS3 Emulator Default</option>
+                        <option value="fps">FPS / Shooter Layout</option>
+                        <option value="fighting">Fighting Games (Arcade)</option>
+                        <option value="racing">Racing Layout</option>
+                        <option value="custom">Custom Mappings</option>
+                    </select>
+                </div>
+
+                <a href="#mappingSection" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-lg shadow-rose-600/25 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span class="hidden sm:inline">Configure Binds</span>
+                </a>
+
+                <button id="exportBtn" title="Export JSON" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-download text-sky-400"></i>
+                    <span class="hidden md:inline">Export</span>
+                </button>
+                <button id="importBtn" title="Import JSON" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-upload text-emerald-400"></i>
+                    <span class="hidden md:inline">Import</span>
+                </button>
+                <input type="file" id="importInput" accept=".json" class="hidden">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-10">
+
+        <!-- ========================================== -->
+        <!-- SECTION 1: HERO VIEW - CONTROLLER DIAGRAM  -->
+        <!-- ========================================== -->
+        <section class="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-4 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-md flex flex-col items-center">
+            
+            <!-- Section Header & Realtime Input Status -->
+            <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-800/80 pb-4 mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <div>
+                        <h2 class="font-bold text-white text-base">Interactive Controller Diagram View</h2>
+                        <p class="text-xs text-slate-400">Click any diagram callout to remap. Press keyboard keys to see live illumination.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-xs font-mono">
+                    <span class="text-slate-500">Last Pressed:</span>
+                    <kbd id="liveLastKey" class="text-rose-400 font-bold px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700">None</kbd>
+                    <span class="text-slate-600">|</span>
+                    <span id="liveLastAction" class="text-emerald-400 font-medium">Ready</span>
+                </div>
+            </div>
+
+            <!-- Controller SVG + Callout Leader Line Overlay Container -->
+            <div class="w-full max-w-[960px] relative select-none py-4 flex justify-center">
+
+                <!-- SVG Diagram Canvas -->
+                <svg id="ps3DiagramSvg" viewBox="0 0 960 600" class="w-full h-auto filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.8)]">
+                    <defs>
+                        <!-- Shell Gradients -->
+                        <linearGradient id="ps3ShellGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#2c303b" />
+                            <stop offset="45%" stop-color="#1c1f27" />
+                            <stop offset="100%" stop-color="#0d0f14" />
+                        </linearGradient>
+
+                        <radialGradient id="thumbWellGrad" cx="40%" cy="40%" r="60%">
+                            <stop offset="0%" stop-color="#14171f" />
+                            <stop offset="100%" stop-color="#2d3342" />
+                        </radialGradient>
+
+                        <linearGradient id="btnFaceGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#3d4454" />
+                            <stop offset="100%" stop-color="#1b1e26" />
+                        </linearGradient>
+                    </defs>
+
+                    <!-- ========================================== -->
+                    <!-- RED ANNOTATION LEADER LINES (From Image)   -->
+                    <!-- ========================================== -->
+                    <g id="leaderLines" stroke="#ef4444" stroke-width="2.2" fill="none" opacity="0.85" stroke-linecap="round" stroke-linejoin="round">
+                        <!-- L2 Button (Top Left) -->
+                        <polyline points="230,22 280,22 320,132" />
+                        <circle cx="320" cy="132" r="3.5" fill="#ef4444" />
+
+                        <!-- L1 Button (Top Left) -->
+                        <polyline points="230,55 295,55 330,145" />
+                        <circle cx="330" cy="145" r="3.5" fill="#ef4444" />
+
+                        <!-- Port Indicator (Top Center) -->
+                        <polyline points="480,75 480,150" />
+                        <circle cx="480" cy="150" r="3.5" fill="#ef4444" />
+
+                        <!-- R2 Button (Top Right) -->
+                        <polyline points="730,22 680,22 640,132" />
+                        <circle cx="640" cy="132" r="3.5" fill="#ef4444" />
+
+                        <!-- R1 Button (Top Right) -->
+                        <polyline points="730,55 665,55 630,145" />
+                        <circle cx="630" cy="145" r="3.5" fill="#ef4444" />
+
+                        <!-- Directional Buttons (Left D-Pad) -->
+                        <polyline points="180,270 240,270 300,270" />
+                        <circle cx="300" cy="270" r="28" fill="none" stroke="#ef4444" stroke-width="2" />
+
+                        <!-- Left Stick & L3 Button (Left Analog) -->
+                        <polyline points="160,375 270,375 390,375" />
+                        <circle cx="390" cy="375" r="3.5" fill="#ef4444" />
+
+                        <!-- SELECT Button (Center Left) -->
+                        <polyline points="400,535 400,305 425,305" />
+                        <circle cx="425" cy="305" r="3.5" fill="#ef4444" />
+
+                        <!-- PS Button (Center Middle) -->
+                        <polyline points="480,565 480,355" />
+                        <circle cx="480" cy="355" r="3.5" fill="#ef4444" />
+
+                        <!-- START Button (Center Right) -->
+                        <polyline points="560,535 560,305 535,305" />
+                        <circle cx="535" cy="305" r="3.5" fill="#ef4444" />
+
+                        <!-- Triangle Button (Right Face Top) -->
+                        <polyline points="770,270 705,270" />
+                        <circle cx="705" cy="270" r="3.5" fill="#ef4444" />
+
+                        <!-- Square Button (Right Face Left) -->
+                        <polyline points="770,320 660,320" />
+                        <circle cx="660" cy="320" r="3.5" fill="#ef4444" />
+
+                        <!-- Circle Button (Right Face Right) -->
+                        <polyline points="770,370 750,370" />
+                        <circle cx="750" cy="370" r="3.5" fill="#ef4444" />
+
+                        <!-- Cross Button (Right Face Bottom) -->
+                        <polyline points="770,420 705,420" />
+                        <circle cx="705" cy="420" r="3.5" fill="#ef4444" />
+
+                        <!-- Right Stick & R3 Button (Right Analog) -->
+                        <polyline points="800,480 700,480 570,375" />
+                        <circle cx="570" cy="375" r="3.5" fill="#ef4444" />
+                    </g>
+
+                    <!-- ========================================== -->
+                    <!-- MAIN DUALSHOCK 3 CONTROLLER SVG GRAPHIC    -->
+                    <!-- ========================================== -->
+                    <g id="controllerBody">
+                        <!-- Shell Outer Outer Grip Path -->
+                        <path d="M 270,140 
+                                 C 350,135 400,148 480,152 
+                                 C 560,148 610,135 690,140 
+                                 C 760,145 830,170 865,235 
+                                 C 900,300 910,400 875,475 
+                                 C 850,530 790,540 750,495 
+                                 C 700,440 660,420 590,420 
+                                 C 550,420 520,432 480,432 
+                                 C 440,432 410,420 370,420 
+                                 C 300,420 260,440 210,495 
+                                 C 170,540 110,530 85,475 
+                                 C 50,400 60,300 95,235 
+                                 C 130,170 200,145 270,140 Z" 
+                              fill="url(#ps3ShellGrad)" stroke="#384152" stroke-width="4"/>
+
+                        <!-- Center SONY Logo -->
+                        <text x="480" y="178" fill="#94a3b8" font-family="sans-serif" font-weight="900" font-size="16" letter-spacing="3" text-anchor="middle">SONY</text>
+                        <!-- DUALSHOCK 3 -->
+                        <text x="480" y="210" fill="#64748b" font-family="sans-serif" font-weight="700" font-size="9" letter-spacing="2" text-anchor="middle">DUALSHOCK 3</text>
+                    </g>
+
+                    <!-- SHOULDERS & TRIGGERS -->
+                    <g id="shoulderGroup">
+                        <!-- L1 Button -->
+                        <path id="svg_l1" class="controller-part" d="M 285,115 C 310,112 345,115 365,125 L 350,142 C 335,137 300,135 285,138 Z" fill="#2d3340" stroke="#475569" stroke-width="2"/>
+                        <text x="325" y="130" fill="#cbd5e1" font-size="11" font-weight="bold" text-anchor="middle" pointer-events="none">L</text>
+
+                        <!-- R1 Button -->
+                        <path id="svg_r1" class="controller-part" d="M 675,115 C 650,112 615,115 595,125 L 610,142 C 625,137 660,135 675,138 Z" fill="#2d3340" stroke="#475569" stroke-width="2"/>
+                        <text x="635" y="130" fill="#cbd5e1" font-size="11" font-weight="bold" text-anchor="middle" pointer-events="none">R</text>
+
+                        <!-- L2 Trigger Graphic -->
+                        <rect id="svg_l2" class="controller-part" x="305" y="96" width="45" height="20" rx="4" fill="#1e222b" stroke="#475569" stroke-width="1.5"/>
+                        <text x="327" y="110" fill="#94a3b8" font-size="10" font-weight="bold" text-anchor="middle" pointer-events="none">L2</text>
+
+                        <!-- R2 Trigger Graphic -->
+                        <rect id="svg_r2" class="controller-part" x="610" y="96" width="45" height="20" rx="4" fill="#1e222b" stroke="#475569" stroke-width="1.5"/>
+                        <text x="632" y="110" fill="#94a3b8" font-size="10" font-weight="bold" text-anchor="middle" pointer-events="none">R2</text>
+                    </g>
+
+                    <!-- PORT INDICATORS (Center LEDs) -->
+                    <g id="svg_port_indicator" transform="translate(435, 142)">
+                        <rect x="0" y="0" width="90" height="12" rx="3" fill="#0f1117" stroke="#2a2e39"/>
+                        <!-- 4 LEDs -->
+                        <circle cx="15" cy="6" r="3" fill="#ef4444" class="filter drop-shadow-[0_0_4px_#ef4444]"/>
+                        <circle cx="35" cy="6" r="3" fill="#1e293b"/>
+                        <circle cx="55" cy="6" r="3" fill="#1e293b"/>
+                        <circle cx="75" cy="6" r="3" fill="#1e293b"/>
+                    </g>
+
+                    <!-- D-PAD / DIRECTIONAL BUTTONS -->
+                    <g id="dpadGroup" transform="translate(300, 270)">
+                        <circle cx="0" cy="0" r="68" fill="#14171e" stroke="#272c38" stroke-width="3"/>
+                        
+                        <!-- D-Pad Up -->
+                        <path id="svg_dpad_up" class="controller-part" d="M -18,-60 L 18,-60 C 22,-60 25,-54 22,-38 L 18,-18 L -18,-18 L -22,-38 C -25,-54 -22,-60 -18,-60 Z" fill="#242934" stroke="#3b4252" stroke-width="1.5"/>
+                        <polygon points="0,-52 -10,-36 10,-36" fill="#64748b" pointer-events="none"/>
+
+                        <!-- D-Pad Down -->
+                        <path id="svg_dpad_down" class="controller-part" d="M -18,60 L 18,60 C 22,60 25,54 22,38 L 18,18 L -18,18 L -22,38 C -25,54 -22,60 -18,60 Z" fill="#242934" stroke="#3b4252" stroke-width="1.5"/>
+                        <polygon points="0,52 -10,36 10,36" fill="#64748b" pointer-events="none"/>
+
+                        <!-- D-Pad Left -->
+                        <path id="svg_dpad_left" class="controller-part" d="M -60,-18 L -60,18 C -60,22 -54,25 -38,22 L -18,18 L -18,-18 L -38,-22 C -54,-25 -60,-22 -60,-18 Z" fill="#242934" stroke="#3b4252" stroke-width="1.5"/>
+                        <polygon points="-52,0 -36,-10 -36,10" fill="#64748b" pointer-events="none"/>
+
+                        <!-- D-Pad Right -->
+                        <path id="svg_dpad_right" class="controller-part" d="M 60,-18 L 60,18 C 60,22 54,25 38,22 L 18,18 L 18,-18 L 38,-22 C 54,-25 60,-22 60,-18 Z" fill="#242934" stroke="#3b4252" stroke-width="1.5"/>
+                        <polygon points="52,0 36,-10 36,10" fill="#64748b" pointer-events="none"/>
+
+                        <circle cx="0" cy="0" r="16" fill="#161920"/>
+                    </g>
+
+                    <!-- ACTION FACE BUTTONS -->
+                    <g id="faceGroup" transform="translate(660, 270)">
+                        <circle cx="0" cy="0" r="68" fill="#14171e" stroke="#272c38" stroke-width="3"/>
+
+                        <!-- Triangle (Top) -->
+                        <g id="svg_triangle" class="controller-part">
+                            <circle cx="0" cy="-42" r="20" fill="url(#btnFaceGrad)" stroke="#3b4252" stroke-width="2"/>
+                            <polygon points="0,-50 -9,-35 9,-35" fill="none" stroke="#10b981" stroke-width="3.5" stroke-linejoin="round" pointer-events="none"/>
+                        </g>
+
+                        <!-- Circle (Right) -->
+                        <g id="svg_circle" class="controller-part">
+                            <circle cx="42" cy="0" r="20" fill="url(#btnFaceGrad)" stroke="#3b4252" stroke-width="2"/>
+                            <circle cx="42" cy="0" r="8.5" fill="none" stroke="#ef4444" stroke-width="3.5" pointer-events="none"/>
+                        </g>
+
+                        <!-- Cross / X (Bottom) -->
+                        <g id="svg_cross" class="controller-part">
+                            <circle cx="0" cy="42" r="20" fill="url(#btnFaceGrad)" stroke="#3b4252" stroke-width="2"/>
+                            <path d="M -7,35 L 7,49 M 7,35 L -7,49" stroke="#3b82f6" stroke-width="3.5" stroke-linecap="round" pointer-events="none"/>
+                        </g>
+
+                        <!-- Square (Left) -->
+                        <g id="svg_square" class="controller-part">
+                            <circle cx="-42" cy="0" r="20" fill="url(#btnFaceGrad)" stroke="#3b4252" stroke-width="2"/>
+                            <rect x="-49" y="-7" width="14" height="14" fill="none" stroke="#ec4899" stroke-width="3.5" stroke-linejoin="round" pointer-events="none"/>
+                        </g>
+                    </g>
+
+                    <!-- CENTER BUTTONS -->
+                    <g id="centerGroup">
+                        <!-- SELECT Button -->
+                        <g id="svg_select" class="controller-part">
+                            <rect x="410" y="296" width="32" height="16" rx="8" fill="#242934" stroke="#475569" stroke-width="1.5"/>
+                            <text x="426" y="288" fill="#64748b" font-size="9" font-weight="bold" text-anchor="middle" pointer-events="none">SELECT</text>
+                        </g>
+
+                        <!-- START Button -->
+                        <g id="svg_start" class="controller-part">
+                            <rect x="518" y="296" width="32" height="16" rx="8" fill="#242934" stroke="#475569" stroke-width="1.5"/>
+                            <text x="534" y="288" fill="#64748b" font-size="9" font-weight="bold" text-anchor="middle" pointer-events="none">START</text>
+                        </g>
+
+                        <!-- PS Button -->
+                        <g id="svg_ps" class="controller-part">
+                            <circle cx="480" cy="355" r="22" fill="url(#btnFaceGrad)" stroke="#475569" stroke-width="2"/>
+                            <path d="M 474,347 C 474,347 484,345 484,351 C 484,356 475,355 475,360 C 475,365 485,365 485,365" fill="none" stroke="#cbd5e1" stroke-width="2.5" stroke-linecap="round" pointer-events="none"/>
+                            <text x="480" y="388" fill="#64748b" font-size="9" font-weight="bold" text-anchor="middle" pointer-events="none">PS</text>
+                        </g>
+                    </g>
+
+                    <!-- ANALOG STICKS (LEFT & RIGHT) -->
+                    <g id="analogSticks">
+                        <!-- Left Stick Well & Stick Cap (L3) -->
+                        <g transform="translate(390, 375)">
+                            <circle cx="0" cy="0" r="54" fill="url(#thumbWellGrad)" stroke="#1a1e28" stroke-width="4"/>
+                            <g id="svg_left_stick" class="controller-part">
+                                <circle cx="0" cy="0" r="38" fill="#222733" stroke="#3b4252" stroke-width="2.5"/>
+                                <circle cx="0" cy="0" r="29" fill="none" stroke="#161820" stroke-width="3" stroke-dasharray="4,2"/>
+                                <text x="0" y="4" fill="#64748b" font-size="11" font-weight="bold" text-anchor="middle" pointer-events="none">L3</text>
+                            </g>
+                        </g>
+
+                        <!-- Right Stick Well & Stick Cap (R3) -->
+                        <g transform="translate(570, 375)">
+                            <circle cx="0" cy="0" r="54" fill="url(#thumbWellGrad)" stroke="#1a1e28" stroke-width="4"/>
+                            <g id="svg_right_stick" class="controller-part">
+                                <circle cx="0" cy="0" r="38" fill="#222733" stroke="#3b4252" stroke-width="2.5"/>
+                                <circle cx="0" cy="0" r="29" fill="none" stroke="#161820" stroke-width="3" stroke-dasharray="4,2"/>
+                                <text x="0" y="4" fill="#64748b" font-size="11" font-weight="bold" text-anchor="middle" pointer-events="none">R3</text>
+                            </g>
+                        </g>
+                    </g>
+                </svg>
+
+                <!-- ========================================== -->
+                <!-- HTML OVERLAY CALLOUT BADGES WITH KEYS      -->
+                <!-- ========================================== -->
+
+                <!-- Top Left Callouts -->
+                <div id="badge_l2" class="callout-badge absolute top-[1.5%] left-[6%] sm:left-[12%] bg-slate-900/95 border border-slate-700 text-white px-3 py-1.5 rounded-xl shadow-xl flex items-center gap-2 text-xs" onclick="openRemapModal('l2')">
+                    <span class="font-bold text-rose-400">L2 button</span>
+                    <kbd id="badge_key_l2" class="px-2 py-0.5 bg-slate-800 text-sky-400 font-mono font-bold rounded border border-slate-700">U</kbd>
+                </div>
+
+                <div id="badge_l1" class="callout-badge absolute top-[7%] left-[6%] sm:left-[12%] bg-slate-900/95 border border-slate-700 text-white px-3 py-1.5 rounded-xl shadow-xl flex items-center gap-2 text-xs" onclick="openRemapModal('l1')">
+                    <span class="font-bold text-rose-400">L1 button</span>
+                    <kbd id="badge_key_l1" class="px-2 py-0.5 bg-slate-800 text-sky-400 font-mono font-bold rounded border border-slate-700">Q</kbd>
+                </div>
+
+                <!-- Top Center Callout -->
+                <div id="badge_port" class="callout-badge absolute top-[10%] left-[50%] -translate-x-1/2 bg-slate-900/95 border border-slate-700 text-white px-3 py-1 rounded-xl shadow-xl flex items-center gap-2 text-xs">
+                    <span class="font-bold text-slate-300">Port indicator</span>
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                </div>
+
+                <!-- Top Right Callouts -->
+                <div id="badge_r2" class="callout-badge absolute top-[1.5%] right-[6%] sm:right-[12%] bg-slate-900/95 border border-slate-700 text-white px-3 py-1.5 rounded-xl shadow-xl flex items-center gap-2 text-xs" onclick="openRemapModal('r2')">
+                    <kbd id="badge_key_r2" class="px-2 py-0.5 bg-slate-800 text-sky-400 font-mono font-bold rounded border border-slate-700">O</kbd>
+                    <span class="font-bold text-rose-400">R2 button</span>
+                </div>
+
+                <div id="badge_r1" class="callout-badge absolute top-[7%] right-[6%] sm:right-[12%] bg-slate-900/95 border border-slate-700 text-white px-3 py-1.5 rounded-xl shadow-xl flex items-center gap-2 text-xs" onclick="openRemapModal('r1')">
+                    <kbd id="badge_key_r1" class="px-2 py-0.5 bg-slate-800 text-sky-400 font-mono font-bold rounded border border-slate-700">E</kbd>
+                    <span class="font-bold text-rose-400">R1 button</span>
+                </div>
+
+                <!-- Left Middle Callout: D-Pad -->
+                <div id="badge_dpad" class="callout-badge absolute top-[43%] left-[1%] sm:left-[5%] bg-slate-900/95 border border-slate-700 text-white px-3 py-2 rounded-xl shadow-xl flex flex-col gap-1 text-xs" onclick="scrollToSection('sec_dpad')">
+                    <span class="font-bold text-rose-400">Directional buttons</span>
+                    <div class="flex gap-1 font-mono text-[11px]">
+                        <kbd id="badge_key_dpad_up" class="px-1.5 py-0.5 bg-slate-800 text-sky-400 rounded">↑</kbd>
+                        <kbd id="badge_key_dpad_down" class="px-1.5 py-0.5 bg-slate-800 text-sky-400 rounded">↓</kbd>
+                        <kbd id="badge_key_dpad_left" class="px-1.5 py-0.5 bg-slate-800 text-sky-400 rounded">←</kbd>
+                        <kbd id="badge_key_dpad_right" class="px-1.5 py-0.5 bg-slate-800 text-sky-400 rounded">→</kbd>
+                    </div>
+                </div>
+
+                <!-- Left Bottom Callouts: Left Stick & L3 -->
+                <div id="badge_left_stick" class="callout-badge absolute top-[60%] left-[1%] sm:left-[3%] bg-slate-900/95 border border-slate-700 text-white px-3 py-2 rounded-xl shadow-xl flex flex-col gap-1 text-xs" onclick="scrollToSection('sec_left_stick')">
+                    <span class="font-bold text-rose-400">Left stick</span>
+                    <div class="flex gap-1 font-mono text-[11px]">
+                        <kbd id="badge_key_ls_up" class="px-1 py-0.5 bg-slate-800 text-sky-400 rounded">W</kbd>
+                        <kbd id="badge_key_ls_left" class="px-1 py-0.5 bg-slate-800 text-sky-400 rounded">A</kbd>
+                        <kbd id="badge_key_ls_down" class="px-1 py-0.5 bg-slate-800 text-sky-400 rounded">S</kbd>
+                        <kbd id="badge_key_ls_right" class="px-1 py-0.5 bg-slate-800 text-sky-400 rounded">D</kbd>
+                    </div>
+                </div>
+
+                <div id="badge_l3" class="callout-badge absolute top-[74%] left-[1%] sm:left-[3%] bg-slate-900/95 border border-rose-500/50 text-white px-3 py-1.5 rounded-xl shadow-xl flex items-center gap-2 text-xs" onclick="openRemapModal('l3')">
+                    <span class="font-bold text-rose-400">L3 button</span>
+                    <kbd id="badge_key_l3" class="px-2 py-0.5 bg-slate-800 text-rose-400 font-mono font-bold rounded border border-rose-500/30">Shift</kbd>
+                </div>
+
+                <!-- Bottom Center Callouts: SELECT, PS, START -->
+                <div id="badge_select" class="callout-badge absolute top-[87%] left-[28%] sm:left-[32%] bg-slate-900/95 border border-slate-700 text-white px-2.5 py-1 rounded-xl shadow-xl flex items-center gap-1.5 text-xs" onclick="openRemapModal('select')">
+                    <span class="font-bold text-slate-300">SELECT</span>
+                    <kbd id="badge_key_select" class="px-1.5 py-0.5 bg-slate-800 text-sky-400 font-mono rounded text-[11px]">Back</kbd>
+                </div>
+
+                <div id="badge_ps" class="callout-badge absolute top-[92%] left-[50%] -translate-x-1/2 bg-slate-900/95 border border-slate-700 text-white px-3 py-1 rounded-xl shadow-xl flex items-center gap-1.5 text-xs" onclick="openRemapModal('ps')">
+                    <span class="font-bold text-slate-300">PS button</span>
+                    <kbd id="badge_key_ps" class="px-1.5 py-0.5 bg-slate-800 text-sky-400 font-mono rounded text-[11px]">Home</kbd>
+                </div>
+
+                <div id="badge_start" class="callout-badge absolute top-[87%] right-[28%] sm:right-[32%] bg-slate-900/95 border border-slate-700 text-white px-2.5 py-1 rounded-xl shadow-xl flex items-center gap-1.5 text-xs" onclick="openRemapModal('start')">
+                    <kbd id="badge_key_start" class="px-1.5 py-0.5 bg-slate-800 text-sky-400 font-mono rounded text-[11px]">Enter</kbd>
+                    <span class="font-bold text-slate-300">START</span>
+                </div>
+
+                <!-- Right Action Face Button Callouts -->
+                <div id="badge_triangle" class="callout-badge absolute top-[43%] right-[1%] sm:right-[5%] bg-slate-900/95 border border-slate-700 text-white px-3 py-1 rounded-xl shadow-xl flex items-center gap-2 text-xs" onclick="openRemapModal('triangle')">
+                    <kbd id="badge_key_triangle" class="px-2 py-0.5 bg-slate-800 text-emerald-400 font-mono font-bold rounded">I</kbd>
+                    <span class="font-bold text-emerald-400">△ button</span>
+                </div>
+
+                <div id="badge_square" class="callout-badge absolute top-[51%] right-[1%] sm:right-[5%] bg-slate-900/95 border border-slate-700 text-white px-3 py-1 rounded-xl shadow-xl flex items-center gap-2 text-xs" onclick="openRemapModal('square')">
+                    <kbd id="badge_key_square" class="px-2 py-0.5 bg-slate-800 text-pink-400 font-mono font-bold rounded">J</kbd>
+                    <span class="font-bold text-pink-400">□ button</span>
+                </div>
+
+                <div id="badge_circle" class="callout-badge absolute top-[59%] right-[1%] sm:right-[5%] bg-slate-900/95 border border-slate-700 text-white px-3 py-1 rounded-xl shadow-xl flex items-center gap-2 text-xs" onclick="openRemapModal('circle')">
+                    <kbd id="badge_key_circle" class="px-2 py-0.5 bg-slate-800 text-red-400 font-mono font-bold rounded">L</kbd>
+                    <span class="font-bold text-red-400">○ button</span>
+                </div>
+
+                <div id="badge_cross" class="callout-badge absolute top-[67%] right-[1%] sm:right-[5%] bg-slate-900/95 border border-slate-700 text-white px-3 py-1 rounded-xl shadow-xl flex items-center gap-2 text-xs" onclick="openRemapModal('cross')">
+                    <kbd id="badge_key_cross" class="px-2 py-0.5 bg-slate-800 text-blue-400 font-mono font-bold rounded">K</kbd>
+                    <span class="font-bold text-blue-400">✕ button</span>
+                </div>
+
+                <!-- Right Bottom Callouts: Right Stick & R3 -->
+                <div id="badge_right_stick" class="callout-badge absolute top-[77%] right-[1%] sm:right-[3%] bg-slate-900/95 border border-slate-700 text-white px-3 py-2 rounded-xl shadow-xl flex flex-col gap-1 text-xs" onclick="scrollToSection('sec_right_stick')">
+                    <span class="font-bold text-rose-400">Right stick</span>
+                    <div class="flex gap-1 font-mono text-[11px]">
+                        <kbd id="badge_key_rs_up" class="px-1 py-0.5 bg-slate-800 text-sky-400 rounded">I</kbd>
+                        <kbd id="badge_key_rs_left" class="px-1 py-0.5 bg-slate-800 text-sky-400 rounded">J</kbd>
+                        <kbd id="badge_key_rs_down" class="px-1 py-0.5 bg-slate-800 text-sky-400 rounded">K</kbd>
+                        <kbd id="badge_key_rs_right" class="px-1 py-0.5 bg-slate-800 text-sky-400 rounded">L</kbd>
+                    </div>
+                </div>
+
+                <div id="badge_r3" class="callout-badge absolute top-[90%] right-[1%] sm:right-[3%] bg-slate-900/95 border border-rose-500/50 text-white px-3 py-1.5 rounded-xl shadow-xl flex items-center gap-2 text-xs" onclick="openRemapModal('r3')">
+                    <kbd id="badge_key_r3" class="px-2 py-0.5 bg-slate-800 text-rose-400 font-mono font-bold rounded border border-rose-500/30">Ctrl</kbd>
+                    <span class="font-bold text-rose-400">R3 button</span>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ========================================================= -->
+        <!-- SECTION 2: SCROLL-DOWN KEY MAPPING & CUSTOMIZATION PANELS -->
+        <!-- ========================================================= -->
+        <section id="mappingSection" class="flex flex-col gap-8 scroll-mt-20">
+            
+            <!-- Section Title & Filter Bar -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/70 p-6 rounded-3xl border border-slate-800 shadow-xl backdrop-blur-sm">
+                <div>
+                    <h2 class="font-bold text-xl text-white flex items-center gap-3">
+                        <i class="fa-solid fa-sliders text-rose-500"></i>
+                        Key Mapping & Controls Customization
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Both Left/Right Analog Movement directions and L3/R3 Stick Clicks are separated into individual customizable cards.</p>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                        <input type="text" id="searchInput" placeholder="Filter button or key..." class="bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500 w-full sm:w-56">
+                    </div>
+                    <button id="resetDefaultsBtn" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium border border-slate-700 transition flex items-center gap-1.5 whitespace-nowrap">
+                        <i class="fa-solid fa-rotate-left text-amber-400"></i>
+                        Reset Defaults
+                    </button>
+                </div>
+            </div>
+
+            <!-- Warning Container for Duplicate Key Detection -->
+            <div id="duplicateWarning" class="hidden bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-xs text-amber-400 flex items-center gap-3">
+                <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                <span id="duplicateWarningText">Warning: Multiple actions are mapped to the same key.</span>
+            </div>
+
+            <!-- CATEGORY GRIDS -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <!-- CARD 1: LEFT ANALOG STICK & L3 CLICK (SEPARATED) -->
+                <div id="sec_left_stick" class="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col gap-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 class="font-bold text-base text-white flex items-center gap-2">
+                            <i class="fa-solid fa-gamepad text-emerald-400"></i>
+                            Left Stick & L3 Button
+                        </h3>
+                        <span class="text-[11px] text-slate-400 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700">Movement & Click</span>
+                    </div>
+
+                    <!-- Movement Directions -->
+                    <div class="space-y-2.5">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Analog Movement Axes</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                                <span class="text-xs text-slate-300">Stick UP</span>
+                                <kbd onclick="openRemapModal('ls_up')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_ls_up">W</kbd>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                                <span class="text-xs text-slate-300">Stick DOWN</span>
+                                <kbd onclick="openRemapModal('ls_down')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_ls_down">S</kbd>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                                <span class="text-xs text-slate-300">Stick LEFT</span>
+                                <kbd onclick="openRemapModal('ls_left')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_ls_left">A</kbd>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                                <span class="text-xs text-slate-300">Stick RIGHT</span>
+                                <kbd onclick="openRemapModal('ls_right')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_ls_right">D</kbd>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Explicit L3 Stick Click -->
+                    <div class="pt-2 border-t border-slate-800/80">
+                        <span class="text-xs font-semibold text-rose-400 uppercase tracking-wider">Separated Stick Click Button</span>
+                        <div class="mt-2 bg-slate-950 p-3 rounded-2xl border border-rose-500/30 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-white block">L3 Button (Left Stick Press)</span>
+                                <span class="text-[11px] text-slate-400">Usually used for Sprint or Melee</span>
+                            </div>
+                            <button onclick="openRemapModal('l3')" class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white font-mono text-xs font-bold rounded-xl border border-rose-500/40 transition flex items-center gap-2">
+                                <span id="bind_key_l3">Shift</span>
+                                <i class="fa-solid fa-pen text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 2: RIGHT ANALOG STICK & R3 CLICK (SEPARATED) -->
+                <div id="sec_right_stick" class="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col gap-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 class="font-bold text-base text-white flex items-center gap-2">
+                            <i class="fa-solid fa-gamepad text-sky-400"></i>
+                            Right Stick & R3 Button
+                        </h3>
+                        <span class="text-[11px] text-slate-400 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700">Camera & Click</span>
+                    </div>
+
+                    <!-- Movement Directions -->
+                    <div class="space-y-2.5">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Camera / Aim Axes</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                                <span class="text-xs text-slate-300">Right Stick UP</span>
+                                <kbd onclick="openRemapModal('rs_up')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_rs_up">I</kbd>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                                <span class="text-xs text-slate-300">Right Stick DOWN</span>
+                                <kbd onclick="openRemapModal('rs_down')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_rs_down">K</kbd>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                                <span class="text-xs text-slate-300">Right Stick LEFT</span>
+                                <kbd onclick="openRemapModal('rs_left')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_rs_left">J</kbd>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                                <span class="text-xs text-slate-300">Right Stick RIGHT</span>
+                                <kbd onclick="openRemapModal('rs_right')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_rs_right">L</kbd>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Explicit R3 Stick Click -->
+                    <div class="pt-2 border-t border-slate-800/80">
+                        <span class="text-xs font-semibold text-rose-400 uppercase tracking-wider">Separated Stick Click Button</span>
+                        <div class="mt-2 bg-slate-950 p-3 rounded-2xl border border-rose-500/30 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-white block">R3 Button (Right Stick Press)</span>
+                                <span class="text-[11px] text-slate-400">Usually used for Crouch or Lock-On</span>
+                            </div>
+                            <button onclick="openRemapModal('r3')" class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white font-mono text-xs font-bold rounded-xl border border-rose-500/40 transition flex items-center gap-2">
+                                <span id="bind_key_r3">Control</span>
+                                <i class="fa-solid fa-pen text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 3: DIRECTIONAL BUTTONS (D-PAD) -->
+                <div id="sec_dpad" class="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col gap-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 class="font-bold text-base text-white flex items-center gap-2">
+                            <i class="fa-solid fa-up-down-left-right text-indigo-400"></i>
+                            Directional Buttons (D-Pad)
+                        </h3>
+                        <span class="text-[11px] text-slate-400 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700">Digital D-Pad</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-300">D-Pad Up</span>
+                            <kbd onclick="openRemapModal('dpad_up')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_dpad_up">Up Arrow</kbd>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-300">D-Pad Down</span>
+                            <kbd onclick="openRemapModal('dpad_down')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_dpad_down">Down Arrow</kbd>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-300">D-Pad Left</span>
+                            <kbd onclick="openRemapModal('dpad_left')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_dpad_left">Left Arrow</kbd>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-300">D-Pad Right</span>
+                            <kbd onclick="openRemapModal('dpad_right')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_dpad_right">Right Arrow</kbd>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 4: ACTION FACE BUTTONS -->
+                <div id="sec_face" class="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col gap-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 class="font-bold text-base text-white flex items-center gap-2">
+                            <i class="fa-solid fa-shapes text-rose-400"></i>
+                            Action Face Buttons
+                        </h3>
+                        <span class="text-[11px] text-slate-400 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700">PlayStation Symbols</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                            <span class="text-xs font-bold text-emerald-400">△ Triangle</span>
+                            <kbd onclick="openRemapModal('triangle')" class="px-2.5 py-1 bg-slate-800 text-emerald-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_triangle">I</kbd>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                            <span class="text-xs font-bold text-red-400">○ Circle</span>
+                            <kbd onclick="openRemapModal('circle')" class="px-2.5 py-1 bg-slate-800 text-red-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_circle">L</kbd>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                            <span class="text-xs font-bold text-blue-400">✕ Cross (X)</span>
+                            <kbd onclick="openRemapModal('cross')" class="px-2.5 py-1 bg-slate-800 text-blue-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_cross">K</kbd>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                            <span class="text-xs font-bold text-pink-400">□ Square</span>
+                            <kbd onclick="openRemapModal('square')" class="px-2.5 py-1 bg-slate-800 text-pink-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_square">J</kbd>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 5: SHOULDERS & TRIGGERS -->
+                <div id="sec_shoulders" class="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col gap-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 class="font-bold text-base text-white flex items-center gap-2">
+                            <i class="fa-solid fa-[#1e293b] fa-shield-halved text-sky-400"></i>
+                            Shoulders & Triggers (L1/R1, L2/R2)
+                        </h3>
+                        <span class="text-[11px] text-slate-400 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700">Top Bumpers</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-300">L1 Button</span>
+                            <kbd onclick="openRemapModal('l1')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_l1">Q</kbd>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-300">R1 Button</span>
+                            <kbd onclick="openRemapModal('r1')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_r1">E</kbd>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-300">L2 Trigger</span>
+                            <kbd onclick="openRemapModal('l2')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_l2">U</kbd>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-300">R2 Trigger</span>
+                            <kbd onclick="openRemapModal('r2')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_r2">O</kbd>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 6: CENTER SYSTEM CONTROLS -->
+                <div id="sec_center" class="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col gap-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 class="font-bold text-base text-white flex items-center gap-2">
+                            <i class="fa-solid fa-circle-dot text-amber-400"></i>
+                            Center Controls (Select, PS, Start)
+                        </h3>
+                        <span class="text-[11px] text-slate-400 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700">System Buttons</span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex flex-col gap-2 items-center text-center">
+                            <span class="text-xs font-medium text-slate-300">SELECT</span>
+                            <kbd onclick="openRemapModal('select')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_select">Backspace</kbd>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex flex-col gap-2 items-center text-center">
+                            <span class="text-xs font-medium text-slate-300">PS Button</span>
+                            <kbd onclick="openRemapModal('ps')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_ps">Home</kbd>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex flex-col gap-2 items-center text-center">
+                            <span class="text-xs font-medium text-slate-300">START</span>
+                            <kbd onclick="openRemapModal('start')" class="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-xs font-bold rounded-lg border border-slate-700 cursor-pointer hover:border-rose-500 transition" id="bind_key_start">Enter</kbd>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- KEY REBINDING LISTEN MODAL -->
+    <div id="remapModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full p-6 shadow-2xl flex flex-col items-center text-center gap-4 relative listening-active">
+            <button id="closeModalBtn" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="w-14 h-14 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center text-2xl border border-rose-500/20 mb-1">
+                <i class="fa-solid fa-keyboard"></i>
+            </div>
+
+            <div>
+                <h3 class="font-bold text-lg text-white">Press Any Keyboard Key</h3>
+                <p class="text-xs text-slate-400 mt-1">
+                    Assigning key for: <span id="modalBtnName" class="text-rose-400 font-bold">Triangle Button</span>
+                </p>
+            </div>
+
+            <div class="w-full py-8 bg-slate-950 rounded-2xl border border-dashed border-slate-700 flex items-center justify-center">
+                <span class="text-slate-400 text-xs font-mono animate-pulse">Press desired key on your keyboard now...</span>
+            </div>
+
+            <p class="text-[11px] text-slate-500">Press <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-slate-300">Escape</kbd> to cancel.</p>
+        </div>
     </div>
-  </header>
-  <main>
-    <div class="card">
-      <div class="status">
-        <div><span class="dot"></span>Click callouts or pad areas to remap · keys light the diagram</div>
-        <div>Last: <kbd id="lastKey">None</kbd> · <span id="lastAct" style="color:#34d399">Ready</span></div>
-      </div>
-      <div class="stage" id="stage">
-        <svg viewBox="0 0 960 520" id="svg">
-          <defs>
-            <linearGradient id="shell" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#2c303b"/><stop offset="100%" stop-color="#0d0f14"/>
-            </linearGradient>
-          </defs>
-          <path d="M270,120 C350,115 400,128 480,132 C560,128 610,115 690,120 C760,125 830,150 865,215 C900,280 910,370 875,440 C850,490 790,500 750,460 C700,410 660,390 590,390 C550,390 520,400 480,400 C440,400 410,390 370,390 C300,390 260,410 210,460 C170,500 110,490 85,440 C50,370 60,280 95,215 C130,150 200,125 270,120 Z" fill="url(#shell)" stroke="#384152" stroke-width="4"/>
-          <text x="480" y="165" fill="#94a3b8" font-size="14" font-weight="800" text-anchor="middle" letter-spacing="3">SONY</text>
-          <text x="480" y="190" fill="#64748b" font-size="10" font-weight="700" text-anchor="middle" letter-spacing="2">DUALSHOCK 3</text>
-          <!-- shoulders -->
-          <rect id="svg_l2" class="controller-part" data-id="l2" x="300" y="78" width="50" height="18" rx="4" fill="#1e222b" stroke="#475569"/>
-          <rect id="svg_l1" class="controller-part" data-id="l1" x="300" y="100" width="55" height="18" rx="4" fill="#2d3340" stroke="#475569"/>
-          <rect id="svg_r2" class="controller-part" data-id="r2" x="610" y="78" width="50" height="18" rx="4" fill="#1e222b" stroke="#475569"/>
-          <rect id="svg_r1" class="controller-part" data-id="r1" x="605" y="100" width="55" height="18" rx="4" fill="#2d3340" stroke="#475569"/>
-          <text x="325" y="91" fill="#94a3b8" font-size="10" text-anchor="middle" pointer-events="none">L2</text>
-          <text x="327" y="113" fill="#cbd5e1" font-size="10" text-anchor="middle" pointer-events="none">L1</text>
-          <text x="635" y="91" fill="#94a3b8" font-size="10" text-anchor="middle" pointer-events="none">R2</text>
-          <text x="632" y="113" fill="#cbd5e1" font-size="10" text-anchor="middle" pointer-events="none">R1</text>
-          <!-- dpad -->
-          <g transform="translate(300,250)">
-            <circle r="62" fill="#14171e" stroke="#272c38" stroke-width="3"/>
-            <path id="svg_dpad_up" class="controller-part" data-id="dpad_up" d="M-16,-52 L16,-52 L12,-18 L-12,-18 Z" fill="#242934" stroke="#3b4252"/>
-            <path id="svg_dpad_down" class="controller-part" data-id="dpad_down" d="M-16,52 L16,52 L12,18 L-12,18 Z" fill="#242934" stroke="#3b4252"/>
-            <path id="svg_dpad_left" class="controller-part" data-id="dpad_left" d="M-52,-16 L-52,16 L-18,12 L-18,-12 Z" fill="#242934" stroke="#3b4252"/>
-            <path id="svg_dpad_right" class="controller-part" data-id="dpad_right" d="M52,-16 L52,16 L18,12 L18,-12 Z" fill="#242934" stroke="#3b4252"/>
-          </g>
-          <!-- face -->
-          <g transform="translate(660,250)">
-            <circle r="62" fill="#14171e" stroke="#272c38" stroke-width="3"/>
-            <g id="svg_triangle" class="controller-part" data-id="triangle"><circle cx="0" cy="-38" r="18" fill="#1b1e26" stroke="#3b4252"/><polygon points="0,-46 -8,-32 8,-32" fill="none" stroke="#10b981" stroke-width="3"/></g>
-            <g id="svg_circle" class="controller-part" data-id="circle"><circle cx="38" cy="0" r="18" fill="#1b1e26" stroke="#3b4252"/><circle cx="38" cy="0" r="8" fill="none" stroke="#ef4444" stroke-width="3"/></g>
-            <g id="svg_cross" class="controller-part" data-id="cross"><circle cx="0" cy="38" r="18" fill="#1b1e26" stroke="#3b4252"/><path d="M-7,31 L7,45 M7,31 L-7,45" stroke="#3b82f6" stroke-width="3"/></g>
-            <g id="svg_square" class="controller-part" data-id="square"><circle cx="-38" cy="0" r="18" fill="#1b1e26" stroke="#3b4252"/><rect x="-45" y="-7" width="14" height="14" fill="none" stroke="#ec4899" stroke-width="3"/></g>
-          </g>
-          <!-- sticks -->
-          <g id="svg_left_stick" class="controller-part" data-id="l3" transform="translate(390,340)"><circle r="34" fill="#1a1e28" stroke="#3b4252" stroke-width="3"/><circle r="18" fill="#2a3140"/></g>
-          <g id="svg_right_stick" class="controller-part" data-id="r3" transform="translate(570,340)"><circle r="34" fill="#1a1e28" stroke="#3b4252" stroke-width="3"/><circle r="18" fill="#2a3140"/></g>
-          <!-- select start ps -->
-          <g id="svg_select" class="controller-part" data-id="select" transform="translate(430,270)"><rect width="28" height="12" rx="3" fill="#1e222b" stroke="#475569"/></g>
-          <g id="svg_start" class="controller-part" data-id="start" transform="translate(502,270)"><rect width="28" height="12" rx="3" fill="#1e222b" stroke="#475569"/></g>
-          <g id="svg_ps" class="controller-part" data-id="ps" transform="translate(480,320)"><circle r="14" fill="#161920" stroke="#cbd5e1"/></g>
-        </svg>
-        <!-- badges positioned % over stage -->
-        <div class="badge" data-id="l2" style="left:8%;top:4%"><b>L2</b><i id="k_l2">—</i></div>
-        <div class="badge" data-id="l1" style="left:8%;top:12%"><b>L1</b><i id="k_l1">—</i></div>
-        <div class="badge" data-id="r2" style="right:8%;top:4%;left:auto"><b>R2</b><i id="k_r2">—</i></div>
-        <div class="badge" data-id="r1" style="right:8%;top:12%;left:auto"><b>R1</b><i id="k_r1">—</i></div>
-        <div class="badge" data-id="dpad_up" style="left:6%;top:38%"><b>↑</b><i id="k_dpad_up">—</i></div>
-        <div class="badge" data-id="dpad_left" style="left:2%;top:48%"><b>←</b><i id="k_dpad_left">—</i></div>
-        <div class="badge" data-id="dpad_right" style="left:14%;top:48%"><b>→</b><i id="k_dpad_right">—</i></div>
-        <div class="badge" data-id="dpad_down" style="left:6%;top:58%"><b>↓</b><i id="k_dpad_down">—</i></div>
-        <div class="badge" data-id="triangle" style="right:4%;top:38%;left:auto"><b>△</b><i id="k_triangle">—</i></div>
-        <div class="badge" data-id="square" style="right:10%;top:48%;left:auto"><b>□</b><i id="k_square">—</i></div>
-        <div class="badge" data-id="circle" style="right:1%;top:48%;left:auto"><b>○</b><i id="k_circle">—</i></div>
-        <div class="badge" data-id="cross" style="right:4%;top:58%;left:auto"><b>✕</b><i id="k_cross">—</i></div>
-        <div class="badge" data-id="select" style="left:38%;top:28%"><b>Select</b><i id="k_select">—</i></div>
-        <div class="badge" data-id="start" style="left:52%;top:28%"><b>Start</b><i id="k_start">—</i></div>
-        <div class="badge" data-id="ps" style="left:46%;top:62%"><b>PS</b><i id="k_ps">—</i></div>
-        <div class="badge" data-id="ls_up" style="left:22%;top:68%"><b>LS↑</b><i id="k_ls_up">—</i></div>
-        <div class="badge" data-id="ls_left" style="left:16%;top:76%"><b>LS←</b><i id="k_ls_left">—</i></div>
-        <div class="badge" data-id="ls_right" style="left:28%;top:76%"><b>LS→</b><i id="k_ls_right">—</i></div>
-        <div class="badge" data-id="ls_down" style="left:22%;top:84%"><b>LS↓</b><i id="k_ls_down">—</i></div>
-        <div class="badge" data-id="l3" style="left:34%;top:80%"><b>L3</b><i id="k_l3">—</i></div>
-        <div class="badge" data-id="rs_up" style="left:62%;top:68%"><b>RS↑</b><i id="k_rs_up">—</i></div>
-        <div class="badge" data-id="rs_left" style="left:56%;top:76%"><b>RS←</b><i id="k_rs_left">—</i></div>
-        <div class="badge" data-id="rs_right" style="left:68%;top:76%"><b>RS→</b><i id="k_rs_right">—</i></div>
-        <div class="badge" data-id="rs_down" style="left:62%;top:84%"><b>RS↓</b><i id="k_rs_down">—</i></div>
-        <div class="badge" data-id="r3" style="left:50%;top:80%"><b>R3</b><i id="k_r3">—</i></div>
-      </div>
-      <div class="grid" id="grid"></div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-2xl shadow-2xl text-xs flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toastMsg">Action complete</span>
     </div>
-  </main>
-</div>
-<div class="modal" id="modal"><div class="box"><div style="font-weight:700;margin-bottom:8px" id="modalName">Button</div><div style="color:#94a3b8;font-size:13px">Press any key… (Esc cancel)</div></div></div>
-<div class="toast" id="toast">Saved</div>
-<script>
-const NAMES = {l1:'L1',r1:'R1',l2:'L2',r2:'R2',dpad_up:'D-Pad Up',dpad_down:'D-Pad Down',dpad_left:'D-Pad Left',dpad_right:'D-Pad Right',triangle:'Triangle',circle:'Circle',cross:'Cross',square:'Square',select:'Select',start:'Start',ps:'PS',ls_up:'LS Up',ls_down:'LS Down',ls_left:'LS Left',ls_right:'LS Right',l3:'L3',rs_up:'RS Up',rs_down:'RS Down',rs_left:'RS Left',rs_right:'RS Right',r3:'R3'};
-const PRESETS = {
-  rpcs3: {dpad_up:'NumPad8',dpad_down:'NumPad5',dpad_left:'NumPad4',dpad_right:'NumPad6',triangle:'S',circle:'X',cross:'Z',square:'A',l1:'L',r1:'R',l2:'RShiftKey',r2:'RControlKey',select:'Space',start:'V',ps:'Backspace',ls_up:'Up',ls_down:'Down',ls_left:'Left',ls_right:'Right',l3:'LShiftKey',rs_up:'U',rs_down:'J',rs_left:'H',rs_right:'K',r3:'LControlKey'},
-  fps: {dpad_up:'D1',dpad_down:'D2',dpad_left:'D3',dpad_right:'D4',triangle:'Y',circle:'C',cross:'Space',square:'R',l1:'G',r1:'F',l2:'U',r2:'O',select:'Tab',start:'Escape',ps:'F1',ls_up:'W',ls_down:'S',ls_left:'A',ls_right:'D',l3:'LShiftKey',rs_up:'Up',rs_down:'Down',rs_left:'Left',rs_right:'Right',r3:'V'},
-  fighting: {dpad_up:'W',dpad_down:'S',dpad_left:'A',dpad_right:'D',triangle:'I',circle:'K',cross:'J',square:'U',l1:'O',r1:'P',l2:'L',r2:'Oem1',select:'B',start:'Enter',ps:'Home',ls_up:'W',ls_down:'S',ls_left:'A',ls_right:'D',l3:'D9',rs_up:'I',rs_down:'K',rs_left:'J',rs_right:'L',r3:'D0'},
-  racing: {dpad_up:'Up',dpad_down:'Down',dpad_left:'A',dpad_right:'D',triangle:'C',circle:'Space',cross:'W',square:'S',l1:'Q',r1:'E',l2:'LControlKey',r2:'LShiftKey',select:'M',start:'Escape',ps:'Home',ls_up:'W',ls_down:'S',ls_left:'A',ls_right:'D',l3:'H',rs_up:'I',rs_down:'K',rs_left:'J',rs_right:'L',r3:'R'}
-};
-let map = Object.assign({}, PRESETS.rpcs3);
-let listen = null;
-function post(obj){ try{ if(window.chrome&&chrome.webview) chrome.webview.postMessage(obj); }catch(e){} }
-function pretty(k){ if(!k) return '—'; return String(k).replace('NumPad','Num+').replace('RControlKey','Ctrl R').replace('LControlKey','Ctrl L').replace('RShiftKey','Shift R').replace('LShiftKey','Shift L'); }
-function updateUI(){
-  Object.keys(NAMES).forEach(id=>{
-    const el=document.getElementById('k_'+id); if(el) el.textContent=pretty(map[id]);
-    const row=document.getElementById('row_'+id); if(row) row.querySelector('strong').textContent=pretty(map[id]);
-  });
-}
-function buildGrid(){
-  const g=document.getElementById('grid'); g.innerHTML='';
-  Object.keys(NAMES).forEach(id=>{
-    const d=document.createElement('div'); d.className='row'; d.id='row_'+id;
-    d.innerHTML=`<span>${NAMES[id]}</span><strong>${pretty(map[id])}</strong>`;
-    d.onclick=()=>startListen(id);
-    g.appendChild(d);
-  });
-}
-function startListen(id){ listen=id; document.getElementById('modalName').textContent=NAMES[id]||id; document.getElementById('modal').classList.add('show'); }
-function stopListen(){ listen=null; document.getElementById('modal').classList.remove('show'); }
-function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
-function flash(id){
-  document.querySelectorAll(`[data-id="${id}"]`).forEach(el=>{ el.classList.add(el.classList.contains('badge')?'active-badge':'active'); setTimeout(()=>{ el.classList.remove('active'); el.classList.remove('active-badge'); },220); });
-}
-document.querySelectorAll('.controller-part, .badge').forEach(el=>{ el.addEventListener('click',()=>{ const id=el.getAttribute('data-id'); if(id&&NAMES[id]) startListen(id); }); });
-document.getElementById('preset').onchange=e=>{ const v=e.target.value; if(PRESETS[v]){ map=Object.assign({},PRESETS[v]); updateUI(); toast('Preset: '+v); } };
-document.getElementById('btnReset').onclick=()=>{ map=Object.assign({},PRESETS.rpcs3); document.getElementById('preset').value='rpcs3'; updateUI(); toast('Reset to defaults'); };
-document.getElementById('btnSave').onclick=()=>{ post({type:'save', map}); toast('Saved to PPSX33'); };
-window.addEventListener('keydown', e=>{
-  if(listen){
-    if(e.key==='Escape'){ stopListen(); return; }
-    e.preventDefault();
-    let code=e.code||e.key;
-    // map to WinForms Keys-ish names
-    const table={Space:'Space',ArrowUp:'Up',ArrowDown:'Down',ArrowLeft:'Left',ArrowRight:'Right',ShiftLeft:'LShiftKey',ShiftRight:'RShiftKey',ControlLeft:'LControlKey',ControlRight:'RControlKey',Backspace:'Backspace',Enter:'Enter',Tab:'Tab',Escape:'Escape'};
-    let key=table[code]|| (code.startsWith('Key')?code.slice(3): code.startsWith('Digit')?'D'+code.slice(5): code.startsWith('Numpad')?'NumPad'+code.slice(6): code);
-    map[listen]=key; document.getElementById('preset').value='custom'; updateUI(); flash(listen); stopListen(); post({type:'bind', id:listen, key}); return;
-  }
-  document.getElementById('lastKey').textContent=e.key===' '?'Space':e.key;
-  let hit=null;
-  Object.keys(map).forEach(id=>{ if(String(map[id]).toLowerCase()===e.key.toLowerCase()||map[id]===e.code) hit=id; });
-  document.getElementById('lastAct').textContent=hit?(NAMES[hit]||hit):'Unmapped';
-  if(hit) flash(hit);
-});
-// Host → page
-window.chrome?.webview?.addEventListener('message', ev=>{
-  const d=ev.data; if(!d) return;
-  if(d.type==='setMap' && d.map){ map=Object.assign({}, d.map); updateUI(); }
-});
-buildGrid(); updateUI();
-// request initial map
-post({type:'ready'});
-</script>
+
+    <!-- APPLICATION JAVASCRIPT LOGIC -->
+    <script>
+        // Preset Definitions
+        const PRESETS = {
+            rpcs3: {
+                dpad_up: { key: '8', code: 'Numpad8', label: 'Num+8' },
+                dpad_down: { key: '5', code: 'Numpad5', label: 'Num+5' },
+                dpad_left: { key: '4', code: 'Numpad4', label: 'Num+4' },
+                dpad_right: { key: '6', code: 'Numpad6', label: 'Num+6' },
+                triangle: { key: 's', code: 'KeyS', label: 'S' },
+                circle: { key: 'x', code: 'KeyX', label: 'X' },
+                cross: { key: 'z', code: 'KeyZ', label: 'Z' },
+                square: { key: 'a', code: 'KeyA', label: 'A' },
+                l1: { key: 'l', code: 'KeyL', label: 'L' },
+                r1: { key: 'r', code: 'KeyR', label: 'R' },
+                l2: { key: 'Shift', code: 'ShiftRight', label: 'Shift Right' },
+                r2: { key: 'Control', code: 'ControlRight', label: 'Ctrl Right' },
+                select: { key: ' ', code: 'Space', label: 'Space' },
+                start: { key: 'v', code: 'KeyV', label: 'V' },
+                ps: { key: 'Backspace', code: 'Backspace', label: 'Backspace' },
+                ls_up: { key: 'ArrowUp', code: 'ArrowUp', label: 'Up' },
+                ls_down: { key: 'ArrowDown', code: 'ArrowDown', label: 'Down' },
+                ls_left: { key: 'ArrowLeft', code: 'ArrowLeft', label: 'Left' },
+                ls_right: { key: 'ArrowRight', code: 'ArrowRight', label: 'Right' },
+                l3: { key: 'Shift', code: 'ShiftLeft', label: 'Shift Left' },
+                rs_up: { key: 'u', code: 'KeyU', label: 'U' },
+                rs_down: { key: 'j', code: 'KeyJ', label: 'J' },
+                rs_left: { key: 'h', code: 'KeyH', label: 'H' },
+                rs_right: { key: 'k', code: 'KeyK', label: 'K' },
+                r3: { key: 'Control', code: 'ControlLeft', label: 'Ctrl Left' }
+            },
+            fps: {
+                dpad_up: { key: '1', code: 'Digit1', label: '1' },
+                dpad_down: { key: '2', code: 'Digit2', label: '2' },
+                dpad_left: { key: '3', code: 'Digit3', label: '3' },
+                dpad_right: { key: '4', code: 'Digit4', label: '4' },
+                triangle: { key: 'y', code: 'KeyY', label: 'Y' },
+                circle: { key: 'c', code: 'KeyC', label: 'C' },
+                cross: { key: ' ', code: 'Space', label: 'Space' },
+                square: { key: 'r', code: 'KeyR', label: 'R' },
+                l1: { key: 'g', code: 'KeyG', label: 'G' },
+                r1: { key: 'f', code: 'KeyF', label: 'F' },
+                l2: { key: 'u', code: 'KeyU', label: 'U' },
+                r2: { key: 'o', code: 'KeyO', label: 'O' },
+                select: { key: 'Tab', code: 'Tab', label: 'Tab' },
+                start: { key: 'Escape', code: 'Escape', label: 'Escape' },
+                ps: { key: 'F1', code: 'F1', label: 'F1' },
+                ls_up: { key: 'w', code: 'KeyW', label: 'W' },
+                ls_down: { key: 's', code: 'KeyS', label: 'S' },
+                ls_left: { key: 'a', code: 'KeyA', label: 'A' },
+                ls_right: { key: 'd', code: 'KeyD', label: 'D' },
+                l3: { key: 'Shift', code: 'ShiftLeft', label: 'Shift' },
+                rs_up: { key: 'ArrowUp', code: 'ArrowUp', label: 'Up Arrow' },
+                rs_down: { key: 'ArrowDown', code: 'ArrowDown', label: 'Down Arrow' },
+                rs_left: { key: 'ArrowLeft', code: 'ArrowLeft', label: 'Left Arrow' },
+                rs_right: { key: 'ArrowRight', code: 'ArrowRight', label: 'Right Arrow' },
+                r3: { key: 'v', code: 'KeyV', label: 'V' }
+            },
+            fighting: {
+                dpad_up: { key: 'w', code: 'KeyW', label: 'W' },
+                dpad_down: { key: 's', code: 'KeyS', label: 'S' },
+                dpad_left: { key: 'a', code: 'KeyA', label: 'A' },
+                dpad_right: { key: 'd', code: 'KeyD', label: 'D' },
+                square: { key: 'u', code: 'KeyU', label: 'U' },
+                triangle: { key: 'i', code: 'KeyI', label: 'I' },
+                cross: { key: 'j', code: 'KeyJ', label: 'J' },
+                circle: { key: 'k', code: 'KeyK', label: 'K' },
+                l1: { key: 'o', code: 'KeyO', label: 'O' },
+                r1: { key: 'p', code: 'KeyP', label: 'P' },
+                l2: { key: 'l', code: 'KeyL', label: 'L' },
+                r2: { key: ';', code: 'Semicolon', label: ';' },
+                select: { key: 'b', code: 'KeyB', label: 'B' },
+                start: { key: 'Enter', code: 'Enter', label: 'Enter' },
+                ps: { key: 'Home', code: 'Home', label: 'Home' },
+                ls_up: { key: 'w', code: 'KeyW', label: 'W' },
+                ls_down: { key: 's', code: 'KeyS', label: 'S' },
+                ls_left: { key: 'a', code: 'KeyA', label: 'A' },
+                ls_right: { key: 'd', code: 'KeyD', label: 'D' },
+                l3: { key: '9', code: 'Digit9', label: '9' },
+                rs_up: { key: 'i', code: 'KeyI', label: 'I' },
+                rs_down: { key: 'k', code: 'KeyK', label: 'K' },
+                rs_left: { key: 'j', code: 'KeyJ', label: 'J' },
+                rs_right: { key: 'l', code: 'KeyL', label: 'L' },
+                r3: { key: '0', code: 'Digit0', label: '0' }
+            },
+            racing: {
+                dpad_up: { key: 'ArrowUp', code: 'ArrowUp', label: 'Up Arrow' },
+                dpad_down: { key: 'ArrowDown', code: 'ArrowDown', label: 'Down Arrow' },
+                dpad_left: { key: 'a', code: 'KeyA', label: 'A' },
+                dpad_right: { key: 'd', code: 'KeyD', label: 'D' },
+                square: { key: 's', code: 'KeyS', label: 'S' },
+                triangle: { key: 'c', code: 'KeyC', label: 'C' },
+                cross: { key: 'w', code: 'KeyW', label: 'W' },
+                circle: { key: ' ', code: 'Space', label: 'Space' },
+                l1: { key: 'q', code: 'KeyQ', label: 'Q' },
+                r1: { key: 'e', code: 'KeyE', label: 'E' },
+                l2: { key: 'Control', code: 'ControlLeft', label: 'Ctrl' },
+                r2: { key: 'Shift', code: 'ShiftLeft', label: 'Shift' },
+                select: { key: 'm', code: 'KeyM', label: 'M' },
+                start: { key: 'Escape', code: 'Escape', label: 'Esc' },
+                ps: { key: 'Home', code: 'Home', label: 'Home' },
+                ls_up: { key: 'w', code: 'KeyW', label: 'W' },
+                ls_down: { key: 's', code: 'KeyS', label: 'S' },
+                ls_left: { key: 'a', code: 'KeyA', label: 'A' },
+                ls_right: { key: 'd', code: 'KeyD', label: 'D' },
+                l3: { key: 'h', code: 'KeyH', label: 'H' },
+                rs_up: { key: 'i', code: 'KeyI', label: 'I' },
+                rs_down: { key: 'k', code: 'KeyK', label: 'K' },
+                rs_left: { key: 'j', code: 'KeyJ', label: 'J' },
+                rs_right: { key: 'l', code: 'KeyL', label: 'L' },
+                r3: { key: 'r', code: 'KeyR', label: 'R' }
+            }
+        };
+
+        // Master Button Definitions
+        const BUTTON_NAMES = {
+            l1: 'L1 Button',
+            r1: 'R1 Button',
+            l2: 'L2 Button',
+            r2: 'R2 Button',
+            dpad_up: 'D-Pad Up',
+            dpad_down: 'D-Pad Down',
+            dpad_left: 'D-Pad Left',
+            dpad_right: 'D-Pad Right',
+            triangle: 'Triangle Button',
+            circle: 'Circle Button',
+            cross: 'Cross (X) Button',
+            square: 'Square Button',
+            select: 'SELECT Button',
+            start: 'START Button',
+            ps: 'PS Button',
+            ls_up: 'Left Stick Up',
+            ls_down: 'Left Stick Down',
+            ls_left: 'Left Stick Left',
+            ls_right: 'Left Stick Right',
+            l3: 'L3 Button (Stick Click)',
+            rs_up: 'Right Stick Up',
+            rs_down: 'Right Stick Down',
+            rs_left: 'Right Stick Left',
+            rs_right: 'Right Stick Right',
+            r3: 'R3 Button (Stick Click)'
+        };
+
+        // Map Button Key to SVG Graphic ID Mapping
+        const SVG_MAP = {
+            l1: 'svg_l1',
+            r1: 'svg_r1',
+            l2: 'svg_l2',
+            r2: 'svg_r2',
+            dpad_up: 'svg_dpad_up',
+            dpad_down: 'svg_dpad_down',
+            dpad_left: 'svg_dpad_left',
+            dpad_right: 'svg_dpad_right',
+            triangle: 'svg_triangle',
+            circle: 'svg_circle',
+            cross: 'svg_cross',
+            square: 'svg_square',
+            select: 'svg_select',
+            start: 'svg_start',
+            ps: 'svg_ps',
+            l3: 'svg_left_stick',
+            r3: 'svg_right_stick',
+            ls_up: 'svg_left_stick',
+            ls_down: 'svg_left_stick',
+            ls_left: 'svg_left_stick',
+            ls_right: 'svg_left_stick',
+            rs_up: 'svg_right_stick',
+            rs_down: 'svg_right_stick',
+            rs_left: 'svg_right_stick',
+            rs_right: 'svg_right_stick'
+        };
+
+        // State Storage
+        let currentMappings = JSON.parse(JSON.stringify(PRESETS.rpcs3));
+        let activeModalTargetKey = null;
+
+        // DOM Elements
+        const presetSelect = document.getElementById('presetSelect');
+        const remapModal = document.getElementById('remapModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const modalBtnName = document.getElementById('modalBtnName');
+        const liveLastKey = document.getElementById('liveLastKey');
+        const liveLastAction = document.getElementById('liveLastAction');
+        const searchInput = document.getElementById('searchInput');
+        const resetDefaultsBtn = document.getElementById('resetDefaultsBtn');
+        const duplicateWarning = document.getElementById('duplicateWarning');
+        const exportBtn = document.getElementById('exportBtn');
+        const importBtn = document.getElementById('importBtn');
+        const importInput = document.getElementById('importInput');
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            updateAllUI();
+            attachKeyboardListeners();
+        });
+
+        // Update all badges, cards, and warnings
+        function updateAllUI() {
+            // Update Diagram Callout Badges
+            document.getElementById('badge_key_l2').textContent = currentMappings.l2?.label || '-';
+            document.getElementById('badge_key_l1').textContent = currentMappings.l1?.label || '-';
+            document.getElementById('badge_key_r2').textContent = currentMappings.r2?.label || '-';
+            document.getElementById('badge_key_r1').textContent = currentMappings.r1?.label || '-';
+
+            document.getElementById('badge_key_dpad_up').textContent = getShortKey(currentMappings.dpad_up?.label);
+            document.getElementById('badge_key_dpad_down').textContent = getShortKey(currentMappings.dpad_down?.label);
+            document.getElementById('badge_key_dpad_left').textContent = getShortKey(currentMappings.dpad_left?.label);
+            document.getElementById('badge_key_dpad_right').textContent = getShortKey(currentMappings.dpad_right?.label);
+
+            document.getElementById('badge_key_ls_up').textContent = getShortKey(currentMappings.ls_up?.label);
+            document.getElementById('badge_key_ls_left').textContent = getShortKey(currentMappings.ls_left?.label);
+            document.getElementById('badge_key_ls_down').textContent = getShortKey(currentMappings.ls_down?.label);
+            document.getElementById('badge_key_ls_right').textContent = getShortKey(currentMappings.ls_right?.label);
+            document.getElementById('badge_key_l3').textContent = currentMappings.l3?.label || '-';
+
+            document.getElementById('badge_key_select').textContent = currentMappings.select?.label || '-';
+            document.getElementById('badge_key_ps').textContent = currentMappings.ps?.label || '-';
+            document.getElementById('badge_key_start').textContent = currentMappings.start?.label || '-';
+
+            document.getElementById('badge_key_triangle').textContent = currentMappings.triangle?.label || '-';
+            document.getElementById('badge_key_square').textContent = currentMappings.square?.label || '-';
+            document.getElementById('badge_key_circle').textContent = currentMappings.circle?.label || '-';
+            document.getElementById('badge_key_cross').textContent = currentMappings.cross?.label || '-';
+
+            document.getElementById('badge_key_rs_up').textContent = getShortKey(currentMappings.rs_up?.label);
+            document.getElementById('badge_key_rs_left').textContent = getShortKey(currentMappings.rs_left?.label);
+            document.getElementById('badge_key_rs_down').textContent = getShortKey(currentMappings.rs_down?.label);
+            document.getElementById('badge_key_rs_right').textContent = getShortKey(currentMappings.rs_right?.label);
+            document.getElementById('badge_key_r3').textContent = currentMappings.r3?.label || '-';
+
+            // Update Configuration Cards (Bottom Grid)
+            Object.keys(BUTTON_NAMES).forEach(btnKey => {
+                const elem = document.getElementById(`bind_key_${btnKey}`);
+                if (elem) {
+                    elem.textContent = currentMappings[btnKey]?.label || 'Unassigned';
+                }
+            });
+
+            checkDuplicateKeys();
+        }
+
+        function getShortKey(label) {
+            if (!label) return '-';
+            if (label === 'Up Arrow') return '↑';
+            if (label === 'Down Arrow') return '↓';
+            if (label === 'Left Arrow') return '←';
+            if (label === 'Right Arrow') return '→';
+            if (label === 'Space') return 'Spc';
+            return label;
+        }
+
+        // Open Key Capture Modal
+        function openRemapModal(btnKey) {
+            activeModalTargetKey = btnKey;
+            modalBtnName.textContent = BUTTON_NAMES[btnKey] || btnKey;
+            remapModal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            remapModal.classList.add('hidden');
+        }
+
+        closeModalBtn.addEventListener('click', closeModal);
+
+        // Global Keydown Handler
+        function attachKeyboardListeners() {
+            window.addEventListener('keydown', (e) => {
+                // If Modal is active, capture binding key
+                if (!remapModal.classList.contains('hidden')) {
+                    if (e.key === 'Escape') {
+                        closeModal();
+                    } else {
+                        e.preventDefault();
+                        assignNewKey(activeModalTargetKey, e.key, e.code);
+                        closeModal();
+                    }
+                    return;
+                }
+
+                // Live Input Feedback Detection
+                const pressedKey = e.key;
+                const pressedCode = e.code;
+
+                liveLastKey.textContent = pressedKey === ' ' ? 'Space' : pressedKey;
+
+                let matchedBtn = null;
+                Object.keys(currentMappings).forEach(btnKey => {
+                    const m = currentMappings[btnKey];
+                    if (m && (m.key.toLowerCase() === pressedKey.toLowerCase() || m.code === pressedCode)) {
+                        matchedBtn = btnKey;
+                    }
+                });
+
+                if (matchedBtn) {
+                    liveLastAction.textContent = BUTTON_NAMES[matchedBtn];
+
+                    // Highlight SVG element
+                    const svgId = SVG_MAP[matchedBtn];
+                    if (svgId) {
+                        const svgElem = document.getElementById(svgId);
+                        if (svgElem) {
+                            svgElem.classList.add('active');
+                            setTimeout(() => svgElem.classList.remove('active'), 250);
+                        }
+                    }
+
+                    // Highlight Badge
+                    const badgeElem = document.getElementById(`badge_${matchedBtn}`);
+                    if (badgeElem) {
+                        badgeElem.classList.add('active-badge');
+                        setTimeout(() => badgeElem.classList.remove('active-badge'), 250);
+                    }
+                } else {
+                    liveLastAction.textContent = 'Unmapped Input';
+                }
+            });
+        }
+
+        // Assign Key Logic
+        function assignNewKey(btnKey, key, code) {
+            if (!btnKey) return;
+            const label = key === ' ' ? 'Space' : key.length === 1 ? key.toUpperCase() : key;
+
+            currentMappings[btnKey] = {
+                key: key,
+                code: code,
+                label: label
+            };
+
+            presetSelect.value = 'custom';
+            updateAllUI();
+            showToast(`Mapped ${BUTTON_NAMES[btnKey]} to [ ${label} ]`);
+        }
+
+        // Duplicate Key Detection
+        function checkDuplicateKeys() {
+            const seen = {};
+            const duplicates = new Set();
+
+            Object.keys(currentMappings).forEach(btnKey => {
+                const label = currentMappings[btnKey]?.label;
+                if (label && label !== 'Unassigned') {
+                    if (seen[label]) {
+                        duplicates.add(label);
+                    } else {
+                        seen[label] = true;
+                    }
+                }
+            });
+
+            if (duplicates.size > 0) {
+                duplicateWarning.classList.remove('hidden');
+                document.getElementById('duplicateWarningText').textContent = 
+                    `Warning: Multiple inputs share key binding(s): ${Array.from(duplicates).join(', ')}`;
+            } else {
+                duplicateWarning.classList.add('hidden');
+            }
+        }
+
+        // Preset Selector Listener
+        presetSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (PRESETS[val]) {
+                currentMappings = JSON.parse(JSON.stringify(PRESETS[val]));
+                updateAllUI();
+                showToast(`Switched to ${e.target.options[e.target.selectedIndex].text}`);
+            }
+        });
+
+        // Search Filter
+        searchInput.addEventListener('input', (e) => {
+            const search = e.target.value.toLowerCase();
+            Object.keys(BUTTON_NAMES).forEach(btnKey => {
+                const rowElem = document.getElementById(`bind_key_${btnKey}`)?.parentElement;
+                if (rowElem) {
+                    const name = BUTTON_NAMES[btnKey].toLowerCase();
+                    const key = (currentMappings[btnKey]?.label || '').toLowerCase();
+                    if (name.includes(search) || key.includes(search)) {
+                        rowElem.style.display = 'flex';
+                    } else {
+                        rowElem.style.display = 'none';
+                    }
+                }
+            });
+        });
+
+        // Smooth Scroll Helper
+        function scrollToSection(id) {
+            const elem = document.getElementById(id);
+            if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Reset Defaults
+        resetDefaultsBtn.addEventListener('click', () => {
+            presetSelect.value = 'rpcs3';
+            currentMappings = JSON.parse(JSON.stringify(PRESETS.rpcs3));
+            updateAllUI();
+            showToast('Reset all controls to RPCS3 Defaults');
+        });
+
+        // Export JSON
+        exportBtn.addEventListener('click', () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentMappings, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `ps3_keyboard_mapping.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+            showToast('Exported mapping file JSON');
+        });
+
+        // Import JSON
+        importBtn.addEventListener('click', () => importInput.click());
+        importInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    currentMappings = JSON.parse(evt.target.result);
+                    presetSelect.value = 'custom';
+                    updateAllUI();
+                    showToast('Successfully imported custom mapping file');
+                } catch (err) {
+                    showToast('Error reading JSON file', true);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // Toast Helper
+        function showToast(msg, isError = false) {
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.textContent = msg;
+            toastIcon.className = isError 
+                ? "fa-solid fa-circle-exclamation text-rose-400 text-base" 
+                : "fa-solid fa-circle-check text-emerald-400 text-base";
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 2400);
+        }
+    
+        // --- PPSX33 host bridge (WebView2) — mappings only, no layout changes ---
+        function hostPost(obj) {
+            try { if (window.chrome && chrome.webview) chrome.webview.postMessage(obj); } catch (e) {}
+        }
+        function mappingsToHostFlat(m) {
+            const flat = {};
+            const codeMap = {
+                'Numpad8':'NumPad8','Numpad5':'NumPad5','Numpad4':'NumPad4','Numpad6':'NumPad6',
+                'ShiftRight':'RShiftKey','ShiftLeft':'LShiftKey',
+                'ControlRight':'RControlKey','ControlLeft':'LControlKey',
+                'ArrowUp':'Up','ArrowDown':'Down','ArrowLeft':'Left','ArrowRight':'Right',
+                'Space':'Space','Backspace':'Backspace'
+            };
+            Object.keys(m).forEach(id => {
+                const e = m[id];
+                if (!e) return;
+                let k = e.code && codeMap[e.code] ? codeMap[e.code] : (e.label || e.key || '');
+                if (e.code && e.code.startsWith('Key') && e.code.length===4) k = e.code.slice(3);
+                flat[id] = k;
+            });
+            return flat;
+        }
+        // Save to app when export is used OR add implicit save on assign
+        const _origAssign = typeof assignNewKey === 'function' ? assignNewKey : null;
+        if (_origAssign) {
+            assignNewKey = function(btnKey, key, code) {
+                _origAssign(btnKey, key, code);
+                hostPost({ type: 'bind', id: btnKey, key: mappingsToHostFlat(currentMappings)[btnKey] });
+            };
+        }
+        exportBtn?.addEventListener('click', () => {
+            hostPost({ type: 'save', map: mappingsToHostFlat(currentMappings) });
+        });
+        // Also post save when reset finishes
+        resetDefaultsBtn?.addEventListener('click', () => {
+            setTimeout(() => hostPost({ type: 'save', map: mappingsToHostFlat(currentMappings) }), 0);
+        });
+        // Receive map from C# host
+        try {
+            window.chrome?.webview?.addEventListener('message', (ev) => {
+                const d = ev.data;
+                if (!d || d.type !== 'setMap' || !d.map) return;
+                Object.keys(d.map).forEach(id => {
+                    if (!BUTTON_NAMES[id]) return;
+                    const label = d.map[id];
+                    currentMappings[id] = { key: label, code: label, label: label };
+                });
+                updateAllUI();
+            });
+        } catch (e) {}
+        hostPost({ type: 'ready' });
+
+    </script>
 </body>
 </html>
