@@ -8,13 +8,18 @@
     <AssemblyName>PS3Recomp</AssemblyName>
     <RootNamespace>PS3Recomp.Gui</RootNamespace>
     <LangVersion>latest</LangVersion>
+    <WebView2EnableWinForms>true</WebView2EnableWinForms>
+    <WebView2EnableWpf>false</WebView2EnableWpf>
     <ApplicationIcon>$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico</ApplicationIcon>
     <OutputPath>$(MSBuildThisFileDirectory)..\..\build\dist\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
-
   <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2849.39" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="www\**\*" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico" Condition="Exists('$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico')">
       <Link>ppsx33-logo.ico</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -32,4 +37,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <Target Name="RemoveWebView2Wpf" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <ReferencePath Remove="@(ReferencePath)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
+      <Reference Remove="Microsoft.Web.WebView2.Wpf" />
+    </ItemGroup>
+  </Target>
 </Project>

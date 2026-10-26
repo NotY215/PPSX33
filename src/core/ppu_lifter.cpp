@@ -597,6 +597,25 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
             o << fmt("for(int i=0;i<4;++i){ uint32_t a=((uint32_t)c.vpr[%u][i*4]<<24)|((uint32_t)c.vpr[%u][i*4+1]<<16)|((uint32_t)c.vpr[%u][i*4+2]<<8)|c.vpr[%u][i*4+3]; unsigned s=c.vpr[%u][i*4+3]&0x1f; uint32_t r=a>>s; c.vpr[%u][i*4]=(uint8_t)(r>>24); c.vpr[%u][i*4+1]=(uint8_t)(r>>16); c.vpr[%u][i*4+2]=(uint8_t)(r>>8); c.vpr[%u][i*4+3]=(uint8_t)r; }", va,va,va,va, vb, vd,vd,vd,vd); return true; }
         if (xo11 == 1222) { // vcmpeqfp
             o << fmt("for(int i=0;i<4;++i){ float a,b; std::memcpy(&a,&c.vpr[%u][i*4],4); std::memcpy(&b,&c.vpr[%u][i*4],4); uint32_t r=(a==b)?0xffffffffu:0; c.vpr[%u][i*4]=(uint8_t)(r>>24); c.vpr[%u][i*4+1]=(uint8_t)(r>>16); c.vpr[%u][i*4+2]=(uint8_t)(r>>8); c.vpr[%u][i*4+3]=(uint8_t)r; }", va, vb, vd,vd,vd,vd); return true; }
+        // Remaining high-frequency AltiVec (true ops, not soft-memcpy)
+        if (xo11 == 186) { // vmaxfp
+            o << fmt("for(int i=0;i<4;++i){ float a,b,r; std::memcpy(&a,&c.vpr[%u][i*4],4); std::memcpy(&b,&c.vpr[%u][i*4],4); r=a>b?a:b; std::memcpy(&c.vpr[%u][i*4],&r,4); }", va, vb, vd); return true; }
+        if (xo11 == 454) { // vminfp
+            o << fmt("for(int i=0;i<4;++i){ float a,b,r; std::memcpy(&a,&c.vpr[%u][i*4],4); std::memcpy(&b,&c.vpr[%u][i*4],4); r=a<b?a:b; std::memcpy(&c.vpr[%u][i*4],&r,4); }", va, vb, vd); return true; }
+        if (xo11 == 714) { // vrefp
+            o << fmt("for(int i=0;i<4;++i){ float a,r; std::memcpy(&a,&c.vpr[%u][i*4],4); r=(a!=0.f)?1.f/a:0.f; std::memcpy(&c.vpr[%u][i*4],&r,4); }", va, vd); return true; }
+        if (xo11 == 842) { // vrsqrtefp
+            o << fmt("for(int i=0;i<4;++i){ float a,r; std::memcpy(&a,&c.vpr[%u][i*4],4); r=(a>0.f)?1.f/std::sqrt(a):0.f; std::memcpy(&c.vpr[%u][i*4],&r,4); }", va, vd); return true; }
+        if (xo11 == 1034) { // vand
+            o << fmt("for(int i=0;i<16;++i) c.vpr[%u][i]=(uint8_t)(c.vpr[%u][i]&c.vpr[%u][i]);", vd, va, vb); return true; }
+        if (xo11 == 1158) { // vnor already — vor
+            o << fmt("for(int i=0;i<16;++i) c.vpr[%u][i]=(uint8_t)(c.vpr[%u][i]|c.vpr[%u][i]);", vd, va, vb); return true; }
+        if (xo11 == 788) { // vmulesb approx
+            o << fmt("for(int i=0;i<8;++i){ int16_t r=(int16_t)(int8_t)c.vpr[%u][i*2]*(int16_t)(int8_t)c.vpr[%u][i*2]; c.vpr[%u][i*2]=(uint8_t)(r>>8); c.vpr[%u][i*2+1]=(uint8_t)r; }", va, vb, vd, vd); return true; }
+        if (xo11 == 10) { // vrlh
+            o << fmt("for(int i=0;i<8;++i){ uint16_t v=(c.vpr[%u][i*2]<<8)|c.vpr[%u][i*2+1]; unsigned s=c.vpr[%u][i*2+1]&15; uint16_t r=(uint16_t)((v<<s)|(v>>(16-s))); c.vpr[%u][i*2]=(uint8_t)(r>>8); c.vpr[%u][i*2+1]=(uint8_t)r; }", va,va, vb, vd,vd); return true; }
+        if (xo11 == 14) { // vrlw
+            o << fmt("for(int i=0;i<4;++i){ uint32_t v=((uint32_t)c.vpr[%u][i*4]<<24)|((uint32_t)c.vpr[%u][i*4+1]<<16)|((uint32_t)c.vpr[%u][i*4+2]<<8)|c.vpr[%u][i*4+3]; unsigned s=c.vpr[%u][i*4+3]&31; uint32_t r=(v<<s)|(v>>(32-s)); c.vpr[%u][i*4]=(uint8_t)(r>>24); c.vpr[%u][i*4+1]=(uint8_t)(r>>16); c.vpr[%u][i*4+2]=(uint8_t)(r>>8); c.vpr[%u][i*4+3]=(uint8_t)r; }", va,va,va,va, vb, vd,vd,vd,vd); return true; }
         o << fmt("/* VMX xo11=%u unimplemented */;", xo11);
         return false;
     }

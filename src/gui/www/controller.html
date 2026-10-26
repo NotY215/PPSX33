@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PPSX33 · DualShock 3 Mapper</title>
+<style>
+  :root { --bg:#090d16; --card:#131b2e; --line:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --rose:#ef4444; --ok:#10b981; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font-family: Inter, Segoe UI, system-ui, sans-serif; overflow:hidden; }
+  .wrap { display:flex; flex-direction:column; height:100%; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 14px; border-bottom:1px solid var(--line); background:rgba(15,23,42,.92); }
+  header h1 { margin:0; font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  header h1 span { font-size:10px; color:#fb7185; border:1px solid rgba(251,113,133,.25); background:rgba(251,113,133,.1); padding:2px 8px; border-radius:999px; font-family:ui-monospace,monospace; }
+  .tools { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  select, button { background:#0f172a; color:var(--text); border:1px solid #334155; border-radius:10px; padding:6px 10px; font-size:12px; cursor:pointer; }
+  button.primary { background:#e11d48; border-color:#e11d48; color:#fff; font-weight:600; }
+  button.sky { background:#0c4a6e; border-color:#0369a1; }
+  button.ok { background:#064e3b; border-color:#059669; }
+  main { flex:1; overflow:auto; padding:12px; }
+  .card { background:rgba(19,27,46,.85); border:1px solid #1e293b; border-radius:20px; padding:12px; position:relative; }
+  .status { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:12px; color:var(--muted); }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--ok); box-shadow:0 0 8px var(--ok); display:inline-block; margin-right:6px; }
+  kbd { background:#1e293b; border:1px solid #334155; border-radius:6px; padding:1px 6px; color:#fb7185; font-family:ui-monospace,monospace; }
+  .stage { position:relative; max-width:960px; margin:0 auto; }
+  svg { width:100%; height:auto; display:block; filter: drop-shadow(0 20px 30px rgba(0,0,0,.55)); }
+  .controller-part { cursor:pointer; transition: filter .15s, opacity .15s; }
+  .controller-part:hover { filter: drop-shadow(0 0 8px rgba(56,189,248,.9)); opacity:.95; }
+  .controller-part.active { filter: drop-shadow(0 0 14px rgba(239,68,68,1)) !important; }
+  .badge { position:absolute; min-width:64px; padding:4px 8px; border-radius:10px; border:1px solid #334155; background:rgba(15,23,42,.92); font-size:11px; font-family:ui-monospace,monospace; cursor:pointer; transition: .15s; user-select:none; }
+  .badge:hover, .badge.active-badge { border-color:var(--rose); box-shadow:0 0 16px rgba(239,68,68,.45); background:rgba(239,68,68,.15); transform:scale(1.04); }
+  .badge b { color:var(--muted); font-weight:600; margin-right:6px; }
+  .badge i { color:var(--accent); font-style:normal; font-weight:700; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px; margin-top:14px; }
+  .row { display:flex; justify-content:space-between; align-items:center; background:#0f172a; border:1px solid #1e293b; border-radius:12px; padding:8px 10px; font-size:12px; cursor:pointer; }
+  .row:hover { border-color:var(--accent); }
+  .row span { color:var(--muted); }
+  .row strong { color:#f8fafc; font-family:ui-monospace,monospace; }
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:50; }
+  .modal.show { display:flex; }
+  .modal .box { width:min(380px,92vw); background:#0f172a; border:1px solid #334155; border-radius:16px; padding:18px; text-align:center; animation: pulse 1.2s infinite ease-in-out; }
+  @keyframes pulse { 0%,100%{ box-shadow:0 0 16px rgba(56,189,248,.25);} 50%{ box-shadow:0 0 28px rgba(56,189,248,.7);} }
+  .toast { position:fixed; bottom:16px; left:50%; transform:translateX(-50%) translateY(40px); opacity:0; transition:.25s; background:#0f172a; border:1px solid #334155; padding:8px 14px; border-radius:12px; font-size:12px; z-index:60; }
+  .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>DualShock 3 Mapper <span>PPSX33</span></h1>
+    <div class="tools">
+      <select id="preset">
+        <option value="rpcs3">RPCS3 / PPSX33 Default</option>
+        <option value="fps">FPS / Shooter</option>
+        <option value="fighting">Fighting (Arcade)</option>
+        <option value="racing">Racing</option>
+        <option value="custom">Custom</option>
+      </select>
+      <button class="ok" id="btnSave">Save to app</button>
+      <button class="sky" id="btnReset">Reset</button>
+    </div>
+  </header>
+  <main>
+    <div class="card">
+      <div class="status">
+        <div><span class="dot"></span>Click callouts or pad areas to remap · keys light the diagram</div>
+        <div>Last: <kbd id="lastKey">None</kbd> · <span id="lastAct" style="color:#34d399">Ready</span></div>
+      </div>
+      <div class="stage" id="stage">
+        <svg viewBox="0 0 960 520" id="svg">
+          <defs>
+            <linearGradient id="shell" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#2c303b"/><stop offset="100%" stop-color="#0d0f14"/>
+            </linearGradient>
+          </defs>
+          <path d="M270,120 C350,115 400,128 480,132 C560,128 610,115 690,120 C760,125 830,150 865,215 C900,280 910,370 875,440 C850,490 790,500 750,460 C700,410 660,390 590,390 C550,390 520,400 480,400 C440,400 410,390 370,390 C300,390 260,410 210,460 C170,500 110,490 85,440 C50,370 60,280 95,215 C130,150 200,125 270,120 Z" fill="url(#shell)" stroke="#384152" stroke-width="4"/>
+          <text x="480" y="165" fill="#94a3b8" font-size="14" font-weight="800" text-anchor="middle" letter-spacing="3">SONY</text>
+          <text x="480" y="190" fill="#64748b" font-size="10" font-weight="700" text-anchor="middle" letter-spacing="2">DUALSHOCK 3</text>
+          <!-- shoulders -->
+          <rect id="svg_l2" class="controller-part" data-id="l2" x="300" y="78" width="50" height="18" rx="4" fill="#1e222b" stroke="#475569"/>
+          <rect id="svg_l1" class="controller-part" data-id="l1" x="300" y="100" width="55" height="18" rx="4" fill="#2d3340" stroke="#475569"/>
+          <rect id="svg_r2" class="controller-part" data-id="r2" x="610" y="78" width="50" height="18" rx="4" fill="#1e222b" stroke="#475569"/>
+          <rect id="svg_r1" class="controller-part" data-id="r1" x="605" y="100" width="55" height="18" rx="4" fill="#2d3340" stroke="#475569"/>
+          <text x="325" y="91" fill="#94a3b8" font-size="10" text-anchor="middle" pointer-events="none">L2</text>
+          <text x="327" y="113" fill="#cbd5e1" font-size="10" text-anchor="middle" pointer-events="none">L1</text>
+          <text x="635" y="91" fill="#94a3b8" font-size="10" text-anchor="middle" pointer-events="none">R2</text>
+          <text x="632" y="113" fill="#cbd5e1" font-size="10" text-anchor="middle" pointer-events="none">R1</text>
+          <!-- dpad -->
+          <g transform="translate(300,250)">
+            <circle r="62" fill="#14171e" stroke="#272c38" stroke-width="3"/>
+            <path id="svg_dpad_up" class="controller-part" data-id="dpad_up" d="M-16,-52 L16,-52 L12,-18 L-12,-18 Z" fill="#242934" stroke="#3b4252"/>
+            <path id="svg_dpad_down" class="controller-part" data-id="dpad_down" d="M-16,52 L16,52 L12,18 L-12,18 Z" fill="#242934" stroke="#3b4252"/>
+            <path id="svg_dpad_left" class="controller-part" data-id="dpad_left" d="M-52,-16 L-52,16 L-18,12 L-18,-12 Z" fill="#242934" stroke="#3b4252"/>
+            <path id="svg_dpad_right" class="controller-part" data-id="dpad_right" d="M52,-16 L52,16 L18,12 L18,-12 Z" fill="#242934" stroke="#3b4252"/>
+          </g>
+          <!-- face -->
+          <g transform="translate(660,250)">
+            <circle r="62" fill="#14171e" stroke="#272c38" stroke-width="3"/>
+            <g id="svg_triangle" class="controller-part" data-id="triangle"><circle cx="0" cy="-38" r="18" fill="#1b1e26" stroke="#3b4252"/><polygon points="0,-46 -8,-32 8,-32" fill="none" stroke="#10b981" stroke-width="3"/></g>
+            <g id="svg_circle" class="controller-part" data-id="circle"><circle cx="38" cy="0" r="18" fill="#1b1e26" stroke="#3b4252"/><circle cx="38" cy="0" r="8" fill="none" stroke="#ef4444" stroke-width="3"/></g>
+            <g id="svg_cross" class="controller-part" data-id="cross"><circle cx="0" cy="38" r="18" fill="#1b1e26" stroke="#3b4252"/><path d="M-7,31 L7,45 M7,31 L-7,45" stroke="#3b82f6" stroke-width="3"/></g>
+            <g id="svg_square" class="controller-part" data-id="square"><circle cx="-38" cy="0" r="18" fill="#1b1e26" stroke="#3b4252"/><rect x="-45" y="-7" width="14" height="14" fill="none" stroke="#ec4899" stroke-width="3"/></g>
+          </g>
+          <!-- sticks -->
+          <g id="svg_left_stick" class="controller-part" data-id="l3" transform="translate(390,340)"><circle r="34" fill="#1a1e28" stroke="#3b4252" stroke-width="3"/><circle r="18" fill="#2a3140"/></g>
+          <g id="svg_right_stick" class="controller-part" data-id="r3" transform="translate(570,340)"><circle r="34" fill="#1a1e28" stroke="#3b4252" stroke-width="3"/><circle r="18" fill="#2a3140"/></g>
+          <!-- select start ps -->
+          <g id="svg_select" class="controller-part" data-id="select" transform="translate(430,270)"><rect width="28" height="12" rx="3" fill="#1e222b" stroke="#475569"/></g>
+          <g id="svg_start" class="controller-part" data-id="start" transform="translate(502,270)"><rect width="28" height="12" rx="3" fill="#1e222b" stroke="#475569"/></g>
+          <g id="svg_ps" class="controller-part" data-id="ps" transform="translate(480,320)"><circle r="14" fill="#161920" stroke="#cbd5e1"/></g>
+        </svg>
+        <!-- badges positioned % over stage -->
+        <div class="badge" data-id="l2" style="left:8%;top:4%"><b>L2</b><i id="k_l2">—</i></div>
+        <div class="badge" data-id="l1" style="left:8%;top:12%"><b>L1</b><i id="k_l1">—</i></div>
+        <div class="badge" data-id="r2" style="right:8%;top:4%;left:auto"><b>R2</b><i id="k_r2">—</i></div>
+        <div class="badge" data-id="r1" style="right:8%;top:12%;left:auto"><b>R1</b><i id="k_r1">—</i></div>
+        <div class="badge" data-id="dpad_up" style="left:6%;top:38%"><b>↑</b><i id="k_dpad_up">—</i></div>
+        <div class="badge" data-id="dpad_left" style="left:2%;top:48%"><b>←</b><i id="k_dpad_left">—</i></div>
+        <div class="badge" data-id="dpad_right" style="left:14%;top:48%"><b>→</b><i id="k_dpad_right">—</i></div>
+        <div class="badge" data-id="dpad_down" style="left:6%;top:58%"><b>↓</b><i id="k_dpad_down">—</i></div>
+        <div class="badge" data-id="triangle" style="right:4%;top:38%;left:auto"><b>△</b><i id="k_triangle">—</i></div>
+        <div class="badge" data-id="square" style="right:10%;top:48%;left:auto"><b>□</b><i id="k_square">—</i></div>
+        <div class="badge" data-id="circle" style="right:1%;top:48%;left:auto"><b>○</b><i id="k_circle">—</i></div>
+        <div class="badge" data-id="cross" style="right:4%;top:58%;left:auto"><b>✕</b><i id="k_cross">—</i></div>
+        <div class="badge" data-id="select" style="left:38%;top:28%"><b>Select</b><i id="k_select">—</i></div>
+        <div class="badge" data-id="start" style="left:52%;top:28%"><b>Start</b><i id="k_start">—</i></div>
+        <div class="badge" data-id="ps" style="left:46%;top:62%"><b>PS</b><i id="k_ps">—</i></div>
+        <div class="badge" data-id="ls_up" style="left:22%;top:68%"><b>LS↑</b><i id="k_ls_up">—</i></div>
+        <div class="badge" data-id="ls_left" style="left:16%;top:76%"><b>LS←</b><i id="k_ls_left">—</i></div>
+        <div class="badge" data-id="ls_right" style="left:28%;top:76%"><b>LS→</b><i id="k_ls_right">—</i></div>
+        <div class="badge" data-id="ls_down" style="left:22%;top:84%"><b>LS↓</b><i id="k_ls_down">—</i></div>
+        <div class="badge" data-id="l3" style="left:34%;top:80%"><b>L3</b><i id="k_l3">—</i></div>
+        <div class="badge" data-id="rs_up" style="left:62%;top:68%"><b>RS↑</b><i id="k_rs_up">—</i></div>
+        <div class="badge" data-id="rs_left" style="left:56%;top:76%"><b>RS←</b><i id="k_rs_left">—</i></div>
+        <div class="badge" data-id="rs_right" style="left:68%;top:76%"><b>RS→</b><i id="k_rs_right">—</i></div>
+        <div class="badge" data-id="rs_down" style="left:62%;top:84%"><b>RS↓</b><i id="k_rs_down">—</i></div>
+        <div class="badge" data-id="r3" style="left:50%;top:80%"><b>R3</b><i id="k_r3">—</i></div>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+  </main>
+</div>
+<div class="modal" id="modal"><div class="box"><div style="font-weight:700;margin-bottom:8px" id="modalName">Button</div><div style="color:#94a3b8;font-size:13px">Press any key… (Esc cancel)</div></div></div>
+<div class="toast" id="toast">Saved</div>
+<script>
+const NAMES = {l1:'L1',r1:'R1',l2:'L2',r2:'R2',dpad_up:'D-Pad Up',dpad_down:'D-Pad Down',dpad_left:'D-Pad Left',dpad_right:'D-Pad Right',triangle:'Triangle',circle:'Circle',cross:'Cross',square:'Square',select:'Select',start:'Start',ps:'PS',ls_up:'LS Up',ls_down:'LS Down',ls_left:'LS Left',ls_right:'LS Right',l3:'L3',rs_up:'RS Up',rs_down:'RS Down',rs_left:'RS Left',rs_right:'RS Right',r3:'R3'};
+const PRESETS = {
+  rpcs3: {dpad_up:'NumPad8',dpad_down:'NumPad5',dpad_left:'NumPad4',dpad_right:'NumPad6',triangle:'S',circle:'X',cross:'Z',square:'A',l1:'L',r1:'R',l2:'RShiftKey',r2:'RControlKey',select:'Space',start:'V',ps:'Backspace',ls_up:'Up',ls_down:'Down',ls_left:'Left',ls_right:'Right',l3:'LShiftKey',rs_up:'U',rs_down:'J',rs_left:'H',rs_right:'K',r3:'LControlKey'},
+  fps: {dpad_up:'D1',dpad_down:'D2',dpad_left:'D3',dpad_right:'D4',triangle:'Y',circle:'C',cross:'Space',square:'R',l1:'G',r1:'F',l2:'U',r2:'O',select:'Tab',start:'Escape',ps:'F1',ls_up:'W',ls_down:'S',ls_left:'A',ls_right:'D',l3:'LShiftKey',rs_up:'Up',rs_down:'Down',rs_left:'Left',rs_right:'Right',r3:'V'},
+  fighting: {dpad_up:'W',dpad_down:'S',dpad_left:'A',dpad_right:'D',triangle:'I',circle:'K',cross:'J',square:'U',l1:'O',r1:'P',l2:'L',r2:'Oem1',select:'B',start:'Enter',ps:'Home',ls_up:'W',ls_down:'S',ls_left:'A',ls_right:'D',l3:'D9',rs_up:'I',rs_down:'K',rs_left:'J',rs_right:'L',r3:'D0'},
+  racing: {dpad_up:'Up',dpad_down:'Down',dpad_left:'A',dpad_right:'D',triangle:'C',circle:'Space',cross:'W',square:'S',l1:'Q',r1:'E',l2:'LControlKey',r2:'LShiftKey',select:'M',start:'Escape',ps:'Home',ls_up:'W',ls_down:'S',ls_left:'A',ls_right:'D',l3:'H',rs_up:'I',rs_down:'K',rs_left:'J',rs_right:'L',r3:'R'}
+};
+let map = Object.assign({}, PRESETS.rpcs3);
+let listen = null;
+function post(obj){ try{ if(window.chrome&&chrome.webview) chrome.webview.postMessage(obj); }catch(e){} }
+function pretty(k){ if(!k) return '—'; return String(k).replace('NumPad','Num+').replace('RControlKey','Ctrl R').replace('LControlKey','Ctrl L').replace('RShiftKey','Shift R').replace('LShiftKey','Shift L'); }
+function updateUI(){
+  Object.keys(NAMES).forEach(id=>{
+    const el=document.getElementById('k_'+id); if(el) el.textContent=pretty(map[id]);
+    const row=document.getElementById('row_'+id); if(row) row.querySelector('strong').textContent=pretty(map[id]);
+  });
+}
+function buildGrid(){
+  const g=document.getElementById('grid'); g.innerHTML='';
+  Object.keys(NAMES).forEach(id=>{
+    const d=document.createElement('div'); d.className='row'; d.id='row_'+id;
+    d.innerHTML=`<span>${NAMES[id]}</span><strong>${pretty(map[id])}</strong>`;
+    d.onclick=()=>startListen(id);
+    g.appendChild(d);
+  });
+}
+function startListen(id){ listen=id; document.getElementById('modalName').textContent=NAMES[id]||id; document.getElementById('modal').classList.add('show'); }
+function stopListen(){ listen=null; document.getElementById('modal').classList.remove('show'); }
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
+function flash(id){
+  document.querySelectorAll(`[data-id="${id}"]`).forEach(el=>{ el.classList.add(el.classList.contains('badge')?'active-badge':'active'); setTimeout(()=>{ el.classList.remove('active'); el.classList.remove('active-badge'); },220); });
+}
+document.querySelectorAll('.controller-part, .badge').forEach(el=>{ el.addEventListener('click',()=>{ const id=el.getAttribute('data-id'); if(id&&NAMES[id]) startListen(id); }); });
+document.getElementById('preset').onchange=e=>{ const v=e.target.value; if(PRESETS[v]){ map=Object.assign({},PRESETS[v]); updateUI(); toast('Preset: '+v); } };
+document.getElementById('btnReset').onclick=()=>{ map=Object.assign({},PRESETS.rpcs3); document.getElementById('preset').value='rpcs3'; updateUI(); toast('Reset to defaults'); };
+document.getElementById('btnSave').onclick=()=>{ post({type:'save', map}); toast('Saved to PPSX33'); };
+window.addEventListener('keydown', e=>{
+  if(listen){
+    if(e.key==='Escape'){ stopListen(); return; }
+    e.preventDefault();
+    let code=e.code||e.key;
+    // map to WinForms Keys-ish names
+    const table={Space:'Space',ArrowUp:'Up',ArrowDown:'Down',ArrowLeft:'Left',ArrowRight:'Right',ShiftLeft:'LShiftKey',ShiftRight:'RShiftKey',ControlLeft:'LControlKey',ControlRight:'RControlKey',Backspace:'Backspace',Enter:'Enter',Tab:'Tab',Escape:'Escape'};
+    let key=table[code]|| (code.startsWith('Key')?code.slice(3): code.startsWith('Digit')?'D'+code.slice(5): code.startsWith('Numpad')?'NumPad'+code.slice(6): code);
+    map[listen]=key; document.getElementById('preset').value='custom'; updateUI(); flash(listen); stopListen(); post({type:'bind', id:listen, key}); return;
+  }
+  document.getElementById('lastKey').textContent=e.key===' '?'Space':e.key;
+  let hit=null;
+  Object.keys(map).forEach(id=>{ if(String(map[id]).toLowerCase()===e.key.toLowerCase()||map[id]===e.code) hit=id; });
+  document.getElementById('lastAct').textContent=hit?(NAMES[hit]||hit):'Unmapped';
+  if(hit) flash(hit);
+});
+// Host → page
+window.chrome?.webview?.addEventListener('message', ev=>{
+  const d=ev.data; if(!d) return;
+  if(d.type==='setMap' && d.map){ map=Object.assign({}, d.map); updateUI(); }
+});
+buildGrid(); updateUI();
+// request initial map
+post({type:'ready'});
+</script>
+</body>
+</html>
