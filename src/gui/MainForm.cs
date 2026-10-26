@@ -44,6 +44,10 @@ public sealed partial class MainForm : Form
     private Panel? _logoRingPanel;
     private System.Windows.Forms.Timer? _animTimer;
     private float _ringAngle;
+    private Font? _logoFontTitle;
+    private Font? _logoFontSub;
+    private Pen? _logoPenDash;
+    private Pen? _logoPenArc;
 
     private string? _projectDir;
     private CancellationTokenSource? _cts;
@@ -153,6 +157,14 @@ public sealed partial class MainForm : Form
             Margin = new Padding(0, 0, 0, 12)
         };
         _logoRingPanel.Paint += PaintLogoCard;
+        // Double-buffer ring panel (stops logo animation shuttering)
+        typeof(Control).InvokeMember("DoubleBuffered",
+            System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+            null, _logoRingPanel, new object[] { true });
+        _logoFontTitle = new Font("Segoe UI", 13f, FontStyle.Bold);
+        _logoFontSub = new Font("Segoe UI", 7f, FontStyle.Bold);
+        _logoPenDash = new Pen(Color.FromArgb(140, Accent), 1.5f) { DashStyle = DashStyle.Dash };
+        _logoPenArc = new Pen(Color.FromArgb(160, AccentBlue), 1.5f);
         _logo.Size = new Size(56, 56);
         _logo.SizeMode = PictureBoxSizeMode.Zoom;
         _logo.BackColor = Color.Transparent;
@@ -179,11 +191,17 @@ public sealed partial class MainForm : Form
             _logo.Top = 22;
         };
 
-        _animTimer = new System.Windows.Forms.Timer { Interval = 33 }; // ~30fps
+        _animTimer = new System.Windows.Forms.Timer { Interval = 50 }; // 20fps — smooth enough, less UI thrash
         _animTimer.Tick += (_, _) =>
         {
-            _ringAngle = (_ringAngle + 3f) % 360f;
-            _logoRingPanel?.Invalidate();
+            _ringAngle = (_ringAngle + 2.5f) % 360f;
+            // Only invalidate the ring band around the logo (not whole sidebar)
+            if (_logoRingPanel != null)
+            {
+                int cx = _logoRingPanel.Width / 2;
+                int cy = 50;
+                _logoRingPanel.Invalidate(new Rectangle(cx - 40, cy - 40, 80, 80));
+            }
         };
         _animTimer.Start();
 
@@ -368,6 +386,10 @@ public sealed partial class MainForm : Form
         {
             _animTimer?.Stop();
             _animTimer?.Dispose();
+            _logoFontTitle?.Dispose();
+            _logoFontSub?.Dispose();
+            _logoPenDash?.Dispose();
+            _logoPenArc?.Dispose();
             CleanupAllProjectWorkFolders();
         };
     }
@@ -391,29 +413,29 @@ public sealed partial class MainForm : Form
         int cx = panel.Width / 2;
         int cy = 50;
         // rotating dashed outer ring
-        using (var pen = new Pen(Color.FromArgb(140, Accent), 1.5f) { DashStyle = DashStyle.Dash })
+        if (_logoPenDash != null)
         {
             g.TranslateTransform(cx, cy);
             g.RotateTransform(_ringAngle);
-            g.DrawEllipse(pen, -34, -34, 68, 68);
+            g.DrawEllipse(_logoPenDash, -34, -34, 68, 68);
             g.ResetTransform();
         }
-        using (var pen = new Pen(Color.FromArgb(160, AccentBlue), 1.5f))
+        if (_logoPenArc != null)
         {
             g.TranslateTransform(cx, cy);
             g.RotateTransform(-_ringAngle * 1.4f);
-            g.DrawArc(pen, -28, -28, 56, 56, 0, 270);
+            g.DrawArc(_logoPenArc, -28, -28, 56, 56, 0, 270);
             g.ResetTransform();
         }
 
-        TextRenderer.DrawText(g, "PPSX33",
-            new Font("Segoe UI", 13f, FontStyle.Bold),
-            new Rectangle(0, 88, panel.Width, 20),
-            TextPri, TextFormatFlags.HorizontalCenter);
-        TextRenderer.DrawText(g, "PS3 BINARY RECOMPILER",
-            new Font("Segoe UI", 7f, FontStyle.Bold),
-            new Rectangle(0, 108, panel.Width, 16),
-            Accent, TextFormatFlags.HorizontalCenter);
+        if (_logoFontTitle != null)
+            TextRenderer.DrawText(g, "PPSX33", _logoFontTitle,
+                new Rectangle(0, 88, panel.Width, 20),
+                TextPri, TextFormatFlags.HorizontalCenter);
+        if (_logoFontSub != null)
+            TextRenderer.DrawText(g, "PS3 BINARY RECOMPILER", _logoFontSub,
+                new Rectangle(0, 108, panel.Width, 16),
+                Accent, TextFormatFlags.HorizontalCenter);
     }
 
     static GraphicsPath RoundRect(Rectangle r, int radius)

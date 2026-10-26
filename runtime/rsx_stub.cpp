@@ -371,17 +371,23 @@ static void rsx_upload_guest_tex(uint8_t* mem) {
     uint64_t off = g_rsx.tex_offset ? g_rsx.tex_offset : g_rsx.color_offset;
     if (!off) return;
     uint32_t pitch = g_rsx.tex_pitch ? g_rsx.tex_pitch : (w * 4);
-    // format nibble heuristics (RSX texture format field is complex; use size hints)
-    uint32_t fmt = g_rsx.tex_format;
+    // XV-F: CELL_GCM texture formats (see RPCS3 TextureUtils / CELL_GCM_TEXTURE_*)
+    uint32_t fmt = g_rsx.tex_format & 0x9F;
     int bpp = 4;
     bool dxt = false;
-    if ((fmt & 0x9F) == 0x82 || (fmt & 0xFF) == 0x1A) bpp = 2;
-    if ((fmt & 0x9F) == 0x81) bpp = 1;
-    // XXIII-U: DXT/BC family (common RSX compressed enums) — expand not full yet
-    if ((fmt & 0xFF) == 0x86 || (fmt & 0xFF) == 0x87 || (fmt & 0xFF) == 0x88) {
+    bool expand16 = false;
+    switch (fmt) {
+    case 0x81: bpp = 1; break; /* B8 */
+    case 0x82: case 0x83: case 0x84: case 0x8F: case 0x94:
+        bpp = 2; expand16 = true; break; /* 16-bit color family */
+    case 0x85: case 0xA5: bpp = 4; break; /* A8R8G8B8 / D8R8G8B8 */
+    case 0x86: case 0x87: case 0x88:
         dxt = true; bpp = 4;
-        static int ud = 0;
-        if (ud < 8) { ps3rt_log("[rsx] XXIII-U DXT/BC fmt=0x%x — upload as linear 32bpp fallback\n", fmt); ++ud; }
+        { static int ud=0; if(ud<8){ ps3rt_log("[rsx] XV-F DXT fmt=0x%x RGBA8 fallback\n", fmt); ++ud; } }
+        break;
+    default:
+        if ((g_rsx.tex_format & 0xFF) == 0x1A) { bpp = 2; expand16 = true; }
+        break;
     }
     if (pitch < w * (uint32_t)bpp) pitch = w * (uint32_t)bpp;
     uint64_t need = (uint64_t)pitch * h;
@@ -773,11 +779,13 @@ static void rsx_host_present_clear() {
                     rsx_upload_guest_tex(m);
                     rsx_draw_textured_quad();
                 }
-                // Guest VA geometry from FIFO / GCM
-                if (g_va_offset[0])
+                // XV-C/D/F: real geometry only if FIFO methods ran and VA0 bound
+                if (g_va_offset[0] && g_rsx.methods_this_frame > 0)
                     rsx_draw_nv40_geometry(m);
-                else if (g_rsx.color_offset)
-                    rsx_paint_guest_color_buffer(m);
+                else if (g_rsx.color_offset || g_rsx.tex_offset) {
+                    rsx_upload_guest_tex(m);
+                    rsx_draw_textured_quad();
+                }
             }
             // Diagnostic triangle ONLY when no guest draw was submitted this frame
             if (g_rsx.draws_guest_frame == guest_before) {
@@ -1452,8 +1460,12 @@ static void rsx_draw_nv40_geometry(uint8_t* mem) {
         }
         ++g_rsx.draws;
         ++g_rsx.draws_this_frame;
-        ++g_rsx.draws_guest;
-        ++g_rsx.draws_guest_frame;
+        if (g_va_offset[0] && g_rsx.methods_this_frame > 0) {
+            ++g_rsx.draws_guest;
+            ++g_rsx.draws_guest_frame;
+        } else {
+            ++g_rsx.draws_diagnostic;
+        }
         static int sd = 0;
         if (sd < 24) {
             ps3rt_log("[rsx] XV-D draw verts=%u idx=%s va0=0x%x va1=0x%x stride0=%u max_vi=%u\n",
