@@ -1,20 +1,7 @@
-# Phase XII — Pad input
+# Phase XII — VMX / FP honesty
 
-**Status:** TESTING (core pipeline)  
-**Track:** PHASE 1 (I–XIX)
+**Status:** IN TREE
 
-## Summary
+Correct operands; unknown ops not soft-success.
 
-XInput + keyboard map.
-
-## Scope
-
-Engineering foundation for the experimental static recompiler. Not a playability claim.
-
-## Related
-
-- Main index: [ROADMAP.md](../ROADMAP.md)
-- Later packaging: XX-A … XX-G
-- Runtime base: XX-H … XX-O
-- Lettered work: Phase XXI (A–Z)
-- Current focus: Phase XXII
+See [ROADMAP.md](../ROADMAP.md).

@@ -1,20 +1,7 @@
-# Phase II — ELF load
+# Phase II — PPU lift surface
 
-**Status:** TESTING (core pipeline)  
-**Track:** PHASE 1 (I–XIX)
+**Status:** DONE
 
-## Summary
+Instruction lift to host C++ chunks.
 
-ELF64 big-endian PowerPC loadable segments.
-
-## Scope
-
-Engineering foundation for the experimental static recompiler. Not a playability claim.
-
-## Related
-
-- Main index: [ROADMAP.md](../ROADMAP.md)
-- Later packaging: XX-A … XX-G
-- Runtime base: XX-H … XX-O
-- Lettered work: Phase XXI (A–Z)
-- Current focus: Phase XXII
+See [ROADMAP.md](../ROADMAP.md).

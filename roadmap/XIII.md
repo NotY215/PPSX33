@@ -1,20 +1,7 @@
-# Phase XIII — Build driver
+# Phase XIII — Host UX
 
-**Status:** TESTING (core pipeline)  
-**Track:** PHASE 1 (I–XIX)
+**Status:** DONE
 
-## Summary
+Native WinForms UI; redist = VS guide only.
 
-MSVC project generation and link of game-named EXE.
-
-## Scope
-
-Engineering foundation for the experimental static recompiler. Not a playability claim.
-
-## Related
-
-- Main index: [ROADMAP.md](../ROADMAP.md)
-- Later packaging: XX-A … XX-G
-- Runtime base: XX-H … XX-O
-- Lettered work: Phase XXI (A–Z)
-- Current focus: Phase XXII
+See [ROADMAP.md](../ROADMAP.md).

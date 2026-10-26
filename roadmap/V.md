@@ -1,20 +1,7 @@
-# Phase V — PPU lift
+# Phase V — LV2 / imports HLE
 
-**Status:** TESTING (core pipeline)  
-**Track:** PHASE 1 (I–XIX)
+**Status:** IN TREE
 
-## Summary
+Syscalls and import stubs; expand per title.
 
-Chunk-based static translation to host C++.
-
-## Scope
-
-Engineering foundation for the experimental static recompiler. Not a playability claim.
-
-## Related
-
-- Main index: [ROADMAP.md](../ROADMAP.md)
-- Later packaging: XX-A … XX-G
-- Runtime base: XX-H … XX-O
-- Lettered work: Phase XXI (A–Z)
-- Current focus: Phase XXII
+See [ROADMAP.md](../ROADMAP.md).
