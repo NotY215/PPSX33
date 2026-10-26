@@ -797,34 +797,30 @@ static void rsx_host_present_clear() {
                     rsx_upload_guest_tex(m);
                     rsx_draw_textured_quad();
                 }
-                // XV-H stable frame while game FIFO idle:
-                // 1) seed colorful guest color buffer  2) blit it  3) draw VA triangle on top
-                if (g_rsx.methods_this_frame < 8 && g_rsx.color_offset) {
-                    rsx_paint_guest_color_buffer(m);
-                }
-                if (g_rsx.color_offset || g_rsx.tex_offset) {
-                    if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset;
-                    if (!g_rsx.tex_width) {
-                        g_rsx.tex_width = g_rsx.width > 64 ? g_rsx.width : 1280;
-                        g_rsx.tex_height = g_rsx.height > 64 ? g_rsx.height : 720;
+                // XV-I: one seed composition per flip (no multi-draw spam)
+                static uint64_t s_seed_flip = (uint64_t)-1;
+                if (s_seed_flip != g_rsx.flip_count) {
+                    s_seed_flip = g_rsx.flip_count;
+                    if (g_rsx.color_offset)
+                        rsx_paint_guest_color_buffer(m);
+                    if (g_rsx.color_offset || g_rsx.tex_offset) {
+                        if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset;
+                        if (!g_rsx.tex_width) {
+                            g_rsx.tex_width = g_rsx.width > 64 ? g_rsx.width : 1280;
+                            g_rsx.tex_height = g_rsx.height > 64 ? g_rsx.height : 720;
+                        }
+                        rsx_upload_guest_tex(m);
+                        rsx_draw_textured_quad();
                     }
-                    rsx_upload_guest_tex(m);
-                    rsx_draw_textured_quad();
-                }
-                if (g_va_offset[0]) {
-                    if (g_rsx.methods_this_frame == 0) g_rsx.methods_this_frame = 1;
-                    rsx_draw_nv40_geometry(m);
+                    if (g_va_offset[0]) {
+                        if (g_rsx.methods_this_frame == 0) g_rsx.methods_this_frame = 1;
+                        rsx_draw_nv40_geometry(m);
+                    }
                 }
             }
-            // XV-H: if frame is still empty, force visible solid (never pure black)
             if (g_rsx.draws_guest_frame == guest_before) {
                 rsx_draw_solid_triangle();
                 ++g_rsx.draws_diagnostic;
-            }
-            // Always finish with inject VA geometry on top while FIFO idle (methods low)
-            if (m && g_va_offset[0] && g_rsx.methods_this_frame < 4) {
-                if (g_rsx.methods_this_frame == 0) g_rsx.methods_this_frame = 1;
-                rsx_draw_nv40_geometry(m);
             }
             ++g_rsx.draws_this_frame;
         }
@@ -840,7 +836,7 @@ static void rsx_host_present_clear() {
 
         g_rsx.draws_this_frame = 0;
         g_rsx.draws_guest_frame = 0;
-        g_rsx.methods_this_frame = 0;
+        // methods_this_frame / packets reset after flip log
         if (g_swap) {
             g_swap->Present(0, 0);
             static int pf = 0;
@@ -1985,14 +1981,18 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     if (ps3rt_should_exit()) { ps3rt_force_exit(); return; }
     ++g_rsx.flip_count;
     g_rsx.flip_pending = false;
+    int frame_methods = g_rsx.methods_this_frame;
+    int frame_packets = g_rsx.packets_decoded;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
         ps3rt_log("[rsx] XV flip #%llu guest=%d diag=%d draws=%d shaders=%d tex=%d methods=%d packets=%d %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws_guest, g_rsx.draws_diagnostic,
             g_rsx.draws, g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,
-            g_rsx.methods_this_frame, g_rsx.packets_decoded,
+            frame_methods, frame_packets,
             g_rsx.width, g_rsx.height);
     }
+    g_rsx.methods_this_frame = 0;
+    g_rsx.packets_decoded = 0;
 }
 
 PS3RT_API uint64_t ps3rt_rsx_flip_count(void) {

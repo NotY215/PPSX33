@@ -901,9 +901,13 @@ PS3RT_API void ps3rt_progress_hw(void) {
             // XXIV-B: only treat as real guest stream when put moves past minimal residual
             // XV-H: seed when FIFO stalled (put==get) OR still in residual range.
             // Real game stream only when put advances beyond get with substantial traffic.
-            if (put == get || put <= 0x80) {
+            // XV-I: inject at most once per displayed flip (stop FIFO flood)
+            static uint64_t s_inj_flip = (uint64_t)-1;
+            uint64_t fc = ps3rt_rsx_flip_count();
+            if ((put == get || put <= 0x80) && s_inj_flip != fc) {
+                s_inj_flip = fc;
                 gcm_inject_clear_draw();
-            } else {
+            } else if (put != get && put > 0x80) {
                 static int s_guest = 0;
                 if (s_guest < 12) {
                     ps3rt_log("[gcm] XXIV-B guest put=0x%x get=0x%x\n", put, get);
@@ -917,9 +921,10 @@ PS3RT_API void ps3rt_progress_hw(void) {
             frame_pace_wait();
             ps3rt_rsx_flip(0);
             g_gcm_flip_status = 0;
-            // advance GET toward PUT so guest does not stall forever
-            if (g_gcm_control && put != get) {
-                wr_be32_guest(g_gcm_control + 4, put);
+            // XV-I: sync control GET from RSX after flush (do not skip decode)
+            if (g_gcm_control) {
+                uint32_t rg = ps3rt_rsx_get_get();
+                wr_be32_guest(g_gcm_control + 4, rg);
             }
         }
     }
