@@ -1,20 +1,29 @@
-# Phase XV — RSX host present
+# Phase XV — Real rendering
 
-**Status:** TESTING (core pipeline)  
-**Track:** PHASE 1 (I–XIX)
+**Status:** ACTIVE (2026-10-26)
 
-## Summary
+## Objective
 
-D3D11 clear/flip path.
+Connect guest RSX work to host D3D11 so visible frames come from **game** (or valid GCM) command streams, not diagnostic host geometry.
 
-## Scope
+## Subphases
 
-Engineering foundation for the experimental static recompiler. Not a playability claim.
+| ID | Status | Description |
+|----|--------|-------------|
+| XV-A | DONE | Split `draws_guest` / `draws_diagnostic` metrics |
+| XV-B | IN TREE | FIFO packet count, multi-arg methods, JUMP |
+| XV-C | IN TREE | Present: guest VA / color first; solid triangle only if no guest draw this frame |
+| XV-D | NEXT | Index buffer Draw path + multi-slot attributes |
+| XV-E | NEXT | Honest VP/FP translation (fail closed) |
+| XV-F | NEXT | Title texture formats |
+| XV-G | NEXT | Depth / blend / viewport for one stable scene |
 
-## Related
+## Non-goals (this phase)
 
-- Main index: [ROADMAP.md](../ROADMAP.md)
-- Later packaging: XX-A … XX-G
-- Runtime base: XX-H … XX-O
-- Lettered work: Phase XXI (A–Z)
-- Current focus: Phase XXII
+- Full game playability  
+- Perfect NV40 shader ISA  
+- OpenGL backend (later)
+
+## Related prior work (folded into I–XIV)
+
+Former labels XXIII–XXVI (execution reality, boot pixels, UI) map into phases IX–XIV.
