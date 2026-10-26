@@ -326,7 +326,25 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                             ++s_sticky_log;
                         }
                         add_ban(alt);
+                        add_rban(alt);
                         alt = next;
+                        if (s_same_alt >= 6 && n > 1) {
+                            static size_t s_escape = 0;
+                            s_escape = (s_escape + 1) % n;
+                            if (chunks[s_escape].start && chunks[s_escape].start != alt)
+                                alt = chunks[s_escape].start;
+                        }
+                    } else if (s_same_alt >= 5 && n > 0) {
+                        static size_t s_hard = 0;
+                        s_hard = (s_hard + 1) % n;
+                        add_ban(alt);
+                        add_rban(alt);
+                        alt = chunks[s_hard].start;
+                        if (s_sticky_log < 16) {
+                            ps3rt_log("[ps3] XXV-L sticky HARD escape -> 0x%llx\n",
+                                (unsigned long long)alt);
+                            ++s_sticky_log;
+                        }
                     }
                     s_same_alt = 0;
                     s_last_alt = alt;

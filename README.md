@@ -92,3 +92,13 @@ scripts\build_all.bat
 ```
 
 Output is placed in `build\dist\`.
+
+## Developer documentation
+
+- [Roadmap](ROADMAP.md) · [Phase XXV](roadmap/XXV.md)
+- [Contributor workflow](CONTRIBUTING.md)
+- [Developer guide](docs/DEVELOPER_GUIDE.md)
+
+---
+
+*No proprietary keys or copyrighted game assets are included.*

@@ -776,13 +776,18 @@ PS3RT_API int ps3rt_prx_call(PPUContext* c, uint32_t nid) {
 PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
     if (!c) return -1;
     // XXIV-D: reject TOC/code-looking values; prefer true 32-bit NIDs
+    // XV-J: reject size/pointer-shaped values (log: 0x003CC7F8 was alloc size)
     auto looks_like_nid = [](uint32_t v) -> bool {
         if (v == 0 || v == 0xFFFFFFFFu) return false;
-        if (v >= 0x30000000u && v <= 0x3FFFFFFFu) return false; // stub region
-        if (v >= 0x48000000u && v <= 0x4FFFFFFFu) return false; // common false positive / code
-        if (v >= 0x80000000u) return false; // high VA
-        // NIDs are arbitrary 32-bit but rarely look like small pointers
         if (v < 0x10000u) return false;
+        if (v >= 0x30000000u && v <= 0x3FFFFFFFu) return false;
+        if (v >= 0x48000000u && v <= 0x4FFFFFFFu) return false;
+        if (v >= 0x80000000u) return false;
+        if ((v & 0xFFFu) == 0) return false;
+        if (v < 0x01000000u && (v & 0xFFu) == 0) return false;
+        int bits = 0;
+        for (uint32_t t = v; t; t >>= 1) bits += (int)(t & 1u);
+        if (bits < 6 || bits > 26) return false;
         return true;
     };
     uint32_t maybe_nid = (uint32_t)c->gpr[11];
@@ -798,7 +803,7 @@ PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
         }
         if (!maybe_nid) {
             for (uint32_t cand : cands) {
-                if (looks_like_nid(cand)) { maybe_nid = cand; break; }
+                if (looks_like_nid(cand) && nid_lookup(cand)) { maybe_nid = cand; break; }
             }
         }
     }
@@ -810,7 +815,7 @@ PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
             uint32_t w = ((uint32_t)g_mem[a] << 24) | ((uint32_t)g_mem[a+1] << 16) |
                          ((uint32_t)g_mem[a+2] << 8) | (uint32_t)g_mem[a+3];
             if (looks_like_nid(w) && nid_lookup(w)) { maybe_nid = w; break; }
-            if (!maybe_nid && looks_like_nid(w)) maybe_nid = w;
+            // skip non-table memory words
         }
     }
     if (!maybe_nid) maybe_nid = 0;
