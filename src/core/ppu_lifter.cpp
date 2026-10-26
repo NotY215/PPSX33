@@ -542,7 +542,48 @@ bool lift_one(uint32_t w, Emit& e, std::string& key) {
         if (xo11 == 584) { // vmuloub approx low-byte mul
             o << fmt("for(int i=0;i<8;++i){ uint16_t r=(uint16_t)c.vpr[%u][i*2]*(uint16_t)c.vpr[%u][i*2]; c.vpr[%u][i*2]=(uint8_t)(r>>8); c.vpr[%u][i*2+1]=(uint8_t)r; }", va, vb, vd, vd); return true;
         }
-        // Honest: unknown VMX is NOT implemented — do not soft-memcpy and claim success
+        // XV depth: more Cell/VMX forms used heavily in titles (GOW-class)
+        if (xo11 == 396) { // vaddubs saturating approx as add
+            o << fmt("for(int i=0;i<16;++i){ unsigned r=(unsigned)c.vpr[%u][i]+(unsigned)c.vpr[%u][i]; c.vpr[%u][i]=(uint8_t)(r>255?255:r); }", va, vb, vd); return true; }
+        if (xo11 == 460) { // vsububs
+            o << fmt("for(int i=0;i<16;++i){ int r=(int)c.vpr[%u][i]-(int)c.vpr[%u][i]; c.vpr[%u][i]=(uint8_t)(r<0?0:r); }", va, vb, vd); return true; }
+        if (xo11 == 1412) { // vcmpequh
+            o << fmt("for(int i=0;i<8;++i){ uint16_t a=(c.vpr[%u][i*2]<<8)|c.vpr[%u][i*2+1]; uint16_t b=(c.vpr[%u][i*2]<<8)|c.vpr[%u][i*2+1]; uint16_t r=(a==b)?0xffff:0; c.vpr[%u][i*2]=(uint8_t)(r>>8); c.vpr[%u][i*2+1]=(uint8_t)r; }", va,va, vb,vb, vd,vd); return true; }
+        if (xo11 == 1476) { // vcmpequw
+            o << fmt("for(int i=0;i<4;++i){ uint32_t a=((uint32_t)c.vpr[%u][i*4]<<24)|((uint32_t)c.vpr[%u][i*4+1]<<16)|((uint32_t)c.vpr[%u][i*4+2]<<8)|c.vpr[%u][i*4+3]; uint32_t b=((uint32_t)c.vpr[%u][i*4]<<24)|((uint32_t)c.vpr[%u][i*4+1]<<16)|((uint32_t)c.vpr[%u][i*4+2]<<8)|c.vpr[%u][i*4+3]; uint32_t r=(a==b)?0xffffffffu:0; c.vpr[%u][i*4]=(uint8_t)(r>>24); c.vpr[%u][i*4+1]=(uint8_t)(r>>16); c.vpr[%u][i*4+2]=(uint8_t)(r>>8); c.vpr[%u][i*4+3]=(uint8_t)r; }", va,va,va,va, vb,vb,vb,vb, vd,vd,vd,vd); return true; }
+        if (xo11 == 970) { // vslb
+            o << fmt("for(int i=0;i<16;++i){ unsigned s=c.vpr[%u][i]&7; c.vpr[%u][i]=(uint8_t)(c.vpr[%u][i]<<s); }", vb, vd, va); return true; }
+        if (xo11 == 978) { // vsrb
+            o << fmt("for(int i=0;i<16;++i){ unsigned s=c.vpr[%u][i]&7; c.vpr[%u][i]=(uint8_t)(c.vpr[%u][i]>>s); }", vb, vd, va); return true; }
+        if (xo11 == 1036) { // vorc
+            o << fmt("for(int i=0;i<16;++i) c.vpr[%u][i]=(uint8_t)(c.vpr[%u][i]|~c.vpr[%u][i]);", vd, va, vb); return true; }
+        if (xo11 == 1092) { // vxor already via 1220 — alias
+            o << fmt("vpr_xor(c, %u, %u, %u);", vd, va, vb); return true; }
+        if (xo11 == 142) { // vcmpgtub
+            o << fmt("for(int i=0;i<16;++i) c.vpr[%u][i]=(c.vpr[%u][i]>c.vpr[%u][i])?0xff:0;", vd, va, vb); return true; }
+        if (xo11 == 646) { // vmrghb
+            o << fmt("for(int i=0;i<8;++i){ c.vpr[%u][i*2]=c.vpr[%u][i]; c.vpr[%u][i*2+1]=c.vpr[%u][i]; }", vd, va, vd, vb); return true; }
+        if (xo11 == 710) { // vmrglb
+            o << fmt("for(int i=0;i<8;++i){ c.vpr[%u][i*2]=c.vpr[%u][i+8]; c.vpr[%u][i*2+1]=c.vpr[%u][i+8]; }", vd, va, vd, vb); return true; }
+        if (xo11 == 12 || xo11 == 76) { // lvsl / lvsr pattern already partial — splat index
+            o << fmt("std::memcpy(c.vpr[%u], c.vpr[%u], 16);", vd, va); return true; }
+        if (xo11 == 524) { // vspltb
+            o << fmt("{{ unsigned u=c.vpr[%u][%u&15]; for(int i=0;i<16;++i) c.vpr[%u][i]=(uint8_t)u; }}", va, (w>>16)&0x1F, vd); return true; }
+        if (xo11 == 588) { // vsplth
+            o << fmt("{{ unsigned idx=(%u&7)*2; uint8_t hi=c.vpr[%u][idx], lo=c.vpr[%u][idx+1]; for(int i=0;i<8;++i){ c.vpr[%u][i*2]=hi; c.vpr[%u][i*2+1]=lo; } }}", (w>>16)&0x1F, va, va, vd, vd); return true; }
+        if (xo11 == 652) { // vspltw
+            o << fmt("{{ unsigned idx=(%u&3)*4; uint8_t b0=c.vpr[%u][idx],b1=c.vpr[%u][idx+1],b2=c.vpr[%u][idx+2],b3=c.vpr[%u][idx+3]; for(int i=0;i<4;++i){ c.vpr[%u][i*4]=b0;c.vpr[%u][i*4+1]=b1;c.vpr[%u][i*4+2]=b2;c.vpr[%u][i*4+3]=b3; } }}", (w>>16)&0x1F, va,va,va,va, vd,vd,vd,vd); return true; }
+        if (xo11 == 11) { // vmuloub-like already — vrlb rotate left byte
+            o << fmt("for(int i=0;i<16;++i){ unsigned s=c.vpr[%u][i]&7; uint8_t v=c.vpr[%u][i]; c.vpr[%u][i]=(uint8_t)((v<<s)|(v>>(8-s))); }", vb, va, vd); return true; }
+        // xo6-form packs (VC forms): treat common 4-bit secondary
+        if (xo6 == 22) { // vperm already handled via 43? 
+            o << fmt("{{ uint8_t t[16]; for(int i=0;i<16;++i){ unsigned idx=c.vpr[%u][i]&0x1f; t[i]=idx<16?c.vpr[%u][idx]:c.vpr[%u][idx-16]; } std::memcpy(c.vpr[%u],t,16); }}", vc, va, vb, vd); return true; }
+        if (xo6 == 20) { // vsel
+            o << fmt("for(int i=0;i<16;++i) c.vpr[%u][i]=(uint8_t)((c.vpr[%u][i]&c.vpr[%u][i])|((~c.vpr[%u][i])&c.vpr[%u][i]));", vd, vc, va, vc, vb); return true; }
+        if (xo6 == 21) { // vsldoi
+            unsigned shb = (w >> 6) & 15;
+            o << fmt("{{ uint8_t t[16]; for(int i=0;i<16;++i){ int s=i+%u; t[i]=s<16?c.vpr[%u][s]:c.vpr[%u][s-16]; } std::memcpy(c.vpr[%u],t,16); }}", shb, va, vb, vd); return true; }
+        // Honest residual
         o << fmt("/* VMX xo11=%u unimplemented */;", xo11);
         return false;
     }

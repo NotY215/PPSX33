@@ -54,6 +54,8 @@ public sealed partial class MainForm : Form
     private int _liftChunks;
     private bool _controllerMapped;
     private bool _controllerHiddenAfterBuild;
+    /// <summary>True after user saves controller map or build locks mapping.</summary>
+    internal bool ControllerMapped => _controllerMapped;
 
     private static string RuntimeDir => Path.Combine(AppContext.BaseDirectory, "runtime");
     private static string CompilersDir => Path.Combine(AppContext.BaseDirectory, "redist");
@@ -463,7 +465,7 @@ public sealed partial class MainForm : Form
     {
         if (_headerStatus == null) return;
         bool locked = _busy || _building;
-        _headerStatus.Text = locked ? "WORKING" : "ENGINE READY";
+        _headerStatus.Text = locked ? "WORKING" : (_controllerMapped ? "MAPPED" : "ENGINE READY");
         _headerStatus.ForeColor = locked ? Color.FromArgb(0xF0, 0xB4, 0x00) : Accent;
     }
 
