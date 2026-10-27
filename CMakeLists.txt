@@ -76,7 +76,6 @@ add_custom_target(copy_runtime ALL
             ${CMAKE_SOURCE_DIR}/runtime/ps3rt_internal.h
             ${CMAKE_SOURCE_DIR}/runtime/ps3rt_stage.h
             ${CMAKE_SOURCE_DIR}/runtime/ps3rt_b.inl
-            ${CMAKE_SOURCE_DIR}/runtime/README.md
             ${CMAKE_BINARY_DIR}/dist/runtime/
     COMMENT "Copying runtime headers (no sources)"
     DEPENDS ps3rt

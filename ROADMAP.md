@@ -1,77 +1,155 @@
-# PPSX33 implementation status
+# PPSX33 Roadmap
 
-Not a phase list. Concrete subsystems and how complete they are, based on source and GOW3 run logs (latest checked: 2026-10-27).
+This is the **working plan**. Status comes from source and GOW3 run logs, not marketing.
+External AI audits are **leads only**: accept what matches code and logs.
 
-Legend: **Done** · **Partial** · **In progress** · **Not started**
+Legend: **Done** · **Partial** · **In progress** · **Blocked** · **Not started**
 
-## Pipeline
+---
 
-| Implementation | Status | Notes |
+## How to read this document
+
+1. **Facts** = observed in logs or source.
+2. **Inferences** = likely causes.
+3. **Actions** = next engineering steps.
+4. A diagnostic triangle is not game rendering.
+
+---
+
+## Current evidence (GOW3)
+
+| Observation | Status |
+| --- | --- |
+| Lift: translated count can match instruction count (one run: unimplemented 0) | Fact |
+| D3D11 window, flips advance | Fact |
+| GCM control / labels / local alloc | Fact |
+| FIFO method counts small after JUMP fix | Fact |
+| Draws still inject/seed; shaders=0 in logs | Fact |
+| Sticky BREAK / wild-pc recovery | Fact |
+| PRX UNKNOWN NIDs (reduced, not eliminated) | Fact |
+| Title meshes / textures / menus on screen | **Not observed** |
+
+**Inference:** Host present and HLE skeleton work; title GCM and boot control flow are incomplete.
+
+---
+
+## A. Host product / packaging
+
+| Item | Status | Action |
 | --- | --- | --- |
-| ELF64 BE load / segments | Done | Guest image + VA map |
-| PPU lift → C++ chunks | Partial | Large unimplemented opcode counts on big titles |
-| GUI load / decompile / build | Done | WinForms; MSVC via vswhere |
-| Game package layout (SFO/PSARC paths) | Partial | Scan/read helpers; not full FS fidelity |
+| GUI load / decompile / build | Done | |
+| Prebuilt `ps3rt.dll` / `.lib` | Partial | CMake builds DLL |
+| Game build must not re-link empty DLL | **In progress** | Skip `LINK ps3rt.dll` when prebuilt; link EXE to `ps3rt.lib` only |
+| `dist/runtime` without `.cpp` | Done | Sources stay in repo |
+| `dist/runtime` without `.md` | In progress | Do not copy README |
+| Headers in `dist/runtime` | **Required** | See below |
+| `redist/` VS + WebView2 notes | In progress | WebView2 evergreen download URL |
+| No bundled compiler tree | Done | System VS |
 
-## Runtime CPU / OS
+### Why headers cannot all disappear into the DLL
 
-| Implementation | Status | Notes |
+Lifted game `.cpp` files `#include` `ppu_runtime.h`, `ppu_runtime_run.h`, `nid_table.h`, and related `.inl` content at **compile time**.
+
+A DLL holds **compiled** code, not include text. Options:
+
+1. Ship headers next to the prebuilt DLL (current correct model).
+2. Change the lifter so generated code does not include those headers (large design change).
+
+Amalgamating headers into fewer `.h` files is optional cleanup; it does not remove the need for headers.
+
+---
+
+## B. PPU / lift / execution
+
+| Item | Status | Action |
 | --- | --- | --- |
-| PPU run loop + soft recovery | Partial | Sticky BREAK still frequent on GOW3 |
-| VMX / Altivec coverage | Partial | Dispatch present; not full ISA |
-| LV2 syscalls (mem, thread, time, event) | Partial | Expanded table; many still return 0 |
-| PRX / NID import stubs | Partial | Table + filter; unknown NIDs remain |
-| cellSysmodule load by id | Partial | Maps common ids; no full PRX ELF |
-| SPU interpreter / MFC / SPURS | Partial | Stubs and coarse ticks |
+| ELF load | Done | |
+| Lift to chunks | Partial | Title-dependent |
+| VMX / complex ops | Partial | Validate against faults |
+| Wild-pc / sticky BREAK | Partial | Trace; reduce silent recovery |
+| TOC / OPD | Partial | |
 
-## Graphics (RSX / GCM)
+**AI lead:** truthful PPU translation — **valid**. Prefer log-driven fixes over full rewrites.
 
-| Implementation | Status | Notes |
+---
+
+## C. LV2 / PRX / modules
+
+| Item | Status | Action |
 | --- | --- | --- |
-| D3D11 device / swapchain / resize | Done | |
-| GCM control / labels / local addr | Done | |
-| FIFO JUMP/CALL fix + PUT/GET mod | Done | Log no longer shows methods≈131072 |
-| Surface COLOR offset/pitch/size | Done | |
-| CLEAR solid color to guest surface | Done | |
-| BEGIN/END vs DRAW_ARRAYS split | Done | Inject emits 0x1814 |
-| Texture unit regs (0x1A00+) | Partial | State recorded; formats limited |
-| Vertex array offset/format | Partial | VA0 path; multi-attr weak |
-| Host draw of VA / indexed | Partial | Works for inject triangle |
-| Guest color blit to window | Partial | Present blits surface without rainbow overwrite |
-| SCE VP/FP → HLSL | Partial | Experimental compile path |
-| **Title-authored GCM (real meshes)** | **In progress** | Blocked on boot advancing PUT with game methods |
-| Depth/stencil/blend accurate | Partial | State bits; not full |
-| Tile / zcull / reports | Not started | Stubs only |
+| Syscalls | Partial | Expand from failing paths |
+| NID table | Partial | Add NIDs from **log UNKNOWN lines** |
+| cellGcmSys HLE | Partial | |
+| sysmodule / fs / game / sysutil | Partial | |
+| Full PRX ELF | Partial | |
 
-## Audio / input / save
+---
 
-| Implementation | Status | Notes |
+## D. RSX / GCM / rendering (priority)
+
+| Item | Status | Action |
 | --- | --- | --- |
-| waveOut path | Partial | |
-| Pad map / XInput | Partial | |
-| cellSaveData | Partial | |
+| D3D11 present | Done | |
+| FIFO JUMP/CALL | Done | |
+| Surface / CLEAR | Done | |
+| BEGIN / DRAW_ARRAYS | Done | |
+| Present without diagnostic overwrite | Done | |
+| Inject seed triangle | Partial | Diagnostic only |
+| Multi-attr VA / textures | Partial | |
+| SCE VP/FP HLSL | Partial | |
+| **Title GCM stream** | **Blocked** | Needs boot/HLE so PUT carries game methods |
+| Tile / zcull | Not started | |
 
-## UI / packaging
+### Rendering truth ladder
 
-| Implementation | Status | Notes |
-| --- | --- | --- |
-| DualShock WebView2 mapper | Partial | Full HTML mapper; pad_map.json on build |
-| Lift report in GUI console | In progress | Pasted after successful Decompile |
-| dist/runtime packaging | Partial | Sources shipped for per-game `ps3rt.dll` MSVC build |
+1. Non-inject methods in log (not fixed inject packet counts).
+2. VA/IB/tex from game memory.
+3. Frames differ from seed triangle.
+4. Shader binds affect output.
+5. Menu / gameplay stable frames.
 
-## Current focus
+**AI lead:** diagnostic draws can hide missing geometry — **correct**.
 
-1. Keep FIFO and present honest (no diagnostic overwrite of guest color).
-2. Inject and any real methods use DRAW_ARRAYS (`0x1814`) so the host draw path runs.
-3. Reduce sticky BREAK / import stalls so GOW3 can submit its own GCM.
-4. Expand texture format and multi-attribute vertex fetch when real methods appear.
+---
+
+## E. SPU / MFC / SPURS
+
+| Item | Status |
+| --- | --- |
+| Coarse interpreter | Partial |
+| DMA / SPURS depth | Partial / later |
+
+---
+
+## F. Audio / pad / save
+
+| Item | Status |
+| --- | --- |
+| waveOut / pad / save | Partial |
+| Controller WebView2 | Needs runtime installed |
+
+---
+
+## Recommended order
+
+1. **Packaging** — prebuilt DLL path: never link empty `ps3rt.dll`; only game objects + `ps3rt.lib`.
+2. **Boot / NID** — sticky BREAK + top UNKNOWN NIDs from latest log.
+3. **Guest GCM proof** — first non-inject DRAW.
+4. **Textures / multi-attr** when methods appear.
+5. **SPU** after interactive frames exist.
+
+---
 
 ## Verification
 
-Rebuild game runtime after overlay, run GOW3, confirm log:
+- [ ] Host `ps3rt.dll` links cleanly
+- [ ] Game log: `PREBUILT ps3rt.dll (skip link)` then successful `LINK <game>.exe`
+- [ ] `dist/runtime`: dll, lib, headers/inl only
+- [ ] No nid=0 UNKNOWN spam
+- [ ] Later: non-inject DRAW in log
 
-- `XV-O CLEAR` without following rainbow `XXV-K paint` every flip
-- `inject` followed by draw with `method=0x1814` when flush runs
-- `methods` / `packets` stay small (tens), not 64k+
+---
 
-Real GOW menus/meshes require title GCM traffic beyond inject.
+## Shared ChatGPT link
+
+The share URL did not expose full message text without login here. Themes from prior audits are included only where they match PPSX33 evidence.

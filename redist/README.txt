@@ -111,3 +111,18 @@ Successful compile does not mean the title is playable.
 
   Missing Windows.h / kernel32.lib
     → Install a Windows 10/11 SDK component from the VS installer.
+
+
+----------------------------------------------------------------------
+3) Microsoft Edge WebView2 Runtime (GUI controller mapping page)
+----------------------------------------------------------------------
+
+The Controller tab uses the WebView2 control. If the mapping page is blank
+or fails to load, install the Evergreen WebView2 Runtime:
+
+  https://developer.microsoft.com/en-in/microsoft-edge/webview2?ch=1&form=MA13LH&cs=2885428259#download
+
+Prefer "Evergreen Bootstrapper" or "Evergreen Standalone Installer" (x64).
+After install, restart PPSX33.
+
+Note: Visual Studio and WebView2 installs require network access.

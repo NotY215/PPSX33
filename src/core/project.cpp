@@ -466,7 +466,11 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         }
         {
             std::ofstream g_rsp(out / "link_game.rsp");
-            g_rsp << "/nologo\n/OUT:\"" << out_exe << "\"\n";
+            g_rsp << "/nologo
+/MACHINE:X64
+/LIBPATH:.
+/OUT:\"" << out_exe << "\"
+";
             for (auto& n : gameSrc) g_rsp << "obj\\g_" << n << ".obj\n";
             if (fs::exists(src / "game_main.cpp") &&
                 std::find(gameSrc.begin(), gameSrc.end(), "game_main.cpp") == gameSrc.end()) {
@@ -531,8 +535,14 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
                 f << cl << " " << cflags << " /c src\\" << n << " /Fo" << o << " || exit /b 1\n";
             }
             cancel_chk();
-            f << "echo LINK ps3rt.dll\n";
-            f << "link @link_rt.rsp || exit /b 1\n";
+            if (!prebuilt_rt) {
+                f << "echo LINK ps3rt.dll\n";
+                f << "link @link_rt.rsp || exit /b 1\n";
+            } else {
+                f << "echo PREBUILT ps3rt.dll (skip link)\n";
+                f << "if not exist ps3rt.dll (echo MISSING prebuilt ps3rt.dll & exit /b 1)\n";
+                f << "if not exist ps3rt.lib (echo MISSING prebuilt ps3rt.lib & exit /b 1)\n";
+            }
             for (auto& n : gameSrc) {
                 cancel_chk();
                 std::string o = "obj\\g_" + n + ".obj";
