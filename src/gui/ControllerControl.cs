@@ -117,8 +117,11 @@ public sealed class ControllerControl : Control
 
     private string? Hit(Point p)
     {
-        float sx = W / (float)Math.Max(1, ClientSize.Width), sy = H / (float)Math.Max(1, ClientSize.Height);
-        PointF q = new(p.X*sx, p.Y*sy);
+        float scale = Math.Min(ClientSize.Width / (float)W, ClientSize.Height / (float)H);
+        if (scale <= 0) return null;
+        float ox = (ClientSize.Width - W * scale) * .5f;
+        float oy = (ClientSize.Height - H * scale) * .5f;
+        PointF q = new((p.X - ox) / scale, (p.Y - oy) / scale);
         foreach (var kv in _hits) if (kv.Value.Contains(q)) return kv.Key;
         return null;
     }
@@ -181,7 +184,13 @@ public sealed class ControllerControl : Control
         base.OnPaint(e);
         var g=e.Graphics; g.SmoothingMode=SmoothingMode.AntiAlias; g.InterpolationMode=InterpolationMode.HighQualityBicubic;
         g.TextRenderingHint=System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
-        g.ScaleTransform(ClientSize.Width/(float)W, ClientSize.Height/(float)H);
+        g.Clear(Bg);
+        float scale = Math.Min(ClientSize.Width / (float)W, ClientSize.Height / (float)H);
+        if (scale <= 0) return;
+        float ox = (ClientSize.Width - W * scale) * .5f;
+        float oy = (ClientSize.Height - H * scale) * .5f;
+        g.TranslateTransform(ox, oy);
+        g.ScaleTransform(scale, scale);
         using(var b=new SolidBrush(Bg)) g.FillRectangle(b,0,0,W,H);
         using(var glow=new SolidBrush(Color.FromArgb(18,0,229,255))) g.FillEllipse(glow,280,-210,640,500);
         using(var grid=new Pen(Color.FromArgb(18,29,52,89),1)) { for(int x=0;x<W;x+=32)g.DrawLine(grid,x,0,x,H); for(int y=0;y<H;y+=32)g.DrawLine(grid,0,y,W,y); }
