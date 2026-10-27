@@ -206,7 +206,42 @@ static const NidEntry kNidTable[] = {
     { 0xA6696A7D, "cellSync", "cellSyncMutexLock", 0 },
     { 0xA8A6D976, "cellSync", "cellSyncMutexUnlock", 0 },
 
+    /* GOW3 log unknowns / boot probes — soft HLE stubs (return 0) */
+    { 0x00525680, "cellSysutil", "cellSysutilStub_00525680", 7 },
+    { 0x0065FCC8, "cellSysutil", "cellSysutilStub_0065FCC8", 7 },
+    { 0x07552C23, "cellSysutil", "cellSysutilRegisterCallback", 7 },
+    { 0x1E14A55D, "cellSysutil", "cellSysutilGetSystemParamInt", 7 },
+    { 0x40E895D3, "cellSysutil", "cellSysutilGetSystemParamInt_alt", 7 },
+    { 0x189A74DA, "cellSysutil", "cellSysutilCheckCallback", 7 },
+    { 0x938013A3, "cellSysutil", "cellSysutilGetSystemParamString", 7 },
+    { 0x9D98AFA0, "cellSysutil", "cellSysutilUnregisterCallback", 7 },
+    { 0x220894E3, "cellSysutil", "cellSysutilGetBgmPlaybackStatus", 7 },
+    { 0xD8474B63, "cellResc", "cellRescSetSrc", 0 },
+    { 0x0D3C22CE, "cellResc", "cellRescSetConvertAndFlip", 0 },
+    { 0xC481C207, "cellResc", "cellRescInit", 0 },
+    { 0x01220224, "cellResc", "cellRescVideoOut", 0 },
+    { 0x6CD0F436, "cellGame", "cellGameBootCheck", 10 },
+    { 0xDA988E6F, "cellGame", "cellGameGetParamInt", 10 },
+    { 0xB7A45CAF, "cellGame", "cellGameGetParamString", 10 },
+    { 0x70ACB9C2, "cellGame", "cellGameContentPermit", 10 },
+    { 0x0A4C3A32, "cellGame", "cellGameDataCheck", 10 },
+    { 0x5E1B4D9C, "cellGame", "cellGameGetSizeKB", 10 },
+    { 0xDC09357B, "cellGcmSys", "cellGcmSetFlipMode", 1 },
+    { 0xA114EC67, "cellGcmSys", "cellGcmGetFlipStatus", 1 },
+    { 0xBD2F6DD7, "cellGcmSys", "cellGcmSetTileInfo", 1 },
+    { 0xD0B1D189, "cellGcmSys", "cellGcmUnbindTile", 1 },
+    { 0x9A0159AF, "cellGcmSys", "cellGcmBindZcull", 1 },
+    { 0xBC982946, "cellGcmSys", "cellGcmUnbindZcull", 1 },
+    { 0x21AC3697, "cellGcmSys", "cellGcmAddressToOffset", 1 },
+    { 0x5FEA1F9E, "cellGcmSys", "cellGcmGetConfiguration", 1 },
+    { 0xE315A0B2, "cellGcmSys", "cellGcmGetDisplayBuffer", 1 },
+    { 0x4524CCCD, "cellGcmSys", "cellGcmSetDisplayBuffer", 1 },
+    { 0x72A57700, "cellGcmSys", "cellGcmGetLastFlipTime", 1 },
+    { 0x0E6B0DAE, "cellGcmSys", "cellGcmSetWaitFlip", 1 },
+    { 0x63387071, "cellGcmSys", "cellGcmGetCurrentField", 1 },
 };
+
+
 
 static constexpr int kNidTableCount = (int)(sizeof(kNidTable) / sizeof(kNidTable[0]));
 

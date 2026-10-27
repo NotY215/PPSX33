@@ -751,6 +751,7 @@ static int spurs_dispatch(PPUContext* c, uint32_t nid) {
 
 static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
     if (!c) return -1;
+    if (maybe_nid == 0) { c->gpr[3] = 0; return 0; }
     const NidEntry* e = nid_lookup(maybe_nid);
     if (e) {
         if (g_prx_log < 40) {
@@ -884,7 +885,12 @@ static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
     if (kind == 5) { return spurs_dispatch(c, maybe_nid); }
     if (kind == 11) { return ps3rt_save_dispatch(c, maybe_nid); }
     if (kind == 8) { pad_poll_host(); c->gpr[3] = 0; prx_note_hit(maybe_nid, 1); return 0; }
-    // XXV-G: unknown import contract
+    // Unknown import: nid 0 is noise
+    if (maybe_nid == 0) {
+        c->gpr[3] = 0;
+        return 0;
+    }
+// XXV-G: unknown import contract
     prx_note_hit(maybe_nid, 2);
     ++g_prx_unknown_n;
     static int s_unk = 0;

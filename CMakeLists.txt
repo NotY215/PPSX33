@@ -40,14 +40,14 @@ target_link_libraries(ps3_cli PRIVATE ps3core)
 # ps3rt.dll — prebuilt game runtime (headers + binary in dist/runtime; no .cpp)
 # ------------------------------------------------------------------
 if(WIN32)
+# ps3rt.cpp already provides ps3rt_log + includes ps3rt_b.inl (ps3rt_progress_hw).
+# Do NOT also link ps3rt_hw.cpp / ps3rt_log.cpp (LNK2005 + missing g_mem exports).
 set(PS3RT_SOURCES
     ${CMAKE_SOURCE_DIR}/runtime/ps3rt.cpp
     ${CMAKE_SOURCE_DIR}/runtime/rsx_stub.cpp
     ${CMAKE_SOURCE_DIR}/runtime/spu_stub.cpp
     ${CMAKE_SOURCE_DIR}/runtime/audio_save.cpp
     ${CMAKE_SOURCE_DIR}/runtime/assets.cpp
-    ${CMAKE_SOURCE_DIR}/runtime/ps3rt_hw.cpp
-    ${CMAKE_SOURCE_DIR}/runtime/ps3rt_log.cpp
 )
 add_library(ps3rt SHARED ${PS3RT_SOURCES})
 target_include_directories(ps3rt PRIVATE ${CMAKE_SOURCE_DIR}/runtime)
