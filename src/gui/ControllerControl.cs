@@ -191,9 +191,11 @@ public sealed class ControllerControl : Control
         using var small=new Font("Segoe UI",9);
         using(var b=new LinearGradientBrush(new Rectangle(28,18,230,45),Color.FromArgb(125,220,255),Cyan,0f))
             g.DrawString("PPSX33",title,b,28,10);
-        g.DrawLine(new Pen(Border,2),260,20,260,65);
-        g.DrawString("PLAYSTATION 3  /  CONTROLLER STUDIO",sub,new SolidBrush(White),280,20);
-        g.DrawString("NATIVE INPUT MAPPER  •  CLICK ANY CONTROL TO REBIND",small,new SolidBrush(Color.FromArgb(102,190,220)),281,43);
+        using(var divider=new Pen(Border,2))g.DrawLine(divider,260,20,260,65);
+        using var subBrush=new SolidBrush(White);
+        using var smallBrush=new SolidBrush(Color.FromArgb(102,190,220));
+        g.DrawString("PLAYSTATION 3  /  CONTROLLER STUDIO",sub,subBrush,280,20);
+        g.DrawString("NATIVE INPUT MAPPER  •  CLICK ANY CONTROL TO REBIND",small,smallBrush,281,43);
         DrawToolbar(g,"@import","IMPORT",28,76,130);
         DrawToolbar(g,"@export","EXPORT",168,76,130);
         DrawToolbar(g,"@reset","RESET DEFAULTS",308,76,180);
@@ -213,7 +215,8 @@ public sealed class ControllerControl : Control
     private void DrawController(Graphics g)
     {
         using var caption=new Font("Segoe UI",8,FontStyle.Bold);
-        g.DrawString("DUALSHOCK-STYLE CONTROLLER",caption,new SolidBrush(Color.FromArgb(95,180,210)),456,130);
+        using var captionBrush=new SolidBrush(Color.FromArgb(95,180,210));
+        g.DrawString("DUALSHOCK-STYLE CONTROLLER",caption,captionBrush,456,130);
         // soft cast shadow
         using(var sh=new SolidBrush(Color.FromArgb(125,0,0,0)))g.FillEllipse(sh,260,425,680,46);
         // grip silhouettes
@@ -233,8 +236,9 @@ public sealed class ControllerControl : Control
         DrawShoulder(g,"l2","L2",334,160,95,31); DrawShoulder(g,"l1","L1",344,190,78,23);
         DrawShoulder(g,"r2","R2",771,160,95,31); DrawShoulder(g,"r1","R1",778,190,78,23);
         // center panel, speaker holes, LEDs, tiny screws
-        using(var p=CenterPlate())using(var b=new LinearGradientBrush(new Rectangle(440,214,320,112),Color.FromArgb(20,33,53),Color.FromArgb(7,14,25),90f))g.FillPath(b,p);
-        using(var pen=new Pen(Color.FromArgb(48,75,110),1.2f))g.DrawPath(pen,CenterPlate());
+        using(var p=CenterPlate())
+        using(var b=new LinearGradientBrush(new Rectangle(440,214,320,112),Color.FromArgb(20,33,53),Color.FromArgb(7,14,25),90f))
+        using(var pen=new Pen(Color.FromArgb(48,75,110),1.2f)) { g.FillPath(b,p); g.DrawPath(pen,p); }
         for(int row=0;row<3;row++)for(int col=0;col<7;col++){using var b=new SolidBrush(Color.FromArgb(70,105,132,160));g.FillEllipse(b,570+col*9,250+row*8,3,3);}
         for(int i=0;i<4;i++){using var led=new SolidBrush(i==0?Color.FromArgb(150,0,229,255):Color.FromArgb(35,110,140,165));g.FillEllipse(led,588+i*10,300,5,5);}
         foreach(var pt in new[]{new PointF(330,223),new PointF(870,223),new PointF(386,397),new PointF(814,397)}){using var b=new SolidBrush(Color.FromArgb(130,4,8,16));g.FillEllipse(b,pt.X-3,pt.Y-3,6,6);using var p=new Pen(Color.FromArgb(60,125,150,180));g.DrawEllipse(p,pt.X-3,pt.Y-3,6,6);}
@@ -350,7 +354,9 @@ public sealed class ControllerControl : Control
 
     private void DrawMappingGrid(Graphics g)
     {
-        using var h=new Font("Segoe UI",9,FontStyle.Bold);g.DrawString("BINDINGS  /  CLICK A ROW OR A CONTROLLER CONTROL TO CAPTURE A KEY",h,new SolidBrush(Color.FromArgb(110,190,220)),28,470);
+        using var h=new Font("Segoe UI",9,FontStyle.Bold);
+        using var headerBrush=new SolidBrush(Color.FromArgb(110,190,220));
+        g.DrawString("BINDINGS  /  CLICK A ROW OR A CONTROLLER CONTROL TO CAPTURE A KEY",h,headerBrush,28,470);
         int cols=3,rows=9;float x0=28,y0=492,cw=376,rh=41;
         for(int i=0;i<Order.Length;i++)
         {
@@ -360,7 +366,8 @@ public sealed class ControllerControl : Control
             using(var p=new Pen(hot?Cyan:Color.FromArgb(42,67,100),hot?1.6f:1f)){g.FillRounded(b,r,6);g.DrawRounded(p,r,6);}
             using var nameFont=new Font("Segoe UI",8.5f,FontStyle.Bold);
             using var keyFont=new Font("Consolas",9,FontStyle.Bold);
-            g.DrawString(Names[id],nameFont,new SolidBrush(hot?Cyan:Color.FromArgb(183,205,225)),x+10,y+7);
+            using(var nameBrush=new SolidBrush(hot?Cyan:Color.FromArgb(183,205,225)))
+                g.DrawString(Names[id],nameFont,nameBrush,x+10,y+7);
             string key=_rebinding==id?"PRESS A KEY…":DisplayKey(Get(id));
             var badge=new RectangleF(x+cw-125,y+6,108,rh-18);
             using(var bb=new SolidBrush(_rebinding==id?Color.FromArgb(65,65,12):Color.FromArgb(16,32,51)))g.FillRounded(bb,badge,5);
@@ -368,7 +375,8 @@ public sealed class ControllerControl : Control
             TextRenderer.DrawText(g,key,keyFont,Rectangle.Round(badge),_rebinding==id?Color.FromArgb(255,203,85):White,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter|TextFormatFlags.EndEllipsis);
         }
         using var foot=new Font("Segoe UI",8);
-        g.DrawString("Tip: select a binding, then press any key. Esc cancels. Analog sticks animate when their mapped direction keys are held while this panel has focus.",foot,new SolidBrush(Color.FromArgb(105,150,180)),28,866);
+        using var footBrush=new SolidBrush(Color.FromArgb(105,150,180));
+        g.DrawString("Tip: select a binding, then press any key. Esc cancels. Analog sticks animate when their mapped direction keys are held while this panel has focus.",foot,footBrush,28,866);
     }
     private void DrawRebindOverlay(Graphics g)
     {
