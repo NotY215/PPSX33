@@ -311,7 +311,9 @@ public sealed class ControllerControl : Control
     }
     private void DrawStick(Graphics g,string prefix,string click,float x,float y,float dx,float dy)
     {
-        AddHit(prefix=="ls"?"l3":"r3",x-26,y-26,52,52);
+        AddHit(prefix=="ls"?"l3":"r3",x-12,y-12,24,24);
+        int glowAlpha=(int)(8+(Math.Sin(_phase*1.35)+1)*7);
+        using(var stickGlow=new SolidBrush(Color.FromArgb(glowAlpha,0,229,255)))g.FillEllipse(stickGlow,x-42,y-42,84,84);
         using(var shadow=new SolidBrush(Color.FromArgb(170,0,0,0)))g.FillEllipse(shadow,x-38,y-34,76,76);
         using(var ring=new LinearGradientBrush(new RectangleF(x-36,y-36,72,72),Color.FromArgb(65,87,112),Color.FromArgb(6,13,23),45f))
         using(var p=new Pen(Color.FromArgb(65,94,128),2)){g.FillEllipse(ring,x-36,y-36,72,72);g.DrawEllipse(p,x-36,y-36,72,72);}
