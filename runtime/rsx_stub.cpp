@@ -1970,8 +1970,7 @@ static void rsx_process_fifo(uint8_t* mem) {
         if (dist > (fsz0 / 2)) {
             static int s_rs = 0;
             if (s_rs < 8) {
-                ps3rt_log("[rsx] XV-N FIFO resync get=0x%x put=0x%x dist=0x%x
-", get, put, dist);
+                ps3rt_log("[rsx] XV-N FIFO resync get=0x%x put=0x%x dist=0x%x\n", get, put, dist);
                 ++s_rs;
             }
             g_rsx.get = put;
