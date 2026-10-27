@@ -48,7 +48,113 @@ body{font-family:Inter,sans-serif;background-color:#040810;background-image:radi
 <main id="main-stage" class="relative my-auto flex items-center justify-center max-w-[1600px] mx-auto w-full min-h-[640px] sm:min-h-[720px] p-2 sm:p-4 rounded-2xl bg-gradient-to-b from-[#060e1d]/60 via-[#040914]/85 to-[#020408]/95 border border-ppsx-border/40 overflow-hidden shadow-2xl">
 <svg id="lines-canvas"></svg>
 <div id="controller-wrapper" class="relative w-full max-w-[640px] aspect-[1.5/1] flex items-center justify-center my-6 z-10">
-<svg id="ps3-controller-svg" viewBox="0 0 800 550"></svg>
+<svg id="ps3-controller-svg" viewBox="0 0 800 550" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a2740"/>
+      <stop offset="45%" stop-color="#121c30"/>
+      <stop offset="100%" stop-color="#0a1220"/>
+    </linearGradient>
+    <linearGradient id="gripGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#152238"/>
+      <stop offset="100%" stop-color="#0c1526"/>
+    </linearGradient>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Left grip -->
+  <path fill="url(#gripGrad)" stroke="#1e3a5f" stroke-width="2"
+        d="M120 220 C90 230 70 280 75 360 C80 430 110 480 160 500 C190 512 220 490 230 450 L240 320 C230 260 180 210 120 220Z"/>
+  <!-- Right grip -->
+  <path fill="url(#gripGrad)" stroke="#1e3a5f" stroke-width="2"
+        d="M680 220 C710 230 730 280 725 360 C720 430 690 480 640 500 C610 512 580 490 570 450 L560 320 C570 260 620 210 680 220Z"/>
+
+  <!-- Main body -->
+  <path fill="url(#bodyGrad)" stroke="#243b5e" stroke-width="2.5"
+        d="M200 160
+           C240 120 320 100 400 100
+           C480 100 560 120 600 160
+           C640 190 660 230 655 280
+           C650 320 620 350 580 360
+           L560 370
+           C540 400 500 420 400 420
+           C300 420 260 400 240 370
+           L220 360
+           C180 350 150 320 145 280
+           C140 230 160 190 200 160Z"/>
+
+  <!-- Center bridge / face plate -->
+  <path fill="#0e1828" stroke="#1d3558" stroke-width="1.5" opacity="0.95"
+        d="M300 200 C340 185 460 185 500 200 C520 220 520 280 500 310 C460 330 340 330 300 310 C280 280 280 220 300 200Z"/>
+
+  <!-- Shoulder L2 / L1 -->
+  <rect id="svg-L2" class="btn-target" x="210" y="108" width="70" height="22" rx="8" fill="#1a3050" stroke="#2a4a75" stroke-width="1.5"/>
+  <text x="245" y="124" text-anchor="middle" fill="#7eb8d8" font-size="11" font-weight="700" font-family="Inter,sans-serif">L2</text>
+  <rect id="svg-L1" class="btn-target" x="218" y="132" width="62" height="16" rx="6" fill="#162840" stroke="#2a4a75" stroke-width="1.5"/>
+  <text x="249" y="144" text-anchor="middle" fill="#6aa0c0" font-size="10" font-weight="600" font-family="Inter,sans-serif">L1</text>
+
+  <!-- Shoulder R2 / R1 -->
+  <rect id="svg-R2" class="btn-target" x="520" y="108" width="70" height="22" rx="8" fill="#1a3050" stroke="#2a4a75" stroke-width="1.5"/>
+  <text x="555" y="124" text-anchor="middle" fill="#7eb8d8" font-size="11" font-weight="700" font-family="Inter,sans-serif">R2</text>
+  <rect id="svg-R1" class="btn-target" x="520" y="132" width="62" height="16" rx="6" fill="#162840" stroke="#2a4a75" stroke-width="1.5"/>
+  <text x="551" y="144" text-anchor="middle" fill="#6aa0c0" font-size="10" font-weight="600" font-family="Inter,sans-serif">R1</text>
+
+  <!-- D-pad (left) -->
+  <g transform="translate(220,250)">
+    <rect id="svg-DPAD_UP" class="btn-target" x="18" y="0" width="28" height="28" rx="4" fill="#152538" stroke="#2a4a75"/>
+    <rect id="svg-DPAD_DOWN" class="btn-target" x="18" y="52" width="28" height="28" rx="4" fill="#152538" stroke="#2a4a75"/>
+    <rect id="svg-DPAD_LEFT" class="btn-target" x="0" y="26" width="28" height="28" rx="4" fill="#152538" stroke="#2a4a75"/>
+    <rect id="svg-DPAD_RIGHT" class="btn-target" x="36" y="26" width="28" height="28" rx="4" fill="#152538" stroke="#2a4a75"/>
+    <circle cx="32" cy="40" r="8" fill="#0c1524"/>
+    <path d="M32 8 L38 18 L26 18Z" fill="#4a6a8a"/>
+    <path d="M32 72 L26 62 L38 62Z" fill="#4a6a8a"/>
+    <path d="M8 40 L18 34 L18 46Z" fill="#4a6a8a"/>
+    <path d="M56 40 L46 34 L46 46Z" fill="#4a6a8a"/>
+  </g>
+
+  <!-- Face buttons (right) -->
+  <g transform="translate(520,240)">
+    <circle id="svg-TRIANGLE" class="btn-target" cx="40" cy="18" r="16" fill="#152538" stroke="#2a4a75" stroke-width="1.5"/>
+    <path d="M40 10 L47 22 L33 22Z" fill="none" stroke="#00e676" stroke-width="2"/>
+    <circle id="svg-CIRCLE" class="btn-target" cx="68" cy="46" r="16" fill="#152538" stroke="#2a4a75" stroke-width="1.5"/>
+    <circle cx="68" cy="46" r="7" fill="none" stroke="#ff5252" stroke-width="2"/>
+    <circle id="svg-CROSS" class="btn-target" cx="40" cy="74" r="16" fill="#152538" stroke="#2a4a75" stroke-width="1.5"/>
+    <path d="M34 68 L46 80 M46 68 L34 80" fill="none" stroke="#40c4ff" stroke-width="2" stroke-linecap="round"/>
+    <circle id="svg-SQUARE" class="btn-target" cx="12" cy="46" r="16" fill="#152538" stroke="#2a4a75" stroke-width="1.5"/>
+    <rect x="6" y="40" width="12" height="12" fill="none" stroke="#e040fb" stroke-width="2"/>
+  </g>
+
+  <!-- Select / Start -->
+  <ellipse id="svg-SELECT" class="btn-target" cx="350" cy="250" rx="18" ry="10" fill="#152538" stroke="#2a4a75"/>
+  <text x="350" y="254" text-anchor="middle" fill="#6a8aaa" font-size="8" font-family="Inter,sans-serif">SELECT</text>
+  <ellipse id="svg-START" class="btn-target" cx="450" cy="250" rx="18" ry="10" fill="#152538" stroke="#2a4a75"/>
+  <text x="450" y="254" text-anchor="middle" fill="#6a8aaa" font-size="8" font-family="Inter,sans-serif">START</text>
+
+  <!-- PS button -->
+  <circle id="svg-PS" class="btn-target" cx="400" cy="290" r="18" fill="#1a283c" stroke="#3a5a80" stroke-width="2"/>
+  <text x="400" y="295" text-anchor="middle" fill="#c0d0e0" font-size="11" font-weight="800" font-family="Inter,sans-serif">PS</text>
+
+  <!-- Left stick + L3 -->
+  <g class="left-stick-cap-group" transform="translate(310,350)">
+    <circle cx="0" cy="0" r="42" fill="#0a1422" stroke="#1e3a5f" stroke-width="2"/>
+    <circle id="svg-L3" class="btn-target stick-cap" cx="0" cy="0" r="28" fill="#1a2a40" stroke="#2a4a75" stroke-width="2"/>
+    <circle cx="0" cy="0" r="10" fill="#0c1828"/>
+  </g>
+
+  <!-- Right stick + R3 -->
+  <g class="right-stick-cap-group" transform="translate(490,350)">
+    <circle cx="0" cy="0" r="42" fill="#0a1422" stroke="#1e3a5f" stroke-width="2"/>
+    <circle id="svg-R3" class="btn-target stick-cap" cx="0" cy="0" r="28" fill="#1a2a40" stroke="#2a4a75" stroke-width="2"/>
+    <circle cx="0" cy="0" r="10" fill="#0c1828"/>
+  </g>
+
+  <!-- Subtle top highlight -->
+  <path fill="none" stroke="rgba(0,229,255,0.15)" stroke-width="1.5"
+        d="M240 150 C300 125 500 125 560 150"/>
+</svg>
 
 <div id="anchor-L2" class="absolute left-[28%] top-[13%] w-2 h-2"></div>
 <div id="anchor-L1" class="absolute left-[30%] top-[17%] w-2 h-2"></div>
