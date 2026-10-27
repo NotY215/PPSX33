@@ -510,7 +510,15 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             f << "  echo ERROR: cl.exe not on PATH after vcvars\n";
             f << "  exit /b 1\n";
             f << ")\n";
-            if (!prebuilt_rt) f << "if not exist src\\ps3rt.cpp (echo MISSING src\\ps3rt.cpp & exit /b 1)\n";
+                        if (!prebuilt_rt) {
+                f << "if not exist src\ps3rt.cpp (\n";
+                f << "  echo MISSING src\ps3rt.cpp\n";
+                f << "  echo Rebuild host so dist/runtime/ps3rt.dll and ps3rt.lib exist,\n";
+                f << "  or place runtime sources under dist/runtime.\n";
+                f << "  exit /b 1\n";
+                f << ")\n";
+            }
+
             f << "if not exist obj mkdir obj\n";
             f << "if exist build_cancel.flag del /f /q build_cancel.flag\n";
             {

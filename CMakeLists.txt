@@ -36,6 +36,39 @@ if(WIN32)
     set_target_properties(ps3core PROPERTIES PREFIX "")
 endif()
 
+
+# ------------------------------------------------------------------
+# ps3rt.dll — prebuilt game runtime (headers stay separate for lift includes)
+# ------------------------------------------------------------------
+if(WIN32)
+    add_library(ps3rt SHARED
+        ${CMAKE_SOURCE_DIR}/runtime/ps3rt.cpp
+        ${CMAKE_SOURCE_DIR}/runtime/rsx_stub.cpp
+        ${CMAKE_SOURCE_DIR}/runtime/spu_stub.cpp
+        ${CMAKE_SOURCE_DIR}/runtime/audio_save.cpp
+        ${CMAKE_SOURCE_DIR}/runtime/assets.cpp
+    )
+    target_include_directories(ps3rt PRIVATE ${CMAKE_SOURCE_DIR}/runtime)
+    target_compile_definitions(ps3rt PRIVATE PS3RT_BUILD_DLL=1)
+    if(MSVC)
+        target_compile_options(ps3rt PRIVATE /bigobj)
+    endif()
+    target_link_libraries(ps3rt PRIVATE d3d11 dxgi d3dcompiler user32 gdi32 ole32 winmm)
+    set_target_properties(ps3rt PROPERTIES
+        PREFIX ""
+        OUTPUT_NAME "ps3rt"
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+    )
+    add_custom_command(TARGET ps3rt POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/dist/runtime
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ps3rt> ${CMAKE_BINARY_DIR}/dist/runtime/
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_LINKER_FILE:ps3rt> ${CMAKE_BINARY_DIR}/dist/runtime/
+        COMMENT "Install ps3rt.dll/lib into dist/runtime"
+        VERBATIM)
+endif()
+
 set(PS3RT_DIST_HEADERS
     ppu_runtime.h ppu_runtime_core.h ppu_runtime_core_a.h ppu_runtime_core_b.h
     ppu_runtime_run.h ps3rt_internal.h ps3rt_stage.h ps3rt_b.inl
@@ -90,6 +123,10 @@ if(DOTNET_EXE)
     )
 
     add_dependencies(PS3Recomp ps3core copy_runtime)
+    if(TARGET ps3rt)
+        add_dependencies(PS3Recomp ps3rt)
+        add_dependencies(copy_runtime ps3rt)
+    endif()
 else()
     message(WARNING "dotnet not found on PATH – GUI target (PS3Recomp) will be skipped. Install .NET 8 SDK.")
 endif()
