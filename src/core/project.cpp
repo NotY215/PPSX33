@@ -372,9 +372,31 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     live_open(out);
     g_build_out_dir = out.string();
 
+    // Prefer prebuilt ps3rt.dll/lib from dist/runtime (headers only + binary).
+    // Fall back to compiling .cpp sources if no DLL is present.
+    bool prebuilt_rt = false;
+    {
+        fs::path pre_dll = fs::path(runtime_dir) / "ps3rt.dll";
+        fs::path pre_lib = fs::path(runtime_dir) / "ps3rt.lib";
+        if (!fs::exists(pre_dll)) pre_dll = fs::path(runtime_dir) / ".." / "ps3rt.dll";
+        if (!fs::exists(pre_lib)) pre_lib = fs::path(runtime_dir) / ".." / "ps3rt.lib";
+        if (fs::exists(pre_dll) && fs::exists(pre_lib)) {
+            prebuilt_rt = true;
+            fs::copy_file(pre_dll, out / "ps3rt.dll", fs::copy_options::overwrite_existing, ec);
+            fs::copy_file(pre_lib, out / "ps3rt.lib", fs::copy_options::overwrite_existing, ec);
+            live_log("Using prebuilt ps3rt.dll (no runtime .cpp compile)\n");
+            log += "Using prebuilt ps3rt.dll\n";
+        }
+    }
     if (fs::exists(runtime_dir)) {
         for (auto& e : fs::recursive_directory_iterator(runtime_dir, ec)) {
             if (!e.is_regular_file()) continue;
+            std::string n = e.path().filename().string();
+            // Never ship implementation .cpp into per-game src when prebuilt is available
+            if (prebuilt_rt) {
+                if (n.size() > 4 && n.substr(n.size()-4) == ".cpp") continue;
+                if (n == "ps3rt.dll" || n == "ps3rt.lib" || n == "ps3rt.exp" || n == "ps3rt.pdb") continue;
+            }
             fs::path rel = fs::relative(e.path(), runtime_dir, ec);
             fs::path dst = src / rel;
             fs::create_directories(dst.parent_path(), ec);
@@ -402,7 +424,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         if (n.size() < 5 || n.substr(n.size()-4) != ".cpp") continue;
         if (n == "ps3rt.cpp" || n == "rsx_stub.cpp" || n == "spu_stub.cpp" ||
             n == "audio_save.cpp" || n == "assets.cpp") {
-            rtSrc.push_back(n);
+            if (!prebuilt_rt) rtSrc.push_back(n);
         } else if (n == "ps3rt_hw.cpp" || n == "ps3rt_log.cpp") {
             continue;
         } else {
@@ -486,7 +508,7 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             f << "  echo ERROR: cl.exe not on PATH after vcvars\n";
             f << "  exit /b 1\n";
             f << ")\n";
-            f << "if not exist src\\ps3rt.cpp (echo MISSING src\\ps3rt.cpp & exit /b 1)\n";
+            if (!prebuilt_rt) f << "if not exist src\\ps3rt.cpp (echo MISSING src\\ps3rt.cpp & exit /b 1)\n";
             f << "if not exist obj mkdir obj\n";
             f << "if exist build_cancel.flag del /f /q build_cancel.flag\n";
             {
