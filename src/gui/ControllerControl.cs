@@ -59,7 +59,7 @@ public sealed class ControllerControl : Control
         Font = new Font("Segoe UI", 9f);
     }
 
-    private static float Ease(float a, float b) => a + (b-a)*.28f;
+    protected override void Dispose(bool disposing)\n    {\n        if (disposing) { _timer.Stop(); _timer.Dispose(); }\n        base.Dispose(disposing);\n    }\n\n    private static float Ease(float a, float b) => a + (b-a)*.28f;
     private float Direction(string id) => _held.Contains(GetKey(id)) ? 1f : 0f;
     private string GetKey(string id) => Get(id);
     protected override bool IsInputKey(Keys keyData) => true;
@@ -204,8 +204,8 @@ public sealed class ControllerControl : Control
     {
         var r=new RectangleF(x,y,w,31); _hits[id]=r;
         bool hot=_hover==id;
-        using(var b=new LinearGradientBrush(Rectangle.Round(r),hot?Color.FromArgb(18,57,84):Color.FromArgb(9,18,31),Color.FromArgb(5,12,23),90f))g.FillRounded(g,b,r,7);
-        using(var p=new Pen(hot?Cyan:Border,hot?1.5f:1f))g.DrawRounded(g,p,r,7);
+        using(var b=new LinearGradientBrush(Rectangle.Round(r),hot?Color.FromArgb(18,57,84):Color.FromArgb(9,18,31),Color.FromArgb(5,12,23),90f))g.FillRounded(b,r,7);
+        using(var p=new Pen(hot?Cyan:Border,hot?1.5f:1f))g.DrawRounded(p,r,7);
         using var f=new Font("Segoe UI",8.5f,FontStyle.Bold);
         TextRenderer.DrawText(g,text,f,Rectangle.Round(r),hot?Cyan:White,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);
     }
