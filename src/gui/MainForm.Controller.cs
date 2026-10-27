@@ -15,15 +15,15 @@ public sealed partial class MainForm
 
     private static class NativeController
     {
-        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode)]
+        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode, ExactSpelling = true)]
         internal static extern IntPtr PPSX33_ControllerCreate(
             IntPtr parent, NativeControllerMapCallback callback,
             [MarshalAs(UnmanagedType.LPWStr)] string initialJson);
 
-        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall)]
+        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall, ExactSpelling = true)]
         internal static extern void PPSX33_ControllerResize(IntPtr window, int width, int height);
 
-        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode)]
+        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode, ExactSpelling = true)]
         internal static extern void PPSX33_ControllerSetMap([MarshalAs(UnmanagedType.LPWStr)] string json);
 
         [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall)]
