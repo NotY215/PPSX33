@@ -113,3 +113,12 @@ Successful compile does not mean the title is playable.
     → Install a Windows 10/11 SDK component from the VS installer.
 
 
+
+
+----------------------------------------------------------------------
+Controller mapping
+----------------------------------------------------------------------
+
+Use the Controller tab in PPSX33 (simple keyboard list). Save writes
+settings and project output/pad_map.json. No WebView2 and no native
+controller DLL are required for mapping.

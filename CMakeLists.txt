@@ -36,56 +36,24 @@ if(WIN32)
     set_target_properties(ps3core PROPERTIES PREFIX "")
 endif()
 
-# ------------------------------------------------------------------
-# Native C++ Controller component (embedded in the single WinForms UI)
-# This is a DLL, not a standalone executable.
-# ------------------------------------------------------------------
-if(WIN32)
-    add_library(PPSX33ControllerNative SHARED
-        src/controller/ControllerStudio.cpp
-    )
-    target_compile_definitions(PPSX33ControllerNative PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
-    set_target_properties(PPSX33ControllerNative PROPERTIES
-        PREFIX ""
-        OUTPUT_NAME "PPSX33ControllerNative"
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
-        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
-    )
-    target_link_libraries(PPSX33ControllerNative PRIVATE comdlg32)
-    if(MSVC)
-        target_compile_options(PPSX33ControllerNative PRIVATE /W4 /permissive-)
-    endif()
-endif()
-
-# Remove artifacts from the previous standalone-controller prototype.
-# The controller is now embedded and built as a DLL, never as a second EXE.
-add_custom_target(remove_legacy_controller_exe ALL
-    COMMAND ${CMAKE_COMMAND} -E rm -f
-        "${CMAKE_BINARY_DIR}/dist/PPSX33ControllerStudio.exe"
-        "${CMAKE_BINARY_DIR}/dist/Debug/PPSX33ControllerStudio.exe"
-        "${CMAKE_BINARY_DIR}/dist/Release/PPSX33ControllerStudio.exe"
-        "${CMAKE_BINARY_DIR}/dist/RelWithDebInfo/PPSX33ControllerStudio.exe"
-        "${CMAKE_BINARY_DIR}/dist/MinSizeRel/PPSX33ControllerStudio.exe"
-    COMMENT "Removing obsolete standalone controller executable"
-    VERBATIM
+set(PS3RT_DIST_HEADERS
+    ppu_runtime.h ppu_runtime_core.h ppu_runtime_core_a.h ppu_runtime_core_b.h
+    ppu_runtime_run.h ps3rt_internal.h ps3rt_stage.h ps3rt_b.inl
+    nid_table.h hle_registry.h lv2_syscalls.inl
 )
-
-# ------------------------------------------------------------------
-# ps3_cli.exe – command-line front-end (same API as the GUI)
-# ------------------------------------------------------------------
-add_executable(ps3_cli src/cli/ps3_cli.cpp)
-target_link_libraries(ps3_cli PRIVATE ps3core)
-
-# ------------------------------------------------------------------
-# Copy runtime sources + redist (VS install guide; no bundled compilers)
-# ------------------------------------------------------------------
 add_custom_target(copy_runtime ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/runtime
-            ${CMAKE_BINARY_DIR}/dist/runtime
-    COMMENT "Copying runtime/ sources"
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/dist/runtime
+    COMMENT "Preparing dist/runtime (headers only)"
 )
+foreach(_h ${PS3RT_DIST_HEADERS})
+    if(EXISTS "${CMAKE_SOURCE_DIR}/runtime/${_h}")
+        add_custom_command(TARGET copy_runtime POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${CMAKE_SOURCE_DIR}/runtime/${_h}"
+                    "${CMAKE_BINARY_DIR}/dist/runtime/${_h}"
+            VERBATIM)
+    endif()
+endforeach()
 
 # Ship redist/ next to the app (README + VS Community install notes).
 # Compilers-files is intentionally NOT copied — toolchain is system VS.
@@ -121,10 +89,7 @@ if(DOTNET_EXE)
         VERBATIM
     )
 
-    add_dependencies(PS3Recomp ps3core copy_runtime remove_legacy_controller_exe)
-    if(TARGET PPSX33ControllerNative)
-        add_dependencies(PS3Recomp PPSX33ControllerNative)
-    endif()
+    add_dependencies(PS3Recomp ps3core copy_runtime)
 else()
     message(WARNING "dotnet not found on PATH – GUI target (PS3Recomp) will be skipped. Install .NET 8 SDK.")
 endif()

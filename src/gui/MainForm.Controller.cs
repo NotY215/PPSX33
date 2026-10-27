@@ -1,115 +1,203 @@
-using System.Runtime.InteropServices;
+using System;
+using System.Drawing;
+using System.IO;
 using System.Text.Json;
+using System.Windows.Forms;
 
 namespace PS3Recomp.Gui;
 
-public sealed partial class MainForm
+public partial class MainForm
 {
     private Panel? _controllerPanel;
     private TabPage? _controllerTab;
-    private IntPtr _nativeController;
-    private NativeControllerMapCallback? _nativeControllerCallback;
-
-    [UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Unicode)]
-    private delegate void NativeControllerMapCallback([MarshalAs(UnmanagedType.LPWStr)] string json);
-
-    private static class NativeController
-    {
-        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode, ExactSpelling = true)]
-        internal static extern IntPtr PPSX33_ControllerCreate(
-            IntPtr parent, NativeControllerMapCallback callback,
-            [MarshalAs(UnmanagedType.LPWStr)] string initialJson);
-
-        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall, ExactSpelling = true)]
-        internal static extern void PPSX33_ControllerResize(IntPtr window, int width, int height);
-
-        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode, ExactSpelling = true)]
-        internal static extern void PPSX33_ControllerSetMap([MarshalAs(UnmanagedType.LPWStr)] string json);
-
-        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall, ExactSpelling = true)]
-        internal static extern void PPSX33_ControllerDestroy(IntPtr window);
-    }
+    private bool _controllerHiddenAfterBuild;
 
     void BuildControllerTab()
     {
-        if (_controllerTab != null) return;
-
         _controllerPanel = new Panel
         {
             Dock = DockStyle.Fill,
+            AutoScroll = true,
             BackColor = Color.FromArgb(7, 13, 24),
-            Padding = Padding.Empty
+            Padding = new Padding(12)
         };
-        _controllerPanel.HandleCreated += (_, _) => InitializeNativeController();
-        _controllerPanel.Resize += (_, _) =>
+
+        var title = new Label
         {
-            if (_nativeController != IntPtr.Zero && _controllerPanel != null)
-                NativeController.PPSX33_ControllerResize(
-                    _nativeController, _controllerPanel.ClientSize.Width, _controllerPanel.ClientSize.Height);
+            Text = "Keyboard → DualShock mapping (simple)",
+            ForeColor = Color.FromArgb(51, 190, 220),
+            Font = new Font("Segoe UI", 11f, FontStyle.Bold),
+            AutoSize = true,
+            Location = new Point(12, 10)
         };
+        _controllerPanel.Controls.Add(title);
+
+        var hint = new Label
+        {
+            Text = "Click a key field and press a keyboard key. Save writes settings + pad_map.json.",
+            ForeColor = Color.FromArgb(144, 166, 190),
+            AutoSize = true,
+            Location = new Point(12, 36)
+        };
+        _controllerPanel.Controls.Add(hint);
+
+        var grid = new TableLayoutPanel
+        {
+            Location = new Point(12, 64),
+            ColumnCount = 2,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink
+        };
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160));
+
+        var km = _settings.KeyMap ?? KeyMap.Defaults();
+        _settings.KeyMap = km;
+
+        void AddRow(string label, Func<string> get, Action<string> set)
+        {
+            int row = grid.RowCount++;
+            grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+            var lab = new Label
+            {
+                Text = label,
+                ForeColor = Color.FromArgb(200, 210, 220),
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            var tb = new TextBox
+            {
+                Text = get(),
+                Dock = DockStyle.Fill,
+                BackColor = Color.FromArgb(16, 27, 43),
+                ForeColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle,
+                ReadOnly = true
+            };
+            tb.KeyDown += (_, e) =>
+            {
+                e.SuppressKeyPress = true;
+                string name = FormatWinKey(e.KeyCode);
+                if (name == "Escape") return;
+                set(name);
+                tb.Text = name;
+            };
+            grid.Controls.Add(lab, 0, row);
+            grid.Controls.Add(tb, 1, row);
+        }
+
+        AddRow("Left stick Left", () => km.LeftStickLeft, v => km.LeftStickLeft = v);
+        AddRow("Left stick Down", () => km.LeftStickDown, v => km.LeftStickDown = v);
+        AddRow("Left stick Right", () => km.LeftStickRight, v => km.LeftStickRight = v);
+        AddRow("Left stick Up", () => km.LeftStickUp, v => km.LeftStickUp = v);
+        AddRow("Right stick Left", () => km.RightStickLeft, v => km.RightStickLeft = v);
+        AddRow("Right stick Down", () => km.RightStickDown, v => km.RightStickDown = v);
+        AddRow("Right stick Right", () => km.RightStickRight, v => km.RightStickRight = v);
+        AddRow("Right stick Up", () => km.RightStickUp, v => km.RightStickUp = v);
+        AddRow("Start", () => km.Start, v => km.Start = v);
+        AddRow("Select", () => km.Select, v => km.Select = v);
+        AddRow("PS button", () => km.PsButton, v => km.PsButton = v);
+        AddRow("Square", () => km.Square, v => km.Square = v);
+        AddRow("Cross", () => km.Cross, v => km.Cross = v);
+        AddRow("Circle", () => km.Circle, v => km.Circle = v);
+        AddRow("Triangle", () => km.Triangle, v => km.Triangle = v);
+        AddRow("D-pad Left", () => km.DpadLeft, v => km.DpadLeft = v);
+        AddRow("D-pad Down", () => km.DpadDown, v => km.DpadDown = v);
+        AddRow("D-pad Right", () => km.DpadRight, v => km.DpadRight = v);
+        AddRow("D-pad Up", () => km.DpadUp, v => km.DpadUp = v);
+        AddRow("R1", () => km.R1, v => km.R1 = v);
+        AddRow("R2", () => km.R2, v => km.R2 = v);
+        AddRow("R3", () => km.R3, v => km.R3 = v);
+        AddRow("L1", () => km.L1, v => km.L1 = v);
+        AddRow("L2", () => km.L2, v => km.L2 = v);
+        AddRow("L3", () => km.L3, v => km.L3 = v);
+
+        _controllerPanel.Controls.Add(grid);
+
+        var btnSave = new Button
+        {
+            Text = "Save mapping",
+            Location = new Point(12, 64 + 25 * 32 + 20),
+            Size = new Size(140, 32),
+            BackColor = Color.FromArgb(17, 65, 83),
+            ForeColor = Color.White,
+            FlatStyle = FlatStyle.Flat
+        };
+        btnSave.Click += (_, _) =>
+        {
+            _settings.KeyMap = km;
+            SaveSettings();
+            WritePadMapForRuntime();
+            _controllerMapped = true;
+            Append("Controller mapping saved.");
+            UpdateButtons();
+        };
+        var btnDefault = new Button
+        {
+            Text = "Defaults",
+            Location = new Point(164, 64 + 25 * 32 + 20),
+            Size = new Size(100, 32),
+            BackColor = Color.FromArgb(16, 27, 43),
+            ForeColor = Color.White,
+            FlatStyle = FlatStyle.Flat
+        };
+        btnDefault.Click += (_, _) =>
+        {
+            var d = KeyMap.Defaults();
+            km.LeftStickLeft = d.LeftStickLeft; km.LeftStickDown = d.LeftStickDown;
+            km.LeftStickRight = d.LeftStickRight; km.LeftStickUp = d.LeftStickUp;
+            km.RightStickLeft = d.RightStickLeft; km.RightStickDown = d.RightStickDown;
+            km.RightStickRight = d.RightStickRight; km.RightStickUp = d.RightStickUp;
+            km.Start = d.Start; km.Select = d.Select; km.PsButton = d.PsButton;
+            km.Square = d.Square; km.Cross = d.Cross; km.Circle = d.Circle; km.Triangle = d.Triangle;
+            km.DpadLeft = d.DpadLeft; km.DpadDown = d.DpadDown; km.DpadRight = d.DpadRight; km.DpadUp = d.DpadUp;
+            km.R1 = d.R1; km.R2 = d.R2; km.R3 = d.R3; km.L1 = d.L1; km.L2 = d.L2; km.L3 = d.L3;
+            // refresh textboxes
+            foreach (Control c in grid.Controls)
+                if (c is TextBox) c.Text = ""; // simplified: user can re-open tab
+            Append("Defaults restored in memory — click Save mapping.");
+        };
+        _controllerPanel.Controls.Add(btnSave);
+        _controllerPanel.Controls.Add(btnDefault);
 
         _controllerTab = new TabPage("Controller")
         {
             BackColor = Color.FromArgb(7, 13, 24),
-            Padding = Padding.Empty
+            Padding = new Padding(0)
         };
         _controllerTab.Controls.Add(_controllerPanel);
         _tabs.TabPages.Add(_controllerTab);
     }
 
-    private void InitializeNativeController()
+    static string FormatWinKey(Keys k)
     {
-        if (_nativeController != IntPtr.Zero || _controllerPanel == null || _controllerPanel.IsDisposed)
-            return;
-
-        try
+        return k switch
         {
-            _nativeControllerCallback = OnNativeControllerMapSaved;
-            string initialMap = JsonSerializer.Serialize(_settings.KeyMap ?? KeyMap.Defaults());
-            _nativeController = NativeController.PPSX33_ControllerCreate(
-                _controllerPanel.Handle, _nativeControllerCallback, initialMap);
-            if (_nativeController == IntPtr.Zero)
-            {
-                Append("Native controller studio failed to create its child window.");
-                return;
-            }
-
-            NativeController.PPSX33_ControllerResize(
-                _nativeController, _controllerPanel.ClientSize.Width, _controllerPanel.ClientSize.Height);
-            Append("Native C++ Controller Studio ready.");
-        }
-        catch (DllNotFoundException ex)
-        {
-            Append("Native controller library missing: " + ex.Message);
-        }
-        catch (EntryPointNotFoundException ex)
-        {
-            Append("Native controller library exports are incomplete: " + ex.Message);
-        }
-        catch (Exception ex)
-        {
-            Append("Native controller initialization failed: " + ex.Message);
-        }
-    }
-
-    private void OnNativeControllerMapSaved(string json)
-    {
-        try
-        {
-            var imported = JsonSerializer.Deserialize<KeyMap>(json);
-            if (imported == null) return;
-
-            _settings.KeyMap = imported;
-            SaveSettings();
-            WritePadMapForRuntime();
-            _controllerMapped = true;
-            Append("Controller mapping saved from native C++ Controller Studio.");
-            UpdateButtons();
-        }
-        catch (Exception ex)
-        {
-            Append("Controller mapping could not be saved: " + ex.Message);
-        }
+            Keys.Left => "Left",
+            Keys.Right => "Right",
+            Keys.Up => "Up",
+            Keys.Down => "Down",
+            Keys.Space => "Space",
+            Keys.Back => "Backspace",
+            Keys.Enter => "Enter",
+            Keys.LShiftKey => "LShiftKey",
+            Keys.RShiftKey => "RShiftKey",
+            Keys.LControlKey => "LControlKey",
+            Keys.RControlKey => "RControlKey",
+            Keys.ShiftKey => "ShiftKey",
+            Keys.ControlKey => "ControlKey",
+            Keys.NumPad0 => "NumPad0",
+            Keys.NumPad1 => "NumPad1",
+            Keys.NumPad2 => "NumPad2",
+            Keys.NumPad3 => "NumPad3",
+            Keys.NumPad4 => "NumPad4",
+            Keys.NumPad5 => "NumPad5",
+            Keys.NumPad6 => "NumPad6",
+            Keys.NumPad7 => "NumPad7",
+            Keys.NumPad8 => "NumPad8",
+            Keys.NumPad9 => "NumPad9",
+            _ => k.ToString()
+        };
     }
 
     void WritePadMapForRuntime()
@@ -121,7 +209,6 @@ public sealed partial class MainForm
                 Append("Key map saved to settings; load a project to also write output/pad_map.json.");
                 return;
             }
-
             string outDir = Path.Combine(_projectDir, "output");
             Directory.CreateDirectory(outDir);
             var km = _settings.KeyMap ?? KeyMap.Defaults();
@@ -152,11 +239,5 @@ public sealed partial class MainForm
         catch { }
     }
 
-    private void DisposeNativeController()
-    {
-        if (_nativeController == IntPtr.Zero) return;
-        try { NativeController.PPSX33_ControllerDestroy(_nativeController); } catch { }
-        _nativeController = IntPtr.Zero;
-        _nativeControllerCallback = null;
-    }
+    void DisposeNativeController() { }
 }

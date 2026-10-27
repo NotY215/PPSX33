@@ -1056,19 +1056,29 @@ PS3RT_API void ps3rt_progress_hw(void) {
             {
                 uint32_t dist = (put >= get) ? (put - get) : (fsz - get + put);
                 if (dist > fsz / 2) {
-                    get = put;
-                    if (g_gcm_control) wr_be32_guest(g_gcm_control + 4, get);
                     static int s_fix = 0;
-                    if (s_fix < 8) { ps3rt_log("[gcm] XV-N GET resync put=0x%x\n", put); ++s_fix; }
+                    if (s_fix < 8) {
+                        ps3rt_log("[gcm] P0 large FIFO gap put=0x%x get=0x%x dist=0x%x (no forced resync)\n",
+                            put, get, dist);
+                        ++s_fix;
+                    }
                 }
             }
             // XXIV-B: only treat as real guest stream when put moves past minimal residual
             // XV-H: seed when FIFO stalled (put==get) OR still in residual range.
             // Real game stream only when put advances beyond get with substantial traffic.
             // XV-I: inject at most once per displayed flip (stop FIFO flood)
+            // P1: inject seed only if PS3RT_INJECT_SEED=1
+            static int s_allow_inject = -1;
+            if (s_allow_inject < 0) {
+                const char* e = std::getenv("PS3RT_INJECT_SEED");
+                s_allow_inject = (e && e[0] == '1') ? 1 : 0;
+                if (!s_allow_inject)
+                    ps3rt_log("[gcm] P1 inject seed OFF (set PS3RT_INJECT_SEED=1 to enable)\n");
+            }
             static uint64_t s_inj_flip = (uint64_t)-1;
             uint64_t fc = ps3rt_rsx_flip_count();
-            if ((put == get || put <= 0x80) && s_inj_flip != fc) {
+            if (s_allow_inject && (put == get || put <= 0x80) && s_inj_flip != fc) {
                 s_inj_flip = fc;
                 gcm_inject_clear_draw();
             } else if (put != get && put > 0x80) {

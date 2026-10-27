@@ -291,60 +291,35 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             uint64_t alt = recover_return_pc(c, chunks, n, c.pc, nullptr, 0, nullptr, 0);
             if (!alt && last_good_ret) alt = last_good_ret;
             if (alt) {
-                // Sticky recovery: ban loops without +0x10 spam
+                // P0 first-fault sticky BREAK: no region-ban, no stride/chunk roulette
                 static uint64_t s_last_alt = 0;
                 static int s_same_alt = 0;
                 static int s_sticky_log = 0;
                 if (alt == s_last_alt) ++s_same_alt;
                 else { s_last_alt = alt; s_same_alt = 1; }
                 if (s_same_alt >= 3) {
+                    capture_guest_fault(c, "sticky_break", chunks, n);
+                    if (s_sticky_log < 16) {
+                        ps3rt_log("[ps3] P0 sticky BREAK first-fault pc=0x%llx alt=0x%llx lr=0x%llx hits=%d strict=%d\n",
+                            (unsigned long long)c.pc, (unsigned long long)alt,
+                            (unsigned long long)c.lr, s_same_alt,
+                            ps3rt_strict_fault_mode() ? 1 : 0);
+                        ++s_sticky_log;
+                    }
+                    if (ps3rt_strict_fault_mode()) {
+                        c.halted = true;
+                        break;
+                    }
+                    // Soft: only accept LR if it is a real translated return — never ban/region-skip
                     uint64_t next = 0;
                     uint64_t lr = c.lr;
                     if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr != alt)
                         next = lr;
-                    if (!next) {
-                        for (uint64_t stride = 0x40; stride <= 0x1000; stride <<= 1) {
-                            uint64_t cand = alt + stride;
-                            if (pc_in_chunks(cand, chunks, n)) { next = cand; break; }
-                        }
-                    }
-                    if (!next && n) {
-                        static size_t s_chunk_i = 0;
-                        for (size_t k = 0; k < n; ++k) {
-                            size_t i = (s_chunk_i + k) % n;
-                            if (chunks[i].start != alt) {
-                                next = chunks[i].start;
-                                s_chunk_i = i + 1;
-                                break;
-                            }
-                        }
-                    }
-                    if (next) {
-                        if (s_sticky_log < 12) {
-                            ps3rt_log("[ps3] XXV-L sticky BREAK 0x%llx -> 0x%llx (hits=%d)\n",
-                                (unsigned long long)alt, (unsigned long long)next, s_same_alt);
-                            ++s_sticky_log;
-                        }
-                        add_ban(alt);
-                        add_rban(alt);
-                        alt = next;
-                        if (s_same_alt >= 6 && n > 1) {
-                            static size_t s_escape = 0;
-                            s_escape = (s_escape + 1) % n;
-                            if (chunks[s_escape].start && chunks[s_escape].start != alt)
-                                alt = chunks[s_escape].start;
-                        }
-                    } else if (s_same_alt >= 5 && n > 0) {
-                        static size_t s_hard = 0;
-                        s_hard = (s_hard + 1) % n;
-                        add_ban(alt);
-                        add_rban(alt);
-                        alt = chunks[s_hard].start;
-                        if (s_sticky_log < 16) {
-                            ps3rt_log("[ps3] XXV-L sticky HARD escape -> 0x%llx\n",
-                                (unsigned long long)alt);
-                            ++s_sticky_log;
-                        }
+                    if (next) alt = next;
+                    else {
+                        // No valid continuation — stop this path instead of guessing
+                        c.halted = true;
+                        break;
                     }
                     s_same_alt = 0;
                     s_last_alt = alt;
