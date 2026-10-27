@@ -180,7 +180,7 @@ public sealed class ControllerControl : Control
         using(var glow=new SolidBrush(Color.FromArgb(18,0,229,255))) g.FillEllipse(glow,280,-210,640,500);
         using(var grid=new Pen(Color.FromArgb(18,29,52,89),1)) { for(int x=0;x<W;x+=32)g.DrawLine(grid,x,0,x,H); for(int y=0;y<H;y+=32)g.DrawLine(grid,0,y,W,y); }
         _hits.Clear();
-        DrawHeader(g); DrawController(g); DrawMappingGrid(g);
+        DrawHeader(g); DrawMappingGrid(g); DrawController(g);
         if(_rebinding!=null) DrawRebindOverlay(g);
     }
 
