@@ -1,68 +1,69 @@
-# PPSX33 Roadmap
+# PPSX33 implementation status
 
-**Last updated:** 2026-10-26  
-**Scope:** Experimental PlayStation 3 static recompiler — research toolkit, not a retail emulator.
+Not a phase list. Concrete subsystems and how complete they are, based on source and GOW3 run logs (latest checked: 2026-10-27).
 
-Phases are consolidated to **I – XV** only. Older XX+ labels are archived conceptually into these bands.
+Legend: **Done** · **Partial** · **In progress** · **Not started**
 
----
+## Pipeline
 
-## Phase table
+| Implementation | Status | Notes |
+| --- | --- | --- |
+| ELF64 BE load / segments | Done | Guest image + VA map |
+| PPU lift → C++ chunks | Partial | Large unimplemented opcode counts on big titles |
+| GUI load / decompile / build | Done | WinForms; MSVC via vswhere |
+| Game package layout (SFO/PSARC paths) | Partial | Scan/read helpers; not full FS fidelity |
 
-| Phase | Name | Status | Summary |
-|------:|------|--------|---------|
-| **I** | Project / ELF ingest | DONE | Load BE ELF64, segments, TOC |
-| **II** | PPU lift surface | DONE | Chunked translation to host C++ |
-| **III** | Host project build | DONE | MSVC via system Visual Studio |
-| **IV** | Runtime image | DONE | Guest memory, entry, CRT glue |
-| **V** | LV2 / imports HLE | IN TREE | Syscalls + PRX stubs (expand by title) |
-| **VI** | SPU / MFC | IN TREE | Local store, DMA, channels |
-| **VII** | Filesystem / assets | IN TREE | cellFs, PSARC, sequential load |
-| **VIII** | Audio / pad / save | IN TREE | waveOut, XInput map, save basics |
-| **IX** | GCM / FIFO bind | IN TREE | FIFO put/get, method dispatch |
-| **X** | Host D3D11 present | DONE | Swap chain, window, flip |
-| **XI** | PPU accuracy / faults | IN TREE | Strict/recovery, wild-pc controls |
-| **XII** | VMX / FP honesty | IN TREE | No false “implemented” soft copies |
-| **XIII** | Host UX | DONE | Native WinForms UI (no WebView2) |
-| **XIV** | Guest surfaces / textures | IN TREE | Color buffer upload, textured blit |
-| **XV** | **Real rendering** | **ACTIVE** | Guest geometry, shaders, no diagnostic-only frames |
+## Runtime CPU / OS
 
-Detail files: [roadmap/I.md](roadmap/I.md) … [roadmap/XV.md](roadmap/XV.md).
+| Implementation | Status | Notes |
+| --- | --- | --- |
+| PPU run loop + soft recovery | Partial | Sticky BREAK still frequent on GOW3 |
+| VMX / Altivec coverage | Partial | Dispatch present; not full ISA |
+| LV2 syscalls (mem, thread, time, event) | Partial | Expanded table; many still return 0 |
+| PRX / NID import stubs | Partial | Table + filter; unknown NIDs remain |
+| cellSysmodule load by id | Partial | Maps common ids; no full PRX ELF |
+| SPU interpreter / MFC / SPURS | Partial | Stubs and coarse ticks |
 
----
+## Graphics (RSX / GCM)
 
-## Phase XV — Real rendering (ACTIVE)
+| Implementation | Status | Notes |
+| --- | --- | --- |
+| D3D11 device / swapchain / resize | Done | |
+| GCM control / labels / local addr | Done | |
+| FIFO JUMP/CALL fix + PUT/GET mod | Done | Log no longer shows methods≈131072 |
+| Surface COLOR offset/pitch/size | Done | |
+| CLEAR solid color to guest surface | Done | |
+| BEGIN/END vs DRAW_ARRAYS split | Done | Inject emits 0x1814 |
+| Texture unit regs (0x1A00+) | Partial | State recorded; formats limited |
+| Vertex array offset/format | Partial | VA0 path; multi-attr weak |
+| Host draw of VA / indexed | Partial | Works for inject triangle |
+| Guest color blit to window | Partial | Present blits surface without rainbow overwrite |
+| SCE VP/FP → HLSL | Partial | Experimental compile path |
+| **Title-authored GCM (real meshes)** | **In progress** | Blocked on boot advancing PUT with game methods |
+| Depth/stencil/blend accurate | Partial | State bits; not full |
+| Tile / zcull / reports | Not started | Stubs only |
 
-Goal: frames produced by **guest** command streams, vertex data, and (progressively) shaders — not host diagnostic triangles counted as success.
+## Audio / input / save
 
-| Sub | Status | Work |
-|-----|--------|------|
-| **XV-A** | DONE | Guest vs diagnostic draw counters |
-| **XV-B** | IN TREE | FIFO multi-arg packets / JUMP (prior pack) |
-| **XV-C** | **THIS** | Present path: guest VA first; diagnostic only if no guest draw |
-| **XV-D** | NEXT | Indexed draws + multi-attribute fetch |
-| **XV-E** | NEXT | SCE VP/FP decode → HLSL IR (no silent fallback success) |
-| **XV-F** | NEXT | Texture formats / tilings used by target title |
-| **XV-G** | NEXT | Depth/blend/viewport parity for one boot scene |
+| Implementation | Status | Notes |
+| --- | --- | --- |
+| waveOut path | Partial | |
+| Pad map / XInput | Partial | |
+| cellSaveData | Partial | |
 
-### Success criteria (XV)
+## Current focus
 
-1. `draws_guest_frame > 0` on a real title path without forced inject  
-2. Window shows non-diagnostic content for that path  
-3. Logs report `guest=` separate from `diag=`  
-4. Shader binds > 0 only when guest programs were translated  
+1. Keep FIFO and present honest (no diagnostic overwrite of guest color).
+2. Inject and any real methods use DRAW_ARRAYS (`0x1814`) so the host draw path runs.
+3. Reduce sticky BREAK / import stalls so GOW3 can submit its own GCM.
+4. Expand texture format and multi-attribute vertex fetch when real methods appear.
 
----
+## Verification
 
-## Requirements
+Rebuild game runtime after overlay, run GOW3, confirm log:
 
-See [README.md](README.md) and [redist/README.txt](redist/README.txt).  
-Toolchain: **system Visual Studio** only (`redist/` = installer + guide).
+- `XV-O CLEAR` without following rainbow `XXV-K paint` every flip
+- `inject` followed by draw with `method=0x1814` when flush runs
+- `methods` / `packets` stay small (tens), not 64k+
 
-## Future
-
-OpenGL 3.3 / 2.1 fallback when D3D11 is unavailable (post-XV).
-
----
-
-*No proprietary keys or copyrighted game assets are included.*
+Real GOW menus/meshes require title GCM traffic beyond inject.
