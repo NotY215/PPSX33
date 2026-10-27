@@ -30,6 +30,7 @@ public sealed class ControllerControl : Control
     private readonly HashSet<string> _held = new(StringComparer.OrdinalIgnoreCase);
     private readonly System.Windows.Forms.Timer _timer;
     private KeyMap _map;
+    private Bitmap? _renderCanvas;
     private string? _rebinding, _hover;
     private float _phase, _leftX, _leftY, _rightX, _rightY;
     private bool _savedFlash;
@@ -51,6 +52,8 @@ public sealed class ControllerControl : Control
             float ly = Direction("ls_up") * -1f + Direction("ls_down");
             float rx = Direction("rs_left") * -1f + Direction("rs_right");
             float ry = Direction("rs_up") * -1f + Direction("rs_down");
+            NormalizeStick(ref lx, ref ly);
+            NormalizeStick(ref rx, ref ry);
             _leftX = Ease(_leftX, lx * 17f); _leftY = Ease(_leftY, ly * 17f);
             _rightX = Ease(_rightX, rx * 17f); _rightY = Ease(_rightY, ry * 17f);
             Invalidate();
@@ -61,13 +64,19 @@ public sealed class ControllerControl : Control
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) { _timer.Stop(); _timer.Dispose(); }
+        if (disposing) { _timer.Stop(); _timer.Dispose(); _renderCanvas?.Dispose(); }
         base.Dispose(disposing);
     }
 
     private static float Ease(float a, float b) => a + (b-a)*.28f;
-    private float Direction(string id) => _held.Contains(GetKey(id)) ? 1f : 0f;
-    private string GetKey(string id) => Get(id);
+    private static void NormalizeStick(ref float x, ref float y)
+    {
+        float length = MathF.Sqrt(x * x + y * y);
+        if (length > 1f) { x /= length; y /= length; }
+    }
+    private float Direction(string id) => IsMappedKeyDown(Get(id)) ? 1f : 0f;
+    private bool IsPressed(string id) => IsMappedKeyDown(Get(id));
+    private bool IsMappedKeyDown(string key) => _held.Contains(NormalizeMappedKey(key));
     protected override bool IsInputKey(Keys keyData) => true;
 
     protected override void OnKeyDown(KeyEventArgs e)
@@ -84,8 +93,14 @@ public sealed class ControllerControl : Control
             e.Handled = true; e.SuppressKeyPress = true; return;
         }
         _held.Add(NormalizeKey(e.KeyCode));
+        Invalidate();
     }
-    protected override void OnKeyUp(KeyEventArgs e) { base.OnKeyUp(e); _held.Remove(NormalizeKey(e.KeyCode)); }
+    protected override void OnKeyUp(KeyEventArgs e)
+    {
+        base.OnKeyUp(e);
+        _held.Remove(NormalizeKey(e.KeyCode));
+        Invalidate();
+    }
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
@@ -130,6 +145,25 @@ public sealed class ControllerControl : Control
         Keys.Return => "Enter", Keys.Prior => "PageUp", Keys.Next => "PageDown",
         _ => key.ToString()
     };
+    private static string NormalizeMappedKey(string key)
+    {
+        string value = key.Trim();
+        if (value.StartsWith("Num ", StringComparison.OrdinalIgnoreCase))
+            value = "NumPad" + value[4..];
+        else if (value.StartsWith("NumPad ", StringComparison.OrdinalIgnoreCase))
+            value = "NumPad" + value[7..];
+        else if (value.StartsWith("Arrow", StringComparison.OrdinalIgnoreCase))
+            value = value[5..];
+
+        return value.ToUpperInvariant() switch {
+            "CTRL" or "LCTRL" or "RCTRL" or "LCONTROLKEY" or "RCONTROLKEY" => "ControlKey",
+            "SHIFT" or "LSHIFT" or "RSHIFT" or "LSHIFTKEY" or "RSHIFTKEY" => "ShiftKey",
+            "ALT" or "ALTMENU" => "Menu",
+            "ESC" => "Escape",
+            " " => "Space",
+            _ => value
+        };
+    }
     private static string DisplayKey(string key) => key switch {
         "RControlKey"=>"R Ctrl","LControlKey"=>"L Ctrl","RShiftKey"=>"R Shift","LShiftKey"=>"L Shift",
         "ControlKey"=>"Ctrl","ShiftKey"=>"Shift","NumPad0"=>"Num 0","NumPad1"=>"Num 1","NumPad2"=>"Num 2",
@@ -190,14 +224,13 @@ public sealed class ControllerControl : Control
         // Render the entire UI in its native 1200x900 coordinate space first.
         // TextRenderer draws in device coordinates and ignores Graphics transforms;
         // drawing to a virtual canvas prevents labels from drifting away from buttons.
-        using var canvas = new Bitmap(W, H);
-        using (var g = Graphics.FromImage(canvas))
+        _renderCanvas ??= new Bitmap(W, H);
+        using (var g = Graphics.FromImage(_renderCanvas))
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
             g.Clear(Bg);
-            using (var b = new SolidBrush(Bg)) g.FillRectangle(b, 0, 0, W, H);
             using (var glow = new SolidBrush(Color.FromArgb(18, 0, 229, 255))) g.FillEllipse(glow, 280, -210, 640, 500);
             using (var grid = new Pen(Color.FromArgb(18, 29, 52, 89), 1))
             {
@@ -214,7 +247,7 @@ public sealed class ControllerControl : Control
         e.Graphics.SmoothingMode = SmoothingMode.HighQuality;
         e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
         e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-        e.Graphics.DrawImage(canvas, new RectangleF(ox, oy, W * scale, H * scale));
+        e.Graphics.DrawImage(_renderCanvas, new RectangleF(ox, oy, W * scale, H * scale));
     }
 
     private void DrawHeader(Graphics g)
@@ -317,7 +350,8 @@ public sealed class ControllerControl : Control
     private static GraphicsPath CenterPlate(){var p=new GraphicsPath();p.AddBezier(464,222,500,204,700,204,736,222);p.AddBezier(736,222,750,250,750,285,733,310);p.AddBezier(733,310,690,328,510,328,467,310);p.AddBezier(467,310,450,285,450,250,464,222);p.CloseFigure();return p;}
     private void DrawShoulder(Graphics g,string id,string label,float x,float y,float w,float h)
     {
-        AddHit(id,x,y,w,h);bool hot=_hover==id||_rebinding==id;
+        AddHit(id,x,y,w,h);bool pressed=IsPressed(id), hot=_hover==id||_rebinding==id||pressed;
+        if(pressed){using var glow=new SolidBrush(Color.FromArgb(65,0,229,255));g.FillRounded(glow,new RectangleF(x-3,y-3,w+6,h+6),8);}
         using(var b=new LinearGradientBrush(new RectangleF(x,y,w,h),hot?Color.FromArgb(20,99,130):Color.FromArgb(28,48,72),Color.FromArgb(7,15,28),90f))
         using(var p=new Pen(hot?Cyan:Color.FromArgb(50,83,120),hot?2:1.3f)){g.FillRounded(b,new RectangleF(x,y,w,h),7);g.DrawRounded(p,new RectangleF(x,y,w,h),7);}
         using var f=new Font("Segoe UI",8,FontStyle.Bold);TextRenderer.DrawText(g,label,f,Rectangle.Round(new RectangleF(x,y,w,h)),hot?Cyan:Color.FromArgb(135,183,211),TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);
@@ -331,16 +365,17 @@ public sealed class ControllerControl : Control
     }
     private void DrawDpadPiece(Graphics g,string id,float x,float y,float w,float h,string glyph)
     {
-        AddHit(id,x,y,w,h);bool hot=_hover==id||_rebinding==id;
+        AddHit(id,x,y,w,h);bool pressed=IsPressed(id), hot=_hover==id||_rebinding==id||pressed;
+        if(pressed){using var glow=new SolidBrush(Color.FromArgb(80,0,229,255));g.FillRounded(glow,new RectangleF(x-3,y-3,w+6,h+6),6);}
         using(var b=new LinearGradientBrush(new RectangleF(x,y,w,h),hot?Color.FromArgb(10,110,145):Color.FromArgb(30,48,68),Color.FromArgb(6,13,24),90f))
         using(var p=new Pen(hot?Cyan:Color.FromArgb(53,82,112),hot?2:1)){g.FillRounded(b,new RectangleF(x,y,w,h),5);g.DrawRounded(p,new RectangleF(x,y,w,h),5);}
         using var f=new Font("Segoe UI Symbol",9,FontStyle.Bold);TextRenderer.DrawText(g,glyph,f,Rectangle.Round(new RectangleF(x,y,w,h)),hot?Cyan:Color.FromArgb(100,150,185),TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);
     }
     private void DrawFace(Graphics g,string id,string glyph,Color colour,float x,float y)
     {
-        AddHit(id,x-22,y-22,44,44);bool hot=_hover==id||_rebinding==id;
+        AddHit(id,x-22,y-22,44,44);bool pressed=IsPressed(id), hot=_hover==id||_rebinding==id||pressed;
         float pulse=(float)(Math.Sin(_phase*1.7)+1)*.5f;
-        using(var glow=new SolidBrush(Color.FromArgb(hot?65: (int)(12+pulse*12),colour)))g.FillEllipse(glow,x-27,y-27,54,54);
+        using(var glow=new SolidBrush(Color.FromArgb(pressed?130:hot?75:(int)(12+pulse*12),colour)))g.FillEllipse(glow,x-30,y-30,60,60);
         using(var b=new LinearGradientBrush(new RectangleF(x-19,y-19,38,38),hot?Color.FromArgb(38,75,100):Color.FromArgb(28,44,65),Color.FromArgb(5,11,21),90f))
         using(var p=new Pen(hot?Cyan:Color.FromArgb(70,100,133),hot?2.2f:1.2f)){g.FillEllipse(b,x-19,y-19,38,38);g.DrawEllipse(p,x-19,y-19,38,38);}
         using(var p=new Pen(colour,2.3f))g.DrawEllipse(p,x-11,y-11,22,22);
@@ -348,14 +383,17 @@ public sealed class ControllerControl : Control
     }
     private void DrawStick(Graphics g,string prefix,string click,float x,float y,float dx,float dy)
     {
-        AddHit(prefix=="ls"?"l3":"r3",x-12,y-12,24,24);
+        string clickId=prefix=="ls"?"l3":"r3";
+        AddHit(clickId,x-12,y-12,24,24);
+        bool pressed=IsPressed(clickId);
         int glowAlpha=(int)(8+(Math.Sin(_phase*1.35)+1)*7);
+        if(pressed)glowAlpha=95;
         using(var stickGlow=new SolidBrush(Color.FromArgb(glowAlpha,0,229,255)))g.FillEllipse(stickGlow,x-42,y-42,84,84);
         using(var shadow=new SolidBrush(Color.FromArgb(170,0,0,0)))g.FillEllipse(shadow,x-38,y-34,76,76);
         using(var ring=new LinearGradientBrush(new RectangleF(x-36,y-36,72,72),Color.FromArgb(65,87,112),Color.FromArgb(6,13,23),45f))
         using(var p=new Pen(Color.FromArgb(65,94,128),2)){g.FillEllipse(ring,x-36,y-36,72,72);g.DrawEllipse(p,x-36,y-36,72,72);}
         for(int i=0;i<12;i++){double a=i*Math.PI/6;using var p=new Pen(Color.FromArgb(40,125,155,180),1);g.DrawLine(p,x+(float)Math.Cos(a)*29,y+(float)Math.Sin(a)*29,x+(float)Math.Cos(a)*33,y+(float)Math.Sin(a)*33);}
-        float capX=x+dx,capY=y+dy;bool hot=_hover==click||_rebinding==click||_hover?.StartsWith(prefix+"_")==true;
+        float capX=x+dx,capY=y+dy;bool hot=_hover==click||_rebinding==click||_hover?.StartsWith(prefix+"_")==true||pressed||Direction(prefix+"_up")>0||Direction(prefix+"_down")>0||Direction(prefix+"_left")>0||Direction(prefix+"_right")>0;
         using(var cap=new LinearGradientBrush(new RectangleF(capX-23,capY-23,46,46),hot?Color.FromArgb(60,105,130):Color.FromArgb(45,61,80),Color.FromArgb(4,10,19),45f))
         using(var p=new Pen(hot?Cyan:Color.FromArgb(80,116,148),hot?2:1.2f)){g.FillEllipse(cap,capX-23,capY-23,46,46);g.DrawEllipse(p,capX-23,capY-23,46,46);}
         using(var p=new Pen(Color.FromArgb(35,150,180,200),1)){for(int i=-2;i<=2;i++){g.DrawArc(p,capX-14,capY-14+i*4,28,8,0,180);}}
@@ -364,22 +402,23 @@ public sealed class ControllerControl : Control
     private void DrawStickDirectionLabel(Graphics g,string prefix,float x,float y)
     {
         using var f=new Font("Segoe UI",7,FontStyle.Bold);
-        TextRenderer.DrawText(g,"↑",f,new Rectangle((int)x-7,(int)y-48,14,12),_hover==prefix+"_up"?Cyan:Color.FromArgb(100,155,190),TextFormatFlags.HorizontalCenter);
-        TextRenderer.DrawText(g,"↓",f,new Rectangle((int)x-7,(int)y+39,14,12),_hover==prefix+"_down"?Cyan:Color.FromArgb(100,155,190),TextFormatFlags.HorizontalCenter);
-        TextRenderer.DrawText(g,"←",f,new Rectangle((int)x-48,(int)y-6,14,12),_hover==prefix+"_left"?Cyan:Color.FromArgb(100,155,190),TextFormatFlags.HorizontalCenter);
-        TextRenderer.DrawText(g,"→",f,new Rectangle((int)x+34,(int)y-6,14,12),_hover==prefix+"_right"?Cyan:Color.FromArgb(100,155,190),TextFormatFlags.HorizontalCenter);
+        TextRenderer.DrawText(g,"↑",f,new Rectangle((int)x-7,(int)y-48,14,12),_hover==prefix+"_up"||Direction(prefix+"_up")>0?Cyan:Color.FromArgb(100,155,190),TextFormatFlags.HorizontalCenter);
+        TextRenderer.DrawText(g,"↓",f,new Rectangle((int)x-7,(int)y+39,14,12),_hover==prefix+"_down"||Direction(prefix+"_down")>0?Cyan:Color.FromArgb(100,155,190),TextFormatFlags.HorizontalCenter);
+        TextRenderer.DrawText(g,"←",f,new Rectangle((int)x-48,(int)y-6,14,12),_hover==prefix+"_left"||Direction(prefix+"_left")>0?Cyan:Color.FromArgb(100,155,190),TextFormatFlags.HorizontalCenter);
+        TextRenderer.DrawText(g,"→",f,new Rectangle((int)x+34,(int)y-6,14,12),_hover==prefix+"_right"||Direction(prefix+"_right")>0?Cyan:Color.FromArgb(100,155,190),TextFormatFlags.HorizontalCenter);
     }
     private void DrawPill(Graphics g,string id,string label,float x,float y,float w,float h)
     {
-        AddHit(id,x,y,w,h);bool hot=_hover==id||_rebinding==id;
+        AddHit(id,x,y,w,h);bool pressed=IsPressed(id), hot=_hover==id||_rebinding==id||pressed;
+        if(pressed){using var glow=new SolidBrush(Color.FromArgb(70,0,229,255));g.FillRounded(glow,new RectangleF(x-3,y-3,w+6,h+6),10);}
         using(var b=new LinearGradientBrush(new RectangleF(x,y,w,h),Color.FromArgb(34,53,76),Color.FromArgb(5,12,23),90f))
         using(var p=new Pen(hot?Cyan:Color.FromArgb(55,84,117),hot?1.8f:1f)){g.FillRounded(b,new RectangleF(x,y,w,h),9);g.DrawRounded(p,new RectangleF(x,y,w,h),9);}
         using var f=new Font("Segoe UI",6.5f,FontStyle.Bold);TextRenderer.DrawText(g,label,f,Rectangle.Round(new RectangleF(x,y,w,h)),hot?Cyan:Color.FromArgb(140,177,204),TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);
     }
     private void DrawPs(Graphics g)
     {
-        AddHit("ps",572,353,56,43);bool hot=_hover=="ps"||_rebinding=="ps";
-        using(var glow=new SolidBrush(Color.FromArgb(hot?70:25,0,229,255)))g.FillEllipse(glow,566,347,68,55);
+        AddHit("ps",572,353,56,43);bool pressed=IsPressed("ps"), hot=_hover=="ps"||_rebinding=="ps"||pressed;
+        using(var glow=new SolidBrush(Color.FromArgb(pressed?120:hot?70:25,0,229,255)))g.FillEllipse(glow,566,347,68,55);
         using(var b=new LinearGradientBrush(new Rectangle(574,355,52,38),Color.FromArgb(48,72,100),Color.FromArgb(6,13,24),90f))
         using(var p=new Pen(hot?Cyan:Color.FromArgb(68,105,143),hot?2:1.3f)){g.FillEllipse(b,574,355,52,38);g.DrawEllipse(p,574,355,52,38);}
         using var f=new Font("Segoe UI",9,FontStyle.Bold);TextRenderer.DrawText(g,"PS",f,new Rectangle(574,355,52,38),hot?Cyan:White,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);
@@ -394,7 +433,7 @@ public sealed class ControllerControl : Control
         for(int i=0;i<Order.Length;i++)
         {
             string id=Order[i];int col=i/rows,row=i%rows;float x=x0+col*cw,y=y0+row*rh;var r=new RectangleF(x,y,cw-8,rh-5);
-            _hits[id]=r;bool hot=_hover==id||_rebinding==id;
+            _hits[id]=r;bool pressed=IsPressed(id), hot=_hover==id||_rebinding==id||pressed;
             using(var b=new LinearGradientBrush(Rectangle.Round(r),hot?Color.FromArgb(22,68,91):Color.FromArgb(9,17,29),Color.FromArgb(5,11,20),90f))
             using(var p=new Pen(hot?Cyan:Color.FromArgb(42,67,100),hot?1.6f:1f)){g.FillRounded(b,r,6);g.DrawRounded(p,r,6);}
             using var nameFont=new Font("Segoe UI",8.5f,FontStyle.Bold);
