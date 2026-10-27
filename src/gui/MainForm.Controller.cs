@@ -9,7 +9,6 @@ public sealed partial class MainForm
     private Panel? _controllerPanel;
     private TabPage? _controllerTab;
     private WebView2? _controllerView;
-    private bool _controllerReady;
 
     void BuildControllerTab()
     {
@@ -37,7 +36,6 @@ public sealed partial class MainForm
         _controllerView.NavigationCompleted += async (_, e) =>
         {
             if (!e.IsSuccess || _controllerView?.CoreWebView2 == null) return;
-            _controllerReady = true;
             string json = JsonSerializer.Serialize(_settings.KeyMap ?? KeyMap.Defaults());
             await _controllerView.CoreWebView2.ExecuteScriptAsync("window.loadMap && window.loadMap(" + json + ");");
         };
