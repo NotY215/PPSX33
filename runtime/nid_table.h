@@ -239,6 +239,12 @@ static const NidEntry kNidTable[] = {
     { 0x72A57700, "cellGcmSys", "cellGcmGetLastFlipTime", 1 },
     { 0x0E6B0DAE, "cellGcmSys", "cellGcmSetWaitFlip", 1 },
     { 0x63387071, "cellGcmSys", "cellGcmGetCurrentField", 1 },
+    { 0x0053F96C, "cellSysmodule", "cellSysmoduleStub_0053F96C", 3 },
+    { 0x0065F088, "cellSysutil", "cellSysutilStub_0065F088", 7 },
+    { 0x0065F9C8, "cellSysutil", "cellSysutilStub_0065F9C8", 7 },
+    { 0x0065FCC8, "cellSysutil", "cellSysutilStub_0065FCC8", 7 },
+    { 0x00525680, "cellSysutil", "cellSysutilStub_00525680", 7 },
+
 };
 
 

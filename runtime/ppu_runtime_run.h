@@ -119,7 +119,7 @@ static inline uint64_t resolve_guest_branch(uint64_t target, const PPUChunk* chu
     return 0;
 }
 
-static inline void capture_guest_fault(PPUContext& c, const char* reason, const PPUChunk* chunks, size_t n) {
+static inline void capture_guest_fault(PPUContext& c, const char* reason, const PPUChunk* chunks, size_t n, bool halt = true) {
     GuestPcClass k = validate_guest_pc(c.pc, chunks, n, c);
     const char* ks = "invalid";
     if (k == GuestPcClass::Translated) ks = "translated";
@@ -147,7 +147,7 @@ static inline void capture_guest_fault(PPUContext& c, const char* reason, const 
         ps3rt_log("[ps3] XXV-F callstack[%d] 0x%llx\n", depth, (unsigned long long)cand);
         ++depth;
     }
-    c.halted = true;
+    if (halt) c.halted = true;
 }
 
 static inline void log_recovery_action(const char* kind, uint64_t from, uint64_t to) {
@@ -291,40 +291,58 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
             uint64_t alt = recover_return_pc(c, chunks, n, c.pc, nullptr, 0, nullptr, 0);
             if (!alt && last_good_ret) alt = last_good_ret;
             if (alt) {
-                // P0 first-fault sticky BREAK: no region-ban, no stride/chunk roulette
+                // P0 sticky: diagnose; soft continues; strict halts. No region-ban.
                 static uint64_t s_last_alt = 0;
                 static int s_same_alt = 0;
                 static int s_sticky_log = 0;
                 if (alt == s_last_alt) ++s_same_alt;
                 else { s_last_alt = alt; s_same_alt = 1; }
                 if (s_same_alt >= 3) {
-                    capture_guest_fault(c, "sticky_break", chunks, n);
+                    const bool strict = ps3rt_strict_fault_mode();
+                    // Log fault; only halt immediately in strict mode
+                    capture_guest_fault(c, "sticky_break", chunks, n, /*halt=*/strict);
                     if (s_sticky_log < 16) {
                         ps3rt_log("[ps3] P0 sticky BREAK first-fault pc=0x%llx alt=0x%llx lr=0x%llx hits=%d strict=%d\n",
                             (unsigned long long)c.pc, (unsigned long long)alt,
-                            (unsigned long long)c.lr, s_same_alt,
-                            ps3rt_strict_fault_mode() ? 1 : 0);
+                            (unsigned long long)c.lr, s_same_alt, strict ? 1 : 0);
                         ++s_sticky_log;
                     }
-                    if (ps3rt_strict_fault_mode()) {
+                    if (strict) {
                         c.halted = true;
                         break;
                     }
-                    // Soft: only accept LR if it is a real translated return — never ban/region-skip
                     uint64_t next = 0;
                     uint64_t lr = c.lr;
                     if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr != alt)
                         next = lr;
-                    if (next) alt = next;
-                    else {
-                        // No valid continuation — stop this path instead of guessing
+                    if (!next) {
+                        uint64_t sp = c.gpr[1];
+                        for (int off = 0; off < 0x2000 && !next; off += 8) {
+                            uint64_t a = sp + (uint64_t)off;
+                            if (!guest_ok(c, a, 8)) break;
+                            uint64_t cand = rd64(c, a);
+                            if (!cand || (cand & 3ull) != 0) continue;
+                            if (!pc_in_chunks(cand, chunks, n)) continue;
+                            if (cand == alt || cand == c.pc) continue;
+                            next = cand;
+                        }
+                    }
+                    if (next) {
+                        if (s_sticky_log < 24)
+                            ps3rt_log("[ps3] P0 sticky soft-continue -> 0x%llx\n", (unsigned long long)next);
+                        alt = next;
+                        c.gpr[3] = 0;
+                    } else if (alt && pc_in_chunks(alt, chunks, n)) {
+                        if (s_sticky_log < 24)
+                            ps3rt_log("[ps3] P0 sticky soft-retry alt=0x%llx\n", (unsigned long long)alt);
+                    } else {
                         c.halted = true;
                         break;
                     }
                     s_same_alt = 0;
-                    s_last_alt = alt;
+                    s_last_alt = 0;
                 }
-                static int wild_log2 = 0;
+static int wild_log2 = 0;
                 if (wild_log2 < 12) {
                     if (entry_toc) c.gpr[2] = entry_toc;
                     log_recovery_action("wild-pc", c.pc, alt); ++f_recoveries;
