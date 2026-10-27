@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
 
 namespace PS3Recomp.Gui;
 
@@ -6,46 +8,81 @@ public sealed partial class MainForm
 {
     private Panel? _controllerPanel;
     private TabPage? _controllerTab;
-    private ControllerControl? _controllerView;
+    private WebView2? _controllerView;
+    private bool _controllerReady;
 
     void BuildControllerTab()
     {
         if (_controllerTab != null) return;
 
-        _controllerPanel = new Panel
+        _controllerPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(4, 8, 16), Padding = new Padding(0) };
+        _controllerView = new WebView2 { Dock = DockStyle.Fill, DefaultBackgroundColor = Color.FromArgb(4, 8, 16) };
+        _controllerView.CoreWebView2InitializationCompleted += (_, e) =>
         {
-            Dock = DockStyle.Fill,
-            BackColor = Color.FromArgb(4, 8, 16),
-            Padding = new Padding(0)
+            if (!e.IsSuccess || _controllerView?.CoreWebView2 == null)
+            {
+                Append("Controller HTML initialization failed: " + e.InitializationException?.Message);
+                return;
+            }
+            var core = _controllerView.CoreWebView2;
+            core.Settings.AreDefaultContextMenusEnabled = false;
+            core.Settings.AreDevToolsEnabled = false;
+            core.WebMessageReceived += ControllerWebMessageReceived;
+            string htmlPath = Path.Combine(AppContext.BaseDirectory, "www", "controller.html");
+            if (File.Exists(htmlPath))
+                core.Navigate(new Uri(htmlPath).AbsoluteUri);
+            else
+                Append("Controller HTML file not found: " + htmlPath);
         };
-        _controllerView = new ControllerControl(_settings.KeyMap ?? KeyMap.Defaults())
+        _controllerView.NavigationCompleted += async (_, e) =>
         {
-            Dock = DockStyle.Fill
-        };
-        _controllerView.MapChanged += (_, _) =>
-        {
-            _settings.KeyMap = _controllerView.CurrentMap;
-            _controllerMapped = false;
-            SaveSettings();
-        };
-        _controllerView.SaveRequested += (_, _) =>
-        {
-            _settings.KeyMap = _controllerView.CurrentMap;
-            SaveSettings();
-            WritePadMapForRuntime();
-            _controllerMapped = true;
-            Append("Controller mapping saved from native WinForms controller.");
-            UpdateButtons();
+            if (!e.IsSuccess || _controllerView?.CoreWebView2 == null) return;
+            _controllerReady = true;
+            string json = JsonSerializer.Serialize(_settings.KeyMap ?? KeyMap.Defaults());
+            await _controllerView.CoreWebView2.ExecuteScriptAsync("window.loadMap && window.loadMap(" + json + ");");
         };
         _controllerPanel.Controls.Add(_controllerView);
-
-        _controllerTab = new TabPage("Controller")
-        {
-            BackColor = Color.FromArgb(4, 8, 16),
-            Padding = new Padding(0)
-        };
+        _controllerTab = new TabPage("Controller") { BackColor = Color.FromArgb(4, 8, 16), Padding = new Padding(0) };
         _controllerTab.Controls.Add(_controllerPanel);
         _tabs.TabPages.Add(_controllerTab);
+        _ = InitializeControllerWebViewAsync();
+    }
+
+    private async Task InitializeControllerWebViewAsync()
+    {
+        try
+        {
+            if (_controllerView != null)
+                await _controllerView.EnsureCoreWebView2Async();
+        }
+        catch (Exception ex) { Append("Controller WebView2 failed to initialize: " + ex.Message); }
+    }
+
+    private void ControllerWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(e.WebMessageAsJson);
+            string type = doc.RootElement.TryGetProperty("type", out var t) ? t.GetString() ?? "" : "";
+            if (!doc.RootElement.TryGetProperty("map", out var mapElement)) return;
+            var imported = JsonSerializer.Deserialize<KeyMap>(mapElement.GetRawText());
+            if (imported == null) return;
+            _settings.KeyMap = imported;
+            if (type == "changed")
+            {
+                SaveSettings();
+                _controllerMapped = false;
+            }
+            else if (type == "save")
+            {
+                SaveSettings();
+                WritePadMapForRuntime();
+                _controllerMapped = true;
+                Append("Controller mapping saved from HTML Controller Studio.");
+                UpdateButtons();
+            }
+        }
+        catch (Exception ex) { Append("Controller message rejected: " + ex.Message); }
     }
 
     void WritePadMapForRuntime()
