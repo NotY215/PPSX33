@@ -5,6 +5,8 @@
 #include <vector>
 #include <sstream>
 #include <algorithm>
+#include <fstream>
+#include <commdlg.h>
 
 #define API extern "C" __declspec(dllexport)
 using MappingChanged = void (__stdcall*)(const wchar_t*);
@@ -67,8 +69,9 @@ void DrawTextAt(HDC dc,const std::wstring& s,RECT r,COLORREF color,UINT flags=DT
  SetBkMode(dc,TRANSPARENT);SetTextColor(dc,color);DrawTextW(dc,s.c_str(),-1,&r,flags);
 }
 void Layout(){
- const int margin=18,gap=10,usable=std::max(300,width-margin*2-gap),col=usable/2,rowH=37;
- for(size_t i=0;i<items.size();++i){int c=i<13?0:1,row=c==0?int(i):int(i)-13;int x=margin+c*(col+gap),y=116+row*43;items[i].rect={x,y,x+col,y+rowH};}
+ const int margin=18,gap=10,usable=std::max(300,width-margin*2-gap),col=usable/2;
+ const int step=std::max(28,std::min(43,(height-174)/13)),rowH=step-5;
+ for(size_t i=0;i<items.size();++i){int c=i<13?0:1,row=c==0?int(i):int(i)-13;int x=margin+c*(col+gap),y=116+row*step;items[i].rect={x,y,x+col,y+rowH};}
 }
 void Paint(HWND hwnd){
  PAINTSTRUCT ps{};HDC dc=BeginPaint(hwnd,&ps);RECT c{};GetClientRect(hwnd,&c);HBRUSH b=CreateSolidBrush(Bg);FillRect(dc,&c,b);DeleteObject(b);
@@ -82,8 +85,11 @@ void Paint(HWND hwnd){
   RECT l=items[i].rect;l.left+=10;l.right-=104;DrawTextAt(dc,items[i].label,l,Text);
   RECT k=items[i].rect;k.left=k.right-96;k.right-=8;DrawTextAt(dc,sel?L"PRESS KEY":items[i].key,k,sel?Accent:Text,DT_RIGHT|DT_VCENTER|DT_SINGLELINE);
  }
- RECT foot{18,c.bottom-45,c.right-145,c.bottom-12};DrawTextAt(dc,status,foot,Muted);
- RECT save{c.right-128,c.bottom-47,c.right-18,c.bottom-12};Panel(dc,save,RGB(17,65,83),Accent);DrawTextAt(dc,L"SAVE MAP",save,Text,DT_CENTER|DT_VCENTER|DT_SINGLELINE);
+ RECT foot{18,c.bottom-45,c.right-430,c.bottom-12};DrawTextAt(dc,status,foot,Muted);
+ RECT reset{c.right-414,c.bottom-47,c.right-318,c.bottom-12};Panel(dc,reset,Panel,Edge);DrawTextAt(dc,L"RESET",reset,Text,DT_CENTER|DT_VCENTER|DT_SINGLELINE);
+ RECT import{c.right-308,c.bottom-47,c.right-218,c.bottom-12};Panel(dc,import,Panel,Edge);DrawTextAt(dc,L"IMPORT",import,Text,DT_CENTER|DT_VCENTER|DT_SINGLELINE);
+ RECT export{c.right-208,c.bottom-47,c.right-118,c.bottom-12};Panel(dc,export,Panel,Edge);DrawTextAt(dc,L"EXPORT",export,Text,DT_CENTER|DT_VCENTER|DT_SINGLELINE);
+ RECT save{c.right-108,c.bottom-47,c.right-18,c.bottom-12};Panel(dc,save,RGB(17,65,83),Accent);DrawTextAt(dc,L"SAVE",save,Text,DT_CENTER|DT_VCENTER|DT_SINGLELINE);
  EndPaint(hwnd,&ps);
 }
 LRESULT CALLBACK WndProc(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp){
@@ -92,8 +98,20 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp){
  case WM_PAINT:Paint(hwnd);return 0;
  case WM_LBUTTONDOWN:{
   int x=GET_X_LPARAM(lp),y=GET_Y_LPARAM(lp);RECT c{};GetClientRect(hwnd,&c);
-  RECT save{c.right-128,c.bottom-47,c.right-18,c.bottom-12};
+  RECT save{c.right-108,c.bottom-47,c.right-18,c.bottom-12};
+  RECT export{c.right-208,c.bottom-47,c.right-118,c.bottom-12};
+  RECT import{c.right-308,c.bottom-47,c.right-218,c.bottom-12};
+  RECT reset{c.right-414,c.bottom-47,c.right-318,c.bottom-12};
   if(PtInRect(&save,POINT{x,y})){Notify();status=L"Map sent to PPSX33 settings and project output.";InvalidateRect(hwnd,nullptr,TRUE);return 0;}
+  if(PtInRect(&reset,POINT{x,y})){for(size_t i=0;i<items.size();++i)items[i].key=defaults[i];capture=-1;status=L"Default bindings restored. Click SAVE to apply.";InvalidateRect(hwnd,nullptr,TRUE);return 0;}
+  if(PtInRect(&export,POINT{x,y})){
+   wchar_t path[MAX_PATH]=L"ppsx33-key-map.json";OPENFILENAMEW ofn{sizeof(ofn)};ofn.hwndOwner=hwnd;ofn.lpstrFilter=L"JSON key maps (*.json)\0*.json\0All files (*.*)\0*.*\0";ofn.lpstrFile=path;ofn.nMaxFile=MAX_PATH;ofn.Flags=OFN_OVERWRITEPROMPT|OFN_PATHMUSTEXIST;ofn.lpstrDefExt=L"json";
+   if(GetSaveFileNameW(&ofn)){std::wofstream out(path);out<<ToJson();status=L"Exported key map JSON.";}InvalidateRect(hwnd,nullptr,TRUE);return 0;
+  }
+  if(PtInRect(&import,POINT{x,y})){
+   wchar_t path[MAX_PATH]{};OPENFILENAMEW ofn{sizeof(ofn)};ofn.hwndOwner=hwnd;ofn.lpstrFilter=L"JSON key maps (*.json)\0*.json\0All files (*.*)\0*.*\0";ofn.lpstrFile=path;ofn.nMaxFile=MAX_PATH;ofn.Flags=OFN_FILEMUSTEXIST|OFN_PATHMUSTEXIST;
+   if(GetOpenFileNameW(&ofn)){std::wifstream in(path);std::wstringstream buffer;buffer<<in.rdbuf();std::wstring json=buffer.str();for(auto& item:items){auto value=FindJsonString(json.c_str(),item.property);if(!value.empty())item.key=value;}status=L"Imported key map. Click SAVE to apply.";}InvalidateRect(hwnd,nullptr,TRUE);return 0;
+  }
   Layout();capture=-1;
   for(size_t i=0;i<items.size();++i)if(PtInRect(&items[i].rect,POINT{x,y})){capture=int(i);status=L"Press a keyboard key for the selected control. Escape cancels.";break;}
   SetFocus(hwnd);InvalidateRect(hwnd,nullptr,TRUE);return 0;
