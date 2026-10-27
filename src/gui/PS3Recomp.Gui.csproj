@@ -15,7 +15,6 @@
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="www\**\*" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico" Condition="Exists('$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico')">
       <Link>ppsx33-logo.ico</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
