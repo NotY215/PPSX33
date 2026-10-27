@@ -45,15 +45,17 @@ public sealed class ControllerControl : Control
         BackColor = Bg; ForeColor = White; Dock = DockStyle.Fill;
         TabStop = true;
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
-        _timer = new System.Windows.Forms.Timer { Interval = 33 };
+        // 60 Hz updates keep the sticks responsive without the old sluggish easing.
+        _timer = new System.Windows.Forms.Timer { Interval = 16 };
         _timer.Tick += (_, _) => {
-            _phase = (_phase + .075f) % (float)(Math.PI * 2);
+            _phase = (_phase + .16f) % (float)(Math.PI * 2);
             float lx = Direction("ls_left") * -1f + Direction("ls_right");
             float ly = Direction("ls_up") * -1f + Direction("ls_down");
             float rx = Direction("rs_left") * -1f + Direction("rs_right");
             float ry = Direction("rs_up") * -1f + Direction("rs_down");
             NormalizeStick(ref lx, ref ly);
             NormalizeStick(ref rx, ref ry);
+            // High response factor: sticks reach the mapped direction in a couple of frames.
             _leftX = Ease(_leftX, lx * 17f); _leftY = Ease(_leftY, ly * 17f);
             _rightX = Ease(_rightX, rx * 17f); _rightY = Ease(_rightY, ry * 17f);
             Invalidate();
@@ -68,7 +70,7 @@ public sealed class ControllerControl : Control
         base.Dispose(disposing);
     }
 
-    private static float Ease(float a, float b) => a + (b-a)*.28f;
+    private static float Ease(float a, float b) => a + (b-a)*.82f;
     private static void NormalizeStick(ref float x, ref float y)
     {
         float length = MathF.Sqrt(x * x + y * y);
