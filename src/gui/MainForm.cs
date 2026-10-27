@@ -384,6 +384,7 @@ public sealed partial class MainForm : Form
         };
         FormClosing += (_, _) =>
         {
+            DisposeNativeController();
             _animTimer?.Stop();
             _animTimer?.Dispose();
             _logoFontTitle?.Dispose();
