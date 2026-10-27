@@ -33,6 +33,16 @@ Legend: **Done** · **Partial** · **In progress** · **Blocked** · **Not start
 
 ---
 
+## GUI controller (native C#)
+
+| Item | Status | Notes |
+| --- | --- | --- |
+| Replace controller WebView2 page with WinForms/GDI+ | Done | Native `ControllerControl.cs`; HTML page removed |
+| Controller shell, buttons, D-pad, shoulders and labels | Implemented | Custom gradient drawing and surface details |
+| Analog stick movement and pulsing glow | Implemented | Timer-driven animation with aspect-ratio-safe scaling |
+| Keyboard rebinding, reset, JSON import/export | Implemented | Existing `KeyMap.cs` defaults retained |
+| Persist settings and write `output/pad_map.json` | Implemented | Save action integrated with GUI |
+| Release build and manual interaction/DPI test | Pending | Run local `dotnet publish`; test resize, rebind/cancel, import/export and build-lock |
 ## A. Host product / packaging
 
 | Item | Status | Action |
@@ -43,7 +53,7 @@ Legend: **Done** · **Partial** · **In progress** · **Blocked** · **Not start
 | `dist/runtime` without `.cpp` | Done | Sources stay in repo |
 | `dist/runtime` without `.md` | In progress | Do not copy README |
 | Headers in `dist/runtime` | **Required** | See below |
-| `redist/` VS + WebView2 notes | In progress | WebView2 evergreen download URL |
+| `redist/` Visual Studio notes | Done | Native WinForms GUI has no browser runtime dependency |
 | No bundled compiler tree | Done | System VS |
 
 ### Why headers cannot all disappear into the DLL
