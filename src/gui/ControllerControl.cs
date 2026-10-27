@@ -59,7 +59,13 @@ public sealed class ControllerControl : Control
         Font = new Font("Segoe UI", 9f);
     }
 
-    protected override void Dispose(bool disposing)\n    {\n        if (disposing) { _timer.Stop(); _timer.Dispose(); }\n        base.Dispose(disposing);\n    }\n\n    private static float Ease(float a, float b) => a + (b-a)*.28f;
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) { _timer.Stop(); _timer.Dispose(); }
+        base.Dispose(disposing);
+    }
+
+    private static float Ease(float a, float b) => a + (b-a)*.28f;
     private float Direction(string id) => _held.Contains(GetKey(id)) ? 1f : 0f;
     private string GetKey(string id) => Get(id);
     protected override bool IsInputKey(Keys keyData) => true;
