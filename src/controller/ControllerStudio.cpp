@@ -73,6 +73,7 @@ void Layout(){
  const int step=std::max(28,std::min(43,(height-174)/13)),rowH=step-5;
  for(size_t i=0;i<items.size();++i){int c=i<13?0:1,row=c==0?int(i):int(i)-13;int x=margin+c*(col+gap),y=116+row*step;items[i].rect={x,y,x+col,y+rowH};}
 }
+std::wstring FindJsonString(const wchar_t* json,const wchar_t* property);
 void Paint(HWND hwnd){
  PAINTSTRUCT ps{};HDC dc=BeginPaint(hwnd,&ps);RECT c{};GetClientRect(hwnd,&c);HBRUSH b=CreateSolidBrush(Bg);FillRect(dc,&c,b);DeleteObject(b);
  DrawTextAt(dc,L"PPSX33  /  CONTROLLER STUDIO",RECT{18,14,c.right-18,42},Text);
