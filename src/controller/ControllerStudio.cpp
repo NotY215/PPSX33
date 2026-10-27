@@ -18,7 +18,7 @@ constexpr COLORREF kBorder = RGB(44, 67, 91);
 constexpr COLORREF kText = RGB(226, 237, 248);
 constexpr COLORREF kAccent = RGB(51, 190, 220);
 constexpr UINT kSaveId = 9000;
-struct Mapping { std::wstring name, key; RECT rect{}; };
+struct Mapping { std::wstring name, property, key; RECT rect{}; };
 std::vector<Mapping> g_map;
 int g_capture = -1;
 std::wstring g_status = L"Select a control, then press a key to remap it.";
@@ -26,16 +26,16 @@ HWND g_window = nullptr;
 
 std::vector<Mapping> Defaults() {
     return {
-        {L"Left stick · Left",L"Left"},{L"Left stick · Down",L"Down"},
-        {L"Left stick · Right",L"Right"},{L"Left stick · Up",L"Up"},
-        {L"Right stick · Left",L"H"},{L"Right stick · Down",L"J"},
-        {L"Right stick · Right",L"K"},{L"Right stick · Up",L"U"},
-        {L"Start",L"V"},{L"Select",L"Space"},{L"PS button",L"Backspace"},
-        {L"Square",L"A"},{L"Cross",L"Z"},{L"Circle",L"X"},{L"Triangle",L"S"},
-        {L"D-pad · Left",L"NumPad4"},{L"D-pad · Down",L"NumPad5"},
-        {L"D-pad · Right",L"NumPad6"},{L"D-pad · Up",L"NumPad8"},
-        {L"R1",L"R"},{L"R2",L"RControlKey"},{L"R3",L"LControlKey"},
-        {L"L1",L"L"},{L"L2",L"RShiftKey"},{L"L3",L"LShiftKey"}
+        {L"Left stick · Left",L"LeftStickLeft",L"Left"},{L"Left stick · Down",L"LeftStickDown",L"Down"},
+        {L"Left stick · Right",L"LeftStickRight",L"Right"},{L"Left stick · Up",L"LeftStickUp",L"Up"},
+        {L"Right stick · Left",L"RightStickLeft",L"H"},{L"Right stick · Down",L"RightStickDown",L"J"},
+        {L"Right stick · Right",L"RightStickRight",L"K"},{L"Right stick · Up",L"RightStickUp",L"U"},
+        {L"Start",L"Start",L"V"},{L"Select",L"Select",L"Space"},{L"PS button",L"PsButton",L"Backspace"},
+        {L"Square",L"Square",L"A"},{L"Cross",L"Cross",L"Z"},{L"Circle",L"Circle",L"X"},{L"Triangle",L"Triangle",L"S"},
+        {L"D-pad · Left",L"DpadLeft",L"NumPad4"},{L"D-pad · Down",L"DpadDown",L"NumPad5"},
+        {L"D-pad · Right",L"DpadRight",L"NumPad6"},{L"D-pad · Up",L"DpadUp",L"NumPad8"},
+        {L"R1",L"R1",L"R"},{L"R2",L"R2",L"RControlKey"},{L"R3",L"R3",L"LControlKey"},
+        {L"L1",L"L1",L"L"},{L"L2",L"L2",L"RShiftKey"},{L"L3",L"L3",L"LShiftKey"}
     };
 }
 std::wstring KeyName(UINT vk) {
@@ -72,7 +72,7 @@ void SaveMap() {
     if (!f) { g_status = L"Could not write pad_map.json beside the application."; return; }
     f << L"{\n";
     for (size_t i=0;i<g_map.size();++i) {
-        f << L"  \"" << JsonEscape(g_map[i].name) << L"\": \"" << JsonEscape(g_map[i].key) << L"\"";
+        f << L"  \"" << JsonEscape(g_map[i].property) << L"\": \"" << JsonEscape(g_map[i].key) << L"\"";
         f << (i+1<g_map.size()?L",":L"") << L"\n";
     }
     f << L"}\n";
