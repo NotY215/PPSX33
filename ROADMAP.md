@@ -126,7 +126,7 @@ Amalgamating headers into fewer `.h` files is optional cleanup; it does not remo
 | Item | Status |
 | --- | --- |
 | waveOut / pad / save | Partial |
-| Controller WebView2 | Needs runtime installed |
+| Native C# controller mapper | Done | GDI+ drawing, animated sticks/glow, key rebinding, JSON import/export; no WebView2 |
 
 ---
 
