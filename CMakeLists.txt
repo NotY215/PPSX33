@@ -31,6 +31,23 @@ if(WIN32)
 endif()
 
 # ------------------------------------------------------------------
+# Native C++ Controller Studio (Win32)
+# ------------------------------------------------------------------
+if(WIN32)
+    add_executable(PPSX33ControllerStudio WIN32
+        src/controller/ControllerStudio.cpp
+    )
+    target_compile_definitions(PPSX33ControllerStudio PRIVATE UNICODE _UNICODE)
+    set_target_properties(PPSX33ControllerStudio PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+    )
+    if(MSVC)
+        target_compile_options(PPSX33ControllerStudio PRIVATE /W4 /permissive-)
+    endif()
+    message(STATUS "Native Controller Studio target enabled")
+endif()
+
+# ------------------------------------------------------------------
 # ps3_cli.exe – command-line front-end (same API as the GUI)
 # ------------------------------------------------------------------
 add_executable(ps3_cli src/cli/ps3_cli.cpp)
