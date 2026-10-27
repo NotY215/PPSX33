@@ -1,229 +1,214 @@
-# PPSX33
+<!-- PPSX33 project identity -->
+<p align="center">
+  <img src="assets/ppsx33-logo.png" alt="PPSX33 logo" width="150">
+</p>
 
-### *Because the Cell processor deserves a second life on the host*
+<h1 align="center">PPSX33</h1>
+<p align="center"><strong>PlayStation 3 Static Recompiler Research</strong></p>
+<p align="center">From decrypted PowerPC64 code to a native Windows build, one subsystem at a time.</p>
 
-> Static recompilation toolkit for PlayStation 3 titles.
-> Lift decrypted ELF64 into native C++. Run with a host HLE runtime. No full emulator required.
+<p align="center">
+  <img src="assets/ppsx33-banner.png" alt="PPSX33 banner" width="100%">
+</p>
 
----
+<p align="center">
+  <a href="ROADMAP.md">🧭 Roadmap</a> ·
+  <a href="docs/DEVELOPER_GUIDE.md">🛠️ Developer guide</a> ·
+  <a href="USER_MANUAL.md">📘 User manual</a> ·
+  <a href="docs/games/README.md">🎮 Game notes</a>
+</p>
 
-## What Is This?
+<p align="center">
+  <img alt="Platform: Windows x64" src="https://img.shields.io/badge/platform-Windows%20x64-0078D4?style=for-the-badge">
+  <img alt="Graphics: Direct3D 11" src="https://img.shields.io/badge/graphics-Direct3D%2011-6A5ACD?style=for-the-badge">
+  <img alt="Project stage: Experimental" src="https://img.shields.io/badge/stage-experimental-orange?style=for-the-badge">
+</p>
 
-**PPSX33** is an experimental open-source toolkit that **statically recompiles** decrypted PlayStation 3 game binaries into native Windows executables.
+> [!IMPORTANT]
+> **PPSX33 is experimental software, not a finished PS3 compatibility solution.** A successful lift or build does not mean a game is playable. PPU semantics, HLE, SPU/DMA behaviour and real RSX rendering are still being developed and validated.
 
-Instead of interpreting or dynamically recompiling PowerPC/SPU instructions at runtime (what emulators like [RPCS3](https://github.com/RPCS3/rpcs3) do), PPSX33 takes a related but different path:
+## ✨ What PPSX33 is building
 
-1. **Load** a decrypted ELF64 (big-endian PowerPC64).
-2. **Lift** instruction regions into C++ chunks.
-3. **Link** those chunks against a C/C++ **runtime** (memory, LV2/PRX HLE, SPU assist, RSX/D3D11 present).
-4. **Build** a self-contained game EXE with the GUI or CLI.
+PPSX33 is an open-source research project exploring a different route from full-system emulation: **static recompilation**. It analyses a decrypted PS3 ELF, lifts supported PowerPC code into generated C++ and links that code against a host runtime intended to reproduce the PS3 services the title expects.
 
-This is the same broad philosophy as:
+The aim is not to pretend the PS3 is simple. The aim is to make each part observable, testable and replaceable, from instruction semantics to graphics output.
 
-- [N64Recomp](https://github.com/N64Recomp/N64Recomp) (N64 → native)
-- [UnleashedRecomp](https://github.com/hedge-dev/UnleashedRecomp) (Xbox 360 → native)
-- [ps3recomp](https://github.com/sp00nznet/ps3recomp) (PS3 runtime libraries and tooling)
-- [PS2Recomp](https://github.com/ran-j/PS2Recomp) (PS2 → native)
+### 🔁 The pipeline
 
-…applied here as an **integrated GUI + core + runtime** pipeline aimed at practical title builds (currently exercised hard against *God of War III* dumps).
+<p align="center">
+  <strong>Decrypted ELF</strong> &nbsp; → &nbsp;
+  <strong>🧭 Analyse</strong> &nbsp; → &nbsp;
+  <strong>⚙️ Lift to C++</strong> &nbsp; → &nbsp;
+  <strong>🔗 Link runtime</strong> &nbsp; → &nbsp;
+  <strong>🧪 Validate</strong>
+</p>
 
-PPSX33 is **not** a finished product and **does not** claim commercial playability.
+1. **Load** a decrypted ELF or supported game layout that you are legally entitled to use.
+2. **Analyse and lift** supported PPU instruction regions into generated C++.
+3. **Resolve runtime dependencies** through the current LV2, PRX and library HLE layers.
+4. **Build** a native Windows executable using the installed Microsoft C++ toolchain.
+5. **Measure what actually works** using traces, lift reports and per-game test notes.
 
-## Why PS3?
+The last step matters: generated code is only one milestone. Correct execution and rendered gameplay must be demonstrated separately.
 
-The PlayStation 3 has thousands of titles and a unique architecture (Cell Broadband Engine + RSX). Emulation has proven the library can run on PC. Static recompilation tries to offer a different trade-off:
+## 🚦 Implementation status
 
-| Goal | Why it matters |
-| --- | --- |
-| Native host code | Lifted C++ compiles with MSVC; no per-instruction interpreter in the hot path |
-| Lower runtime overhead | Once correct, work shifts to HLE accuracy, not decode bandwidth |
-| Hackable ports | Generated sources and runtime sit in ordinary C++ trees |
-| Focused scope | One pipeline from dump → EXE for research and preservation experiments |
+Status icons describe the current broad state, not a promise that every title or code path works.
 
-## Platform support
-
-| Platform | Status |
-| --- | --- |
-| **Windows x64** | Primary target (GUI, D3D11 present, MSVC game builds) |
-| Linux / macOS | Not a supported host runtime today |
-| Graphics API | **Direct3D 11** (Feature Level 10_0+). OpenGL fallback is planned, not shipped |
-| Compiler for games | System Visual Studio C++ toolset (via `vswhere`). `redist/` is installer + guide only |
-
-## The Challenge
-
-PS3 software is not a single CPU blob. A serious port has to confront:
-
-| Piece | What it is | Why it is hard |
+| Area | Status | Current scope |
 | --- | --- | --- |
-| **PPU** | PowerPC 64-bit main CPU | BE memory, CR/LR/CTR, VMX/AltiVec |
-| **SPUs** | 6× synergistic processors | Local store, MFC DMA, SPURS |
-| **RSX** | NV40-derived GPU | GCM FIFO, surfaces, textures, shaders |
-| **LV2** | Kernel syscalls | Threads, events, memory, time, FS |
-| **PRX** | Dynamic modules | NID exports, sysmodule load order |
+| 🧰 GUI, project flow and build orchestration | 🟡 **Partial / evolving** | Windows GUI and native build pipeline; title-specific failures remain possible |
+| 📦 ELF loading and PPU lifting | 🟡 **Partial** | Supported code can be lifted; translation coverage is not semantic correctness |
+| 🧠 PPU runtime and control flow | 🟡 **In progress** | Guest context and execution paths exist; unsupported or inaccurate paths can break execution |
+| 🪟 D3D11 host window and presentation | 🟢 **Implemented baseline** | Host graphics window/present path exists |
+| 🧱 RSX/GCM command processing | 🟡 **In progress** | Some FIFO methods and basic surface operations are handled; real title shaders and full rendering are incomplete |
+| 🧩 LV2, PRX and NID services | 🟡 **Partial** | HLE coverage is incomplete and individual API semantics require validation |
+| ⚡ SPU, MFC/DMA and SPURS | 🟡 **Partial** | Assist/runtime paths exist; full instruction and scheduling behaviour is not complete |
+| 🔊 Audio, 🎮 input and 💾 save services | 🟡 **Partial** | Basic host paths exist; title-level behaviour still needs verification |
+| 🎯 End-to-end game compatibility | 🔴 **Not established generally** | Static lift reports do not establish bootability or playability |
 
-PPSX33 attacks this with a **lifter + HLE runtime**, not a cycle-accurate emulator. Accuracy grows subsystem by subsystem. See [ROADMAP.md](ROADMAP.md).
+**Legend:** 🟢 implemented baseline · 🟡 partial or under active development · 🔴 not established / major work remains
 
-## Architecture
+For the task-level breakdown, see **[ROADMAP.md](ROADMAP.md)** and **[PPU coverage notes](docs/PPU_COVERAGE.md)**. Game-specific evidence and logs are collected under **[docs/games](docs/games/README.md)**.
 
-```
+## 🧩 Why this is difficult
+
+The PS3 combines multiple processors and a custom graphics system. A useful recompiler has to reproduce the observable behaviour games depend on, not just translate their main CPU instructions.
+
+| Component | Responsibility | Compatibility work |
+| --- | --- | --- |
+| **PPU** | 64-bit PowerPC main processor | Instruction semantics, branches, registers, memory and calling conventions |
+| **SPU** | Synergistic processors | Vector operations, local store, channels and job execution |
+| **MFC / DMA** | SPU data movement | Transfer ordering, tags, stalls and completion semantics |
+| **RSX / GCM** | Graphics processor and command interface | FIFO, shaders, vertex data, textures, render targets and synchronization |
+| **LV2 / PRX** | Kernel and modules | Threads, memory, events, imports, exports and module lifecycle |
+| **cellFs and other libraries** | Game-facing system APIs | Correct paths, data formats, errors, timing and state |
+
+A failure that looks like a graphics bug may actually be caused by a missing import or an SPU transfer that completed too early. Diagnostics should preserve that chain of evidence.
+
+## 🏗️ Project layout
+
+```text
 PPSX33/
 ├── src/
-│   ├── core/                 # ELF load, PPU lifter, project/build orchestration
-│   ├── cli/                  # Headless tools
-│   └── gui/                  # WinForms app (load, decompile, controller map, build)
-├── runtime/                  # Linked into every generated game EXE / ps3rt.dll
-│   ├── ppu_runtime*.h        # Guest context, run loop, recovery
-│   ├── ps3rt*.cpp / *.inl    # HLE, GCM, PRX, syscalls
-│   ├── rsx_stub.cpp          # RSX FIFO → D3D11 present
-│   ├── spu_stub.cpp          # SPU / MFC assist
-│   ├── assets.cpp            # Package / path helpers
-│   └── audio_save.cpp        # Audio + save HLE
-├── scripts/                  # Host build helpers
-├── redist/                   # VS installer pointer + setup guide (not a full compiler tree)
-├── docs/                     # Notes, game logs (e.g. GOW III)
-├── ROADMAP.md                # Implementation status (single file)
-└── README.md                 # This file
+│   ├── core/              # ELF handling, PPU lifter and build orchestration
+│   ├── cli/               # Command-line tooling
+│   └── gui/               # Windows GUI
+├── runtime/               # Runtime linked with generated game builds
+│   ├── ppu_runtime*.h     # Guest context and execution support
+│   ├── ps3rt*.cpp / *.inl # HLE, imports and system services
+│   ├── rsx_stub.cpp       # RSX/GCM-to-D3D11 work in progress
+│   ├── spu_stub.cpp       # SPU and MFC support in progress
+│   └── assets.cpp         # Asset and path helpers
+├── assets/
+│   ├── ppsx33-logo.png    # Project identity
+│   ├── ppsx33-logo.ico    # Windows icon asset
+│   └── ppsx33-banner.png  # README / project banner
+├── docs/
+│   ├── DEVELOPER_GUIDE.md
+│   ├── PPU_COVERAGE.md
+│   └── games/             # Per-title notes, reports and logs
+├── redist/                # Toolchain setup guidance
+├── ROADMAP.md
+└── README.md
 ```
 
-**Generated game output** (per project) typically contains:
+Generated projects may contain a game executable, `ps3rt.dll`, guest image data, generated source files, controller mapping and build logs. Exact output depends on the project and build path.
 
-```
-projects/<Title>/output/
-├── <Title>.exe
-├── ps3rt.dll
-├── guest_image.bin
-├── pad_map.json
-├── src/                      # Lifted chunks + runtime copies used by the game build
-└── build_live.log
-```
+## 🖥️ Host support
 
-## How It Works
-
-### 1. Load
-
-You point the GUI at a **decrypted** ELF / game layout you are allowed to use. The core maps segments into a guest address space and records entry / TOC-related data needed for the lift.
-
-### 2. Decompile / lift
-
-The PPU lifter walks code regions and emits C++ **chunks**. Coverage is title-dependent: large games still show non-trivial unimplemented opcode counts in lift reports. Unimplemented paths must not be silently treated as “correct.”
-
-### 3. Runtime HLE
-
-At run time, the EXE does not emulate a full LV2. It:
-
-- Executes lifted PPU code against a register/memory context
-- Services syscalls and PRX imports through **HLE tables** (`nid_table.h`, LV2 cases, module stubs)
-- Advances SPU-related work at a coarse level where implemented
-- Drives **RSX** by decoding GCM FIFO methods into host D3D11 draws and presents
-
-### 4. Graphics path (current)
-
-1. Game or runtime initializes cellGcm-style control/labels/local memory.
-2. FIFO **PUT/GET** are normalized; JUMP/CALL decoding follows NV40-style rules (false JUMP fixed).
-3. Methods update surface, clear, texture, and vertex-array state.
-4. **DRAW_ARRAYS** / **DRAW_INDEX_ARRAY** issue host draws when vertex data is available.
-5. Present blits the guest color surface (and diagnostic geometry only when the title has not submitted real work).
-
-**Evidence from GOW III logs:** the host window, CLEAR, inject triangle, and stable method counts work. **Title-authored meshes and shaders are not complete yet** while boot/import stalls limit real GCM PUT traffic.
-
-### 5. Build
-
-The GUI writes sources and invokes the **system** MSVC toolchain (`vswhere` → `vcvars64` → `cl`/`link`). Successful builds produce the game EXE next to `ps3rt.dll` and the guest image.
-
-## Implementation status
-
-Full tables live in **[ROADMAP.md](ROADMAP.md)**. Summary:
-
-| Area | Status |
+| Item | Current target |
 | --- | --- |
-| ELF load / GUI / MSVC game build | **Done** (title-dependent lift coverage) |
-| D3D11 window + present | **Done** |
-| GCM FIFO decode (JUMP/PUT/GET) | **Done** |
-| Surface bind + solid CLEAR | **Done** |
-| Seed / inject geometry | **Partial** (diagnostic until title GCM runs) |
-| Real game meshes / textures / SCE shaders | **In progress** |
-| LV2 / PRX / boot completeness | **Partial** |
-| SPU / MFC / SPURS | **Partial** |
-| Audio / pad / save | **Partial** |
+| Operating system | Windows x64 |
+| Graphics backend | Direct3D 11; GPU feature support must be suitable for the build |
+| Native compiler | Microsoft C++ toolchain |
+| GUI framework | .NET 8 or the version specified by the project |
+| Build tooling | CMake / Ninja for the relevant host targets |
 
-## Requirements
+Linux and macOS are **not supported host-runtime targets at present**. Requirements can change as the project evolves; check the build files and [redistributable/toolchain notes](redist/README.txt) before setting up a development machine.
 
-### Run a generated game
+## 🚀 Build and try the tools
 
-| Item | Required | Recommended |
-| --- | --- | --- |
-| OS | Windows 10 x64 | Windows 11 x64 |
-| RAM | 8 GB | 16 GB |
-| GPU | D3D11 Feature Level **10_0** (integrated OK) | Discrete, FL **11_0** |
-| VRAM | ~512 MB usable at 720p | 2 GB+ |
-| Display | 1280×720 | 1920×1080 |
-| Disk | Game dump + a few GB free | SSD/NVMe |
-| Input | Keyboard map and/or XInput | XInput controller |
-| Audio | Default shared-mode device | Low-latency device |
+1. Install Visual Studio with the C++ desktop development tools and a Windows SDK.
+2. Install the .NET SDK required by the GUI project.
+3. Clone this repository and open a terminal at the repository root.
+4. Run the repository build helper:
 
-### Lift and build with PPSX33
+   ```bat
+   scripts\build_all.bat
+   ```
 
-| Item | Required | Recommended |
-| --- | --- | --- |
-| Toolchain | Visual Studio C++ tools + Windows SDK | VS 2022/2026 Community or Build Tools |
-| .NET | SDK **8+** (GUI) | Same |
-| CMake / Ninja | For the host `ps3core` / CLI tree | Same |
-| RAM | 16 GB | 32 GB |
-| Disk | SSD | NVMe |
+5. Launch the generated GUI if the build completes successfully.
+6. Load only a decrypted ELF or game layout you are legally entitled to use.
+7. Review the lift report and build log before attempting to run the generated executable.
 
-`redist/README.txt` documents which VS packages to install. The app does **not** ship a full compiler tree; it uses the system toolchain.
+Build outputs and paths may vary by configuration. If a step fails, capture the complete error and toolchain version instead of assuming the project built successfully. The [developer guide](docs/DEVELOPER_GUIDE.md) and [user manual](USER_MANUAL.md) provide more detail.
 
-## Getting Started
+## 🧪 How compatibility is evaluated
 
-1. Install Visual Studio C++ workload and .NET 8 SDK.
-2. Clone this repository.
-3. Build the host tools:
+PPSX33 tracks different milestones separately:
 
-```bat
-scripts\build_all.bat
-```
+- **Decode/lift coverage:** which instruction encodings the tool recognises or translates.
+- **Semantic correctness:** whether translated instructions reproduce expected guest state.
+- **Runtime service coverage:** whether required imports and system calls behave correctly.
+- **Graphics correctness:** whether real game commands produce the expected image.
+- **Game testing:** whether a documented path boots, accepts input and runs reliably.
 
-4. Run `build\dist\PS3Recomp.exe`.
-5. Accept the legal notice, load a **decrypted** ELF / project you are allowed to use.
-6. Decompile → configure controller map → Build.
-7. Run the EXE under `projects\<name>\output\`.
+A percentage in a lift report is not a compatibility rating. A title should only be described as playable when that claim is backed by reproducible end-to-end testing. See [PPU coverage](docs/PPU_COVERAGE.md) and the individual reports in [game documentation](docs/games/README.md).
 
-Expect logs under the game folder and in the GUI console. For GOW III experiments, compare against notes under `docs/games/`.
+## 🧭 Current engineering priorities
 
-## Relationship to other projects
+The most useful work is correctness-first:
 
-| Project | Relationship |
-| --- | --- |
-| [RPCS3](https://github.com/RPCS3/rpcs3) | Full emulator; PPSX33 uses public RSX/GCM knowledge, not RPCS3 as a runtime |
-| [ps3recomp](https://github.com/sp00nznet/ps3recomp) | Kindred static-recomp / runtime effort; different tree and goals |
-| N64Recomp / UnleashedRecomp | Same *idea* (ahead-of-time lift), different ISA and OS |
+1. Make unsupported PPU instructions fail visibly rather than silently becoming no-ops.
+2. Trace invalid guest PCs and unresolved imports without guessing a recovery path.
+3. Implement and test HLE APIs against their actual contracts.
+4. Build a real RSX path incrementally: vertex input, shaders, textures, depth and render targets.
+5. Validate SPU instructions, channels and DMA ordering with isolated tests.
+6. Add regression tests and record the first successful real frame, audio output and input event.
 
-PPSX33 does not redistribute game assets, firmware, or encrypted SELF content.
+The live task list is maintained in **[ROADMAP.md](ROADMAP.md)**. Contributions should include test evidence or a clear explanation of what remains unverified.
 
-## Documentation
+## 🕹️ Controller mapping
 
-| Doc | Contents |
-| --- | --- |
-| [ROADMAP.md](ROADMAP.md) | Implementation-level Done / Partial / In progress |
-| `docs/` | Game notes and runtime logs |
-| `runtime/README.md` | Runtime module notes (if present) |
-| `redist/README.txt` | VS install and path setup |
+PPSX33 includes a controller mapping reference for the current input path:
 
-## Contributing
+<p align="center">
+  <img src="assets/PPSX33%20PS3%20Controller%20Key%20Mapping.png" alt="PPSX33 PS3 controller key mapping" width="700">
+</p>
 
-Useful contributions:
+See [KEY_MAPPING.md](docs/KEY_MAPPING.md) for the text reference. Actual game input support may depend on the title and runtime path.
 
-- PPU opcode coverage with tests or lift-report before/after
-- LV2/PRX behavior grounded in real title logs
-- RSX method handling with FIFO traces (not diagnostic-only paths)
-- Build script and GUI reliability on clean Windows machines
+## 🤝 Contributing
 
-Please keep changes focused, avoid drive-by refactors, and do not commit copyrighted game binaries.
+Useful contributions include:
 
-## Legal
+- PPU instruction implementations with focused regression tests.
+- Correct LV2/PRX behaviour backed by logs or API references.
+- RSX command and shader work demonstrated with real test scenes.
+- SPU and DMA tests that verify data and completion ordering.
+- Reproducible Windows build fixes and clearer diagnostics.
+- Game reports that distinguish “translated”, “boots”, “reaches menu” and “playable”.
 
-Only use game dumps, firmware, and keys you have the right to use under the laws that apply to you. This project is for interoperability research and personal preservation experiments. Authors are not responsible for misuse.
+Please keep changes scoped, explain assumptions, and do not add copyrighted game binaries, firmware or extracted game assets. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a change.
 
-## License
+## 🔗 Project references
 
-See repository license files if present. Third-party headers and system SDKs remain under their own terms.
+- 🧭 [Roadmap](ROADMAP.md)
+- 🛠️ [Developer guide](docs/DEVELOPER_GUIDE.md)
+- 📘 [User manual](USER_MANUAL.md)
+- 🧪 [PPU coverage report](docs/PPU_COVERAGE.md)
+- 🎮 [Game notes and test logs](docs/games/README.md)
+- ⌨️ [Controller key mapping](docs/KEY_MAPPING.md)
+- 🧰 [Toolchain setup](redist/README.txt)
+- 🛡️ [Security policy](SECURITY.md)
+- 📜 [Legal notes](LEGAL.md)
+- 🧾 [Third-party notices](THIRD_PARTY.md)
+
+## ⚖️ Legal and preservation
+
+Use only game data, firmware and keys you are legally entitled to use. PPSX33 does not provide commercial game files, firmware, encryption keys or decrypted game binaries. Users are responsible for complying with applicable law and third-party licenses. See [LEGAL.md](LEGAL.md), [TERMS.md](TERMS.md) and [NOTICE](NOTICE).
+
+## 📄 License
+
+See [LICENSE](LICENSE) for the project's license. Third-party components, headers and SDKs remain subject to their own licenses.
