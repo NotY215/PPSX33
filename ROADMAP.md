@@ -136,7 +136,7 @@ Amalgamating headers into fewer `.h` files is optional cleanup; it does not remo
 | Item | Status |
 | --- | --- |
 | waveOut / pad / save | Partial |
-| Native C# controller mapper | Done | GDI+ drawing, animated sticks/glow, key rebinding, JSON import/export; no WebView2 |
+| HTML/WebView2 controller studio | Implemented | SVG controller, responsive binding grid, keyboard rebinding, JSON import/export, reset and save |
 
 ---
 
