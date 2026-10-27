@@ -1536,11 +1536,16 @@ static void rsx_draw_host(uint8_t* mem) {
     rsx_apply_viewport_scissor();
     rsx_sync_guest_host(mem);
     // NV40: draw guest vertices when VA0 present; else paint + solid
+    if (mem && g_rsx.tex_offset && g_rsx.tex_offset != g_rsx.color_offset) {
+        rsx_upload_guest_tex(mem);
+    }
     if (mem && g_va_offset[0]) {
         rsx_draw_nv40_geometry(mem);
+    } else if (mem && (g_rsx.color_offset || g_rsx.tex_offset)) {
+        rsx_upload_guest_tex(mem);
+        rsx_draw_textured_quad();
     } else {
-        if (mem) rsx_paint_guest_color_buffer(mem);
-        rsx_draw_solid_triangle(); /* diagnostic */
+        rsx_draw_solid_triangle();
         if (mem && (g_rsx.tex_offset || g_rsx.color_offset)) {
             uint32_t off = g_rsx.tex_offset ? g_rsx.tex_offset : g_rsx.color_offset;
             int nz = 0;
@@ -1593,10 +1598,29 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
     }
     if (method == 0x1D94 || method == 0x1d94) {
         ++g_rsx.clears;
-        // XXV-K: materialize clear into guest color buffer
+        // XV-O: solid clear from clear_color (not diagnostic rainbow)
         {
             uint8_t* m = ps3rt_memory();
-            if (m) rsx_paint_guest_color_buffer(m);
+            uint32_t off = g_rsx.color_offset;
+            uint32_t pitch = g_rsx.color_pitch ? g_rsx.color_pitch : (g_rsx.width * 4);
+            uint32_t w = g_rsx.width ? g_rsx.width : 1280;
+            uint32_t h = g_rsx.height ? g_rsx.height : 720;
+            if (m && off && off + (uint64_t)pitch * h <= 0x10000000u) {
+                uint32_t cc = g_rsx.clear_color;
+                // A8R8G8B8 guest often; store as little endian bytes in host mem window
+                uint8_t b0 = (uint8_t)(cc & 0xFF);
+                uint8_t b1 = (uint8_t)((cc >> 8) & 0xFF);
+                uint8_t b2 = (uint8_t)((cc >> 16) & 0xFF);
+                uint8_t b3 = (uint8_t)((cc >> 24) & 0xFF);
+                for (uint32_t y = 0; y < h; ++y) {
+                    uint8_t* row = m + off + (uint64_t)y * pitch;
+                    for (uint32_t x = 0; x < w; ++x) {
+                        row[x*4+0] = b0; row[x*4+1] = b1; row[x*4+2] = b2; row[x*4+3] = b3 ? b3 : 0xFF;
+                    }
+                }
+                static int sc=0;
+                if (sc < 8) { ps3rt_log("[rsx] XV-O CLEAR color=0x%x %ux%u\n", cc, w, h); ++sc; }
+            }
         }
         return true;
     }
@@ -1709,17 +1733,33 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
         }
         return true;
     }
-    // Begin / draw
-    if (method == 0x1800 || method == 0x1808 || method == 0x1814 || method == 0x1810) {
+    // XV-O: BEGIN/END vs DRAW (psdevwiki NV4097)
+    // 0x1808 SET_BEGIN_END: arg 0 = end, else primitive type
+    // 0x1814 DRAW_ARRAYS: packed first/count
+    // 0x1824 DRAW_INDEX_ARRAY
+    // 0x1810 / 0x180C array element
+    if (method == 0x1808) {
         g_begin_mode = arg;
         g_rsx.begin_mode = arg;
-        if (method == 0x1814 || method == 0x1808) {
-            // count or packed first/count
-            if (arg > 0 && arg < 65536) g_draw_count = arg;
-            else if ((arg >> 24) > 0) g_draw_count = arg & 0xFFFFFF;
-            if (g_draw_count == 0) g_draw_count = 3;
-        }
-        ++g_rsx.draws;
+        return true;
+    }
+    if (method == 0x1814) {
+        // NV40-style: count = (arg >> 24) + 1, first = arg & 0xFFFFFF (common packing)
+        uint32_t cnt = ((arg >> 24) & 0xFF) + 1u;
+        if (cnt <= 1 && (arg & 0xFFFFFF) > 0 && (arg & 0xFFFFFF) < 65536)
+            cnt = arg & 0xFFFFFF;
+        if (cnt > 0 && cnt < 1000000) g_draw_count = cnt;
+        if (g_draw_count == 0) g_draw_count = 3;
+        return true;
+    }
+    if (method == 0x1824) {
+        uint32_t cnt = ((arg >> 24) & 0xFF) + 1u;
+        if (cnt <= 1 && (arg & 0xFFFFFF) > 0) cnt = arg & 0xFFFFFF;
+        if (cnt > 0 && cnt < 1000000) g_draw_count = cnt;
+        if (g_draw_count == 0) g_draw_count = 3;
+        return true;
+    }
+    if (method == 0x1810 || method == 0x180C || method == 0x1800) {
         return true;
     }
     // NOP / reference / semaphore family — acknowledge
@@ -1737,15 +1777,16 @@ static void rsx_fifo_decode_word(uint8_t* mem, uint32_t method, uint32_t arg) {
         ++g_rsx.methods_seen;
         ++g_rsx.methods_this_frame;
         // Issue host draw when guest issues draw-class methods
-        if (method == 0x1800 || method == 0x1808 || method == 0x1814 || method == 0x1810) {
-            // XV-N: do not repaint diagnostic bars on every draw (destroys guest color)
+        if (method == 0x1814 || method == 0x1824) {
             rsx_draw_host(mem);
             static int dg=0;
-            if (dg < 16) {
-                ps3rt_log("[rsx] XXV-D draw method=0x%x arg=0x%x tex=0x%x color=0x%x\n",
-                    method, arg, g_rsx.tex_offset, (unsigned)g_rsx.color_offset);
+            if (dg < 24) {
+                ps3rt_log("[rsx] XV-O draw method=0x%x arg=0x%x count=%u tex=0x%x color=0x%x\n",
+                    method, arg, g_draw_count, g_rsx.tex_offset, (unsigned)g_rsx.color_offset);
                 ++dg;
             }
+        } else if (method == 0x1808 && arg == 0 && g_draw_count >= 3 && g_va_offset[0]) {
+            rsx_draw_host(mem);
         }
     } else {
         ++g_rsx.unknown_methods;
