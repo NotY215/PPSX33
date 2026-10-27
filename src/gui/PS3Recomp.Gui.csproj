@@ -9,18 +9,11 @@
     <RootNamespace>PS3Recomp.Gui</RootNamespace>
     <LangVersion>latest</LangVersion>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <WebView2EnableWinForms>true</WebView2EnableWinForms>
-    <WebView2EnableWpf>false</WebView2EnableWpf>
-    <!-- Demote residual assembly-version unification noise after Wpf strip -->
-    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
     <ApplicationIcon>$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico</ApplicationIcon>
     <OutputPath>$(MSBuildThisFileDirectory)..\..\build\dist\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2849.39" GeneratePathProperty="true" />
-  </ItemGroup>
   <ItemGroup>
     <None Include="www\**\*" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico" Condition="Exists('$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico')">
@@ -40,27 +33,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <!-- Remove WPF WebView2 from every resolution bag that feeds MSB3277 -->
-  <Target Name="StripWebView2Wpf" AfterTargets="ResolvePackageAssets;ResolveAssemblyReferences" BeforeTargets="FindReferenceAssembliesForReferences;ResolveLockFileReferences">
-    <ItemGroup>
-      <ReferencePath Remove="@(ReferencePath)" Condition="$([System.String]::Copy('%(Identity)').Contains('WebView2.Wpf'))" />
-      <Reference Remove="Microsoft.Web.WebView2.Wpf" />
-      <ResolvedCompileFileDefinition Remove="@(ResolvedCompileFileDefinition)" Condition="$([System.String]::Copy('%(Identity)').Contains('WebView2.Wpf'))" />
-      <RuntimeCopyLocalItems Remove="@(RuntimeCopyLocalItems)" Condition="$([System.String]::Copy('%(Identity)').Contains('WebView2.Wpf'))" />
-      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('WebView2.Wpf'))" />
-      <_ReferencesFromPackage Remove="@(_ReferencesFromPackage)" Condition="$([System.String]::Copy('%(Identity)').Contains('WebView2.Wpf'))" />
-    </ItemGroup>
-  </Target>
-  <Target Name="DeleteWpfWebView2" AfterTargets="Publish;Build">
-    <ItemGroup>
-      <_Junk Include="$(OutputPath)Microsoft.Web.WebView2.Wpf.dll" />
-      <_Junk Include="$(OutputPath)Microsoft.Web.WebView2.Wpf.xml" />
-      <_Junk Include="$(OutputPath)Microsoft.Web.WebView2.Core.xml" />
-      <_Junk Include="$(OutputPath)Microsoft.Web.WebView2.WinForms.xml" />
-      <_Junk Include="$(OutputPath)ps3core.exp" />
-      <_Junk Include="$(OutputPath)ps3core.lib" />
-    </ItemGroup>
-    <Delete Files="@(_Junk)" ContinueOnError="true" />
-  </Target>
 </Project>
 
