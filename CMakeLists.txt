@@ -58,6 +58,19 @@ if(WIN32)
     endif()
 endif()
 
+# Remove artifacts from the previous standalone-controller prototype.
+# The controller is now embedded and built as a DLL, never as a second EXE.
+add_custom_target(remove_legacy_controller_exe ALL
+    COMMAND ${CMAKE_COMMAND} -E rm -f
+        "${CMAKE_BINARY_DIR}/dist/PPSX33ControllerStudio.exe"
+        "${CMAKE_BINARY_DIR}/dist/Debug/PPSX33ControllerStudio.exe"
+        "${CMAKE_BINARY_DIR}/dist/Release/PPSX33ControllerStudio.exe"
+        "${CMAKE_BINARY_DIR}/dist/RelWithDebInfo/PPSX33ControllerStudio.exe"
+        "${CMAKE_BINARY_DIR}/dist/MinSizeRel/PPSX33ControllerStudio.exe"
+    COMMENT "Removing obsolete standalone controller executable"
+    VERBATIM
+)
+
 # ------------------------------------------------------------------
 # ps3_cli.exe – command-line front-end (same API as the GUI)
 # ------------------------------------------------------------------
@@ -108,7 +121,7 @@ if(DOTNET_EXE)
         VERBATIM
     )
 
-    add_dependencies(PS3Recomp ps3core copy_runtime)
+    add_dependencies(PS3Recomp ps3core copy_runtime remove_legacy_controller_exe)
     if(TARGET PPSX33ControllerNative)
         add_dependencies(PS3Recomp PPSX33ControllerNative)
     endif()
