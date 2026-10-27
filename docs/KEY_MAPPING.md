@@ -5,7 +5,7 @@
 </p>
 
 
-PPSX33 uses the following default keyboard bindings for the PlayStation 3 DualShock-style controls. These defaults are defined in `src/gui/KeyMap.cs` and are stored in the `KeyMap` section of `%APPDATA%/PPSX33/settings.json`. The native WinForms Controller tab exposes the face buttons, D-pad, both sticks and stick clicks, shoulder/trigger controls, Start, Select, and PS button before a build. Its DPI-scaled GDI+ controller drawing uses the same default bindings as `src/gui/KeyMap.cs`; no browser runtime or external UI assets are required.
+PPSX33 uses the following default keyboard bindings for the PlayStation 3 DualShock-style controls. These defaults are defined in `src/gui/KeyMap.cs` and are stored in the `KeyMap` section of `%APPDATA%/PPSX33/settings.json`. The HTML Controller Studio is hosted inside the WinForms app with WebView2. It provides an interactive controller diagram, responsive binding list, keyboard rebinding, import/export, reset, and save actions, styled to match PPSX33's dark navy and cyan theme.
 
 ## Default bindings
 
@@ -39,19 +39,20 @@ PPSX33 uses the following default keyboard bindings for the PlayStation 3 DualSh
 
 ## Settings persistence
 
-The GUI settings model stores these values in `%APPDATA%/PPSX33/settings.json` under `KeyMap`. If no settings file exists, PPSX33 creates its settings model with these defaults. Existing saved values are retained when settings are loaded. The native controller automatically saves edits and imports to settings.
+The GUI settings model stores these values in `%APPDATA%/PPSX33/settings.json` under `KeyMap`. If no settings file exists, PPSX33 creates its settings model with these defaults. Existing saved values are retained when settings are loaded. The HTML controller sends edited maps to the WinForms host, which persists them in settings.
 
 The internal key names used by the C# model include `NumPad4`, `RControlKey`, `LControlKey`, `RShiftKey`, and `LShiftKey`; the table above uses user-facing names.
 
 ## GUI editing and implementation status
 
-Open the Controller tab before building to edit bindings. Click a controller control or binding row, then press a key to rebind it (Esc cancels). **Import** and **Export** exchange JSON key maps; **Reset defaults** restores the values from `KeyMap.cs`; **Save map** persists the settings and writes `output/pad_map.json` for the loaded project. The controller is drawn and animated natively in C# with no WebView2 dependency. The tab is removed from the GUI after the build workflow locks the mapping for that build. Settings persist in `%APPDATA%/PPSX33/settings.json`.
+Open the Controller tab before building to edit bindings. Click a controller control or binding row, then press a key to rebind it (Esc cancels). **Import** and **Export** exchange JSON key maps; **Reset defaults** restores the values from `KeyMap.cs`; **Save map** persists the settings and writes `output/pad_map.json` for the loaded project. The controller UI is HTML/CSS/SVG/JavaScript hosted by WebView2. The C# host receives mapping messages and persists them to settings and `output/pad_map.json`. The tab is removed from the GUI after the build workflow locks the mapping for that build. Settings persist in `%APPDATA%/PPSX33/settings.json`.
 
 End-to-end input still depends on the runtime polling host keyboard state and passing the resulting button and analog-stick state to guest pad HLE. Treat game input as incomplete until verified with a homebrew pad test or a supported game. A configured mapping by itself does not prove that guest input is working.
 
 ## Related source
 
-- `src/gui/ControllerControl.cs`: native controller drawing, glow/stick animation, rebind UI, and JSON import/export.
+- `src/gui/www/controller.html`: HTML/CSS/SVG controller UI, animation preview, rebind UI, and JSON import/export.
+- `src/gui/MainForm.Controller.cs`: WebView2 host, message bridge, and persistence.
 - `src/gui/KeyMap.cs`: default binding values.
 - `src/gui/Settings.cs`: loading and saving `settings.json`.
 - `runtime/ps3rt.cpp`: guest pad-state setter, `ps3rt_pad_set`.
