@@ -458,19 +458,17 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     bool use_msvc = !vcvars.empty() || !bundled_cl.empty();
 
     if (use_msvc) {
+        if (!prebuilt_rt) {
         {
             std::ofstream rt_rsp(out / "link_rt.rsp");
             rt_rsp << "/nologo\n/DLL\n/OUT:ps3rt.dll\n";
             for (auto& n : rtSrc) rt_rsp << "obj\\rt_" << n << ".obj\n";
             rt_rsp << "d3d11.lib\nd3d10.lib\ndxgi.lib\nuser32.lib\ngdi32.lib\nwinmm.lib\nshell32.lib\n";
         }
+        }
         {
             std::ofstream g_rsp(out / "link_game.rsp");
-            g_rsp << "/nologo
-/MACHINE:X64
-/LIBPATH:.
-/OUT:\"" << out_exe << "\"
-";
+            g_rsp << "/nologo\n/MACHINE:X64\n/LIBPATH:.\n/OUT:\"" << out_exe << "\"\n";
             for (auto& n : gameSrc) g_rsp << "obj\\g_" << n << ".obj\n";
             if (fs::exists(src / "game_main.cpp") &&
                 std::find(gameSrc.begin(), gameSrc.end(), "game_main.cpp") == gameSrc.end()) {
