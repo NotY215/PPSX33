@@ -5,7 +5,7 @@
 </p>
 
 
-PPSX33 uses the following default keyboard bindings for the PlayStation 3 DualShock-style controls. These defaults are defined in `src/gui/KeyMap.cs` and are stored in the `KeyMap` section of `%APPDATA%/PPSX33/settings.json`. The GUI's Controller tab exposes the face buttons, D-pad, left stick, shoulder/trigger controls, Start, and Select before a build. The PS button default is stored in settings but is not currently included as an editable row in the Controller tab.
+PPSX33 uses the following default keyboard bindings for the PlayStation 3 DualShock-style controls. These defaults are defined in `src/gui/KeyMap.cs` and are stored in the `KeyMap` section of `%APPDATA%/PPSX33/settings.json`. The GUI's Controller tab exposes the face buttons, D-pad, both sticks and stick clicks, shoulder/trigger controls, Start, Select, and PS button before a build. The embedded controller diagram uses the same default bindings as `src/gui/KeyMap.cs`.
 
 ## Default bindings
 
