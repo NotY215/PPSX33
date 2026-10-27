@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-27_12-49-14.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-27_12-49-14.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-27_14-28-27.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-27_14-28-27.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -191,16 +191,18 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XV-O CLEAR color=0x402020 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
+[rsx] NV40 VS/PS pipeline ready (guest vertex fetch)
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x402020
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] NV40 VS/PS pipeline ready (guest vertex fetch)
 [rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=1 color=0x402020 tex=0x84f0000 draws=1
-[rsx] XV flip #1 guest=1 diag=0 draws=1 shaders=0 tex=0 methods=22 packets=11 1280x720
+[rsx] XXV-FRAME present flip=1 color=0x402020 tex=0x84f0000 draws=3
+[rsx] XV flip #1 guest=3 diag=0 draws=3 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] Phase M touch-progress n=65536
 [ps3] Phase M touch-progress n=73728
 [ps3] Phase M touch-progress n=81920
@@ -210,170 +212,180 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XV-O CLEAR color=0x204028 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
-[rsx] XV-N FIFO resync get=0xb0 put=0x58 dist=0xfffa8
+[rsx] XV-N FIFO resync get=0xd0 put=0x68 dist=0xfff98
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x204028
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
 [rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=2 color=0x204028 tex=0x84f0000 draws=2
-[rsx] XV flip #2 guest=2 diag=0 draws=2 shaders=0 tex=0 methods=22 packets=11 1280x720
-[gcm] XXIV-B guest put=0xb0 get=0x58
+[rsx] XXV-FRAME present flip=2 color=0x204028 tex=0x84f0000 draws=6
+[rsx] XV flip #2 guest=6 diag=0 draws=6 shaders=0 tex=0 methods=26 packets=13 1280x720
+[gcm] XXIV-B guest put=0xd0 get=0x68
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XV-O CLEAR color=0x204028 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x204028
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
 [rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=3 color=0x204028 tex=0x84f0000 draws=3
-[rsx] XV flip #3 guest=3 diag=0 draws=3 shaders=0 tex=0 methods=22 packets=11 1280x720
+[rsx] XXV-FRAME present flip=3 color=0x204028 tex=0x84f0000 draws=9
+[rsx] XV flip #3 guest=9 diag=0 draws=9 shaders=0 tex=0 methods=26 packets=13 1280x720
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XV-O CLEAR color=0x202848 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
-[rsx] XV-N FIFO resync get=0x108 put=0xb0 dist=0xfffa8
+[rsx] XV-N FIFO resync get=0x138 put=0xd0 dist=0xfff98
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x202848
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
 [rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=4 color=0x202848 tex=0x84f0000 draws=4
-[rsx] XV flip #4 guest=4 diag=0 draws=4 shaders=0 tex=0 methods=22 packets=11 1280x720
-[gcm] XXIV-B guest put=0x108 get=0xb0
+[rsx] XXV-FRAME present flip=4 color=0x202848 tex=0x84f0000 draws=12
+[rsx] XV flip #4 guest=12 diag=0 draws=12 shaders=0 tex=0 methods=26 packets=13 1280x720
+[gcm] XXIV-B guest put=0x138 get=0xd0
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XV-O CLEAR color=0x202848 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x202848
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
 [rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=5 color=0x202848 tex=0x84f0000 draws=5
-[rsx] XV flip #5 guest=5 diag=0 draws=5 shaders=0 tex=0 methods=22 packets=11 1280x720
+[rsx] XXV-FRAME present flip=5 color=0x202848 tex=0x84f0000 draws=15
+[rsx] XV flip #5 guest=15 diag=0 draws=15 shaders=0 tex=0 methods=26 packets=13 1280x720
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XV-O CLEAR color=0x403828 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
-[rsx] XV-N FIFO resync get=0x160 put=0x108 dist=0xfffa8
+[rsx] XV-N FIFO resync get=0x1a0 put=0x138 dist=0xfff98
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x403828
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-T/V HLSL textured quad draw
 [rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=6 color=0x403828 tex=0x84f0000 draws=6
-[rsx] XV flip #6 guest=6 diag=0 draws=6 shaders=0 tex=0 methods=22 packets=11 1280x720
-[gcm] XXIV-B guest put=0x160 get=0x108
+[rsx] XXV-FRAME present flip=6 color=0x403828 tex=0x84f0000 draws=18
+[rsx] XV flip #6 guest=18 diag=0 draws=18 shaders=0 tex=0 methods=26 packets=13 1280x720
+[gcm] XXIV-B guest put=0x1a0 get=0x138
 [rsx] XV-O CLEAR color=0x403828 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x403828
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=7 color=0x403828 tex=0x84f0000 draws=7
-[rsx] XV flip #7 guest=7 diag=0 draws=7 shaders=0 tex=0 methods=22 packets=11 1280x720
+[rsx] XXV-FRAME present flip=7 color=0x403828 tex=0x84f0000 draws=21
+[rsx] XV flip #7 guest=21 diag=0 draws=21 shaders=0 tex=0 methods=26 packets=13 1280x720
 [rsx] XV-O CLEAR color=0x402020 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
-[rsx] XV-N FIFO resync get=0x1b8 put=0x160 dist=0xfffa8
+[rsx] XV-N FIFO resync get=0x208 put=0x1a0 dist=0xfff98
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x402020
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=8 color=0x402020 tex=0x84f0000 draws=8
-[rsx] XV flip #8 guest=8 diag=0 draws=8 shaders=0 tex=0 methods=22 packets=11 1280x720
+[rsx] XXV-FRAME present flip=8 color=0x402020 tex=0x84f0000 draws=24
+[rsx] XV flip #8 guest=24 diag=0 draws=24 shaders=0 tex=0 methods=26 packets=13 1280x720
 [e2e] XXV-J checklist
 [e2e]   boot_mem=OK gcm=1 pad_init=0
 [e2e]   flips=7 ppu_slices=65 spu_ticks=49
 [e2e]   fs/audio/save/pad services installed (I)
 [e2e]   remaining: guest RSX geometry (K), wild-pc stability (L)
-[gcm] XXIV-B guest put=0x1b8 get=0x160
+[gcm] XXIV-B guest put=0x208 get=0x1a0
 [rsx] VA0 offset=0x8cf0000 stride=12
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x402020
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=9 color=0x402020 tex=0x84f0000 draws=9
-[rsx] XV flip #9 guest=9 diag=0 draws=9 shaders=0 tex=0 methods=22 packets=11 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XXV-FRAME present flip=9 color=0x402020 tex=0x84f0000 draws=27
+[rsx] XV flip #9 guest=27 diag=0 draws=27 shaders=0 tex=0 methods=26 packets=13 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
-[rsx] XV-N FIFO resync get=0x210 put=0x1b8 dist=0xfffa8
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x204028
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=10 color=0x204028 tex=0x84f0000 draws=10
-[rsx] XV flip #10 guest=10 diag=0 draws=10 shaders=0 tex=0 methods=22 packets=11 1280x720
-[gcm] XXIV-B guest put=0x210 get=0x1b8
+[rsx] XV-N FIFO resync get=0x270 put=0x208 dist=0xfff98
+[rsx] XXV-FRAME present flip=10 color=0x204028 tex=0x84f0000 draws=30
+[rsx] XV flip #10 guest=30 diag=0 draws=30 shaders=0 tex=0 methods=26 packets=13 1280x720
+[gcm] XXIV-B guest put=0x270 get=0x208
 [rsx] VA0 offset=0x8cf0000 stride=12
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x204028
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=11 color=0x204028 tex=0x84f0000 draws=11
-[rsx] XV flip #11 guest=11 diag=0 draws=11 shaders=0 tex=0 methods=22 packets=11 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XXV-FRAME present flip=11 color=0x204028 tex=0x84f0000 draws=33
+[rsx] XV flip #11 guest=33 diag=0 draws=33 shaders=0 tex=0 methods=26 packets=13 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
-[rsx] XV-N FIFO resync get=0x268 put=0x210 dist=0xfffa8
-[rsx] XXV-K paint guest color off=0x84f0000 1280x720 pitch=5120 clear=0x202848
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=12 color=0x202848 tex=0x84f0000 draws=12
-[rsx] XV flip #12 guest=12 diag=0 draws=12 shaders=0 tex=0 methods=22 packets=11 1280x720
-[gcm] XXIV-B guest put=0x268 get=0x210
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=13 color=0x202848 tex=0x84f0000 draws=13
-[rsx] XV flip #13 guest=13 diag=0 draws=13 shaders=0 tex=0 methods=22 packets=11 1280x720
+[rsx] XV-N FIFO resync get=0x2d8 put=0x270 dist=0xfff98
+[rsx] XXV-FRAME present flip=12 color=0x202848 tex=0x84f0000 draws=36
+[rsx] XV flip #12 guest=36 diag=0 draws=36 shaders=0 tex=0 methods=26 packets=13 1280x720
+[gcm] XXIV-B guest put=0x2d8 get=0x270
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XXV-FRAME present flip=13 color=0x202848 tex=0x84f0000 draws=39
+[rsx] XV flip #13 guest=39 diag=0 draws=39 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
-[rsx] XV-N FIFO resync get=0x2c0 put=0x268 dist=0xfffa8
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=14 color=0x403828 tex=0x84f0000 draws=14
-[rsx] XV flip #14 guest=14 diag=0 draws=14 shaders=0 tex=0 methods=22 packets=11 1280x720
-[gcm] XXIV-B guest put=0x2c0 get=0x268
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=15 color=0x403828 tex=0x84f0000 draws=15
-[rsx] XV flip #15 guest=15 diag=0 draws=15 shaders=0 tex=0 methods=22 packets=11 1280x720
-[rsx] XV-N FIFO resync get=0x318 put=0x2c0 dist=0xfffa8
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=16 color=0x402020 tex=0x84f0000 draws=16
-[rsx] XV flip #16 guest=16 diag=0 draws=16 shaders=0 tex=0 methods=22 packets=11 1280x720
-[gcm] XXIV-B guest put=0x318 get=0x2c0
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=17 color=0x402020 tex=0x84f0000 draws=17
-[rsx] XV flip #17 guest=17 diag=0 draws=17 shaders=0 tex=0 methods=22 packets=11 1280x720
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=18 color=0x204028 tex=0x84f0000 draws=18
-[rsx] XV flip #18 guest=18 diag=0 draws=18 shaders=0 tex=0 methods=22 packets=11 1280x720
-[gcm] XXIV-B guest put=0x370 get=0x318
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=19 color=0x204028 tex=0x84f0000 draws=19
-[rsx] XV flip #19 guest=19 diag=0 draws=19 shaders=0 tex=0 methods=22 packets=11 1280x720
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=20 color=0x202848 tex=0x84f0000 draws=20
-[rsx] XV flip #20 guest=20 diag=0 draws=20 shaders=0 tex=0 methods=22 packets=11 1280x720
-[gcm] XXIV-B guest put=0x3c8 get=0x370
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XV flip #21 guest=21 diag=0 draws=21 shaders=0 tex=0 methods=22 packets=11 1280x720
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XV flip #22 guest=22 diag=0 draws=22 shaders=0 tex=0 methods=22 packets=11 1280x720
-[gcm] XXIV-B guest put=0x420 get=0x3c8
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XV flip #23 guest=23 diag=0 draws=23 shaders=0 tex=0 methods=22 packets=11 1280x720
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XV flip #24 guest=24 diag=0 draws=24 shaders=0 tex=0 methods=22 packets=11 1280x720
-[gcm] XXIV-B guest put=0x478 get=0x420
-[rsx] XV flip #25 guest=25 diag=0 draws=25 shaders=0 tex=0 methods=22 packets=11 1280x720
-[rsx] XV flip #26 guest=26 diag=0 draws=26 shaders=0 tex=0 methods=22 packets=11 1280x720
-[rsx] XV flip #27 guest=27 diag=0 draws=27 shaders=0 tex=0 methods=22 packets=11 1280x720
-[rsx] XV flip #28 guest=28 diag=0 draws=28 shaders=0 tex=0 methods=22 packets=11 1280x720
-[rsx] XV flip #29 guest=29 diag=0 draws=29 shaders=0 tex=0 methods=22 packets=11 1280x720
-[rsx] XV flip #30 guest=30 diag=0 draws=30 shaders=0 tex=0 methods=22 packets=11 1280x720
-[rsx] XV flip #31 guest=31 diag=0 draws=31 shaders=0 tex=0 methods=22 packets=11 1280x720
-[rsx] XV flip #32 guest=32 diag=0 draws=32 shaders=0 tex=0 methods=22 packets=11 1280x720
+[rsx] XV-N FIFO resync get=0x340 put=0x2d8 dist=0xfff98
+[rsx] XXV-FRAME present flip=14 color=0x403828 tex=0x84f0000 draws=42
+[rsx] XV flip #14 guest=42 diag=0 draws=42 shaders=0 tex=0 methods=26 packets=13 1280x720
+[gcm] XXIV-B guest put=0x340 get=0x2d8
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XXV-FRAME present flip=15 color=0x403828 tex=0x84f0000 draws=45
+[rsx] XV flip #15 guest=45 diag=0 draws=45 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XV-N FIFO resync get=0x3a8 put=0x340 dist=0xfff98
+[rsx] XXV-FRAME present flip=16 color=0x402020 tex=0x84f0000 draws=48
+[rsx] XV flip #16 guest=48 diag=0 draws=48 shaders=0 tex=0 methods=26 packets=13 1280x720
+[gcm] XXIV-B guest put=0x3a8 get=0x340
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XXV-FRAME present flip=17 color=0x402020 tex=0x84f0000 draws=51
+[rsx] XV flip #17 guest=51 diag=0 draws=51 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XXV-FRAME present flip=18 color=0x204028 tex=0x84f0000 draws=54
+[rsx] XV flip #18 guest=54 diag=0 draws=54 shaders=0 tex=0 methods=26 packets=13 1280x720
+[gcm] XXIV-B guest put=0x410 get=0x3a8
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XXV-FRAME present flip=19 color=0x204028 tex=0x84f0000 draws=57
+[rsx] XV flip #19 guest=57 diag=0 draws=57 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XXV-FRAME present flip=20 color=0x202848 tex=0x84f0000 draws=60
+[rsx] XV flip #20 guest=60 diag=0 draws=60 shaders=0 tex=0 methods=26 packets=13 1280x720
+[gcm] XXIV-B guest put=0x478 get=0x410
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XV flip #21 guest=63 diag=0 draws=63 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XV flip #22 guest=66 diag=0 draws=66 shaders=0 tex=0 methods=26 packets=13 1280x720
+[gcm] XXIV-B guest put=0x4e0 get=0x478
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XV flip #23 guest=69 diag=0 draws=69 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000
+[rsx] XV flip #24 guest=72 diag=0 draws=72 shaders=0 tex=0 methods=26 packets=13 1280x720
+[gcm] XXIV-B guest put=0x548 get=0x4e0
+[rsx] XV flip #25 guest=75 diag=0 draws=75 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV flip #26 guest=78 diag=0 draws=78 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV flip #27 guest=81 diag=0 draws=81 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV flip #28 guest=84 diag=0 draws=84 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV flip #29 guest=87 diag=0 draws=87 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV flip #30 guest=90 diag=0 draws=90 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV flip #31 guest=93 diag=0 draws=93 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV flip #32 guest=96 diag=0 draws=96 shaders=0 tex=0 methods=26 packets=13 1280x720
 [rsx] XV-H resize 1280x729 rtv=ok
 [rsx] XV-H resize 1280x729 rtv=ok
 [rsx] XV-H resize 1280x729 rtv=ok
@@ -384,19 +396,19 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XV-H resize 1280x729 rtv=ok
 [time] XXIII-K ppu=1024 spu=768 rsx_flips=127 phase=0
 [time] XXIII-K ppu=2048 spu=1536 rsx_flips=255 phase=0
-[rsx] XV flip #257 guest=257 diag=0 draws=257 shaders=0 tex=0 methods=22 packets=11 1280x729
+[rsx] XV flip #257 guest=771 diag=0 draws=771 shaders=0 tex=0 methods=26 packets=13 1280x729
 [time] XXIII-K ppu=3072 spu=2304 rsx_flips=383 phase=0
 [time] XXIII-K ppu=4096 spu=3072 rsx_flips=511 phase=0
-[rsx] XV flip #513 guest=513 diag=0 draws=513 shaders=0 tex=0 methods=22 packets=11 1280x729
+[rsx] XV flip #513 guest=1539 diag=0 draws=1539 shaders=0 tex=0 methods=26 packets=13 1280x729
 [time] XXIII-K ppu=5120 spu=3840 rsx_flips=639 phase=0
 [time] XXIII-K ppu=6144 spu=4608 rsx_flips=767 phase=0
-[rsx] XV flip #769 guest=769 diag=0 draws=769 shaders=0 tex=0 methods=22 packets=11 1280x729
+[rsx] XV flip #769 guest=2305 diag=0 draws=2305 shaders=0 tex=0 methods=26 packets=13 1280x729
 [time] XXIII-K ppu=7168 spu=5376 rsx_flips=895 phase=0
 [time] XXIII-K ppu=8192 spu=6144 rsx_flips=1023 phase=0
-[rsx] XV flip #1025 guest=1025 diag=0 draws=1025 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #1281 guest=1281 diag=0 draws=1281 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #1537 guest=1537 diag=0 draws=1537 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #1793 guest=1793 diag=0 draws=1793 shaders=0 tex=0 methods=22 packets=11 1280x729
+[rsx] XV flip #1025 guest=3073 diag=0 draws=3073 shaders=0 tex=0 methods=26 packets=13 1280x729
+[rsx] XV flip #1281 guest=3841 diag=0 draws=3841 shaders=0 tex=0 methods=26 packets=13 1280x729
+[rsx] XV flip #1537 guest=4609 diag=0 draws=4609 shaders=0 tex=0 methods=26 packets=13 1280x729
+[rsx] XV flip #1793 guest=5377 diag=0 draws=5377 shaders=0 tex=0 methods=26 packets=13 1280x729
 [ps3] XXV-L sticky BREAK 0x33723c -> 0x33727c (hits=3)
 [ps3] Phase XI region-ban 0x337000 (nrban=2)
 [ps3] XXV-L sticky BREAK 0x33723c -> 0x33727c (hits=3)
@@ -405,24 +417,18 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] XXV-L sticky BREAK 0x33723c -> 0x33727c (hits=3)
 [ps3] XXV-L sticky BREAK 0x33723c -> 0x33727c (hits=3)
 [ps3] XXV-L sticky BREAK 0x33723c -> 0x33727c (hits=3)
-[rsx] XV flip #2049 guest=2049 diag=0 draws=2049 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #2305 guest=2305 diag=0 draws=2305 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #2561 guest=2561 diag=0 draws=2561 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #2817 guest=2817 diag=0 draws=2817 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #3073 guest=3073 diag=0 draws=3073 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #3329 guest=3329 diag=0 draws=3329 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #3585 guest=3585 diag=0 draws=3585 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #3841 guest=3841 diag=0 draws=3841 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #4097 guest=4097 diag=0 draws=4097 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #4353 guest=4353 diag=0 draws=4353 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #4609 guest=4609 diag=0 draws=4609 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #4865 guest=4865 diag=0 draws=4865 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #5121 guest=5121 diag=0 draws=5121 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #5377 guest=5377 diag=0 draws=5377 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #5633 guest=5633 diag=0 draws=5633 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #5889 guest=5889 diag=0 draws=5889 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #6145 guest=6145 diag=0 draws=6145 shaders=0 tex=0 methods=22 packets=11 1280x729
-[rsx] XV flip #6401 guest=6401 diag=0 draws=6401 shaders=0 tex=0 methods=22 packets=11 1280x729
+[rsx] XV flip #2049 guest=6145 diag=0 draws=6145 shaders=0 tex=0 methods=26 packets=13 1280x729
+[rsx] XV flip #2305 guest=6913 diag=0 draws=6913 shaders=0 tex=0 methods=26 packets=13 1280x729
+[rsx] XV flip #2561 guest=7681 diag=0 draws=7681 shaders=0 tex=0 methods=26 packets=13 1280x729
+[rsx] XV flip #2817 guest=8449 diag=0 draws=8449 shaders=0 tex=0 methods=26 packets=13 1280x729
+[rsx] XV flip #3073 guest=9217 diag=0 draws=9217 shaders=0 tex=0 methods=26 packets=13 1280x729
+[rsx] XV flip #3329 guest=9985 diag=0 draws=9985 shaders=0 tex=0 methods=26 packets=13 1280x729
+[rsx] XV flip #3585 guest=10753 diag=0 draws=10753 shaders=0 tex=0 methods=26 packets=13 1280x729
+[rsx] XV flip #3841 guest=11521 diag=0 draws=11521 shaders=0 tex=0 methods=26 packets=13 1280x729
+[rsx] XV flip #4097 guest=12289 diag=0 draws=12289 shaders=0 tex=0 methods=26 packets=13 1280x729
+[rsx] XV flip #4353 guest=13057 diag=0 draws=13057 shaders=0 tex=0 methods=26 packets=13 1280x729
+[rsx] XV flip #4609 guest=13825 diag=0 draws=13825 shaders=0 tex=0 methods=26 packets=13 1280x729
+[rsx] XV flip #4865 guest=14593 diag=0 draws=14593 shaders=0 tex=0 methods=26 packets=13 1280x729
 [rsx] window closed by user — exiting
 [ps3rt] force exit
 
