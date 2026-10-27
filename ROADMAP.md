@@ -1,165 +1,52 @@
 # PPSX33 Roadmap
 
-This is the **working plan**. Status comes from source and GOW3 run logs, not marketing.
-External AI audits are **leads only**: accept what matches code and logs.
+Evidence-based status. AI audits are leads only.
 
-Legend: **Done** · **Partial** · **In progress** · **Blocked** · **Not started**
+Legend: **Done** · **Partial** · **In progress** · **Blocked**
 
----
-
-## How to read this document
-
-1. **Facts** = observed in logs or source.
-2. **Inferences** = likely causes.
-3. **Actions** = next engineering steps.
-4. A diagnostic triangle is not game rendering.
-
----
-
-## Current evidence (GOW3)
-
-| Observation | Status |
-| --- | --- |
-| Lift: translated count can match instruction count (one run: unimplemented 0) | Fact |
-| D3D11 window, flips advance | Fact |
-| GCM control / labels / local alloc | Fact |
-| FIFO method counts small after JUMP fix | Fact |
-| Draws still inject/seed; shaders=0 in logs | Fact |
-| Sticky BREAK / wild-pc recovery | Fact |
-| PRX UNKNOWN NIDs (reduced, not eliminated) | Fact |
-| Title meshes / textures / menus on screen | **Not observed** |
-
-**Inference:** Host present and HLE skeleton work; title GCM and boot control flow are incomplete.
-
----
-
-## GUI controller (native C#)
-
-| Item | Status | Notes |
-| --- | --- | --- |
-| Replace controller WebView2 page with WinForms/GDI+ | Done | Native `ControllerControl.cs`; HTML page removed |
-| Controller shell, buttons, D-pad, shoulders and labels | Implemented | Custom gradient drawing and surface details |
-| Analog stick movement and pulsing glow | Implemented | Timer-driven animation with aspect-ratio-safe scaling |
-| Keyboard rebinding, reset, JSON import/export | Implemented | Existing `KeyMap.cs` defaults retained |
-| Persist settings and write `output/pad_map.json` | Implemented | Save action integrated with GUI |
-| Release build and manual interaction/DPI test | Pending | Run local `dotnet publish`; test resize, rebind/cancel, import/export and build-lock |
-## A. Host product / packaging
-
-| Item | Status | Action |
-| --- | --- | --- |
-| GUI load / decompile / build | Done | |
-| Prebuilt `ps3rt.dll` / `.lib` | Partial | CMake builds DLL |
-| Game build must not re-link empty DLL | **In progress** | Skip `LINK ps3rt.dll` when prebuilt; link EXE to `ps3rt.lib` only |
-| `dist/runtime` without `.cpp` | Done | Sources stay in repo |
-| `dist/runtime` without `.md` | In progress | Do not copy README |
-| Headers in `dist/runtime` | **Required** | See below |
-| `redist/` Visual Studio notes | Done | Native WinForms GUI has no browser runtime dependency |
-| No bundled compiler tree | Done | System VS |
-
-### Why headers cannot all disappear into the DLL
-
-Lifted game `.cpp` files `#include` `ppu_runtime.h`, `ppu_runtime_run.h`, `nid_table.h`, and related `.inl` content at **compile time**.
-
-A DLL holds **compiled** code, not include text. Options:
-
-1. Ship headers next to the prebuilt DLL (current correct model).
-2. Change the lifter so generated code does not include those headers (large design change).
-
-Amalgamating headers into fewer `.h` files is optional cleanup; it does not remove the need for headers.
-
----
-
-## B. PPU / lift / execution
-
-| Item | Status | Action |
-| --- | --- | --- |
-| ELF load | Done | |
-| Lift to chunks | Partial | Title-dependent |
-| VMX / complex ops | Partial | Validate against faults |
-| Wild-pc / sticky BREAK | Partial | Trace; reduce silent recovery |
-| TOC / OPD | Partial | |
-
-**AI lead:** truthful PPU translation — **valid**. Prefer log-driven fixes over full rewrites.
-
----
-
-## C. LV2 / PRX / modules
-
-| Item | Status | Action |
-| --- | --- | --- |
-| Syscalls | Partial | Expand from failing paths |
-| NID table | Partial | Add NIDs from **log UNKNOWN lines** |
-| cellGcmSys HLE | Partial | |
-| sysmodule / fs / game / sysutil | Partial | |
-| Full PRX ELF | Partial | |
-
----
-
-## D. RSX / GCM / rendering (priority)
-
-| Item | Status | Action |
-| --- | --- | --- |
-| D3D11 present | Done | |
-| FIFO JUMP/CALL | Done | |
-| Surface / CLEAR | Done | |
-| BEGIN / DRAW_ARRAYS | Done | |
-| Present without diagnostic overwrite | Done | |
-| Inject seed triangle | Partial | Diagnostic only |
-| Multi-attr VA / textures | Partial | |
-| SCE VP/FP HLSL | Partial | |
-| **Title GCM stream** | **Blocked** | Needs boot/HLE so PUT carries game methods |
-| Tile / zcull | Not started | |
-
-### Rendering truth ladder
-
-1. Non-inject methods in log (not fixed inject packet counts).
-2. VA/IB/tex from game memory.
-3. Frames differ from seed triangle.
-4. Shader binds affect output.
-5. Menu / gameplay stable frames.
-
-**AI lead:** diagnostic draws can hide missing geometry — **correct**.
-
----
-
-## E. SPU / MFC / SPURS
+## Packaging / UI
 
 | Item | Status |
 | --- | --- |
-| Coarse interpreter | Partial |
-| DMA / SPURS depth | Partial / later |
+| Simple C# controller mapping (no WebView, no native DLL, no animations) | Done |
+| Native `PPSX33ControllerNative` removed from CMake | Done |
+| `dist/runtime` headers/inl only (no full source tree copy) | Done |
+| Prebuilt `ps3rt` when built | Partial (game links prebuilt path) |
 
----
-
-## F. Audio / pad / save
+## P0 — PPU first-fault sticky BREAK
 
 | Item | Status |
 | --- | --- |
-| waveOut / pad / save | Partial |
-| HTML/WebView2 controller studio | Implemented | SVG controller, responsive binding grid, keyboard rebinding, JSON import/export, reset and save |
+| Capture fault snapshot on sticky BREAK | Done |
+| No region-ban / stride / chunk roulette on sticky path | Done |
+| `PS3RT_STRICT_FAULT=1` halts instead of inventing PC | Done |
+| Soft mode: LR-only continuation or halt | Done |
 
----
+## P0 — FIFO GET after accept
 
-## Recommended order
+| Item | Status |
+| --- | --- |
+| Do not force GET=PUT on large gap | Done |
+| Inject path does not force GET=PUT; uses RSX consumer GET | Done |
+| Progress path syncs GET from `ps3rt_rsx_get_get()` after flush | Done |
 
-1. **Packaging** — prebuilt DLL path: never link empty `ps3rt.dll`; only game objects + `ps3rt.lib`.
-2. **Boot / NID** — sticky BREAK + top UNKNOWN NIDs from latest log.
-3. **Guest GCM proof** — first non-inject DRAW.
-4. **Textures / multi-attr** when methods appear.
-5. **SPU** after interactive frames exist.
+## P1 — Guest draw without inject seed
 
----
+| Item | Status |
+| --- | --- |
+| Inject seed **off** by default | Done |
+| Enable diagnostic seed with `PS3RT_INJECT_SEED=1` | Done |
+| Title-authored GCM still required for real meshes | Blocked on boot/HLE |
 
-## Verification
+## Next
 
-- [ ] Host `ps3rt.dll` links cleanly
-- [ ] Game log: `PREBUILT ps3rt.dll (skip link)` then successful `LINK <game>.exe`
-- [ ] `dist/runtime`: dll, lib, headers/inl only
-- [ ] No nid=0 UNKNOWN spam
-- [ ] Later: non-inject DRAW in log
+1. Use first-fault sticky log to fix originating branch/import.
+2. When guest PUT advances, verify non-inject DRAW in log.
+3. Expand NID/HLE only for call sites on the fault path.
 
----
+## Env flags
 
-## Shared ChatGPT link
-
-The share URL did not expose full message text without login here. Themes from prior audits are included only where they match PPSX33 evidence.
+| Variable | Meaning |
+| --- | --- |
+| `PS3RT_STRICT_FAULT=1` | Halt on sticky/unknown PC; no invented targets |
+| `PS3RT_INJECT_SEED=1` | Allow diagnostic clear+triangle inject |
