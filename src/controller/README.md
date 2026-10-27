@@ -1,26 +1,28 @@
 # Native C++ Controller Studio
 
-This directory contains an independently implemented Win32 controller-mapping studio for PPSX33. It is inspired by common emulator mapping workflows, but does not copy RPCS3 source code.
+PPSX33's controller mapping interface is an independently implemented native Win32 child window written in C++. It is embedded inside the existing WinForms **Controller** tab. It does not copy RPCS3 source code and does not launch a separate controller executable.
 
 ## Build
 
-On Windows with Visual Studio C++ build tools installed:
+On Windows with Visual Studio C++ build tools, CMake, and the .NET 8 SDK installed:
 
 ```powershell
 cmake -S . -B build
-cmake --build build --config Release --target PPSX33ControllerStudio
+cmake --build build --config Release --target PS3Recomp
 ```
 
-The executable is emitted to `build/dist/PPSX33ControllerStudio.exe`.
+The main UI remains `build/dist/PS3Recomp.exe`. The native controller implementation is a companion library, `build/dist/PPSX33ControllerNative.dll`; no `PPSX33ControllerStudio.exe` is generated. The existing CLI target is separate from the GUI and is not part of the controller implementation.
 
-## Controls
+## Mapping behavior
 
-- Click a mapping row, then press a keyboard key to rebind it.
+- Click a binding row, then press a keyboard key to rebind it.
 - Press Escape while capturing a key to cancel.
-- Click **SAVE MAP** to write `pad_map.json` next to the executable.
-- The JSON uses PPSX33's existing `KeyMap` property names and retains the current default keyboard bindings.
-- The UI uses a static dark theme; it does not use decorative animations.
+- Click **SAVE MAP** to save the map through the existing PPSX33 settings workflow.
+- Saved mappings are persisted to `%APPDATA%/PPSX33/settings.json` and, when a project is loaded, to that project's `output/pad_map.json`.
+- The JSON uses the existing `KeyMap` property names and current default keyboard bindings.
+- The interface uses a static dark theme without decorative animations.
+- The native window is hosted in the existing UI; no second controller process is created.
 
-## Integration status
+## Architecture
 
-This is a native C++ Win32 executable built alongside the existing application. It is not yet embedded in the existing C# WinForms Controller tab, and its save path is the executable directory rather than a selected project's `output/pad_map.json`. The existing GUI Controller tab and its settings workflow remain unchanged. A follow-up integration step is needed to host the native control in the tab and route saved mappings through the existing settings/runtime workflow.
+`ControllerStudio.cpp` exports a small C ABI for creating, resizing, updating, and destroying the child window. `MainForm.Controller.cs` hosts that child window and routes its saved JSON mapping to PPSX33's existing C# settings and project-output code. CMake builds the controller component as a DLL and makes the main GUI target depend on it.
