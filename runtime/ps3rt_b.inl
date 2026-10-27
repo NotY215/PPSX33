@@ -1041,8 +1041,18 @@ PS3RT_API void ps3rt_progress_hw(void) {
         }
         // XXIII-K: tighter RSX assist cadence (every 32 ticks)
         if ((s_n & 0x07) == 0) { // XXV-E: denser flip/present assist
-            uint32_t put = g_gcm_control ? rd_be32_guest(g_gcm_control + 0) : 0;
-            uint32_t get = g_gcm_control ? rd_be32_guest(g_gcm_control + 4) : 0;
+            uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000u;
+            uint32_t put = g_gcm_control ? (rd_be32_guest(g_gcm_control + 0) % fsz) : 0;
+            uint32_t get = g_gcm_control ? (rd_be32_guest(g_gcm_control + 4) % fsz) : 0;
+            {
+                uint32_t dist = (put >= get) ? (put - get) : (fsz - get + put);
+                if (dist > fsz / 2) {
+                    get = put;
+                    if (g_gcm_control) wr_be32_guest(g_gcm_control + 4, get);
+                    static int s_fix = 0;
+                    if (s_fix < 8) { ps3rt_log("[gcm] XV-N GET resync put=0x%x\n", put); ++s_fix; }
+                }
+            }
             // XXIV-B: only treat as real guest stream when put moves past minimal residual
             // XV-H: seed when FIFO stalled (put==get) OR still in residual range.
             // Real game stream only when put advances beyond get with substantial traffic.

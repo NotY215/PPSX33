@@ -1600,23 +1600,54 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
         }
         return true;
     }
-    // Texture unit 0
-    if (method == 0x1A00 || method == 0x1840) {
-        g_rsx.tex_offset = arg; g_rsx.tex_units_bound = 1; return true;
+    // XV-N: NV4097 texture units 0-3 (offset/format/address/control/filter/image_rect)
+    // Unit n base = 0x1A00 + n*0x20 (RPCS3 / psdevwiki)
+    if (method >= 0x1A00 && method <= 0x1A7C) {
+        uint32_t rel = method - 0x1A00;
+        uint32_t unit = rel / 0x20;
+        uint32_t reg = rel % 0x20;
+        if (unit < 4) {
+            if (reg == 0x00) { // OFFSET
+                if (unit == 0) { g_rsx.tex_offset = arg & 0x7FFFFFFF; g_rsx.tex_units_bound = 1; }
+                static int to=0; if(to<12){ps3rt_log("[rsx] XV-N TEX%u OFFSET=0x%x\n", unit, arg);++to;}
+                return true;
+            }
+            if (reg == 0x04) { // FORMAT
+                if (unit == 0) g_rsx.tex_format = arg;
+                return true;
+            }
+            if (reg == 0x08) { // ADDRESS
+                return true;
+            }
+            if (reg == 0x0C || reg == 0x10) { // CONTROL0/1
+                if (unit == 0 && reg == 0x0C) g_rsx.tex_pitch = arg;
+                return true;
+            }
+            if (reg == 0x14) { // FILTER
+                return true;
+            }
+            if (reg == 0x18) { // IMAGE_RECT: high=width, low=height (common)
+                if (unit == 0) {
+                    uint32_t w = (arg >> 16) & 0xFFFF;
+                    uint32_t h = arg & 0xFFFF;
+                    if (w) g_rsx.tex_width = w;
+                    if (h) g_rsx.tex_height = h;
+                }
+                return true;
+            }
+            if (reg == 0x1C) return true; // BORDER_COLOR
+        }
     }
-    if (method == 0x1A04 || method == 0x1844) {
-        g_rsx.tex_format = arg; return true;
-    }
-    if (method == 0x1A08 || method == 0x1848) {
+    if (method == 0x1840) { g_rsx.tex_offset = arg & 0x7FFFFFFF; g_rsx.tex_units_bound = 1; return true; }
+    if (method == 0x1844) { g_rsx.tex_format = arg; return true; }
+    if (method == 0x1848) {
         g_rsx.tex_width = (arg >> 16) & 0xFFFF;
         g_rsx.tex_height = arg & 0xFFFF;
         if (!g_rsx.tex_width) g_rsx.tex_width = 1;
         if (!g_rsx.tex_height) g_rsx.tex_height = 1;
         return true;
     }
-    if (method == 0x1A0C || method == 0x184C) {
-        g_rsx.tex_pitch = arg; return true;
-    }
+    if (method == 0x184C) { g_rsx.tex_pitch = arg; return true; }
     // Viewport / scissor
     if (method == 0x08C0) {
         g_rsx.viewport_w = (arg >> 16) ? (arg >> 16) : g_rsx.viewport_w; return true;
@@ -1707,7 +1738,7 @@ static void rsx_fifo_decode_word(uint8_t* mem, uint32_t method, uint32_t arg) {
         ++g_rsx.methods_this_frame;
         // Issue host draw when guest issues draw-class methods
         if (method == 0x1800 || method == 0x1808 || method == 0x1814 || method == 0x1810) {
-            { uint8_t* mm = mem ? mem : ps3rt_memory(); if (mm) rsx_paint_guest_color_buffer(mm); }
+            // XV-N: do not repaint diagnostic bars on every draw (destroys guest color)
             rsx_draw_host(mem);
             static int dg=0;
             if (dg < 16) {
@@ -1854,6 +1885,19 @@ static bool rsx_state_apply_method_p2(uint32_t method, uint32_t arg) {
         return true;
     }
     // Vertex attrib format: size/type in low bits
+    // XV-N: full NV4097_SET_VERTEX_DATA_ARRAY_OFFSET range (8 slots)
+    if (method >= 0x1680 && method <= 0x16BC && ((method & 3) == 0)) {
+        uint32_t slot = (method - 0x1680) / 4;
+        if (slot < 8) {
+            g_va_offset[slot] = arg;
+            static int svo = 0;
+            if (svo < 16) {
+                ps3rt_log("[rsx] XV-N VA%u OFFSET=0x%x\n", slot, arg);
+                ++svo;
+            }
+        }
+        return true;
+    }
     if (method >= 0x1740 && method <= 0x17BC && ((method & 3) == 0)) {
         uint32_t slot = (method - 0x1740) / 4;
         if (slot < 8) {
@@ -1874,12 +1918,27 @@ static void rsx_process_fifo(uint8_t* mem) {
     if (!mem || !g_rsx.fifo_addr || !g_rsx.fifo_size) return;
     uint32_t base = (uint32_t)(g_rsx.fifo_addr & 0xffffffffu);
     if (base == 0 || base >= 0x10000000u) return;
-    uint32_t put = g_rsx.put;
-    uint32_t get = g_rsx.get;
+    uint32_t fsz0 = g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000u;
+    uint32_t put = g_rsx.put % fsz0;
+    uint32_t get = g_rsx.get % fsz0;
+    g_rsx.put = put;
+    g_rsx.get = get;
     if (put == get) return;
-    // Bound walk; support method count in header (NV-style)
+    {
+        uint32_t dist = (put >= get) ? (put - get) : (fsz0 - get + put);
+        if (dist > (fsz0 / 2)) {
+            static int s_rs = 0;
+            if (s_rs < 8) {
+                ps3rt_log("[rsx] XV-N FIFO resync get=0x%x put=0x%x dist=0x%x
+", get, put, dist);
+                ++s_rs;
+            }
+            g_rsx.get = put;
+            return;
+        }
+    }
     uint32_t steps = 0;
-    const uint32_t kMax = 0x10000;
+    const uint32_t kMax = 0x800;
     while (get != put && steps < kMax) {
         uint32_t off = base + (get % (g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000u));
         if (off + 8u >= 0x10000000u) break;
@@ -1893,8 +1952,9 @@ static void rsx_process_fifo(uint8_t* mem) {
         (void)subch;
         // XV-B depth: JUMP / CALL / RETURN
         static uint32_t s_fifo_ret = 0;
-        if ((hdr & 0xE0000003u) == 0x20000000u || (hdr & 0x3) == 0x1) {
-            uint32_t target = hdr & 0x1FFFFFFCu;
+        if ((hdr & 0xE0000003u) == 0x20000000u) {
+            uint32_t fszj = g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000u;
+            uint32_t target = (hdr & 0x1FFFFFFCu) % fszj;
             get = target;
             g_rsx.get = get;
             ++g_rsx.packets_decoded;
@@ -1903,9 +1963,10 @@ static void rsx_process_fifo(uint8_t* mem) {
             if (jn < 12) { ps3rt_log("[rsx] XV-B JUMP -> 0x%x\n", target); ++jn; }
             continue;
         }
-        if ((hdr & 0x3) == 0x2) { // CALL
-            s_fifo_ret = (get + 4) % (g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000u);
-            uint32_t target = hdr & 0x1FFFFFFCu;
+        if ((hdr & 0xE0000003u) == 0x00000002u) { // CALL
+            uint32_t fszc = g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000u;
+            s_fifo_ret = (get + 4) % fszc;
+            uint32_t target = (hdr & 0x1FFFFFFCu) % fszc;
             get = target;
             g_rsx.get = get;
             ++g_rsx.packets_decoded;
@@ -1962,7 +2023,8 @@ PS3RT_API void ps3rt_rsx_set_color_surface(uint32_t offset, uint32_t w, uint32_t
 
 PS3RT_API void ps3rt_rsx_set_put(uint32_t put) {
     std::lock_guard<std::mutex> lk(g_rsx_mu);
-    g_rsx.put = put;
+    uint32_t fsz = g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000u;
+    g_rsx.put = put % fsz;
 }
 
 PS3RT_API uint32_t ps3rt_rsx_get_get(void) {
