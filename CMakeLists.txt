@@ -39,11 +39,13 @@ target_link_libraries(ps3_cli PRIVATE ps3core)
 # ------------------------------------------------------------------
 # Copy runtime sources + redist (VS install guide; no bundled compilers)
 # ------------------------------------------------------------------
+# dist/runtime: sources used by per-game MSVC build of ps3rt.dll (not a second app runtime).
+# Game builds compile these into output/ps3rt.dll; host tools use ps3core.dll only.
 add_custom_target(copy_runtime ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_SOURCE_DIR}/runtime
             ${CMAKE_BINARY_DIR}/dist/runtime
-    COMMENT "Copying runtime/ sources"
+    COMMENT "Copying runtime/ (inputs for per-game ps3rt.dll)"
 )
 
 # Ship redist/ next to the app (README + VS Community install notes).

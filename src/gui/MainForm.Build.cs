@@ -296,7 +296,27 @@ public sealed partial class MainForm
         try { ok = await Task.Run(() => work(_cts.Token)); }
         catch (Exception ex) { Append(ex.Message); }
         finally {
-            if (afterLift && ok) { _canBuild = true; _gfxUnlocked = true; _liftChunks = Math.Max(1, _liftChunks); Append("Lift chunks tracked: " + _liftChunks); }
+            if (afterLift && ok) {
+                _canBuild = true; _gfxUnlocked = true; _liftChunks = Math.Max(1, _liftChunks);
+                Append("Lift chunks tracked: " + _liftChunks);
+                try {
+                    string lr = Path.Combine(_projectDir ?? "", "codebase", "lift_report.txt");
+                    if (File.Exists(lr)) {
+                        Append("--- lift_report.txt ---");
+                        foreach (var line in File.ReadAllLines(lr))
+                            Append(line);
+                        Append("--- end lift_report ---");
+                    } else {
+                        string lr2 = Path.Combine(_projectDir ?? "", "lift_report.txt");
+                        if (File.Exists(lr2)) {
+                            Append("--- lift_report.txt ---");
+                            foreach (var line in File.ReadAllLines(lr2))
+                                Append(line);
+                            Append("--- end lift_report ---");
+                        }
+                    }
+                } catch (Exception ex) { Append("lift_report read failed: " + ex.Message); }
+            }
             if (afterBuild && ok) { _canCopy = true; _canRun = true; }
             string workName = status.Contains("Decompil", StringComparison.OrdinalIgnoreCase) ? "Decompiling" : status.Contains("Build", StringComparison.OrdinalIgnoreCase) ? "Building" : status.TrimEnd('\u2026', '.', ' ');
             Append(ok ? workName + " successful." : workName + " failed.");
