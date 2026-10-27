@@ -182,6 +182,11 @@ static const NidEntry kNidTable[] = {
     { 0xC47D0812, "cellSysutil", "cellSysutilRegisterCallback", 3 },
     { 0x9D98AFA0, "cellSysutil", "cellSysutilCheckCallback", 3 },
     { 0x189A74DA, "cellSysutil", "cellSysutilUnregisterCallback", 3 },
+    { 0x0BE2A25F, "cellResc", "cellRescSetSrc", 1 },
+    { 0xC9256EBA, "cellResc", "cellRescSetConvertAndFlip", 1 },
+    { 0xD128B541, "cellResc", "cellRescInit", 1 },
+    { 0x0D075BDD, "cellResc", "cellRescExit", 1 },
+
     // XV-L boot HLE NIDs
     { 0x40E895D3, "cellSysutil", "cellSysutilGetSystemParamInt", 7 },
     { 0x1E14A55D, "cellSysutil", "cellSysutilGetSystemParamInt_alt", 7 },

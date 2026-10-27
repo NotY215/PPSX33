@@ -1,3 +1,4 @@
+// XV-M: cases inlined into ps3rt_b.inl ps3rt_syscall (do not #include from game src)
 // XV-L: included inside ps3rt_syscall switch
 case 1: // getpid
     c->gpr[3] = 1; break;
