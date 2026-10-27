@@ -182,21 +182,39 @@ public sealed class ControllerControl : Control
     protected override void OnPaint(PaintEventArgs e)
     {
         base.OnPaint(e);
-        var g=e.Graphics; g.SmoothingMode=SmoothingMode.AntiAlias; g.InterpolationMode=InterpolationMode.HighQualityBicubic;
-        g.TextRenderingHint=System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
-        g.Clear(Bg);
         float scale = Math.Min(ClientSize.Width / (float)W, ClientSize.Height / (float)H);
         if (scale <= 0) return;
         float ox = (ClientSize.Width - W * scale) * .5f;
         float oy = (ClientSize.Height - H * scale) * .5f;
-        g.TranslateTransform(ox, oy);
-        g.ScaleTransform(scale, scale);
-        using(var b=new SolidBrush(Bg)) g.FillRectangle(b,0,0,W,H);
-        using(var glow=new SolidBrush(Color.FromArgb(18,0,229,255))) g.FillEllipse(glow,280,-210,640,500);
-        using(var grid=new Pen(Color.FromArgb(18,29,52,89),1)) { for(int x=0;x<W;x+=32)g.DrawLine(grid,x,0,x,H); for(int y=0;y<H;y+=32)g.DrawLine(grid,0,y,W,y); }
-        _hits.Clear();
-        DrawHeader(g); DrawMappingGrid(g); DrawController(g);
-        if(_rebinding!=null) DrawRebindOverlay(g);
+
+        // Render the entire UI in its native 1200x900 coordinate space first.
+        // TextRenderer draws in device coordinates and ignores Graphics transforms;
+        // drawing to a virtual canvas prevents labels from drifting away from buttons.
+        using var canvas = new Bitmap(W, H);
+        using (var g = Graphics.FromImage(canvas))
+        {
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+            g.Clear(Bg);
+            using (var b = new SolidBrush(Bg)) g.FillRectangle(b, 0, 0, W, H);
+            using (var glow = new SolidBrush(Color.FromArgb(18, 0, 229, 255))) g.FillEllipse(glow, 280, -210, 640, 500);
+            using (var grid = new Pen(Color.FromArgb(18, 29, 52, 89), 1))
+            {
+                for (int x = 0; x < W; x += 32) g.DrawLine(grid, x, 0, x, H);
+                for (int y = 0; y < H; y += 32) g.DrawLine(grid, 0, y, W, y);
+            }
+            _hits.Clear();
+            DrawHeader(g);
+            DrawController(g);
+            DrawMappingGrid(g);
+            if (_rebinding != null) DrawRebindOverlay(g);
+        }
+
+        e.Graphics.SmoothingMode = SmoothingMode.HighQuality;
+        e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+        e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        e.Graphics.DrawImage(canvas, new RectangleF(ox, oy, W * scale, H * scale));
     }
 
     private void DrawHeader(Graphics g)
@@ -372,7 +390,7 @@ public sealed class ControllerControl : Control
         using var h=new Font("Segoe UI",9,FontStyle.Bold);
         using var headerBrush=new SolidBrush(Color.FromArgb(110,190,220));
         g.DrawString("BINDINGS  /  CLICK A ROW OR A CONTROLLER CONTROL TO CAPTURE A KEY",h,headerBrush,28,470);
-        int cols=3,rows=9;float x0=28,y0=492,cw=376,rh=41;
+        const int rows = 9;float x0=28,y0=492,cw=376,rh=41;
         for(int i=0;i<Order.Length;i++)
         {
             string id=Order[i];int col=i/rows,row=i%rows;float x=x0+col*cw,y=y0+row*rh;var r=new RectangleF(x,y,cw-8,rh-5);
