@@ -10,7 +10,6 @@ public partial class MainForm
 {
     private Panel? _controllerPanel;
     private TabPage? _controllerTab;
-    private bool _controllerHiddenAfterBuild;
 
     void BuildControllerTab()
     {
