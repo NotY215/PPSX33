@@ -508,18 +508,33 @@ public sealed partial class MainForm : Form
         "  Future API    OpenGL 3.3 / 2.1 fallback\r\n";
 
     static string BuildRoadmapText() =>
-        "PPSX33 — Roadmap\r\n" +
+        "PPSX33 — Roadmap / Live GUI Status\r\n" +
         "========================================\r\n\r\n" +
-        "PHASE 1 — I–XXII core pipeline (TESTING / DONE bands)\r\n" +
-        "XXIII  Execution reality\r\n" +
-        "XXIV   Boot-to-first-pixels\r\n" +
-        "XXV    Truthful exec and guest frames (ACTIVE)\r\n" +
-        "  A–J  services / E2E checklist\r\n" +
-        "  K    guest color buffer → presentable frames\r\n" +
-        "  L    wild-pc / sticky recovery\r\n" +
-        "XXVI   (planned) pure host UI polish + deeper RSX\r\n\r\n" +
-        "Workflow: Decrypt/Load → Decompile → Build → Copy → Run\r\n" +
-        "See ROADMAP.md and roadmap/*.md for full subphases.\r\n";
+        "CURRENT GUI WORK\r\n" +
+        "  Native C# / WinForms controller UI   IMPLEMENTED\r\n" +
+        "  WebView2 controller dependency       REMOVED\r\n" +
+        "  Controller HTML asset                REMOVED\r\n" +
+        "  Controller body / buttons / D-pad    GDI+ rendered\r\n" +
+        "  Stick movement + glow animation      IMPLEMENTED\r\n" +
+        "  Key rebinding / Esc cancel            IMPLEMENTED\r\n" +
+        "  JSON import / export                  IMPLEMENTED\r\n" +
+        "  Save settings + output/pad_map.json   IMPLEMENTED\r\n" +
+        "  Compile + visual runtime validation   PENDING LOCAL BUILD\r\n\r\n" +
+        "CORE RECOMPILER ROADMAP\r\n" +
+        "  I–XXII  Core pipeline                  TESTING / DONE BANDS\r\n" +
+        "  XXIII   Execution reality              PARTIAL\r\n" +
+        "  XXIV    Boot-to-first-pixels           PARTIAL\r\n" +
+        "  XXV     Truthful execution / frames    ACTIVE\r\n" +
+        "    A–J   Services / end-to-end checklist\r\n" +
+        "    K     Guest color buffer → frames    IN PROGRESS\r\n" +
+        "    L     Wild-PC / sticky recovery      INVESTIGATING\r\n" +
+        "  XXVI    Host UI polish + deeper RSX    PLANNED / ONGOING\r\n\r\n" +
+        "KNOWN VALIDATION GATE\r\n" +
+        "  Build the Release GUI locally and fix all compiler errors before marking the UI validated.\r\n" +
+        "  Then test resize / DPI, rebind & cancel, import/export, save/reload, and build-lock workflow.\r\n\r\n" +
+        "WORKFLOW\r\n" +
+        "  Decrypt / Load → Decompile → Build → Copy → Run\r\n" +
+        "  Repository roadmap: ROADMAP.md and roadmap/*.md\r\n";
 
     void CleanupAllProjectWorkFolders()
     {
