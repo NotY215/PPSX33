@@ -1,6 +1,5 @@
+using System.Runtime.InteropServices;
 using System.Text.Json;
-using Microsoft.Web.WebView2.Core;
-using Microsoft.Web.WebView2.WinForms;
 
 namespace PS3Recomp.Gui;
 
@@ -8,79 +7,109 @@ public sealed partial class MainForm
 {
     private Panel? _controllerPanel;
     private TabPage? _controllerTab;
-    private WebView2? _controllerView;
+    private IntPtr _nativeController;
+    private NativeControllerMapCallback? _nativeControllerCallback;
+
+    [UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Unicode)]
+    private delegate void NativeControllerMapCallback([MarshalAs(UnmanagedType.LPWStr)] string json);
+
+    private static class NativeController
+    {
+        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode)]
+        internal static extern IntPtr PPSX33_ControllerCreate(
+            IntPtr parent, NativeControllerMapCallback callback,
+            [MarshalAs(UnmanagedType.LPWStr)] string initialJson);
+
+        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall)]
+        internal static extern void PPSX33_ControllerResize(IntPtr window, int width, int height);
+
+        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode)]
+        internal static extern void PPSX33_ControllerSetMap([MarshalAs(UnmanagedType.LPWStr)] string json);
+
+        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall)]
+        internal static extern void PPSX33_ControllerDestroy(IntPtr window);
+    }
 
     void BuildControllerTab()
     {
         if (_controllerTab != null) return;
 
-        _controllerPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(4, 8, 16), Padding = new Padding(0) };
-        _controllerView = new WebView2 { Dock = DockStyle.Fill, DefaultBackgroundColor = Color.FromArgb(4, 8, 16) };
-        _controllerView.CoreWebView2InitializationCompleted += (_, e) =>
+        _controllerPanel = new Panel
         {
-            if (!e.IsSuccess || _controllerView?.CoreWebView2 == null)
-            {
-                Append("Controller HTML initialization failed: " + e.InitializationException?.Message);
-                return;
-            }
-            var core = _controllerView.CoreWebView2;
-            core.Settings.AreDefaultContextMenusEnabled = false;
-            core.Settings.AreDevToolsEnabled = false;
-            core.WebMessageReceived += ControllerWebMessageReceived;
-            string htmlPath = Path.Combine(AppContext.BaseDirectory, "www", "controller.html");
-            if (File.Exists(htmlPath))
-                core.Navigate(new Uri(htmlPath).AbsoluteUri);
-            else
-                Append("Controller HTML file not found: " + htmlPath);
+            Dock = DockStyle.Fill,
+            BackColor = Color.FromArgb(7, 13, 24),
+            Padding = Padding.Empty
         };
-        _controllerView.NavigationCompleted += async (_, e) =>
+        _controllerPanel.HandleCreated += (_, _) => InitializeNativeController();
+        _controllerPanel.Resize += (_, _) =>
         {
-            if (!e.IsSuccess || _controllerView?.CoreWebView2 == null) return;
-            string json = JsonSerializer.Serialize(_settings.KeyMap ?? KeyMap.Defaults());
-            await _controllerView.CoreWebView2.ExecuteScriptAsync("window.loadMap && window.loadMap(" + json + ");");
+            if (_nativeController != IntPtr.Zero && _controllerPanel != null)
+                NativeController.PPSX33_ControllerResize(
+                    _nativeController, _controllerPanel.ClientSize.Width, _controllerPanel.ClientSize.Height);
         };
-        _controllerPanel.Controls.Add(_controllerView);
-        _controllerTab = new TabPage("Controller") { BackColor = Color.FromArgb(4, 8, 16), Padding = new Padding(0) };
+
+        _controllerTab = new TabPage("Controller")
+        {
+            BackColor = Color.FromArgb(7, 13, 24),
+            Padding = Padding.Empty
+        };
         _controllerTab.Controls.Add(_controllerPanel);
         _tabs.TabPages.Add(_controllerTab);
-        _ = InitializeControllerWebViewAsync();
     }
 
-    private async Task InitializeControllerWebViewAsync()
+    private void InitializeNativeController()
     {
+        if (_nativeController != IntPtr.Zero || _controllerPanel == null || _controllerPanel.IsDisposed)
+            return;
+
         try
         {
-            if (_controllerView != null)
-                await _controllerView.EnsureCoreWebView2Async();
+            _nativeControllerCallback = OnNativeControllerMapSaved;
+            string initialMap = JsonSerializer.Serialize(_settings.KeyMap ?? KeyMap.Defaults());
+            _nativeController = NativeController.PPSX33_ControllerCreate(
+                _controllerPanel.Handle, _nativeControllerCallback, initialMap);
+            if (_nativeController == IntPtr.Zero)
+            {
+                Append("Native controller studio failed to create its child window.");
+                return;
+            }
+
+            NativeController.PPSX33_ControllerResize(
+                _nativeController, _controllerPanel.ClientSize.Width, _controllerPanel.ClientSize.Height);
+            Append("Native C++ Controller Studio ready.");
         }
-        catch (Exception ex) { Append("Controller WebView2 failed to initialize: " + ex.Message); }
+        catch (DllNotFoundException ex)
+        {
+            Append("Native controller library missing: " + ex.Message);
+        }
+        catch (EntryPointNotFoundException ex)
+        {
+            Append("Native controller library exports are incomplete: " + ex.Message);
+        }
+        catch (Exception ex)
+        {
+            Append("Native controller initialization failed: " + ex.Message);
+        }
     }
 
-    private void ControllerWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+    private void OnNativeControllerMapSaved(string json)
     {
         try
         {
-            using var doc = JsonDocument.Parse(e.WebMessageAsJson);
-            string type = doc.RootElement.TryGetProperty("type", out var t) ? t.GetString() ?? "" : "";
-            if (!doc.RootElement.TryGetProperty("map", out var mapElement)) return;
-            var imported = JsonSerializer.Deserialize<KeyMap>(mapElement.GetRawText());
+            var imported = JsonSerializer.Deserialize<KeyMap>(json);
             if (imported == null) return;
+
             _settings.KeyMap = imported;
-            if (type == "changed")
-            {
-                SaveSettings();
-                _controllerMapped = false;
-            }
-            else if (type == "save")
-            {
-                SaveSettings();
-                WritePadMapForRuntime();
-                _controllerMapped = true;
-                Append("Controller mapping saved from HTML Controller Studio.");
-                UpdateButtons();
-            }
+            SaveSettings();
+            WritePadMapForRuntime();
+            _controllerMapped = true;
+            Append("Controller mapping saved from native C++ Controller Studio.");
+            UpdateButtons();
         }
-        catch (Exception ex) { Append("Controller message rejected: " + ex.Message); }
+        catch (Exception ex)
+        {
+            Append("Controller mapping could not be saved: " + ex.Message);
+        }
     }
 
     void WritePadMapForRuntime()
@@ -92,6 +121,7 @@ public sealed partial class MainForm
                 Append("Key map saved to settings; load a project to also write output/pad_map.json.");
                 return;
             }
+
             string outDir = Path.Combine(_projectDir, "output");
             Directory.CreateDirectory(outDir);
             var km = _settings.KeyMap ?? KeyMap.Defaults();
@@ -99,7 +129,10 @@ public sealed partial class MainForm
             File.WriteAllText(path, JsonSerializer.Serialize(km, new JsonSerializerOptions { WriteIndented = true }));
             Append("Wrote pad_map.json → " + path);
         }
-        catch (Exception ex) { Append("pad_map write failed: " + ex.Message); }
+        catch (Exception ex)
+        {
+            Append("pad_map write failed: " + ex.Message);
+        }
     }
 
     void HideControllerAfterBuild()
@@ -117,5 +150,13 @@ public sealed partial class MainForm
             Append("Controller tab closed — mapping locked for this build.");
         }
         catch { }
+    }
+
+    private void DisposeNativeController()
+    {
+        if (_nativeController == IntPtr.Zero) return;
+        try { NativeController.PPSX33_ControllerDestroy(_nativeController); } catch { }
+        _nativeController = IntPtr.Zero;
+        _nativeControllerCallback = null;
     }
 }
