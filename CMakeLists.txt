@@ -9,6 +9,12 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist)
+foreach(cfg DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
+    string(TOUPPER ${cfg} cfg_upper)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${cfg_upper} ${CMAKE_BINARY_DIR}/dist)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${cfg_upper} ${CMAKE_BINARY_DIR}/dist)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${cfg_upper} ${CMAKE_BINARY_DIR}/dist)
+endforeach()
 
 # ------------------------------------------------------------------
 # ps3core.dll  – ELF loader, PPU lifter, project manager, build driver
@@ -46,6 +52,7 @@ if(WIN32)
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
         ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
     )
+    target_link_libraries(PPSX33ControllerNative PRIVATE comdlg32)
     if(MSVC)
         target_compile_options(PPSX33ControllerNative PRIVATE /W4 /permissive-)
     endif()
