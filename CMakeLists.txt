@@ -31,20 +31,24 @@ if(WIN32)
 endif()
 
 # ------------------------------------------------------------------
-# Native C++ Controller Studio (Win32)
+# Native C++ Controller component (embedded in the single WinForms UI)
+# This is a DLL, not a standalone executable.
 # ------------------------------------------------------------------
 if(WIN32)
-    add_executable(PPSX33ControllerStudio WIN32
+    add_library(PPSX33ControllerNative SHARED
         src/controller/ControllerStudio.cpp
     )
-    target_compile_definitions(PPSX33ControllerStudio PRIVATE UNICODE _UNICODE)
-    set_target_properties(PPSX33ControllerStudio PROPERTIES
+    target_compile_definitions(PPSX33ControllerNative PRIVATE UNICODE _UNICODE)
+    set_target_properties(PPSX33ControllerNative PROPERTIES
+        PREFIX ""
+        OUTPUT_NAME "PPSX33ControllerNative"
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
     )
     if(MSVC)
-        target_compile_options(PPSX33ControllerStudio PRIVATE /W4 /permissive-)
+        target_compile_options(PPSX33ControllerNative PRIVATE /W4 /permissive-)
     endif()
-    message(STATUS "Native Controller Studio target enabled")
 endif()
 
 # ------------------------------------------------------------------
@@ -98,6 +102,9 @@ if(DOTNET_EXE)
     )
 
     add_dependencies(PS3Recomp ps3core copy_runtime)
+    if(TARGET PPSX33ControllerNative)
+        add_dependencies(PS3Recomp PPSX33ControllerNative)
+    endif()
 else()
     message(WARNING "dotnet not found on PATH – GUI target (PS3Recomp) will be skipped. Install .NET 8 SDK.")
 endif()
