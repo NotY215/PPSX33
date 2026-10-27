@@ -26,7 +26,7 @@ public sealed partial class MainForm
         [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode, ExactSpelling = true)]
         internal static extern void PPSX33_ControllerSetMap([MarshalAs(UnmanagedType.LPWStr)] string json);
 
-        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall)]
+        [DllImport("PPSX33ControllerNative.dll", CallingConvention = CallingConvention.StdCall, ExactSpelling = true)]
         internal static extern void PPSX33_ControllerDestroy(IntPtr window);
     }
 
