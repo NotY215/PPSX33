@@ -44,7 +44,7 @@ if(WIN32)
     add_library(PPSX33ControllerNative SHARED
         src/controller/ControllerStudio.cpp
     )
-    target_compile_definitions(PPSX33ControllerNative PRIVATE UNICODE _UNICODE)
+    target_compile_definitions(PPSX33ControllerNative PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
     set_target_properties(PPSX33ControllerNative PROPERTIES
         PREFIX ""
         OUTPUT_NAME "PPSX33ControllerNative"
