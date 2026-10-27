@@ -25,7 +25,7 @@ body{font-family:Inter,sans-serif;background-color:#040810;background-image:radi
 .btn-target{transition:all .15s ease}
 .btn-target.active-btn{fill:#00e5ff!important;filter:drop-shadow(0 0 12px #00e5ff)}
 .stick-cap{transition:transform .12s cubic-bezier(.25,1,.5,1),fill .15s,filter .15s;transform-box:fill-box;transform-origin:center}
-.stick-cap.pressed-l3,.stick-cap.pressed-r3{transform:scale(.9)!important;fill:#00e5ff!important;filter:drop-shadow(0 0 15px #00e5ff)}
+.stick-cap.pressed-l3,.stick-cap.pressed-r3{fill:#00e5ff!important;filter:drop-shadow(0 0 15px #00e5ff)}
 #lines-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
 .key-val{color:#fff;font-weight:700;font-size:.85rem}
 </style>
@@ -245,7 +245,7 @@ const DEFAULT_MAPPINGS = {
 'L2':{key:'Shift Right',code:'ShiftRight'},'L1':{key:'L',code:'KeyL'},'L3':{key:'Shift Left',code:'ShiftLeft'},
 'R2':{key:'Ctrl Right',code:'ControlRight'},'R1':{key:'R',code:'KeyR'},'R3':{key:'Ctrl Left',code:'ControlLeft'},
 'PS':{key:'Backspace',code:'Backspace'},
-'DPAD_UP':{key:'Num 8',code:'Numpad8'},'DPAD_LEFT':{key:'Num 4',code:'Numpad4'},'DPAD_RIGHT':{key:'Num 6',code:'Numpad6'},'DPAD_DOWN':{key:'Num 5',code:'Numpad5'},
+'DPAD_UP':{key:'NumPad8',code:'Numpad8'},'DPAD_LEFT':{key:'NumPad4',code:'Numpad4'},'DPAD_RIGHT':{key:'NumPad6',code:'Numpad6'},'DPAD_DOWN':{key:'NumPad5',code:'Numpad5'},
 'TRIANGLE':{key:'S',code:'KeyS'},'CIRCLE':{key:'X',code:'KeyX'},'CROSS':{key:'Z',code:'KeyZ'},'SQUARE':{key:'A',code:'KeyA'},
 'LS_UP':{key:'Up',code:'ArrowUp'},'LS_DOWN':{key:'Down',code:'ArrowDown'},'LS_LEFT':{key:'Left',code:'ArrowLeft'},'LS_RIGHT':{key:'Right',code:'ArrowRight'},
 'RS_UP':{key:'U',code:'KeyU'},'RS_DOWN':{key:'J',code:'KeyJ'},'RS_LEFT':{key:'H',code:'KeyH'},'RS_RIGHT':{key:'K',code:'KeyK'},
@@ -290,7 +290,7 @@ function resetToDefault(){currentMappings=JSON.parse(JSON.stringify(DEFAULT_MAPP
 function exportMappingsFile(){const a=document.createElement('a');a.href='data:text/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(currentMappings,null,2));a.download='ppsx33_key_mapping.json';a.click();}
 function importMappingsFile(ev){const fr=new FileReader();fr.onload=function(e){try{currentMappings={...currentMappings,...JSON.parse(e.target.result)};updateUI();notifyHostFull();}catch(err){alert('Invalid JSON Key Mapping File!');}};fr.readAsText(ev.target.files[0]);}
 function formatKeyName(e){
-if(e.code.startsWith('Numpad'))return 'Num '+e.code.replace('Numpad','');
+if(e.code.startsWith('Numpad'))return 'NumPad'+e.code.replace('Numpad','');
 if(e.code.startsWith('Key'))return e.code.replace('Key','');
 if(e.code.startsWith('Digit'))return e.code.replace('Digit','');
 if(e.code==='ControlLeft')return 'Ctrl Left';if(e.code==='ControlRight')return 'Ctrl Right';
@@ -302,9 +302,9 @@ function isPressed(actionKey){const t=currentMappings[actionKey];return t?active
 function updateStickAnimations(){
 const leftCap=document.getElementById('stick-left-cap-group');const rightCap=document.getElementById('stick-right-cap-group');
 let lsX=0,lsY=0;if(isPressed('LS_UP'))lsY-=16;if(isPressed('LS_DOWN'))lsY+=16;if(isPressed('LS_LEFT'))lsX-=16;if(isPressed('LS_RIGHT'))lsX+=16;
-if(leftCap)leftCap.style.transform='translate('+lsX+'px,'+lsY+'px)';
+if(leftCap)leftCap.style.transform='translate('+lsX+'px,'+lsY+'px) scale('+(isPressed('L3')?.9:1)+')';
 let rsX=0,rsY=0;if(isPressed('RS_UP'))rsY-=16;if(isPressed('RS_DOWN'))rsY+=16;if(isPressed('RS_LEFT'))rsX-=16;if(isPressed('RS_RIGHT'))rsX+=16;
-if(rightCap)rightCap.style.transform='translate('+rsX+'px,'+rsY+'px)';
+if(rightCap)rightCap.style.transform='translate('+rsX+'px,'+rsY+'px) scale('+(isPressed('R3')?.9:1)+')';
 if(isPressed('L3'))leftCap&&leftCap.classList.add('pressed-l3');else leftCap&&leftCap.classList.remove('pressed-l3');
 if(isPressed('R3'))rightCap&&rightCap.classList.add('pressed-r3');else rightCap&&rightCap.classList.remove('pressed-r3');
 }
