@@ -32,12 +32,12 @@ Legend: **Done** · **Partial** · **In progress** · **Not started**
 | GCM control / labels / local addr | Done | |
 | FIFO JUMP/CALL fix + PUT/GET mod | Done | Log no longer shows methods≈131072 |
 | Surface COLOR offset/pitch/size | Done | |
-| CLEAR solid color to guest surface | Done | |
+| CLEAR solid color to guest surface | Done | XV-O |
 | BEGIN/END vs DRAW_ARRAYS split | Done | Inject emits 0x1814 |
 | Texture unit regs (0x1A00+) | Partial | State recorded; formats limited |
 | Vertex array offset/format | Partial | VA0 path; multi-attr weak |
 | Host draw of VA / indexed | Partial | Works for inject triangle |
-| Guest color blit to window | Partial | Present blits surface without rainbow overwrite |
+| Guest color blit to window | Partial | Present blits surface; was overwritten by rainbow (fixed XV-P) |
 | SCE VP/FP → HLSL | Partial | Experimental compile path |
 | **Title-authored GCM (real meshes)** | **In progress** | Blocked on boot advancing PUT with game methods |
 | Depth/stencil/blend accurate | Partial | State bits; not full |

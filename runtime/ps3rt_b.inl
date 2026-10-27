@@ -463,7 +463,10 @@ static void gcm_inject_clear_draw() {
     gcm_fifo_emit(0x0300, 0);                   // blend OFF
     gcm_fifo_emit(0x1680, vb_off);              // VA0 offset
     gcm_fifo_emit(0x1740, 0x23);                // format: float3
-    gcm_fifo_emit(0x1808, 3);                   // draw 3 verts
+    // NV4097: BEGIN (triangles=4), DRAW_ARRAYS count=3, END
+    gcm_fifo_emit(0x1808, 4);
+    gcm_fifo_emit(0x1814, (2u << 24) | 0u);     // count = (2>>24)+1 = 3
+    gcm_fifo_emit(0x1808, 0);
     if (g_mem && g_gcm_control) {
         uint32_t put = rd_be32_guest(g_gcm_control + 0);
         ps3rt_rsx_set_put(put);

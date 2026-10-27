@@ -797,18 +797,19 @@ static void rsx_host_present_clear() {
                     rsx_upload_guest_tex(m);
                     rsx_draw_textured_quad();
                 }
-                // XV-I: one seed composition per flip (no multi-draw spam)
+                // XV-P: present guest color as-is (CLEAR/inject already wrote it).
+                // Do not overwrite with rainbow diagnostic bars.
                 static uint64_t s_seed_flip = (uint64_t)-1;
                 if (s_seed_flip != g_rsx.flip_count) {
                     s_seed_flip = g_rsx.flip_count;
-                    if (g_rsx.color_offset)
-                        rsx_paint_guest_color_buffer(m);
                     if (g_rsx.color_offset || g_rsx.tex_offset) {
                         if (!g_rsx.tex_offset) g_rsx.tex_offset = g_rsx.color_offset;
                         if (!g_rsx.tex_width) {
                             g_rsx.tex_width = g_rsx.width > 64 ? g_rsx.width : 1280;
                             g_rsx.tex_height = g_rsx.height > 64 ? g_rsx.height : 720;
                         }
+                        if (!g_rsx.tex_pitch)
+                            g_rsx.tex_pitch = g_rsx.tex_width * 4;
                         rsx_upload_guest_tex(m);
                         rsx_draw_textured_quad();
                     }
