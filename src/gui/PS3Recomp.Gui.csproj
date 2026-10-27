@@ -32,5 +32,13 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <!-- Remove stale browser-runtime artifacts left by older PPSX33 builds. -->
+  <Target Name="DeleteLegacyWebView2Artifacts" AfterTargets="Build;Publish">
+    <ItemGroup>
+      <_LegacyWebView2 Include="$(OutputPath)Microsoft.Web.WebView2.*" />
+      <_LegacyWebView2 Include="$(OutputPath)WebView2Loader.dll" />
+    </ItemGroup>
+    <Delete Files="@(_LegacyWebView2)" ContinueOnError="true" />
+  </Target>
 </Project>
 
