@@ -1,6 +1,6 @@
 # PPSX33 User Manual
 
-**PlayStation 3 Static Recompiler — Decode · Translate · Play**
+**PlayStation 3 Static Recompiler — Decode · Translate · Validate**
 
 This manual explains how to use the PPSX33 application safely and effectively.  
 PPSX33 is an experimental research toolkit. It is **not** a commercial emulator, a finished product, or a way to play pirated games.
@@ -13,13 +13,14 @@ PPSX33 is an experimental research toolkit. It is **not** a commercial emulator,
 
 - PlayStation, PlayStation 3, PS3, CELL, RSX, and related marks are trademarks of Sony Interactive Entertainment Inc.
 - All game software, assets, icons (ICON0.PNG, etc.), and related materials remain the property of their respective copyright holders.
-- PPSX33 does **not** include any copyrighted game code, assets, or keys.
+- PPSX33 does not intentionally bundle commercial game code, game assets, or proprietary keys. Review release contents and third-party asset licenses before redistribution.
+- The optional **Decrypt EBOOT** action can invoke a separately installed RPCS3 executable. It is not a built-in PPSX33 decryption engine, and using it does not establish that a particular file or action is legally permitted.
 
 ### 1.2 What you may and may not do
 
 **You may:**
 
-- Use PPSX33 with **legally obtained** decrypted ELF / EBOOT files that you own the rights to use for personal research or backup.
+- Use PPSX33 only with files and data you are authorized to access and process under applicable law and relevant license/platform terms. Ownership of a disc or copy does not automatically answer every question about decryption, circumvention, or derivative output.
 - Study the recompiler, contribute improvements, and report bugs.
 
 **You may not:**
@@ -56,7 +57,7 @@ PPSX33 is provided **as-is**, without warranty of any kind. Runtime behaviour is
 
 1. **Launch** `PPSX33` (the GUI).
 2. Accept the **TERMS** dialog if shown.
-3. **Load** a decrypted ELF (or use **Decrypt EBOOT** if you have RPCS3 configured).
+3. **Load** an ELF you are authorized to process. The optional **Decrypt EBOOT** action launches the RPCS3 executable you configured; use it only when the input and intended action are permitted.
 4. **Decompile** (lift) the ELF — this produces translated chunks.
 5. Optionally set **controller mappings** (must be done before Build).
 6. Click **Build**. Wait until the status shows success.
@@ -92,7 +93,7 @@ During a build most action buttons are locked so you cannot start conflicting op
 ### 5.1 Preparing a game
 
 1. Obtain a **legally owned** copy of the game.
-2. Extract or obtain a **decrypted** ELF / EBOOT (many users use RPCS3’s decrypt tools for research dumps they own).
+2. Use an ELF / EBOOT file only when you are authorized to access and process it. If you use the optional RPCS3 integration, obtain RPCS3 separately and follow its own license and applicable law.
 3. Keep the original `PS3_GAME` folder structure if you want ICON0, PSARC assets, and USRDIR layout to work correctly.
 
 ### 5.2 Loading and lifting
@@ -205,8 +206,8 @@ Performs project creation, lifting, and host build without the GUI. Paths must p
 
 ## 10. Safety and good practice
 
-- Keep original game discs / digital purchases; do not share dumps.
-- Work only with files you are legally entitled to use.
+- Do not upload or share game dumps, encrypted or decrypted executables, firmware, keys, or extracted assets.
+- Confirm that your intended processing is permitted; ownership or a legal acknowledgment alone does not guarantee that every operation is lawful.
 - Back up your project folders before major experiments.
 - Do not run untrusted binaries obtained from unofficial sources.
 - Report security issues privately according to the project’s SECURITY policy.
