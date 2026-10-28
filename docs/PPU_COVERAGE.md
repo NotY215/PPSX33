@@ -1,26 +1,28 @@
 # PPSX33 PPU Instruction Coverage
 
+<p align="center"><img src="https://raw.githubusercontent.com/NotY215/PPSX33/main/assets/ppsx33-logo.png" alt="PPSX33 circular logo" width="120" /></p>
+
 ## Recorded static-lift snapshots
 
 | Game | Instruction instances | Translated instances reported | Unimplemented instances reported | Chunks | Static translation coverage |
 | --- | ---: | ---: | ---: | ---: | --- |
 | God of War III (GOW3) | 1,285,560 | 1,285,560 | 0 | 157 | 100% for this snapshot |
-| Minecraft (PS3) | 3,034,530 | 3,034,530 | 0 | 371 | 100% for this snapshot |
-| Uncharted 2: Among Thieves | 3,485,016 | 3,485,016 | 0 | 426 | 100% for this snapshot |
-| Demon's Souls | 6,343,506 | 6,343,506 | 0 | 775 | 100% for this snapshot |
-| Grand Theft Auto: San Andreas | 1,893,428 | 1,893,428 | 0 | 232 | 100% for this snapshot |
-| Grand Theft Auto V | 6,934,214 | 6,934,214 | 0 | 847 | 100% for this snapshot |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Minecraft_Logo.png" width="78" alt="Minecraft logo" /> Minecraft (PS3) | 3,034,530 | 3,034,530 | 0 | 371 | 100% for this snapshot |
+| <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="48" alt="Uncharted 2 logo artwork" /> Uncharted 2: Among Thieves | 3,485,016 | 3,485,016 | 0 | 426 | 100% for this snapshot |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | 6,343,506 | 6,343,506 | 0 | 775 | 100% for this snapshot |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_San_Andreas_logo.svg" width="78" alt="Grand Theft Auto: San Andreas logo" /> Grand Theft Auto: San Andreas | 1,893,428 | 1,893,428 | 0 | 232 | 100% for this snapshot |
+| <img src="https://thumb.wikimedia.org/wikipedia/it/thumb/7/76/Grand_Theft_Auto_V_logo.svg/330px-Grand_Theft_Auto_V_logo.svg.png?utm_source=it.wikipedia.org&utm_campaign=index&utm_content=thumbnail&_=20240305183247" width="78" alt="Grand Theft Auto V logo" /> Grand Theft Auto V | 6,934,214 | 6,934,214 | 0 | 847 | 100% for this snapshot |
 
 ## ELF and analysis metadata
 
 | Game | PT_LOAD segments | Entry OPD | Symbols | OPD entries | PRX/module string hits | Embedded SPU images |
 | --- | ---: | --- | ---: | ---: | ---: | ---: |
-| God of War III | 5 | `0x50ddc0` | 0 | 3 | 47 | 8 |
-| Minecraft (PS3) | 5 | `0xbbe520` | 0 | 4,097 | 45 | 11 |
-| Uncharted 2 | 5 | `0xdd8618` | 0 | 116 | 391 | 7 |
-| Demon's Souls | 5 | `0x1916138` | 0 | 4,097 | 134 | 12 |
-| Grand Theft Auto: San Andreas | 5 | `0x77b718` | 0 | 4,097 | 23 | 0 |
-| Grand Theft Auto V | 5 | `0x1a90b80` | 0 | 4,097 | 56 | 8 |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/God_of_War_Logo.png" width="78" alt="God of War logo" /> God of War III | 5 | `0x50ddc0` | 0 | 3 | 47 | 8 |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Minecraft_Logo.png" width="78" alt="Minecraft logo" /> Minecraft (PS3) | 5 | `0xbbe520` | 0 | 4,097 | 45 | 11 |
+| <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="48" alt="Uncharted 2 logo artwork" /> Uncharted 2 | 5 | `0xdd8618` | 0 | 116 | 391 | 7 |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Demon%27s_Souls_logo_black.svg" width="78" alt="Demon's Souls logo" /> Demon's Souls | 5 | `0x1916138` | 0 | 4,097 | 134 | 12 |
+| <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_San_Andreas_logo.svg" width="78" alt="Grand Theft Auto: San Andreas logo" /> Grand Theft Auto: San Andreas | 5 | `0x77b718` | 0 | 4,097 | 23 | 0 |
+| <img src="https://thumb.wikimedia.org/wikipedia/it/thumb/7/76/Grand_Theft_Auto_V_logo.svg/330px-Grand_Theft_Auto_V_logo.svg.png?utm_source=it.wikipedia.org&utm_campaign=index&utm_content=thumbnail&_=20240305183247" width="78" alt="Grand Theft Auto V logo" /> Grand Theft Auto V | 5 | `0x1a90b80` | 0 | 4,097 | 56 | 8 |
 
 These are recorded analysis snapshots. OPD and PRX values may come from heuristics and should not be treated as confirmed import/export resolution. Zero detected symbols does not mean the ELF contains no functions.
 
@@ -54,13 +56,3 @@ Coverage is measured against the input that was analyzed. A different game, firm
 When guest execution leaves translated code, inspect captured guest PC, LR, CTR, stack pointer, TOC, branch target calculation, indirect branches, function descriptors, and missing translated chunks. Diagnostic values are evidence for investigation, not automatic proof of a root cause.
 
 System calls, PRX imports, SPU execution, RSX graphics, and runtime control flow must be tested separately from PPU translation.
-
-
-## Publication note
-
-Game titles identify the recorded test inputs only and do not imply affiliation, endorsement, or permission to redistribute game content. Counts are measurements from particular input snapshots, not a compatibility guarantee. Before publishing updated reports or logs, remove private local paths, usernames, secrets, proprietary strings, and unnecessary input-derived data. Do not include game binaries, firmware, keys, extracted assets, or third-party artwork unless its redistribution rights have been verified.
-
-
-## Publication note
-
-Game titles identify the recorded test inputs only and do not imply affiliation, endorsement, or permission to redistribute game content. Counts are measurements from particular input snapshots, not a compatibility guarantee. Before publishing updated reports or logs, remove private local paths, usernames, secrets, proprietary strings, and unnecessary input-derived data. Do not include game binaries, firmware, keys, extracted assets, or third-party artwork unless its redistribution rights have been verified.
