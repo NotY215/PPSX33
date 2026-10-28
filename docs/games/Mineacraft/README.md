@@ -1,4 +1,4 @@
-# <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Minecraft_Logo.png" width="140" alt="Minecraft logo" /> Minecraft (PS3) static lift record
+# Minecraft — static analysis record
 
 **Role:** Opcode / coverage stress (lift only). Runtime compatibility has not been established.
 
@@ -35,3 +35,5 @@ The report indicates that all instruction instances in this input snapshot were 
 4. Keep Minecraft as a lift-only stress target while GOW3 remains the primary runtime target.
 
 Do not commit commercial-game executables, keys, or copyrighted game assets.
+
+**Publication note:** This record identifies a test target only and does not imply affiliation, endorsement, or permission to distribute the game. Static-lift counts do not prove compatibility. Publish only sanitized technical reports; do not commit game binaries, decrypted inputs, keys, extracted assets, private paths, or third-party artwork without verified redistribution rights.
