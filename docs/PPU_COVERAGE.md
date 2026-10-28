@@ -59,3 +59,8 @@ System calls, PRX imports, SPU execution, RSX graphics, and runtime control flow
 ## Publication note
 
 Game titles identify the recorded test inputs only and do not imply affiliation, endorsement, or permission to redistribute game content. Counts are measurements from particular input snapshots, not a compatibility guarantee. Before publishing updated reports or logs, remove private local paths, usernames, secrets, proprietary strings, and unnecessary input-derived data. Do not include game binaries, firmware, keys, extracted assets, or third-party artwork unless its redistribution rights have been verified.
+
+
+## Publication note
+
+Game titles identify the recorded test inputs only and do not imply affiliation, endorsement, or permission to redistribute game content. Counts are measurements from particular input snapshots, not a compatibility guarantee. Before publishing updated reports or logs, remove private local paths, usernames, secrets, proprietary strings, and unnecessary input-derived data. Do not include game binaries, firmware, keys, extracted assets, or third-party artwork unless its redistribution rights have been verified.
