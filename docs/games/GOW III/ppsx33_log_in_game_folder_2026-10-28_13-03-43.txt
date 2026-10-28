@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_12-40-09.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_12-40-09.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_13-03-43.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_13-03-43.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -432,59 +432,6 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XV flip #31 guest=0 diag=31 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x720
 [rsx] XV flip #32 guest=0 diag=32 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x720
 [rsx] XV-H resize 1280x729 rtv=ok
-[time] XXIII-K ppu=1024 spu=768 rsx_flips=127 phase=0
-[time] XXIII-K ppu=2048 spu=1536 rsx_flips=255 phase=0
-[rsx] XV flip #257 guest=0 diag=257 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[time] XXIII-K ppu=3072 spu=2304 rsx_flips=383 phase=0
-[time] XXIII-K ppu=4096 spu=3072 rsx_flips=511 phase=0
-[rsx] XV flip #513 guest=0 diag=513 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[time] XXIII-K ppu=5120 spu=3840 rsx_flips=639 phase=0
-[time] XXIII-K ppu=6144 spu=4608 rsx_flips=767 phase=0
-[rsx] XV flip #769 guest=0 diag=769 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[time] XXIII-K ppu=7168 spu=5376 rsx_flips=895 phase=0
-[time] XXIII-K ppu=8192 spu=6144 rsx_flips=1023 phase=0
-[rsx] XV flip #1025 guest=0 diag=1025 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #1281 guest=0 diag=1281 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #1537 guest=0 diag=1537 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #1793 guest=0 diag=1793 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #2049 guest=0 diag=2049 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #2305 guest=0 diag=2305 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #2561 guest=0 diag=2561 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #2817 guest=0 diag=2817 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #3073 guest=0 diag=3073 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #3329 guest=0 diag=3329 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #3585 guest=0 diag=3585 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #3841 guest=0 diag=3841 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #4097 guest=0 diag=4097 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #4353 guest=0 diag=4353 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #4609 guest=0 diag=4609 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #4865 guest=0 diag=4865 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #5121 guest=0 diag=5121 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #5377 guest=0 diag=5377 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #5633 guest=0 diag=5633 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #5889 guest=0 diag=5889 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #6145 guest=0 diag=6145 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #6401 guest=0 diag=6401 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #6657 guest=0 diag=6657 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #6913 guest=0 diag=6913 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #7169 guest=0 diag=7169 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #7425 guest=0 diag=7425 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #7681 guest=0 diag=7681 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #7937 guest=0 diag=7937 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #8193 guest=0 diag=8193 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #8449 guest=0 diag=8449 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #8705 guest=0 diag=8705 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #8961 guest=0 diag=8961 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #9217 guest=0 diag=9217 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[ps3] heartbeat steps=262144 pc=0xa75610 lr=0x0 r2=0x52d6c8 pokes=2 nrban=0
-[ps3] soft left-range pc=0xa75610 -> 0x1b4f40 (escapes=262144 n=1)
-[rsx] XV flip #9473 guest=0 diag=9473 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #9729 guest=0 diag=9729 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #9985 guest=0 diag=9985 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #10241 guest=0 diag=10241 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #10497 guest=0 diag=10497 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #10753 guest=0 diag=10753 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #11009 guest=0 diag=11009 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
 [rsx] window closed by user — exiting
 [ps3rt] force exit
 
