@@ -1155,6 +1155,9 @@ static void frame_pace_wait() {
 
 
 PS3RT_API void ps3rt_progress_hw(void) {
+    extern void ps3rt_spu_tick_all(void);
+    ps3rt_spu_tick_all();
+
     if (ps3rt_should_exit()) { ps3rt_force_exit(); return; }
     static int s_ppu_once = 0;
     if (!s_ppu_once) { PS3RT_STAGE("PPU progress start"); s_ppu_once = 1; }
