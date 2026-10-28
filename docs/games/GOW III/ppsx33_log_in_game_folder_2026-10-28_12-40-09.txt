@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_12-03-46.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_12-03-46.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_12-40-09.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_12-40-09.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -52,11 +52,9 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [lv2] sc 352 r3=f0ffe04 r4=3cc7f8 r5=4 r6=0
 [lv2] alloc VA=0x8000000 size=0x3cc7f8
 [lv2] XV-L mem sc=352 size=0x3cc7f8 -> ea=0x8000000
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000160 kind=0 mod=? lr=0x336750
-[prx] XXV-G UNKNOWN nid=0x00000160 kind=0 (total_unknown=1)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336750
 [ps3] import stub pc=0x39800000 -> ret=0x336750 (#3)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0xF1500000 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0xF1500000 kind=0 (total_unknown=2)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#4)
 [ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#5)
@@ -66,17 +64,13 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] XXIV-D prx_import pc=0x39800000 nid=0x0065F088 kind=7 mod=cellSysutil lr=0x336660
 [prx] stub kind=7 cellSysutil pc=0x39800000 nid=0x0065F088 lr=0x336660 r11=0x65f088
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#7)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000065 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000065 kind=0 (total_unknown=3)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#8)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000065 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000065 kind=0 (total_unknown=4)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#9)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000065 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000065 kind=0 (total_unknown=5)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#10)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000065 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000065 kind=0 (total_unknown=6)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#11)
 [ps3] XXIV-D prx_import pc=0x39800000 nid=0x0065F9C8 kind=7 mod=cellSysutil lr=0x10464
 [prx] stub kind=7 cellSysutil pc=0x39800000 nid=0x0065F9C8 lr=0x10464 r11=0x65f9c8
@@ -92,17 +86,13 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] XXIV-D prx_import pc=0x39800000 nid=0x00525680 kind=7 mod=cellSysutil lr=0x3467c8
 [prx] stub kind=7 cellSysutil pc=0x39800000 nid=0x00525680 lr=0x3467c8 r11=0x525680
 [ps3] import stub pc=0x39800000 -> ret=0x3467c8 (#15)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000020 kind=0 mod=? lr=0x336554
-[prx] XXV-G UNKNOWN nid=0x00000020 kind=0 (total_unknown=7)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336554
 [ps3] import stub pc=0x39800000 -> ret=0x336554 (#16)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000020 kind=0 mod=? lr=0x336588
-[prx] XXV-G UNKNOWN nid=0x00000020 kind=0 (total_unknown=8)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336588
 [ps3] import stub pc=0x39800000 -> ret=0x336588 (#17)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000020 kind=0 mod=? lr=0x34636c
-[prx] XXV-G UNKNOWN nid=0x00000020 kind=0 (total_unknown=9)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x34636c
 [ps3] import stub pc=0x39800000 -> ret=0x34636c (#18)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000020 kind=0 mod=? lr=0x346460
-[prx] XXV-G UNKNOWN nid=0x00000020 kind=0 (total_unknown=10)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x346460
 [ps3] import stub pc=0x39800000 -> ret=0x346460 (#19)
 [ps3] XXIV-D prx_import pc=0x39800000 nid=0x0065FCC8 kind=7 mod=cellSysutil lr=0x346554
 [prx] stub kind=7 cellSysutil pc=0x39800000 nid=0x0065FCC8 lr=0x346554 r11=0x65fcc8
@@ -122,85 +112,55 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] XXV-F recover wild-pc 0x0 -> 0x105e8
 [ps3] XXV-L wild-pc 0x0 -> 0x105e8
 [ps3] Phase XI force-out pc=0xf0ffef0 -> 0x331c30
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=11)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#22)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=12)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#23)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=13)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#24)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=14)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#25)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=15)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#26)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=16)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#27)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=17)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#28)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=18)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#29)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=19)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#30)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=20)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#31)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=21)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#32)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=22)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#33)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=23)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#34)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=24)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#35)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=25)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#36)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=26)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#37)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=27)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#38)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=28)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#39)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=29)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#40)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000050 kind=0 mod=? lr=0x336660
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=30)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#41)
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=31)
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#42)
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=32)
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#43)
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=33)
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#44)
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=34)
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#45)
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=35)
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#46)
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=36)
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#47)
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=37)
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#48)
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=38)
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#49)
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=39)
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#50)
-[prx] XXV-G UNKNOWN nid=0x00000050 kind=0 (total_unknown=40)
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#51)
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#52)
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#53)
@@ -252,34 +212,32 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x39800000 toc=r2=0x52d6c8 sp=r1=0xf100130
 [ps3] XXV-F FAULT gpr3-10 0 3cc7f8 0 0 68d2c0 0 0 0
 [ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x331aac lr=0x0 hits=3 strict=0
+[pad] poll#4 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
+[ps3] Phase M touch-progress n=24576
 [ps3] P0 sticky soft-retry alt=0x331aac
 [ps3] XXV-F recover wild-pc 0x0 -> 0x331aac
 [ps3] XXV-L wild-pc 0x0 -> 0x331aac
-[pad] poll#4 btn=0x0000 sticks=0,0,0,0 L2=0 R2=0
-[ps3] Phase M touch-progress n=24576
 [ps3] XXV-F recover wild-pc 0x0 -> 0x331aac
 [ps3] XXV-L wild-pc 0x0 -> 0x331aac
 [ps3] XXV-F recover wild-pc 0x0 -> 0x331aac
 [ps3] XXV-L wild-pc 0x0 -> 0x331aac
 [ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x39800000 toc=r2=0x52d6c8 sp=r1=0xf100280
 [ps3] XXV-F FAULT gpr3-10 0 3cc7f8 0 0 68d2c0 0 0 0
+[ps3] Phase M touch-progress n=32768
 [ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x331aac lr=0x0 hits=3 strict=0
 [ps3] P0 sticky soft-retry alt=0x331aac
 [ps3] XXV-F recover wild-pc 0x0 -> 0x331aac
 [ps3] XXV-L wild-pc 0x0 -> 0x331aac
-[ps3] Phase M touch-progress n=32768
+[ps3] Phase M touch-progress n=40960
 [ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x39800000 toc=r2=0x52d6c8 sp=r1=0xf1003d0
 [ps3] XXV-F FAULT gpr3-10 0 3cc7f8 0 0 68d2c0 0 0 0
 [ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x331aac lr=0x0 hits=3 strict=0
-[ps3] Phase M touch-progress n=40960
 [ps3] P0 sticky soft-retry alt=0x331aac
+[ps3] Phase M touch-progress n=49152
 [ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x39800000 toc=r2=0x52d6c8 sp=r1=0xf100520
 [ps3] XXV-F FAULT gpr3-10 0 3cc7f8 0 0 68d2c0 0 0 0
-[ps3] Phase M touch-progress n=49152
 [ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x331aac lr=0x0 hits=3 strict=0
 [ps3] P0 sticky soft-retry alt=0x331aac
-[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x39800000 toc=r2=0x52d6c8 sp=r1=0xf100670
-[ps3] XXV-F FAULT gpr3-10 0 3cc7f8 0 0 68d2c0 0 0 0
 [gcm] P1 inject seed OFF (set PS3RT_INJECT_SEED=1 to enable)
 [gcm] FIFO idle put=get=0x0 (no guest commands yet)
 [rsx] XXV-E solid triangle VS/PS ready
@@ -287,28 +245,34 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XXV-FRAME present flip=1 color=0x2d2373 tex=0x0 draws=0
 [rsx] XV flip #1 guest=0 diag=1 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x720
 [ps3] Phase M touch-progress n=57344
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x39800000 toc=r2=0x52d6c8 sp=r1=0xf100670
+[ps3] XXV-F FAULT gpr3-10 0 3cc7f8 0 0 68d2c0 0 0 0
 [ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x331aac lr=0x0 hits=3 strict=0
-[ps3] P0 sticky soft-retry alt=0x331aac
+[ps3] Phase M touch-progress n=65536
+[ps3] P0 sticky soft-retry alt=0x331aac (n=6)
+[ps3] Phase M touch-progress n=73728
 [ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x39800000 toc=r2=0x52d6c8 sp=r1=0xf1007c0
 [ps3] XXV-F FAULT gpr3-10 0 3cc7f8 0 0 68d2c0 0 0 0
-[ps3] Phase M touch-progress n=65536
 [ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x331aac lr=0x0 hits=3 strict=0
-[ps3] P0 sticky soft-retry alt=0x331aac
-[ps3] Phase M touch-progress n=73728
+[ps3] Phase M touch-progress n=81920
+[ps3] P0 sticky soft-retry alt=0x331aac (n=7)
 [ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x39800000 toc=r2=0x52d6c8 sp=r1=0xf100910
 [ps3] XXV-F FAULT gpr3-10 0 3cc7f8 0 0 68d2c0 0 0 0
+[ps3] Phase M touch-progress n=90112
 [ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x331aac lr=0x0 hits=3 strict=0
-[ps3] P0 sticky soft-retry alt=0x331aac
-[ps3] Phase M touch-progress n=81920
+[ps3] P0 sticky soft-retry alt=0x331aac (n=8)
+[ps3] Phase M touch-progress n=98304
 [ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x39800000 toc=r2=0x52d6c8 sp=r1=0xf100a60
 [ps3] XXV-F FAULT gpr3-10 0 3cc7f8 0 0 68d2c0 0 0 0
 [ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x331aac lr=0x0 hits=3 strict=0
-[ps3] P0 sticky soft-retry alt=0x331aac
-[ps3] Phase M touch-progress n=90112
+[ps3] P0 sticky soft-retry alt=0x331aac (n=9)
 [ps3] import stub pc=0x39800000 -> ret=0x34636c (#57)
 [ps3] import stub pc=0x39800000 -> ret=0x346460 (#58)
 [ps3] import stub pc=0x39800000 -> ret=0x346554 (#59)
-[ps3] Phase M touch-progress n=98304
+[gcm] FIFO idle put=get=0x0 (no guest commands yet)
+[rsx] solid triangle Draw(3) 1280x720 flip=2
+[rsx] XXV-FRAME present flip=2 color=0x323296 tex=0x0 draws=0
+[rsx] XV flip #2 guest=0 diag=2 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x720
 [ps3] import stub pc=0x39800000 -> ret=0x104b8 (#60)
 [ps3] import stub pc=0x39800000 -> ret=0x104c4 (#61)
 [ps3] import stub pc=0x39800000 -> ret=0x1b49d0 (#62)
@@ -386,10 +350,6 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [lv2] sc 141 r3=186a0 r4=f100ce4 r5=a r6=5eea48
 [lv2] sc 141 r3=186a0 r4=f100ce4 r5=a r6=5eea48
 [ps3] null-loop skip: 0x1b4b4c +0x400 -> 0x1b4f40 (soft_breaks=2)
-[gcm] FIFO idle put=get=0x0 (no guest commands yet)
-[rsx] solid triangle Draw(3) 1280x720 flip=2
-[rsx] XXV-FRAME present flip=2 color=0x323296 tex=0x0 draws=0
-[rsx] XV flip #2 guest=0 diag=2 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x720
 [gcm] FIFO idle put=get=0x0 (no guest commands yet)
 [rsx] solid triangle Draw(3) 1280x720 flip=3
 [rsx] XXV-FRAME present flip=3 color=0x3721b9 tex=0x0 draws=0
@@ -517,7 +477,7 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XV flip #8961 guest=0 diag=8961 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
 [rsx] XV flip #9217 guest=0 diag=9217 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
 [ps3] heartbeat steps=262144 pc=0xa75610 lr=0x0 r2=0x52d6c8 pokes=2 nrban=0
-[ps3] soft left-range pc=0xa75610 -> last_good=0x1b4f40 (escapes=262144)
+[ps3] soft left-range pc=0xa75610 -> 0x1b4f40 (escapes=262144 n=1)
 [rsx] XV flip #9473 guest=0 diag=9473 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
 [rsx] XV flip #9729 guest=0 diag=9729 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
 [rsx] XV flip #9985 guest=0 diag=9985 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
@@ -525,127 +485,6 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XV flip #10497 guest=0 diag=10497 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
 [rsx] XV flip #10753 guest=0 diag=10753 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
 [rsx] XV flip #11009 guest=0 diag=11009 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #11265 guest=0 diag=11265 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #11521 guest=0 diag=11521 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #11777 guest=0 diag=11777 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #12033 guest=0 diag=12033 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #12289 guest=0 diag=12289 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #12545 guest=0 diag=12545 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #12801 guest=0 diag=12801 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #13057 guest=0 diag=13057 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #13313 guest=0 diag=13313 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #13569 guest=0 diag=13569 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #13825 guest=0 diag=13825 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #14081 guest=0 diag=14081 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #14337 guest=0 diag=14337 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #14593 guest=0 diag=14593 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #14849 guest=0 diag=14849 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #15105 guest=0 diag=15105 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #15361 guest=0 diag=15361 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #15617 guest=0 diag=15617 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #15873 guest=0 diag=15873 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #16129 guest=0 diag=16129 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #16385 guest=0 diag=16385 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #16641 guest=0 diag=16641 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #16897 guest=0 diag=16897 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #17153 guest=0 diag=17153 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #17409 guest=0 diag=17409 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #17665 guest=0 diag=17665 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #17921 guest=0 diag=17921 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #18177 guest=0 diag=18177 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #18433 guest=0 diag=18433 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[ps3] heartbeat steps=524288 pc=0xa75610 lr=0x0 r2=0x52d6c8 pokes=2 nrban=0
-[ps3] soft left-range pc=0xa75610 -> last_good=0x1b4f40 (escapes=262144)
-[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x39800000 toc=r2=0x52d6c8 sp=r1=0xf101100
-[ps3] XXV-F FAULT gpr3-10 0 f100ce4 a 5eea48 5eea48 8080808080808080 5ee910 7f7f7f7f7f7f7f7f
-[ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x3deea8 lr=0x0 hits=3 strict=0
-[ps3] P0 sticky soft-retry alt=0x3deea8
-[rsx] XV flip #18689 guest=0 diag=18689 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #18945 guest=0 diag=18945 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #19201 guest=0 diag=19201 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #19457 guest=0 diag=19457 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #19713 guest=0 diag=19713 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #19969 guest=0 diag=19969 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #20225 guest=0 diag=20225 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #20481 guest=0 diag=20481 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #20737 guest=0 diag=20737 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #20993 guest=0 diag=20993 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #21249 guest=0 diag=21249 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #21505 guest=0 diag=21505 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #21761 guest=0 diag=21761 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #22017 guest=0 diag=22017 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #22273 guest=0 diag=22273 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #22529 guest=0 diag=22529 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #22785 guest=0 diag=22785 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #23041 guest=0 diag=23041 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #23297 guest=0 diag=23297 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #23553 guest=0 diag=23553 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #23809 guest=0 diag=23809 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #24065 guest=0 diag=24065 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #24321 guest=0 diag=24321 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #24577 guest=0 diag=24577 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #24833 guest=0 diag=24833 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #25089 guest=0 diag=25089 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #25345 guest=0 diag=25345 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #25601 guest=0 diag=25601 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #25857 guest=0 diag=25857 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #26113 guest=0 diag=26113 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #26369 guest=0 diag=26369 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #26625 guest=0 diag=26625 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #26881 guest=0 diag=26881 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #27137 guest=0 diag=27137 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #27393 guest=0 diag=27393 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #27649 guest=0 diag=27649 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[ps3] heartbeat steps=786432 pc=0xa75610 lr=0x0 r2=0x52d6c8 pokes=2 nrban=0
-[ps3] soft left-range pc=0xa75610 -> last_good=0x1b4f40 (escapes=262144)
-[rsx] XV flip #27905 guest=0 diag=27905 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #28161 guest=0 diag=28161 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #28417 guest=0 diag=28417 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #28673 guest=0 diag=28673 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #28929 guest=0 diag=28929 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #29185 guest=0 diag=29185 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #29441 guest=0 diag=29441 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #29697 guest=0 diag=29697 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #29953 guest=0 diag=29953 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #30209 guest=0 diag=30209 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #30465 guest=0 diag=30465 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #30721 guest=0 diag=30721 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #30977 guest=0 diag=30977 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #31233 guest=0 diag=31233 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #31489 guest=0 diag=31489 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #31745 guest=0 diag=31745 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #32001 guest=0 diag=32001 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #32257 guest=0 diag=32257 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #32513 guest=0 diag=32513 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #32769 guest=0 diag=32769 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #33025 guest=0 diag=33025 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #33281 guest=0 diag=33281 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #33537 guest=0 diag=33537 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #33793 guest=0 diag=33793 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #34049 guest=0 diag=34049 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #34305 guest=0 diag=34305 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #34561 guest=0 diag=34561 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #34817 guest=0 diag=34817 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #35073 guest=0 diag=35073 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #35329 guest=0 diag=35329 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #35585 guest=0 diag=35585 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #35841 guest=0 diag=35841 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #36097 guest=0 diag=36097 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #36353 guest=0 diag=36353 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #36609 guest=0 diag=36609 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[ps3] heartbeat steps=1048576 pc=0xa75610 lr=0x0 r2=0x52d6c8 pokes=2 nrban=0
-[ps3] soft left-range pc=0xa75610 -> last_good=0x1b4f40 (escapes=262144)
-[rsx] XV flip #36865 guest=0 diag=36865 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #37121 guest=0 diag=37121 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #37377 guest=0 diag=37377 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #37633 guest=0 diag=37633 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #37889 guest=0 diag=37889 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #38145 guest=0 diag=38145 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #38401 guest=0 diag=38401 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #38657 guest=0 diag=38657 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #38913 guest=0 diag=38913 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #39169 guest=0 diag=39169 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #39425 guest=0 diag=39425 draws=0 shaders=0 tex=0 methods=0 packets=0 1280x729
 [rsx] window closed by user — exiting
 [ps3rt] force exit
 
