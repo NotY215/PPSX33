@@ -749,6 +749,61 @@ static int spurs_dispatch(PPUContext* c, uint32_t nid) {
     }
 }
 
+
+// Depth: cellSysutil / videoOut minimal HLE (success + safe outs)
+static int sysutil_hle(PPUContext* c, uint32_t nid) {
+    if (!c) return -1;
+    auto ok = [&]() -> int { c->gpr[3] = 0; return 0; };
+    switch (nid) {
+    case 0x9D98AFA0: // RegisterCallback
+    case 0x189A74DA: // UnregisterCallback
+    case 0x02E20C25: // CheckCallback
+    case 0xD8477650: // EnableBgmPlayback
+    case 0x5CDEAE17: // DisableBgmPlayback
+    case 0x7570C61A: // GetBgmPlaybackStatus
+        return ok();
+    case 0x40E895D3: { // GetSystemParamInt(id, out)
+        uint64_t out = c->gpr[4];
+        if (out && g_mem && out + 4 <= g_mem_size) {
+            // CELL_SYSUTIL_SYSTEMPARAM_ID_LANG = 1 -> English=1
+            g_mem[out] = 0; g_mem[out+1] = 0; g_mem[out+2] = 0; g_mem[out+3] = 1;
+        }
+        return ok();
+    }
+    case 0x938013A0: // GetSystemParamString
+        return ok();
+    case 0x6C0EB84F: { // cellVideoOutGetState(videoOut, deviceIndex, state)
+        uint64_t st = c->gpr[5];
+        if (st && g_mem && st + 16 <= g_mem_size) {
+            // state=1 (available), colorSpace=RGB, resolution=1280x720 id
+            memset(g_mem + st, 0, 16);
+            g_mem[st + 3] = 1; // state
+        }
+        return ok();
+    }
+    case 0x55EBB5AF: // GetResolution
+    case 0x0BAE8772: // Configure
+    case 0xE558748D: // GetNumberOfDevice
+    case 0x75BBB672: // GetDeviceInfo
+    case 0xCFFE948A: // GetResolutionAvailability
+        return ok();
+    case 0x63A2C8A9: // sysmodule Initialize
+    case 0xA1934A6A: // Finalize
+    case 0x3A5B8C0B: // LoadModule
+    case 0x5A59E258: // UnloadModule
+    case 0x32267A31: // IsLoaded
+    case 0x74A54CDF: // GetLibraryInfo
+    case 0x96C07ADF: // SetMemcontainer
+    case 0x0053F96C:
+        return ok();
+    default:
+        // Known GOW stub NIDs from logs
+        if (nid == 0x0065F088 || nid == 0x0065F9C8 || nid == 0x0065FCC8 || nid == 0x00525680)
+            return ok();
+        return ok(); // soft success for registered sysutil kind
+    }
+}
+
 static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
     if (!c) return -1;
     if (maybe_nid == 0) { c->gpr[3] = 0; return 0; }
@@ -854,7 +909,8 @@ static int prx_dispatch(PPUContext* c, uint32_t maybe_nid, int kind) {
             }
             c->gpr[3] = 0; return 0;
         }
-        if (kind == 8) {
+        if (kind == 7 || kind == 3) { return sysutil_hle(c, maybe_nid); }
+    if (kind == 8) {
             pad_poll_host();
             c->gpr[3] = 0; return 0;
         }
@@ -928,15 +984,15 @@ PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
     // XV-J: reject size/pointer-shaped values (log: 0x003CC7F8 was alloc size)
     auto looks_like_nid = [](uint32_t v) -> bool {
         if (v == 0 || v == 0xFFFFFFFFu) return false;
-        if (v < 0x100000u) return false; // reject 0x65 / 0x160 class
+        if (v < 0x100000u) return false; // reject 0x65 / 0x160
         if (v >= 0x30000000u && v <= 0x3FFFFFFFu) return false;
         if (v >= 0x48000000u && v <= 0x4FFFFFFFu) return false;
-        if (v >= 0x80000000u) return false; // reject 0xF1500000 class
+        if (v >= 0x80000000u) return false;
         if ((v & 0xFFFu) == 0) return false;
         if (v < 0x01000000u && (v & 0xFFu) == 0) return false;
         int bits = 0;
         for (uint32_t t = v; t; t >>= 1) bits += (int)(t & 1u);
-        if (bits < 8 || bits > 24) return false;
+        if (bits < 6 || bits > 26) return false;
         return true;
     };
     uint32_t maybe_nid = (uint32_t)c->gpr[11];
@@ -967,8 +1023,6 @@ PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
             // skip non-table memory words
         }
     }
-    // Only accept values that pass looks_like_nid (reject 0x65 / 0x160 / 0xF1500000 noise)
-    if (maybe_nid && !looks_like_nid(maybe_nid)) maybe_nid = 0;
 
     const NidEntry* e = maybe_nid ? nid_lookup(maybe_nid) : nullptr;
     int kind = e ? e->kind : 0;

@@ -315,7 +315,6 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                     uint64_t lr = c.lr;
                     if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr != alt)
                         next = lr;
-                    // Prefer callstack frames that are not the spinning alt
                     if (!next) {
                         uint64_t sp = c.gpr[1];
                         for (int off = 0; off < 0x4000 && !next; off += 8) {
@@ -339,7 +338,6 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                         s_retry_n = 0;
                     } else if (alt && pc_in_chunks(alt, chunks, n)) {
                         if (alt == s_retry_alt) ++s_retry_n; else { s_retry_alt = alt; s_retry_n = 1; }
-                        // Same alt spinning with lr=0: escalate away from alt
                         if (s_retry_n >= 6) {
                             uint64_t esc = 0;
                             uint64_t sp = c.gpr[1];
@@ -359,14 +357,12 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                                 alt = esc;
                                 c.gpr[3] = 0;
                                 s_retry_n = 0;
-                            } else {
-                                if (s_sticky_log < 24)
-                                    ps3rt_log("[ps3] P0 sticky soft-retry alt=0x%llx (n=%d)\n",
-                                        (unsigned long long)alt, s_retry_n);
+                            } else if (s_sticky_log < 24) {
+                                ps3rt_log("[ps3] P0 sticky soft-retry alt=0x%llx (n=%d)\n",
+                                    (unsigned long long)alt, s_retry_n);
                             }
-                        } else {
-                            if (s_sticky_log < 24)
-                                ps3rt_log("[ps3] P0 sticky soft-retry alt=0x%llx\n", (unsigned long long)alt);
+                        } else if (s_sticky_log < 24) {
+                            ps3rt_log("[ps3] P0 sticky soft-retry alt=0x%llx\n", (unsigned long long)alt);
                         }
                     } else {
                         c.halted = true;
@@ -523,7 +519,6 @@ static int wild_log2 = 0;
                 static int s_left_n = 0;
                 if (c.pc == s_left_pc) ++s_left_n; else { s_left_pc = c.pc; s_left_n = 1; }
                 uint64_t dest = 0;
-                // After several hits on same external PC, prefer a different stack frame over last_good
                 if (s_left_n >= 3) {
                     uint64_t sp = c.gpr[1];
                     for (int off = 0; off < 0x8000 && !dest; off += 8) {
