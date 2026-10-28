@@ -346,6 +346,27 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                             }
                         }
                         if (esc) {
+                            static uint64_t s_pp_esc = 0;
+                            static int s_pp_n = 0;
+                            if (esc == s_pp_esc) ++s_pp_n; else { s_pp_esc = esc; s_pp_n = 1; }
+                            if (s_pp_n >= 3) {
+                                add_rban(esc);
+                                if (s_sticky_log < 32)
+                                    ps3rt_log("[ps3] P0 sticky ban-pingpong esc=0x%llx\n",
+                                        (unsigned long long)esc);
+                                // Prefer last_good or another chunk start
+                                uint64_t alt2 = 0;
+                                if (last_good_ret && !is_banned(last_good_ret) && last_good_ret != esc)
+                                    alt2 = last_good_ret;
+                                if (!alt2) {
+                                    for (size_t ci = 0; ci < n && !alt2; ++ci) {
+                                        uint64_t st = chunks[ci].start;
+                                        if (st && !is_banned(st) && st != esc && st != alt) alt2 = st;
+                                    }
+                                }
+                                if (alt2) esc = alt2;
+                                s_pp_n = 0;
+                            }
                             if (s_sticky_log < 32)
                                 ps3rt_log("[ps3] P0 sticky skip-banned alt=0x%llx -> 0x%llx\n",
                                     (unsigned long long)alt, (unsigned long long)esc);
