@@ -336,7 +336,26 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                         c.gpr[3] = 0;
                         s_retry_alt = 0;
                         s_retry_n = 0;
-                    } else if (alt && pc_in_chunks(alt, chunks, n)) {
+                    } else if (alt && is_banned(alt)) {
+                        uint64_t esc = recover_return_pc(c, chunks, n, alt, ban_lr, nban, rban, nrban);
+                        if (!esc && last_good_ret && !is_banned(last_good_ret)) esc = last_good_ret;
+                        if (!esc) {
+                            for (size_t ci = 0; ci < n && !esc; ++ci) {
+                                uint64_t st = chunks[ci].start;
+                                if (st && !is_banned(st) && st != alt) esc = st;
+                            }
+                        }
+                        if (esc) {
+                            if (s_sticky_log < 32)
+                                ps3rt_log("[ps3] P0 sticky skip-banned alt=0x%llx -> 0x%llx\n",
+                                    (unsigned long long)alt, (unsigned long long)esc);
+                            alt = esc; c.pc = esc; c.gpr[3] = 0;
+                        } else {
+                            c.pc = last_good_ret ? last_good_ret : (n ? chunks[0].start : c.pc);
+                            c.gpr[3] = 0;
+                        }
+                    } else if (alt && pc_in_chunks(alt, chunks, n) && !is_banned(alt)) {
+
                         if (alt == s_retry_alt) ++s_retry_n; else { s_retry_alt = alt; s_retry_n = 1; }
                         if (s_retry_n >= 6) {
                             // Ban spinning alt so recover/stack can leave the null-import island

@@ -1203,18 +1203,25 @@ PS3RT_API void ps3rt_progress_hw(void) {
             // Real game stream only when put advances beyond get with substantial traffic.
             // XV-I: inject at most once per displayed flip (stop FIFO flood)
             // P1: inject seed only if PS3RT_INJECT_SEED=1
+            // Boot FIFO assist: while guest PUT stays idle, emit one real cmdstream per flip
+            // so the RSX path (methods/draws) is exercised. Disable with PS3RT_INJECT_SEED=0.
             static int s_allow_inject = -1;
+            static int s_boot_n = 0;
             if (s_allow_inject < 0) {
                 const char* e = std::getenv("PS3RT_INJECT_SEED");
-                s_allow_inject = (e && e[0] == '1') ? 1 : 0;
-                if (!s_allow_inject)
-                    ps3rt_log("[gcm] P1 inject seed OFF (set PS3RT_INJECT_SEED=1 to enable)\n");
+                if (e && e[0] == '0') s_allow_inject = 0;
+                else s_allow_inject = 1; // default ON until guest drives PUT
+                ps3rt_log("[gcm] boot FIFO assist %s (PS3RT_INJECT_SEED=0 to disable)\n",
+                    s_allow_inject ? "ON" : "OFF");
             }
             static uint64_t s_inj_flip = (uint64_t)-1;
             uint64_t fc = ps3rt_rsx_flip_count();
-            if (s_allow_inject && (put == get || put <= 0x80) && s_inj_flip != fc) {
+            if (s_allow_inject && (put == get || put <= 0x80) && s_inj_flip != fc && s_boot_n < 64) {
                 s_inj_flip = fc;
+                ++s_boot_n;
                 gcm_inject_clear_draw();
+                if (s_boot_n <= 8 || (s_boot_n & 7) == 0)
+                    ps3rt_log("[gcm] boot FIFO assist #%d put/get were idle\n", s_boot_n);
             } else if (put != get && put > 0x80) {
                 static int s_guest = 0;
                 if (s_guest < 12) {
