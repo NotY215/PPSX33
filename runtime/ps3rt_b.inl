@@ -542,7 +542,9 @@ static void gcm_inject_clear_draw() {
         uint32_t put = gcm_rd_ctrl_u32(g_gcm_control + 0);
         ps3rt_rsx_set_put(put);
         ps3rt_rsx_flush(g_mem);
-        wr_be32_guest(g_gcm_control + 4, put);
+        // P0: GET only after FIFO accept — publish RSX get, do not force GET=PUT blindly
+        uint32_t rg = ps3rt_rsx_get_get();
+        wr_be32_guest(g_gcm_control + 4, rg);
     }
     static int s_log = 0;
     if (s_log < 8) {
@@ -1216,7 +1218,7 @@ PS3RT_API void ps3rt_progress_hw(void) {
             }
             static uint64_t s_inj_flip = (uint64_t)-1;
             uint64_t fc = ps3rt_rsx_flip_count();
-            if (s_allow_inject && (put == get || put <= 0x80) && s_inj_flip != fc && s_boot_n < 64) {
+            if (s_allow_inject && (put == get || put <= 0x80) && s_inj_flip != fc && s_boot_n < 128) {
                 s_inj_flip = fc;
                 ++s_boot_n;
                 gcm_inject_clear_draw();

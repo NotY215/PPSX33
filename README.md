@@ -66,7 +66,7 @@ Status icons describe the current broad state, not a promise that every title or
 | 📦 ELF loading and PPU lifting | 🟡 **Partial** | Supported code can be lifted; translation coverage is not semantic correctness |
 | 🧠 PPU runtime and control flow | 🟡 **In progress** | Guest context and execution paths exist; unsupported or inaccurate paths can break execution |
 | 🪟 D3D11 host window and presentation | 🟢 **Implemented baseline** | Host graphics window/present path exists |
-| 🧱 RSX/GCM command processing | 🟡 **In progress** | Some FIFO methods and basic surface operations are handled; real title shaders and full rendering are incomplete |
+| 🧱 RSX/GCM command processing | 🟡 **In progress** | FIFO decode and D3D11 draws proven on boot-assist cmdstreams (`methods` / guest draw counts in logs); title-authored GCM and shaders still incomplete |
 | 🧩 LV2, PRX and NID services | 🟡 **Partial** | HLE coverage is incomplete and individual API semantics require validation |
 | ⚡ SPU, MFC/DMA and SPURS | 🟡 **Partial** | Assist/runtime paths exist; full instruction and scheduling behaviour is not complete |
 | 🔊 Audio, 🎮 input and 💾 save services | 🟡 **Partial** | Basic host paths exist; title-level behaviour still needs verification |
@@ -89,7 +89,7 @@ HLE and host services written for this project. Public emulator behaviour may be
 | Input | cellPad mapping (XInput/host keys) | 🟡 Partial |
 | Audio | cellAudio host path (waveOut-style) | 🟡 Partial |
 | Video out / GCM | cellVideoOut, cellGcmSys control/FIFO kick | 🟡 Partial |
-| Graphics (RSX) | FIFO decode, D3D11 present, limited draws | 🟡 In progress |
+| Graphics (RSX) | FIFO decode, D3D11 present; assist draws proven; title stream pending | 🟡 In progress |
 | SPU / MFC / SPURS | Interpreter, DMA/tags, job assist | 🟡 Partial |
 | PRX / NID / LV2 | Import stubs, common syscalls | 🟡 Partial |
 | Codecs / media | PNG/JPG helpers; ATRAC/VDEC deep decode | 🔨 Limited / partial |
@@ -100,7 +100,7 @@ HLE and host services written for this project. Public emulator behaviour may be
 
 Task-level tracking: [ROADMAP.md](ROADMAP.md).
 
-For the task-level breakdown, see **[ROADMAP.md](ROADMAP.md)** and **[PPU coverage notes](docs/PPU_COVERAGE.md)**. Game-specific evidence and logs are collected under **[docs/games](docs/games/README.md)**.
+For the task-level breakdown and longer-term architecture plan, see **[ROADMAP.md](ROADMAP.md)** and **[PPU coverage notes](docs/PPU_COVERAGE.md)**. Game-specific evidence and logs are collected under **[docs/games](docs/games/README.md)**.
 
 ## 🧩 Why this is difficult
 

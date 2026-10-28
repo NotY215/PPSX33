@@ -1967,15 +1967,27 @@ static void rsx_process_fifo(uint8_t* mem) {
     g_rsx.get = get;
     if (put == get) return;
     {
-        uint32_t dist = (put >= get) ? (put - get) : (fsz0 - get + put);
-        if (dist > (fsz0 / 2)) {
-            static int s_rs = 0;
-            if (s_rs < 8) {
-                ps3rt_log("[rsx] XV-N FIFO resync get=0x%x put=0x%x dist=0x%x\n", get, put, dist);
-                ++s_rs;
+        // AIFIAR: do not drop the stream when GET is stale-ahead of PUT after a ring restart.
+        // Log evidence: get=0xd0 put=0x68 dist=0xfff98 — false "full ring" wipe skipped real cmds.
+        if (put < get && put < 0x10000u) {
+            static int s_rw = 0;
+            if (s_rw < 12) {
+                ps3rt_log("[rsx] FIFO PUT restart get=0x%x -> 0 (put=0x%x)\n", get, put);
+                ++s_rw;
             }
-            g_rsx.get = put;
-            return;
+            get = 0;
+            g_rsx.get = 0;
+        } else {
+            uint32_t dist = (put >= get) ? (put - get) : (fsz0 - get + put);
+            if (dist > (fsz0 * 3u / 4u)) {
+                static int s_rs = 0;
+                if (s_rs < 8) {
+                    ps3rt_log("[rsx] FIFO large gap get=0x%x put=0x%x dist=0x%x (process capped)\n",
+                        get, put, dist);
+                    ++s_rs;
+                }
+                // Do NOT set get=put; process with kMax cap below
+            }
         }
     }
     uint32_t steps = 0;
@@ -1983,7 +1995,13 @@ static void rsx_process_fifo(uint8_t* mem) {
     while (get != put && steps < kMax) {
         uint32_t off = base + (get % (g_rsx.fifo_size ? g_rsx.fifo_size : 0x100000u));
         if (off + 8u >= 0x10000000u) break;
-        uint32_t hdr = (uint32_t)mem[off] | ((uint32_t)mem[off+1] << 8) | ((uint32_t)mem[off+2] << 16) | ((uint32_t)mem[off+3] << 24);
+        uint32_t hdr_be = ((uint32_t)mem[off] << 24) | ((uint32_t)mem[off+1] << 16) |
+                          ((uint32_t)mem[off+2] << 8) | (uint32_t)mem[off+3];
+        uint32_t hdr_le = (uint32_t)mem[off] | ((uint32_t)mem[off+1] << 8) |
+                          ((uint32_t)mem[off+2] << 16) | ((uint32_t)mem[off+3] << 24);
+        // Guest cmdstream is BE; fall back to LE only if BE looks inert
+        uint32_t hdr = hdr_be;
+        if ((hdr_be & 0x1FFCu) == 0 && (hdr_le & 0x1FFCu) != 0) hdr = hdr_le;
         // BE words on RSX pushbuffer — prefer BE load
         hdr = ((hdr & 0xff) << 24) | ((hdr & 0xff00) << 8) | ((hdr >> 8) & 0xff00) | ((hdr >> 24) & 0xff);
         uint32_t method = hdr & 0x1FFCu;
