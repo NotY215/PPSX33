@@ -161,11 +161,29 @@ static void mfc_do_dma(SPUContext& s) {
 
     bool is_get = (cmd == 0x20 || cmd == 0x21 || cmd == 0x22 || cmd == 0x28 || cmd == 0x29 || cmd == 0x2A);
     bool is_put = (cmd == 0x24 || cmd == 0x25 || cmd == 0x26 || cmd == 0x2C || cmd == 0x2D || cmd == 0x2E);
-    // Atomic: GETLLAR / PUTLLC / PUTLLUC — pretend success
+    // Atomic: GETLLAR / PUTLLC / PUTLLUC / PUTQLLUC — reservation surface
     if (cmd == 0x60 || cmd == 0x61 || cmd == 0x62 || cmd == 0x64) {
-        if (cmd == 0x60) mfc_xfer(s, lsa, ea, size ? size : 4, true);
-        else if (cmd == 0x61 || cmd == 0x62) mfc_xfer(s, lsa, ea, size ? size : 4, false);
-        s.mfc_atomic_stat = 0; // XXIII-F: HLE success (no real reservation yet)
+        uint32_t xsz = size ? size : 128;
+        if (xsz > 128) xsz = 128;
+        if (cmd == 0x60) { // GETLLAR — load + arm reservation
+            mfc_xfer(s, lsa, ea, xsz, true);
+            g_mfc_res_ea[0] = ea;
+            g_mfc_res_size[0] = xsz;
+            g_mfc_res_valid[0] = 1;
+            s.mfc_atomic_stat = 0; // success
+        } else if (cmd == 0x61) { // PUTLLC — store conditional
+            if (g_mfc_res_valid[0] && g_mfc_res_ea[0] == ea) {
+                mfc_xfer(s, lsa, ea, xsz, false);
+                s.mfc_atomic_stat = 0; // success
+            } else {
+                s.mfc_atomic_stat = 1; // failure
+            }
+            g_mfc_res_valid[0] = 0;
+        } else { // PUTLLUC / unconditional
+            mfc_xfer(s, lsa, ea, xsz, false);
+            g_mfc_res_valid[0] = 0;
+            s.mfc_atomic_stat = 0;
+        }
         mfc_complete_tag(s);
         return;
     }

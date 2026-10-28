@@ -412,6 +412,48 @@ struct GcmTile {
 static GcmTile g_gcm_tiles[16] = {};
 
 // XX-I: single entry for all cellGcmSys NIDs
+
+// Read GCM control put/get: titles may poke LE or BE; accept either (AIFIAR: observe both).
+static uint32_t gcm_rd_ctrl_u32(uint64_t ea) {
+    if (!g_mem || ea + 4 > g_mem_size) return 0;
+    uint32_t be = rd_be32_guest(ea);
+    uint32_t raw = (uint32_t)g_mem[ea] | ((uint32_t)g_mem[ea+1] << 8) |
+                   ((uint32_t)g_mem[ea+2] << 16) | ((uint32_t)g_mem[ea+3] << 24);
+    // Prefer BE when non-zero; else LE raw if it looks like a fifo offset
+    if (be != 0) return be;
+    if (raw != 0 && raw < 0x10000000u) {
+        static int s_le = 0;
+        if (s_le < 8) {
+            ps3rt_log("[gcm] control LE put/get observed @0x%llx val=0x%x (using LE)\n",
+                (unsigned long long)ea, raw);
+            ++s_le;
+        }
+        return raw;
+    }
+    return be;
+}
+
+// Emit one NV4097 method word pair into guest FIFO and advance put (libgcm-style kick).
+static void gcm_fifo_emit_method(uint32_t method, uint32_t count, const uint32_t* args) {
+    if (!g_mem || !g_gcm_control || !g_gcm_fifo || !g_gcm_fifo_size) return;
+    uint32_t fsz = g_gcm_fifo_size;
+    uint32_t put = gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz;
+    // method header: (count<<18) | method  (NV40 style used by cellGcm)
+    uint32_t hdr = ((count & 0x7FFu) << 18) | (method & 0x1FFFFu);
+    auto wr = [&](uint32_t v) {
+        uint64_t a = g_gcm_fifo + put;
+        if (a + 4 <= g_mem_size) {
+            g_mem[a] = (uint8_t)(v >> 24); g_mem[a+1] = (uint8_t)(v >> 16);
+            g_mem[a+2] = (uint8_t)(v >> 8); g_mem[a+3] = (uint8_t)v;
+        }
+        put = (put + 4) % fsz;
+    };
+    wr(hdr);
+    for (uint32_t i = 0; i < count; ++i) wr(args ? args[i] : 0);
+    wr_be32_guest(g_gcm_control + 0, put);
+    ps3rt_rsx_set_put(put);
+}
+
 static int gcm_hle(PPUContext* c, uint32_t nid);
 
 static void gcm_ensure_state() {
@@ -447,8 +489,8 @@ static void gcm_fifo_emit(uint32_t method, uint32_t arg) {
     if (!g_gcm_control || !g_gcm_fifo) return;
     uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000;
     // Only advance PUT — GET must lag so RSX can drain the command stream
-    uint32_t put = rd_be32_guest(g_gcm_control + 0) % fsz;
-    uint32_t get = rd_be32_guest(g_gcm_control + 4) % fsz;
+    uint32_t put = gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz;
+    uint32_t get = gcm_rd_ctrl_u32(g_gcm_control + 4) % fsz;
     uint64_t fa = g_gcm_fifo + put;
     if (fa + 8 <= g_mem_size) {
         // NV40/GCM: count=1 method packet (method is register offset)
@@ -497,7 +539,7 @@ static void gcm_inject_clear_draw() {
     gcm_fifo_emit(0x1814, (2u << 24) | 0u);     // count = (2>>24)+1 = 3
     gcm_fifo_emit(0x1808, 0);
     if (g_mem && g_gcm_control) {
-        uint32_t put = rd_be32_guest(g_gcm_control + 0);
+        uint32_t put = gcm_rd_ctrl_u32(g_gcm_control + 0);
         ps3rt_rsx_set_put(put);
         ps3rt_rsx_flush(g_mem);
         wr_be32_guest(g_gcm_control + 4, put);
@@ -544,9 +586,14 @@ static int gcm_hle(PPUContext* c, uint32_t nid) {
             return ok();
         }
         {
-            // XV-M: flip path forces FIFO process + present so boot/draw loops progress
+            // Flip HLE: queue a guest-visible FIFO kick (libgcm advances put) then process
             uint32_t id = (uint32_t)c->gpr[3];
             if (id < 8) g_gcm_current_fb = id;
+            {
+                // NV406E_SET_REFERENCE-style / user command marker so put != get
+                uint32_t arg = id & 7u;
+                gcm_fifo_emit_method(0x0050, 1, &arg); // SET_REFERENCE-ish method slot
+            }
             if (g_mem) ps3rt_rsx_flush(g_mem);
             ps3rt_rsx_flip(id);
             g_gcm_flip_status = 0;
@@ -1135,8 +1182,8 @@ PS3RT_API void ps3rt_progress_hw(void) {
         // XXIII-K: tighter RSX assist cadence (every 32 ticks)
         if ((s_n & 0x07) == 0) { // XXV-E: denser flip/present assist
             uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000u;
-            uint32_t put = g_gcm_control ? (rd_be32_guest(g_gcm_control + 0) % fsz) : 0;
-            uint32_t get = g_gcm_control ? (rd_be32_guest(g_gcm_control + 4) % fsz) : 0;
+            uint32_t put = g_gcm_control ? (gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz) : 0;
+            uint32_t get = g_gcm_control ? (gcm_rd_ctrl_u32(g_gcm_control + 4) % fsz) : 0;
             {
                 uint32_t dist = (put >= get) ? (put - get) : (fsz - get + put);
                 if (dist > fsz / 2) {
