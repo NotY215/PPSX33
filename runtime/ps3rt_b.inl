@@ -115,13 +115,34 @@ case 176: case 177: case 178: case 179: case 180: case 181:
 case 330: case 331: case 332: case 333: case 334:
     c->gpr[3] = 0; break;
 case 348: case 349: case 350: case 351: case 352: case 353: case 354: {
-    uint64_t sz = r4 ? r4 : 0x1000;
-    uint64_t al = r5 ? r5 : 0x10000;
-    if (al > 0x100000) al = 0x10000;
+    // AIFIAR: reject stack/pointer-shaped "sizes" (log: r4=0xf100b40)
+    auto looks_size = [](uint64_t v) -> bool {
+        return v >= 0x100ull && v <= 0x10000000ull; // 256B .. 256MB
+    };
+    auto looks_ptr = [](uint64_t v) -> bool {
+        return v >= 0x10000ull && v < g_mem_size;
+    };
+    uint64_t sz = 0, out = 0, flags = 0;
+    // Prefer (out=r3, size=r4) when r4 is a plausible size
+    if (looks_size(r4) && looks_ptr(r3)) { out = r3; sz = r4; flags = r5; }
+    else if (looks_size(r3)) { sz = r3; flags = r4; out = r5 ? r5 : 0; }
+    else if (looks_size(r4)) { sz = r4; out = looks_ptr(r3) ? r3 : 0; flags = r5; }
+    if (!sz) {
+        static int s_bad = 0;
+        if (s_bad < 12) {
+            ps3rt_log("[lv2] mem REJECT sc=%u r3=0x%llx r4=0x%llx (not a size)\n",
+                (unsigned)num, (unsigned long long)r3, (unsigned long long)r4);
+            ++s_bad;
+        }
+        c->gpr[3] = (uint64_t)(int64_t)-1;
+        break;
+    }
+    uint64_t al = 0x10000;
+    if (flags && flags <= 0x100000) al = flags;
     uint64_t a = guest_alloc(sz, al);
-    if (r3 && r3 + 8 <= g_mem_size) wr_be64_guest(r3, a);
+    if (out && out + 8 <= g_mem_size) wr_be64_guest(out, a);
     static int s_m = 0;
-    if (s_m < 16) {
+    if (s_m < 24) {
         ps3rt_log("[lv2] XV-L mem sc=%u size=0x%llx -> ea=0x%llx\n",
             (unsigned)num, (unsigned long long)sz, (unsigned long long)a);
         ++s_m;

@@ -350,11 +350,15 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                                 if (cand == alt || cand == c.pc || cand == s_retry_alt) continue;
                                 esc = cand;
                             }
+                            if (!esc && last_good_ret && pc_in_chunks(last_good_ret, chunks, n)
+                                && last_good_ret != alt)
+                                esc = last_good_ret;
                             if (esc) {
                                 if (s_sticky_log < 24)
                                     ps3rt_log("[ps3] P0 sticky escalate -> 0x%llx (was alt=0x%llx)\n",
                                         (unsigned long long)esc, (unsigned long long)alt);
                                 alt = esc;
+                                c.pc = esc;
                                 c.gpr[3] = 0;
                                 s_retry_n = 0;
                             } else if (s_sticky_log < 24) {
