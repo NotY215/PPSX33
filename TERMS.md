@@ -93,7 +93,7 @@ By cloning, building, installing, or using PPSX33 (the "Software"), including th
 
 ## 9. Not legal advice
 
-9.1. [LEGAL.md](https://github.com/NotY215/PPSX33/blob/main/LEGAL.md) and these Terms describe the project's **intended positioning**. They are **not** legal advice and **do not** guarantee that any third party (including rights holders) will never assert claims.
+9.1. [LEGAL.md](https://github.com/NotY215/PPSX33/blob/main/LEGAL.md) and these Terms describe project policy and are **not** legal advice. They do not establish that the software or a particular use is lawful, provide a safe harbor, or guarantee that a third party (including a rights holder) will not assert a claim.
 
 9.2. If you need advice about your specific use, consult a qualified attorney in your jurisdiction.
 
