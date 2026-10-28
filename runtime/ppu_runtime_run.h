@@ -484,6 +484,19 @@ static int wild_log2 = 0;
                 last_leave = alt;
                 c.pc = alt; c.gpr[3] = 0; ++external_escapes; continue;
             }
+            // Soft: do not kill the title when escape budget is exhausted — return to last good
+            if (last_good_ret && pc_in_chunks(last_good_ret, chunks, n)) {
+                static int s_soft_left = 0;
+                if (s_soft_left < 24) {
+                    ps3rt_log("[ps3] soft left-range pc=0x%llx -> last_good=0x%llx (escapes=%d)\n",
+                        (unsigned long long)c.pc, (unsigned long long)last_good_ret, external_escapes);
+                    ++s_soft_left;
+                }
+                c.pc = last_good_ret;
+                c.gpr[3] = 0;
+                external_escapes = 0;
+                continue;
+            }
             ps3rt_log("[ps3] halt: PC left range pc=0x%llx lr=0x%llx escapes=%d nrban=%d last_good=0x%llx\n",
                 (unsigned long long)c.pc, (unsigned long long)c.lr,
                 external_escapes, nrban, (unsigned long long)last_good_ret);

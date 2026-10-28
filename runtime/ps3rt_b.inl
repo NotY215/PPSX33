@@ -967,7 +967,11 @@ PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
             // skip non-table memory words
         }
     }
-    if (!maybe_nid) maybe_nid = 0;
+    if (!maybe_nid) {
+        // Prefer raw r11 for dispatch/telemetry even when heuristic rejected it
+        uint32_t r11 = (uint32_t)c->gpr[11];
+        if (r11 && r11 != 0xFFFFFFFFu) maybe_nid = r11;
+    }
 
     const NidEntry* e = maybe_nid ? nid_lookup(maybe_nid) : nullptr;
     int kind = e ? e->kind : 0;
@@ -1091,6 +1095,11 @@ PS3RT_API void ps3rt_progress_hw(void) {
             if (g_mem) {
                 if (put > 0x20) ps3rt_rsx_set_put(put);
                 ps3rt_rsx_flush(g_mem);
+                static int s_idle = 0;
+                if (put == get && s_idle < 8) {
+                    ps3rt_log("[gcm] FIFO idle put=get=0x%x (no guest commands yet)\n", put);
+                    ++s_idle;
+                }
             }
             frame_pace_wait();
             ps3rt_rsx_flip(0);
