@@ -1,4 +1,4 @@
-# Uncharted 2: Among Thieves — PPU opcode expansion
+# <img src="https://www.pngkey.com/png/detail/983-9839044_uncharted-2-among-thieves.png" width="68" alt="Uncharted 2 logo artwork" /> Uncharted 2: Among Thieves — PPU opcode expansion
 
 **Role:** Secondary target for static PPU coverage. Primary runtime target remains GOW3.
 
