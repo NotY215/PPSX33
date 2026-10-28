@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_17-15-22.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_17-15-22.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_19-09-29.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_19-09-29.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -561,6 +561,14 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XV flip #32 guest=128 diag=0 draws=128 shaders=0 tex=0 methods=52 packets=26 1280x720
 [gcm] boot FIFO assist #24 put/get were idle
 [gcm] boot FIFO assist #32 put/get were idle
+[rsx] XV-H resize 1280x729 rtv=ok
+[rsx] XV-H resize 1280x729 rtv=ok
+[rsx] XV-H resize 1280x729 rtv=ok
+[rsx] XV-H resize 1280x729 rtv=ok
+[rsx] XV-H resize 1280x729 rtv=ok
+[rsx] XV-H resize 1280x729 rtv=ok
+[rsx] XV-H resize 1280x729 rtv=ok
+[rsx] XV-H resize 1280x729 rtv=ok
 [gcm] boot FIFO assist #40 put/get were idle
 [gcm] boot FIFO assist #48 put/get were idle
 [gcm] boot FIFO assist #56 put/get were idle
@@ -573,14 +581,6 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [gcm] boot FIFO assist #104 put/get were idle
 [gcm] boot FIFO assist #112 put/get were idle
 [gcm] boot FIFO assist #120 put/get were idle
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
 [gcm] boot FIFO assist #128 put/get were idle
 [time] XXIII-K ppu=2048 spu=1536 rsx_flips=255 phase=0
 [rsx] XV flip #257 guest=1021 diag=0 draws=1021 shaders=0 tex=0 methods=0 packets=0 1280x729
@@ -597,7 +597,6 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XV flip #1537 guest=2301 diag=0 draws=2301 shaders=0 tex=0 methods=0 packets=0 1280x729
 [rsx] XV flip #1793 guest=2557 diag=0 draws=2557 shaders=0 tex=0 methods=0 packets=0 1280x729
 [rsx] XV flip #2049 guest=2813 diag=0 draws=2813 shaders=0 tex=0 methods=0 packets=0 1280x729
-[rsx] XV flip #2305 guest=3069 diag=0 draws=3069 shaders=0 tex=0 methods=0 packets=0 1280x729
 [rsx] window closed by user — exiting
 [ps3rt] force exit
 
