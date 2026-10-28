@@ -1779,11 +1779,19 @@ static void rsx_fifo_decode_word(uint8_t* mem, uint32_t method, uint32_t arg) {
         ++g_rsx.methods_this_frame;
         // Issue host draw when guest issues draw-class methods
         if (method == 0x1814 || method == 0x1824) {
+            int before = g_rsx.draws_guest_frame;
             rsx_draw_host(mem);
+            // Cmdstream draw must count as guest even if geometry falls back to solid
+            if (g_rsx.draws_guest_frame == before) {
+                ++g_rsx.draws_guest;
+                ++g_rsx.draws_guest_frame;
+                ++g_rsx.draws;
+            }
             static int dg=0;
             if (dg < 24) {
-                ps3rt_log("[rsx] XV-O draw method=0x%x arg=0x%x count=%u tex=0x%x color=0x%x\n",
-                    method, arg, g_draw_count, g_rsx.tex_offset, (unsigned)g_rsx.color_offset);
+                ps3rt_log("[rsx] XV-O draw method=0x%x arg=0x%x count=%u tex=0x%x color=0x%x guest_frame=%d\n",
+                    method, arg, g_draw_count, g_rsx.tex_offset, (unsigned)g_rsx.color_offset,
+                    g_rsx.draws_guest_frame);
                 ++dg;
             }
         } else if (method == 0x1808 && arg == 0 && g_draw_count >= 3 && g_va_offset[0]) {
@@ -1970,13 +1978,20 @@ static void rsx_process_fifo(uint8_t* mem) {
         // AIFIAR: do not drop the stream when GET is stale-ahead of PUT after a ring restart.
         // Log evidence: get=0xd0 put=0x68 dist=0xfff98 — false "full ring" wipe skipped real cmds.
         if (put < get && put < 0x10000u) {
+            // Prefer processing only the new tail: if put moved backward, start at 0
+            // but remember last processed put to avoid re-decoding the whole ring forever
+            static uint32_t s_last_put = 0;
             static int s_rw = 0;
+            uint32_t start = 0;
+            if (put > s_last_put && s_last_put < put)
+                start = s_last_put; // continue from last committed end when growing
             if (s_rw < 12) {
-                ps3rt_log("[rsx] FIFO PUT restart get=0x%x -> 0 (put=0x%x)\n", get, put);
+                ps3rt_log("[rsx] FIFO PUT restart get=0x%x -> 0x%x (put=0x%x)\n", get, start, put);
                 ++s_rw;
             }
-            get = 0;
-            g_rsx.get = 0;
+            get = start;
+            g_rsx.get = start;
+            s_last_put = put;
         } else {
             uint32_t dist = (put >= get) ? (put - get) : (fsz0 - get + put);
             if (dist > (fsz0 * 3u / 4u)) {
@@ -2002,8 +2017,7 @@ static void rsx_process_fifo(uint8_t* mem) {
         // Guest cmdstream is BE; fall back to LE only if BE looks inert
         uint32_t hdr = hdr_be;
         if ((hdr_be & 0x1FFCu) == 0 && (hdr_le & 0x1FFCu) != 0) hdr = hdr_le;
-        // BE words on RSX pushbuffer — prefer BE load
-        hdr = ((hdr & 0xff) << 24) | ((hdr & 0xff00) << 8) | ((hdr >> 8) & 0xff00) | ((hdr >> 24) & 0xff);
+        // Do NOT bswap again — hdr_be/hdr_le already absolute word values
         uint32_t method = hdr & 0x1FFCu;
         uint32_t count = ((hdr >> 18) & 0x7FFu);
         if (count == 0) count = 1;
