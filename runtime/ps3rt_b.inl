@@ -88,11 +88,21 @@ case 128: {
 case 129: case 130: case 131: case 132: case 133: case 134: case 135:
 case 136: case 137: case 138: case 139:
     c->gpr[3] = 0; break;
-case 141: case 142:
+case 141: case 142: {
+    // sys_timer_usleep / sys_timer_sleep — log shows 0x186a0 us (=100ms) tight-loop
+    uint64_t us = r3;
 #if defined(_WIN32)
-    Sleep(0);
+    if (us >= 1000ull) {
+        DWORD ms = (DWORD)(us / 1000ull);
+        if (ms > 50) ms = 50; // bound so host stays responsive
+        if (ms == 0) ms = 1;
+        Sleep(ms);
+    } else {
+        Sleep(0);
+    }
 #endif
     c->gpr[3] = 0; break;
+}
 case 143: {
     static uint32_t fid = 0x8000;
     if (r3 && r3 + 4 <= g_mem_size) wr_be32_guest(r3, ++fid);
@@ -115,21 +125,19 @@ case 176: case 177: case 178: case 179: case 180: case 181:
 case 330: case 331: case 332: case 333: case 334:
     c->gpr[3] = 0; break;
 case 348: case 349: case 350: case 351: case 352: case 353: case 354: {
-    // AIFIAR: reject stack/pointer-shaped "sizes" (log: r4=0xf100b40)
     auto looks_size = [](uint64_t v) -> bool {
-        return v >= 0x100ull && v <= 0x10000000ull; // 256B .. 256MB
+        return v >= 0x100ull && v <= 0x10000000ull;
     };
     auto looks_ptr = [](uint64_t v) -> bool {
         return v >= 0x10000ull && v < g_mem_size;
     };
     uint64_t sz = 0, out = 0, flags = 0;
-    // Prefer (out=r3, size=r4) when r4 is a plausible size
     if (looks_size(r4) && looks_ptr(r3)) { out = r3; sz = r4; flags = r5; }
-    else if (looks_size(r3)) { sz = r3; flags = r4; out = r5 ? r5 : 0; }
+    else if (looks_size(r3)) { sz = r3; flags = r4; out = (r5 && looks_ptr(r5)) ? r5 : 0; }
     else if (looks_size(r4)) { sz = r4; out = looks_ptr(r3) ? r3 : 0; flags = r5; }
     if (!sz) {
         static int s_bad = 0;
-        if (s_bad < 12) {
+        if (s_bad < 16) {
             ps3rt_log("[lv2] mem REJECT sc=%u r3=0x%llx r4=0x%llx (not a size)\n",
                 (unsigned)num, (unsigned long long)r3, (unsigned long long)r4);
             ++s_bad;
@@ -138,7 +146,7 @@ case 348: case 349: case 350: case 351: case 352: case 353: case 354: {
         break;
     }
     uint64_t al = 0x10000;
-    if (flags && flags <= 0x100000) al = flags;
+    if (flags && flags >= 0x1000 && flags <= 0x100000) al = flags;
     uint64_t a = guest_alloc(sz, al);
     if (out && out + 8 <= g_mem_size) wr_be64_guest(out, a);
     static int s_m = 0;

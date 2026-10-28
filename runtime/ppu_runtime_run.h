@@ -339,31 +339,37 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                     } else if (alt && pc_in_chunks(alt, chunks, n)) {
                         if (alt == s_retry_alt) ++s_retry_n; else { s_retry_alt = alt; s_retry_n = 1; }
                         if (s_retry_n >= 6) {
-                            uint64_t esc = 0;
-                            uint64_t sp = c.gpr[1];
-                            for (int off = 0; off < 0x8000 && !esc; off += 8) {
-                                uint64_t a = sp + (uint64_t)off;
-                                if (!guest_ok(c, a, 8)) break;
-                                uint64_t cand = rd64(c, a);
-                                if (!cand || (cand & 3ull) != 0) continue;
-                                if (!pc_in_chunks(cand, chunks, n)) continue;
-                                if (cand == alt || cand == c.pc || cand == s_retry_alt) continue;
-                                esc = cand;
+                            // Ban spinning alt so recover/stack can leave the null-import island
+                            add_rban(alt);
+                            uint64_t esc = recover_return_pc(c, chunks, n, alt, ban_lr, nban, rban, nrban);
+                            if (!esc) {
+                                uint64_t sp = c.gpr[1];
+                                for (int off = 0; off < 0x8000 && !esc; off += 8) {
+                                    uint64_t a = sp + (uint64_t)off;
+                                    if (!guest_ok(c, a, 8)) break;
+                                    uint64_t cand = rd64(c, a);
+                                    if (!cand || (cand & 3ull) != 0) continue;
+                                    if (!pc_in_chunks(cand, chunks, n)) continue;
+                                    if (cand == alt || cand == c.pc || cand == s_retry_alt) continue;
+                                    esc = cand;
+                                }
                             }
                             if (!esc && last_good_ret && pc_in_chunks(last_good_ret, chunks, n)
-                                && last_good_ret != alt)
+                                && last_good_ret != alt && !is_banned(last_good_ret))
                                 esc = last_good_ret;
                             if (esc) {
-                                if (s_sticky_log < 24)
-                                    ps3rt_log("[ps3] P0 sticky escalate -> 0x%llx (was alt=0x%llx)\n",
-                                        (unsigned long long)esc, (unsigned long long)alt);
+                                if (s_sticky_log < 32)
+                                    ps3rt_log("[ps3] P0 sticky escalate -> 0x%llx (was alt=0x%llx n=%d)\n",
+                                        (unsigned long long)esc, (unsigned long long)alt, s_retry_n);
                                 alt = esc;
                                 c.pc = esc;
                                 c.gpr[3] = 0;
                                 s_retry_n = 0;
-                            } else if (s_sticky_log < 24) {
-                                ps3rt_log("[ps3] P0 sticky soft-retry alt=0x%llx (n=%d)\n",
-                                    (unsigned long long)alt, s_retry_n);
+                                s_retry_alt = 0;
+                            } else {
+                                if (s_sticky_log < 32)
+                                    ps3rt_log("[ps3] P0 sticky soft-retry alt=0x%llx (n=%d, no esc)\n",
+                                        (unsigned long long)alt, s_retry_n);
                             }
                         } else if (s_sticky_log < 24) {
                             ps3rt_log("[ps3] P0 sticky soft-retry alt=0x%llx\n", (unsigned long long)alt);
