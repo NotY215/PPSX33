@@ -35,6 +35,8 @@ The aim is not to pretend the PS3 is simple. The aim is to make each part observ
 
 PPSX33's optional **Decrypt EBOOT** action launches a separately installed RPCS3 executable. PPSX33 does not bundle RPCS3 or proprietary keys. Users are responsible for confirming that processing their selected inputs is permitted; a disclaimer or ownership claim alone does not guarantee legality.
 
+PPSX33's optional **Decrypt EBOOT** action launches a separately installed RPCS3 executable. PPSX33 does not bundle RPCS3 or proprietary keys. Users are responsible for confirming that processing their selected inputs is permitted; a disclaimer or ownership claim alone does not guarantee legality.
+
 ### 🔁 The pipeline
 
 <p align="center">
