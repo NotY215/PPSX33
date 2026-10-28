@@ -37,7 +37,7 @@ The output is placed in `build\dist\`. The GUI is published when the .NET SDK is
 
 The Alpha 01 package contains the WinForms application, native core library/import artifacts, CLI, .NET runtime metadata, logos, staged build tools, and selected runtime sources. The intended directory layout is documented in the root [README](../README.md), and the public-facing notes are in [PPSX33-Alpha-01 release notes](../releases/PPSX33-Alpha-01.md).
 
-Before publishing a binary archive, validate the exact archive on a clean Windows machine. Audit each included image, icon, font, runtime library, and other third-party artifact for provenance, redistribution permission, and required notices; do not assume repository presence establishes a license. Check that the GUI starts, `ps3_cli.exe --help` returns its usage text, and the synthetic smoke test passes. If a check has not been run, identify it as unverified. Confirm all bundled third-party binaries can legally be redistributed.
+Before publishing a binary archive, validate the exact archive on a clean Windows machine. Audit each included image, icon, font, runtime library, and other third-party artifact for provenance, redistribution permission, and required notices; repository presence does not establish a license. Audit each included image, icon, font, runtime library, and other third-party artifact for provenance, redistribution permission, and required notices; do not assume repository presence establishes a license. Check that the GUI starts, `ps3_cli.exe --help` returns its usage text, and the synthetic smoke test passes. If a check has not been run, identify it as unverified. Confirm all bundled third-party binaries can legally be redistributed.
 
 ## Test workflow
 
