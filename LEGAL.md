@@ -40,16 +40,6 @@ PPSX33 does not bundle proprietary decryption keys or ship Sony firmware, game b
 
 The external tool has its own code, license, and behavior. PPSX33 does not authorize circumvention, determine whether a user is entitled to decrypt a particular file, or make an otherwise restricted act lawful. Do not use the workflow unless you have confirmed that your input and intended use are permitted under applicable law and relevant terms.
 
-In plain terms:
-
-| Claim | Status |
-|-------|--------|
-| Ships Sony/PlayStation decryption keys | **No** |
-| Embeds retail disc/HDD encryption secrets | **No** |
-| Built-in “one-click” DRM crack engine | **No** |
-| Can invoke an external tool for a user-selected EBOOT | **Yes, through the optional RPCS3 integration** |
-| Ability to unlock content you do not already have keys/tools for | **No** (by design of this project) |
-
 The optional EBOOT workflow invokes the RPCS3 executable selected by the user. Users must obtain RPCS3 independently, comply with its license and applicable law, and use only inputs they are authorized to process. PPSX33 does not ship RPCS3 or keys and does not instruct users to obtain unauthorized dumps.
 
 ---
@@ -77,7 +67,7 @@ You must only use PPSX33 with material you **lawfully own or are licensed to use
 
 The repository and UI:
 
-- **Do not promote** decrypting `EBOOT.BIN` to ELF as a product feature for the general public.  
+- Do not present the external RPCS3 decrypt workflow as a guarantee of compatibility, legal authorization, or a built-in PPSX33 decryption engine.  
 - **Do not promote** downloading or sharing pirated games.  
 - Describe the RPCS3 decrypt action accurately as an optional external-tool workflow; do not imply that a legal acknowledgment establishes permission or guarantees legality.  
 - Require an on-screen **legal acknowledgment** before Load ELF / Decrypt flows in the GUI.
