@@ -928,15 +928,15 @@ PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
     // XV-J: reject size/pointer-shaped values (log: 0x003CC7F8 was alloc size)
     auto looks_like_nid = [](uint32_t v) -> bool {
         if (v == 0 || v == 0xFFFFFFFFu) return false;
-        if (v < 0x10000u) return false;
+        if (v < 0x100000u) return false; // reject 0x65 / 0x160 class
         if (v >= 0x30000000u && v <= 0x3FFFFFFFu) return false;
         if (v >= 0x48000000u && v <= 0x4FFFFFFFu) return false;
-        if (v >= 0x80000000u) return false;
+        if (v >= 0x80000000u) return false; // reject 0xF1500000 class
         if ((v & 0xFFFu) == 0) return false;
         if (v < 0x01000000u && (v & 0xFFu) == 0) return false;
         int bits = 0;
         for (uint32_t t = v; t; t >>= 1) bits += (int)(t & 1u);
-        if (bits < 6 || bits > 26) return false;
+        if (bits < 8 || bits > 24) return false;
         return true;
     };
     uint32_t maybe_nid = (uint32_t)c->gpr[11];
@@ -967,11 +967,8 @@ PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
             // skip non-table memory words
         }
     }
-    if (!maybe_nid) {
-        // Prefer raw r11 for dispatch/telemetry even when heuristic rejected it
-        uint32_t r11 = (uint32_t)c->gpr[11];
-        if (r11 && r11 != 0xFFFFFFFFu) maybe_nid = r11;
-    }
+    // Only accept values that pass looks_like_nid (reject 0x65 / 0x160 / 0xF1500000 noise)
+    if (maybe_nid && !looks_like_nid(maybe_nid)) maybe_nid = 0;
 
     const NidEntry* e = maybe_nid ? nid_lookup(maybe_nid) : nullptr;
     int kind = e ? e->kind : 0;

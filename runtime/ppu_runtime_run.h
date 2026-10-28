@@ -315,9 +315,10 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                     uint64_t lr = c.lr;
                     if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr != alt)
                         next = lr;
+                    // Prefer callstack frames that are not the spinning alt
                     if (!next) {
                         uint64_t sp = c.gpr[1];
-                        for (int off = 0; off < 0x2000 && !next; off += 8) {
+                        for (int off = 0; off < 0x4000 && !next; off += 8) {
                             uint64_t a = sp + (uint64_t)off;
                             if (!guest_ok(c, a, 8)) break;
                             uint64_t cand = rd64(c, a);
@@ -327,14 +328,46 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                             next = cand;
                         }
                     }
+                    static uint64_t s_retry_alt = 0;
+                    static int s_retry_n = 0;
                     if (next) {
                         if (s_sticky_log < 24)
                             ps3rt_log("[ps3] P0 sticky soft-continue -> 0x%llx\n", (unsigned long long)next);
                         alt = next;
                         c.gpr[3] = 0;
+                        s_retry_alt = 0;
+                        s_retry_n = 0;
                     } else if (alt && pc_in_chunks(alt, chunks, n)) {
-                        if (s_sticky_log < 24)
-                            ps3rt_log("[ps3] P0 sticky soft-retry alt=0x%llx\n", (unsigned long long)alt);
+                        if (alt == s_retry_alt) ++s_retry_n; else { s_retry_alt = alt; s_retry_n = 1; }
+                        // Same alt spinning with lr=0: escalate away from alt
+                        if (s_retry_n >= 6) {
+                            uint64_t esc = 0;
+                            uint64_t sp = c.gpr[1];
+                            for (int off = 0; off < 0x8000 && !esc; off += 8) {
+                                uint64_t a = sp + (uint64_t)off;
+                                if (!guest_ok(c, a, 8)) break;
+                                uint64_t cand = rd64(c, a);
+                                if (!cand || (cand & 3ull) != 0) continue;
+                                if (!pc_in_chunks(cand, chunks, n)) continue;
+                                if (cand == alt || cand == c.pc || cand == s_retry_alt) continue;
+                                esc = cand;
+                            }
+                            if (esc) {
+                                if (s_sticky_log < 24)
+                                    ps3rt_log("[ps3] P0 sticky escalate -> 0x%llx (was alt=0x%llx)\n",
+                                        (unsigned long long)esc, (unsigned long long)alt);
+                                alt = esc;
+                                c.gpr[3] = 0;
+                                s_retry_n = 0;
+                            } else {
+                                if (s_sticky_log < 24)
+                                    ps3rt_log("[ps3] P0 sticky soft-retry alt=0x%llx (n=%d)\n",
+                                        (unsigned long long)alt, s_retry_n);
+                            }
+                        } else {
+                            if (s_sticky_log < 24)
+                                ps3rt_log("[ps3] P0 sticky soft-retry alt=0x%llx\n", (unsigned long long)alt);
+                        }
                     } else {
                         c.halted = true;
                         break;
@@ -485,17 +518,39 @@ static int wild_log2 = 0;
                 c.pc = alt; c.gpr[3] = 0; ++external_escapes; continue;
             }
             // Soft: do not kill the title when escape budget is exhausted — return to last good
-            if (last_good_ret && pc_in_chunks(last_good_ret, chunks, n)) {
-                static int s_soft_left = 0;
-                if (s_soft_left < 24) {
-                    ps3rt_log("[ps3] soft left-range pc=0x%llx -> last_good=0x%llx (escapes=%d)\n",
-                        (unsigned long long)c.pc, (unsigned long long)last_good_ret, external_escapes);
-                    ++s_soft_left;
+            {
+                static uint64_t s_left_pc = 0;
+                static int s_left_n = 0;
+                if (c.pc == s_left_pc) ++s_left_n; else { s_left_pc = c.pc; s_left_n = 1; }
+                uint64_t dest = 0;
+                // After several hits on same external PC, prefer a different stack frame over last_good
+                if (s_left_n >= 3) {
+                    uint64_t sp = c.gpr[1];
+                    for (int off = 0; off < 0x8000 && !dest; off += 8) {
+                        uint64_t a = sp + (uint64_t)off;
+                        if (!guest_ok(c, a, 8)) break;
+                        uint64_t cand = rd64(c, a);
+                        if (!cand || (cand & 3ull) != 0) continue;
+                        if (!pc_in_chunks(cand, chunks, n)) continue;
+                        if (cand == last_good_ret || cand == c.pc) continue;
+                        dest = cand;
+                    }
                 }
-                c.pc = last_good_ret;
-                c.gpr[3] = 0;
-                external_escapes = 0;
-                continue;
+                if (!dest && last_good_ret && pc_in_chunks(last_good_ret, chunks, n))
+                    dest = last_good_ret;
+                if (dest) {
+                    static int s_soft_left = 0;
+                    if (s_soft_left < 32) {
+                        ps3rt_log("[ps3] soft left-range pc=0x%llx -> 0x%llx (escapes=%d n=%d)\n",
+                            (unsigned long long)c.pc, (unsigned long long)dest, external_escapes, s_left_n);
+                        ++s_soft_left;
+                    }
+                    c.pc = dest;
+                    c.gpr[3] = 0;
+                    external_escapes = 0;
+                    if (s_left_n >= 3) { s_left_pc = 0; s_left_n = 0; }
+                    continue;
+                }
             }
             ps3rt_log("[ps3] halt: PC left range pc=0x%llx lr=0x%llx escapes=%d nrban=%d last_good=0x%llx\n",
                 (unsigned long long)c.pc, (unsigned long long)c.lr,
