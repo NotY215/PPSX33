@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_17-01-55.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_17-01-55.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_17-15-22.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_17-15-22.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -279,7 +279,9 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] XXV-F FAULT gpr3-10 0 3cc7f8 0 0 68d2c0 0 0 0
 [ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x331aac lr=0x0 hits=3 strict=0
 [ps3] Phase M touch-progress n=98304
-[ps3] P0 sticky skip-banned alt=0x331aac -> 0x32a6b4
+[ps3] Phase XI region-ban 0x32a400 (nrban=2)
+[ps3] P0 sticky ban-pingpong esc=0x32a6b4
+[ps3] P0 sticky skip-banned alt=0x331aac -> 0x18000
 [ps3] import stub pc=0x39800000 -> ret=0x34636c (#57)
 [ps3] import stub pc=0x39800000 -> ret=0x346460 (#58)
 [ps3] import stub pc=0x39800000 -> ret=0x346554 (#59)
@@ -288,79 +290,77 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [ps3] import stub pc=0x39800000 -> ret=0x1b49d0 (#62)
 [lv2] sc 169 r3=6 r4=0 r5=0 r6=0
 [ps3] import stub pc=0x39800000 -> ret=0x28ec24 (#63)
-[lv2] sc 48 r3=0 r4=f100b50 r5=0 r6=0
-[lv2] sc 352 r3=f100b88 r4=f100b50 r5=0 r6=0
-[lv2] XV-L mem sc=352 size=0xf100b50 -> ea=0x0
+[lv2] sc 48 r3=0 r4=f100b30 r5=0 r6=0
+[lv2] sc 352 r3=f100b68 r4=f100b30 r5=0 r6=0
+[lv2] XV-L mem sc=352 size=0xf100b30 -> ea=0x0
 [ps3] import stub pc=0x39800000 -> ret=0x28ec9c (#64)
 [ps3] import stub pc=0x39800000 -> ret=0x28ecb0 (#65)
 [ps3] import stub pc=0x39800000 -> ret=0x28ecd8 (#66)
 [ps3] import stub pc=0x39800000 -> ret=0x28ed18 (#67)
 [ps3] import stub pc=0x39800000 -> ret=0x28ed2c (#68)
 [ps3] import stub pc=0x39800000 -> ret=0x28ed50 (#69)
-[lv2] sc 352 r3=f100b60 r4=f100b70 r5=0 r6=0
-[lv2] XV-L mem sc=352 size=0xf100b70 -> ea=0x0
+[lv2] sc 352 r3=f100b40 r4=f100b50 r5=0 r6=0
+[lv2] XV-L mem sc=352 size=0xf100b50 -> ea=0x0
 [ps3] import stub pc=0x39800000 -> ret=0x268f8c (#70)
 [ps3] import stub pc=0x39800000 -> ret=0x268fc0 (#71)
-[prx] XXV-G UNKNOWN nid=0x005EEA4F kind=0 (total_unknown=1)
 [ps3] import stub pc=0x39800000 -> ret=0x268ff0 (#72)
-[prx] XXV-G UNKNOWN nid=0x005EEA4F kind=0 (total_unknown=2)
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#73)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#74)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#75)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#76)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#77)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#78)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#79)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#80)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#81)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#82)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#83)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#84)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#85)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#86)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#87)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#88)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#89)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#90)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#91)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#92)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#93)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#94)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#95)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [ps3] import stub pc=0x39800000 -> ret=0x1b4b4c (#96)
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f100cf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f100cd4 r5=a r6=5eea48
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XV-O CLEAR color=0x204028 1280x720
@@ -559,15 +559,7 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XV flip #30 guest=120 diag=0 draws=120 shaders=0 tex=0 methods=52 packets=26 1280x720
 [rsx] XV flip #31 guest=123 diag=0 draws=123 shaders=0 tex=0 methods=26 packets=13 1280x720
 [rsx] XV flip #32 guest=128 diag=0 draws=128 shaders=0 tex=0 methods=52 packets=26 1280x720
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
 [gcm] boot FIFO assist #24 put/get were idle
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
 [gcm] boot FIFO assist #32 put/get were idle
 [gcm] boot FIFO assist #40 put/get were idle
 [gcm] boot FIFO assist #48 put/get were idle
@@ -581,6 +573,14 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [gcm] boot FIFO assist #104 put/get were idle
 [gcm] boot FIFO assist #112 put/get were idle
 [gcm] boot FIFO assist #120 put/get were idle
+[rsx] XV-H resize 1280x729 rtv=ok
+[rsx] XV-H resize 1280x729 rtv=ok
+[rsx] XV-H resize 1280x729 rtv=ok
+[rsx] XV-H resize 1280x729 rtv=ok
+[rsx] XV-H resize 1280x729 rtv=ok
+[rsx] XV-H resize 1280x729 rtv=ok
+[rsx] XV-H resize 1280x729 rtv=ok
+[rsx] XV-H resize 1280x729 rtv=ok
 [gcm] boot FIFO assist #128 put/get were idle
 [time] XXIII-K ppu=2048 spu=1536 rsx_flips=255 phase=0
 [rsx] XV flip #257 guest=1021 diag=0 draws=1021 shaders=0 tex=0 methods=0 packets=0 1280x729
@@ -596,6 +596,8 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XV flip #1281 guest=2045 diag=0 draws=2045 shaders=0 tex=0 methods=0 packets=0 1280x729
 [rsx] XV flip #1537 guest=2301 diag=0 draws=2301 shaders=0 tex=0 methods=0 packets=0 1280x729
 [rsx] XV flip #1793 guest=2557 diag=0 draws=2557 shaders=0 tex=0 methods=0 packets=0 1280x729
+[rsx] XV flip #2049 guest=2813 diag=0 draws=2813 shaders=0 tex=0 methods=0 packets=0 1280x729
+[rsx] XV flip #2305 guest=3069 diag=0 draws=3069 shaders=0 tex=0 methods=0 packets=0 1280x729
 [rsx] window closed by user — exiting
 [ps3rt] force exit
 
