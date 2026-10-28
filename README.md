@@ -13,6 +13,7 @@
 
 <p align="center">
   <a href="ROADMAP.md">🧭 Roadmap</a> ·
+  <a href="ENGINEERING.md">📐 Engineering</a> ·
   <a href="docs/DEVELOPER_GUIDE.md">🛠️ Developer guide</a> ·
   <a href="USER_MANUAL.md">📘 User manual</a> ·
   <a href="docs/games/README.md">🎮 Game notes</a>
@@ -25,7 +26,7 @@
 </p>
 
 > [!IMPORTANT]
-> **PPSX33 is experimental software, not a finished PS3 compatibility solution.** A successful lift or build does not mean a game is playable. PPU semantics, HLE, SPU/DMA behaviour and real RSX rendering are still being developed and validated.
+> **PPSX33 is experimental software, not a finished PS3 compatibility solution.** A successful lift or build does not mean a game is playable. Control-flow recovery and boot FIFO assist are **diagnostic**; use `PS3RT_STRICT_FAULT=1` when validating correctness. PPU semantics, HLE, SPU/DMA behaviour and real RSX rendering are still being developed and validated.
 
 > [!NOTE]
 > **Input format:** PPSX33 loads **decrypted ELF** files only. It does **not** decrypt EBOOTs, bundle keys, or launch external emulators. Obtaining a decrypted ELF is the user's responsibility (for example, offline tooling some users already have — not provided by this project).

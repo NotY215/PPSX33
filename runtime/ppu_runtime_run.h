@@ -1,3 +1,4 @@
+extern "C" void ps3rt_log_hle_status_once(void);
 // XXV-L: sticky wild-pc break + LR-first recovery
 // XXV-F full depth: validate_guest_pc, capture_guest_fault, strict/storm
 #include <cstdlib>
@@ -233,7 +234,8 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
     uint64_t f_last_from = 0;
     uint64_t f_same_from = 0;
 
-    while (!c.halted) {
+        ps3rt_log_hle_status_once();
+while (!c.halted) {
 
         // XXV-F: classify PC; strict or storm stops silent invent
         {

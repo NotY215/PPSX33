@@ -22,6 +22,7 @@ PS3RT_API void ps3rt_assets_boot_scan(void);
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include "hle_status.h"
 #endif
 
 static FILE* g_logf = nullptr;
@@ -30,12 +31,14 @@ static std::atomic<int> g_exit_requested{0};
 PS3RT_API void ps3rt_request_exit(void) {
     g_exit_requested.store(1);
     PS3RT_STAGE("EXIT requested");
-    ps3rt_log("[ps3rt] exit requested\n");
+    ps3rt_log("[ps3rt] exit requested
+");
 }
 PS3RT_API int ps3rt_should_exit(void) { return g_exit_requested.load() != 0; }
 PS3RT_API void ps3rt_force_exit(void) {
     g_exit_requested.store(1);
-    ps3rt_log("[ps3rt] force exit\n");
+    ps3rt_log("[ps3rt] force exit
+");
     ps3rt_log_close();
 #if defined(_WIN32)
     ExitProcess(0);
@@ -44,7 +47,9 @@ PS3RT_API void ps3rt_force_exit(void) {
 #endif
 }
 static void ps3rt_log_close(void) {
-    if (g_logf) { std::fprintf(g_logf, "\n--- log end ---\n"); std::fflush(g_logf); std::fclose(g_logf); g_logf = nullptr; }
+    if (g_logf) { std::fprintf(g_logf, "
+--- log end ---
+"); std::fflush(g_logf); std::fclose(g_logf); g_logf = nullptr; }
 }
 #if defined(_WIN32)
 static int path_looks_like_game_folder(const char* dir) {
@@ -103,13 +108,17 @@ static void ps3rt_log_open(void) {
     g_logf = std::fopen(full, "w");
     if (g_logf) {
         std::fprintf(g_logf,
-            "PPSX33 run log\n"
-            "mode=%s\n"
-            "file=%s\n",
+            "PPSX33 run log
+"
+            "mode=%s
+"
+            "file=%s
+",
             in_game ? "launch_in_game_folder" : "launch_outside_game",
             full);
         std::fflush(g_logf);
-        ps3rt_log("[ps3rt] log file (%s): %s\n",
+        ps3rt_log("[ps3rt] log file (%s): %s
+",
             in_game ? "in_game_folder" : "outside_game", full);
     }
 }
@@ -157,7 +166,8 @@ static uint64_t guest_alloc(uint64_t size, uint64_t align) {
     if (a + size > kAllocEnd || a + size > g_mem_size) return 0;
     std::memset(g_mem + a, 0, (size_t)size);
     g_alloc_ptr = a + size;
-    ps3rt_log("[lv2] alloc VA=0x%llx size=0x%llx\n", (unsigned long long)a, (unsigned long long)size);
+    ps3rt_log("[lv2] alloc VA=0x%llx size=0x%llx
+", (unsigned long long)a, (unsigned long long)size);
     return a;
 }
 PS3RT_API void ps3rt_touch(uint64_t, size_t) {
@@ -165,7 +175,8 @@ PS3RT_API void ps3rt_touch(uint64_t, size_t) {
     static uint32_t s_log = 0;
     if ((++s_n & 0x1FFF) == 0) {
         ps3rt_progress_hw();
-        if (s_log < 12) { ps3rt_log("[ps3] Phase M touch-progress n=%u\n", s_n); ++s_log; }
+        if (s_log < 12) { ps3rt_log("[ps3] Phase M touch-progress n=%u
+", s_n); ++s_log; }
     }
 }
 static uint32_t rd_le32(const uint8_t* p) { uint32_t v; std::memcpy(&v, p, 4); return v; }
@@ -188,10 +199,12 @@ static int load_guest_image(const char* path) {
             if (vaddr + memsz > g_mem_size) { if (vaddr >= g_mem_size) continue; memsz = g_mem_size - vaddr; if (filesz > memsz) filesz = memsz; }
             std::memset(g_mem + vaddr, 0, (size_t)memsz);
             if (filesz) std::memcpy(g_mem + vaddr, file.data() + (size_t)off, (size_t)filesz);
-            ps3rt_log("[ps3rt] map seg%u VA=0x%llx filesz=0x%llx memsz=0x%llx\n", i, (unsigned long long)vaddr, (unsigned long long)filesz, (unsigned long long)memsz);
+            ps3rt_log("[ps3rt] map seg%u VA=0x%llx filesz=0x%llx memsz=0x%llx
+", i, (unsigned long long)vaddr, (unsigned long long)filesz, (unsigned long long)memsz);
             ++mapped;
         }
-        ps3rt_log("[ps3rt] PS3IMG1 loaded from %s (%d segments)\n", path, mapped);
+        ps3rt_log("[ps3rt] PS3IMG1 loaded from %s (%d segments)
+", path, mapped);
         PS3RT_STAGE("MEM map end");
         return mapped > 0 ? 0 : -1;
     }
@@ -215,7 +228,8 @@ PS3RT_API int ps3rt_init(const char* image_path) {
     for (auto c : candidates) {
         if (c && c[0] && load_guest_image(c) == 0) { ok = 0; break; }
     }
-    if (ok != 0) ps3rt_log("[ps3rt] warning: no guest_image.bin mapped\n");
+    if (ok != 0) ps3rt_log("[ps3rt] warning: no guest_image.bin mapped
+");
     ps3rt_save_boot_notice();
     ps3rt_assets_boot_scan();
     PS3RT_STAGE("BOOT end");
@@ -337,7 +351,8 @@ PS3RT_API void ps3rt_pad_set(uint16_t buttons, int16_t lx, int16_t ly, int16_t r
 PS3RT_API void ps3rt_pad_set_sensor(int enabled) {
     g_pad_sensor_enabled = enabled ? 1 : 0;
     static int s_q = 0;
-    if (s_q < 4) { ps3rt_log("[pad] Q sensor %s\n", enabled ? "on" : "off"); ++s_q; }
+    if (s_q < 4) { ps3rt_log("[pad] Q sensor %s
+", enabled ? "on" : "off"); ++s_q; }
 }
 PS3RT_API void ps3rt_pad_get_pressure(uint8_t out[16]) {
     if (!out) return;
@@ -367,11 +382,13 @@ static void pad_load_xinput() {
         if (!m) continue;
         s_XInputGetState = (PFN_XInputGetState)GetProcAddress(m, "XInputGetState");
         if (s_XInputGetState) {
-            ps3rt_log("[pad] XInput loaded from %s\n", dlls[i]);
+            ps3rt_log("[pad] XInput loaded from %s
+", dlls[i]);
             return;
         }
     }
-    ps3rt_log("[pad] XInput not found — keyboard only\n");
+    ps3rt_log("[pad] XInput not found — keyboard only
+");
 }
 static int16_t stick_from_xinput(SHORT v) {
     if (v > -8000 && v < 8000) return 0;
@@ -481,10 +498,26 @@ static void pad_poll_host() {
     // Only log pad/XInput while the game window is focused
     if (window_is_focused()) {
         if ((g_pad_poll_count <= 4) || ((g_pad_poll_count & 0x3FF) == 1 && btn)) {
-            ps3rt_log("[pad] poll#%u btn=0x%04X sticks=%d,%d,%d,%d L2=%u R2=%u\n",
+            ps3rt_log("[pad] poll#%u btn=0x%04X sticks=%d,%d,%d,%d L2=%u R2=%u
+",
                 g_pad_poll_count, (unsigned)btn, (int)lx, (int)ly, (int)rx, (int)ry, (unsigned)l2, (unsigned)r2);
         }
     }
 }
 
 #include "ps3rt_b.inl"
+
+
+extern "C" void ps3rt_log_hle_status_once(void) {
+    static int done = 0;
+    if (done) return;
+    done = 1;
+    for (int i = 0; i < k_ps3_hle_modules_count; ++i) {
+        const char* st =
+            k_ps3_hle_modules[i].status == PS3_HLE_COMPLETE ? "complete" :
+            k_ps3_hle_modules[i].status == PS3_HLE_PARTIAL ? "partial" :
+            k_ps3_hle_modules[i].status == PS3_HLE_STUB ? "stub" : "oos";
+        ps3rt_log("[hle] %s = %s (%s)\n", k_ps3_hle_modules[i].name, st,
+                  k_ps3_hle_modules[i].notes ? k_ps3_hle_modules[i].notes : "");
+    }
+}
