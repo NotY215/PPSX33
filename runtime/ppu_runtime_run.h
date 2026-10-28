@@ -300,7 +300,7 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                 if (s_same_alt >= 3) {
                     const bool strict = ps3rt_strict_fault_mode();
                     // Log fault; only halt immediately in strict mode
-                    capture_guest_fault(c, "sticky_break", chunks, n, /*halt=*/strict);
+                    if ((s_same_alt % 32) == 3 || strict) capture_guest_fault(c, "sticky_break", chunks, n, /*halt=*/strict);
                     if (s_sticky_log < 16) {
                         ps3rt_log("[ps3] P0 sticky BREAK first-fault pc=0x%llx alt=0x%llx lr=0x%llx hits=%d strict=%d\n",
                             (unsigned long long)c.pc, (unsigned long long)alt,
@@ -357,19 +357,41 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
                             if (!esc && last_good_ret && pc_in_chunks(last_good_ret, chunks, n)
                                 && last_good_ret != alt && !is_banned(last_good_ret))
                                 esc = last_good_ret;
+                            if (!esc) {
+                                // Last resort: any translated chunk entry not equal to spinning alt
+                                for (size_t ci = 0; ci < n && !esc; ++ci) {
+                                    uint64_t st = chunks[ci].start;
+                                    if (!st || (st & 3ull) != 0) continue;
+                                    if (st == alt || st == c.pc || st == s_retry_alt) continue;
+                                    if (is_banned(st)) continue;
+                                    esc = st;
+                                }
+                            }
                             if (esc) {
-                                if (s_sticky_log < 32)
+                                if (s_sticky_log < 48)
                                     ps3rt_log("[ps3] P0 sticky escalate -> 0x%llx (was alt=0x%llx n=%d)\n",
                                         (unsigned long long)esc, (unsigned long long)alt, s_retry_n);
+                                add_rban(alt);
                                 alt = esc;
                                 c.pc = esc;
                                 c.gpr[3] = 0;
                                 s_retry_n = 0;
                                 s_retry_alt = 0;
                             } else {
-                                if (s_sticky_log < 32)
-                                    ps3rt_log("[ps3] P0 sticky soft-retry alt=0x%llx (n=%d, no esc)\n",
+                                // Dead island with no translated escape — skip this alt permanently
+                                add_rban(alt);
+                                if (s_sticky_log < 48)
+                                    ps3rt_log("[ps3] P0 sticky dead-island alt=0x%llx (n=%d) — banned\n",
                                         (unsigned long long)alt, s_retry_n);
+                                s_retry_n = 0;
+                                s_retry_alt = 0;
+                                // Keep running host HW present path; advance PC off 0
+                                if (last_good_ret && !is_banned(last_good_ret))
+                                    c.pc = last_good_ret;
+                                else if (n && chunks[0].start)
+                                    c.pc = chunks[0].start;
+                                c.gpr[3] = 0;
+                                continue; // do not fall into soft-retry spin
                             }
                         } else if (s_sticky_log < 24) {
                             ps3rt_log("[ps3] P0 sticky soft-retry alt=0x%llx\n", (unsigned long long)alt);
