@@ -31,3 +31,8 @@ These are per-input snapshots. GTA: San Andreas report files: [lift report](Gran
 ## Publication and rights note
 
 Game titles are used only to identify technical test inputs; this page does not imply endorsement, affiliation, or permission to distribute those games. The listed counts are static analysis measurements, not compatibility claims. Do not commit commercial executables, decrypted ELFs, EBOOT files, firmware, keys, extracted assets, or unsanitized logs. Before publishing any report, check that it contains no proprietary input data, private local paths, usernames, or secrets. Remove or replace third-party artwork unless its license and redistribution permission have been verified.
+
+
+## Publication and rights note
+
+Game titles identify technical test inputs only; this page does not imply endorsement, affiliation, or permission to distribute those games. The listed counts are static analysis measurements, not compatibility claims. Do not commit commercial executables, decrypted ELFs, EBOOT files, firmware, keys, extracted assets, or unsanitized logs. Before publishing any report, check that it contains no proprietary input data, private local paths, usernames, or secrets. Remove or replace third-party artwork unless its license and redistribution permission have been verified.
