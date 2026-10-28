@@ -1,6 +1,6 @@
 # PPSX33 — Terms and Conditions
 
-**Effective date:** 2026-10-13  
+**Effective date:** 2026-10-28  
 **Related documents:** [LEGAL.md](https://github.com/NotY215/PPSX33/blob/main/LEGAL.md) · [LICENSE](https://github.com/NotY215/PPSX33/blob/main/LICENSE) · [Repository](https://github.com/NotY215/PPSX33)
 
 By cloning, building, installing, or using PPSX33 (the "Software"), including the GUI, core library, runtime, and any generated host binary branded **PPSX33** / **PPSX33.exe**, you ("you", "User") agree to these Terms and Conditions. If you do not agree, do not use the Software.
@@ -29,11 +29,13 @@ By cloning, building, installing, or using PPSX33 (the "Software"), including th
 
 ## 3. No proprietary keys; no DRM circumvention product
 
-3.1. **PPSX33 does not contain, use, or distribute any proprietary decryption keys, nor does it possess the capability to bypass Digital Rights Management (DRM) or encryption frameworks.**
+3.1. PPSX33 does not bundle proprietary Sony/PlayStation decryption keys, firmware, or game binaries, and it does not ship a standalone decryption engine.
 
-3.2. Optional workflows that reference encrypted binaries (e.g. EBOOT) rely only on **tools and data you supply**. The Software does not ship keys or a built-in DRM crack.
+3.2. The GUI does include an optional EBOOT workflow that can invoke a separately installed RPCS3 executable using its `--decrypt` option. This is an external-tool integration. It is not a representation that every decryption action is authorized or lawful.
 
-3.3. PPSX33 does **not** promote piracy, unauthorized decryption, or redistribution of protected content.
+3.3. Users must independently confirm that they are authorized to process a selected file and must comply with applicable law, third-party licenses, and relevant platform terms. A legal acknowledgment in PPSX33 does not grant rights, legalize circumvention, or guarantee that a particular use is permitted.
+
+3.4. PPSX33 does not endorse piracy or redistribution of protected content.
 
 ---
 
@@ -49,7 +51,7 @@ By cloning, building, installing, or using PPSX33 (the "Software"), including th
 - Redistribute generated executables **bundled with** game assets, USRDIR data, or decrypted retail images
 - Use the Software to facilitate piracy or unauthorized access to online services
 
-4.4. In-app legal notices (ELF load / BIN workflows) restate these rules. Accepting them does not transfer any game rights to you.
+4.4. In-app legal notices for ELF/EBOOT workflows restate these rules. Accepting them does not transfer game rights to you or establish that an act is lawful.
 
 ---
 
