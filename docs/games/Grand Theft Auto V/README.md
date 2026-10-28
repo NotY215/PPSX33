@@ -1,4 +1,4 @@
-# <img src="https://thumb.wikimedia.org/wikipedia/it/thumb/7/76/Grand_Theft_Auto_V_logo.svg/330px-Grand_Theft_Auto_V_logo.svg.png?utm_source=it.wikipedia.org&utm_campaign=index&utm_content=thumbnail&_=20240305183247" width="180" alt="Grand Theft Auto V logo" /> Grand Theft Auto V
+# Grand Theft Auto V
 
 This folder records the PPSX33 static-lift and ELF-analysis snapshot for Grand Theft Auto V.
 
@@ -22,3 +22,6 @@ This folder records the PPSX33 static-lift and ELF-analysis snapshot for Grand T
 ## Important notes
 
 Keep future metrics tied to the exact input build and PPSX33 revision. Translation coverage is not proof of semantic correctness, runtime compatibility, or playability. Do not commit commercial-game executables or other copyrighted game data.
+
+
+**Publication note:** This record identifies a test target only and does not imply affiliation, endorsement, or permission to distribute the game. Static-lift counts do not prove compatibility. Publish only sanitized technical reports; do not commit game binaries, decrypted inputs, keys, extracted assets, private paths, or third-party artwork without verified redistribution rights.
