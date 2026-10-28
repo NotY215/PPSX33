@@ -10,8 +10,18 @@ static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, 
                                          uint64_t exclude_pc = 0,
                                          const uint64_t* ban = nullptr, int nban = 0,
                                          const uint64_t* rban = nullptr, int nrban = 0) {
-    // XXV-L: prefer LR when it is a translated address
-    if (c.lr && (c.lr & 3ull) == 0 && pc_in_chunks(c.lr, chunks, n)) {
+    // XXV-L: prefer LR when translated and not region-banned
+    auto banned_early = [&](uint64_t p) -> bool {
+        if (!p || p == exclude_pc) return true;
+        if (p < 0x10100ull) return true;
+        for (int i = 0; i < nban; ++i) if (ban && ban[i] == p) return true;
+        for (int i = 0; i < nrban; ++i) {
+            uint64_t b = rban ? rban[i] : 0;
+            if (b && p >= b && p < b + 0x400ull) return true;
+        }
+        return false;
+    };
+    if (c.lr && (c.lr & 3ull) == 0 && pc_in_chunks(c.lr, chunks, n) && !banned_early(c.lr)) {
         static uint64_t s_lr_sticky = 0;
         static int s_lr_hits = 0;
         if (c.lr == s_lr_sticky) ++s_lr_hits; else { s_lr_sticky = c.lr; s_lr_hits = 1; }
@@ -288,8 +298,16 @@ static inline void ppu_run(PPUContext& c, const PPUChunk* chunks, size_t n){
 
         if ((c.pc == 0 || c.pc >= 0x10000000ull) &&
             !(c.pc == 0x39800000ull || (c.pc & 0xFFFF0000ull) == 0x39800000ull)) {
-            uint64_t alt = recover_return_pc(c, chunks, n, c.pc, nullptr, 0, nullptr, 0);
-            if (!alt && last_good_ret) alt = last_good_ret;
+            // CRITICAL: pass region-ban tables — nullptr made recovery ignore bans (log: always 0x331aac)
+            uint64_t alt = recover_return_pc(c, chunks, n, c.pc, ban_lr, nban, rban, nrban);
+            if (!alt && last_good_ret && !is_banned(last_good_ret)) alt = last_good_ret;
+            if (alt && is_banned(alt)) {
+                alt = 0;
+                for (size_t ci = 0; ci < n && !alt; ++ci) {
+                    uint64_t st = chunks[ci].start;
+                    if (st && !is_banned(st)) alt = st;
+                }
+            }
             if (alt) {
                 // P0 sticky: diagnose; soft continues; strict halts. No region-ban.
                 static uint64_t s_last_alt = 0;
@@ -572,7 +590,8 @@ static int wild_log2 = 0;
                             ret = alt;
                         }
                     }
-                    last_good_ret = ret;
+                    if (!is_banned(ret))
+                        last_good_ret = ret;
                     c.pc = ret;
                     ++external_escapes;
                     continue;
