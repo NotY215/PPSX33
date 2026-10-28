@@ -47,6 +47,7 @@ In plain terms:
 | Ships Sony/PlayStation decryption keys | **No** |
 | Embeds retail disc/HDD encryption secrets | **No** |
 | Built-in “one-click” DRM crack engine | **No** |
+| Can invoke an external tool for a user-selected EBOOT | **Yes, through the optional RPCS3 integration** |
 | Ability to unlock content you do not already have keys/tools for | **No** (by design of this project) |
 
 The optional EBOOT workflow invokes the RPCS3 executable selected by the user. Users must obtain RPCS3 independently, comply with its license and applicable law, and use only inputs they are authorized to process. PPSX33 does not ship RPCS3 or keys and does not instruct users to obtain unauthorized dumps.
