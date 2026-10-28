@@ -1,4 +1,4 @@
-# <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_San_Andreas_logo.svg" width="180" alt="Grand Theft Auto: San Andreas logo" /> Grand Theft Auto: San Andreas
+# Grand Theft Auto: San Andreas
 
 ## Analysis status
 
