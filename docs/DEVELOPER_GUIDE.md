@@ -31,13 +31,13 @@ Build from the repository root in a Visual Studio developer command prompt:
 scripts\build_all.bat
 ```
 
-The output is placed in `build\dist\`. The GUI is published when the .NET SDK is available. The current WinForms frontend includes ELF loading, an RPCS3-backed EBOOT decrypt launcher, project decompilation, object-file-based build progress/ETA, run/stop, output copying, persisted graphics/thread/controller settings, and build-cancellation UI.
+The output is placed in `build\dist\`. The GUI is published when the .NET SDK is available. The current WinForms frontend includes ELF loading, an optional launcher for the separately installed RPCS3 EBOOT `--decrypt` workflow, project decompilation, object-file-based build progress/ETA, run/stop, output copying, persisted graphics/thread/controller settings, and build-cancellation UI. This integration does not bundle RPCS3 or determine whether the user's chosen input and intended processing are legally permitted.
 
 ## Alpha packaging and release validation
 
 The Alpha 01 package contains the WinForms application, native core library/import artifacts, CLI, .NET runtime metadata, logos, staged build tools, and selected runtime sources. The intended directory layout is documented in the root [README](../README.md), and the public-facing notes are in [PPSX33-Alpha-01 release notes](../releases/PPSX33-Alpha-01.md).
 
-Before publishing a binary archive, validate the exact archive on a clean Windows machine. Check that the GUI starts, `ps3_cli.exe --help` returns its usage text, and the synthetic smoke test passes. If a check has not been run, identify it as unverified. Confirm all bundled third-party binaries can legally be redistributed.
+Before publishing a binary archive, validate the exact archive on a clean Windows machine. Audit each included image, icon, font, runtime library, and other third-party artifact for provenance, redistribution permission, and required notices; do not assume repository presence establishes a license. Check that the GUI starts, `ps3_cli.exe --help` returns its usage text, and the synthetic smoke test passes. If a check has not been run, identify it as unverified. Confirm all bundled third-party binaries can legally be redistributed.
 
 ## Test workflow
 
@@ -112,7 +112,7 @@ When changing `src/core/ps3core.h`, update the implementation, CLI callers, and 
 
 ## Working with game coverage records
 
-Game records must be based on real tool output. Store public-safe text reports only. Include the input build identifier when known, PPSX33 revision, workflow, and measured counts. Do not commit game executables, decrypted ELFs, EBOOT files, keys, or copyrighted assets.
+Game records must be based on real tool output. Store only public-safe, sanitized text reports. Include the input build identifier when known, PPSX33 revision, workflow, and measured counts. Before committing logs, remove local user paths, usernames, proprietary strings or data, secrets, and unnecessary input-derived details. Do not commit game executables, decrypted ELFs, EBOOT files, keys, extracted game assets, or third-party artwork without verified permission.
 
 Keep these metrics separate:
 
