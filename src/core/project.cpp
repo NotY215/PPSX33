@@ -434,12 +434,17 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     std::sort(rtSrc.begin(), rtSrc.end());
     std::sort(gameSrc.begin(), gameSrc.end());
 
-    int build_total = (int)rtSrc.size() + (int)gameSrc.size() + 2;
+    int build_total = (int)rtSrc.size() + (int)gameSrc.size() + (prebuilt_rt ? 1 : 2);
     {
-        char buf[64];
-        std::snprintf(buf, sizeof(buf), "BUILD_TOTAL=%d\n", build_total);
+        char buf[128];
+        std::snprintf(buf, sizeof(buf), "BUILD_TOTAL=%d prebuilt_rt=%d game_objs=%d\n",
+            build_total, prebuilt_rt ? 1 : 0, (int)gameSrc.size());
         live_log(buf);
         log += buf;
+        if (prebuilt_rt)
+            live_log("Runtime is prebuilt DLL — only game objects are compiled/linked.\n");
+        else
+            live_log("No prebuilt ps3rt.dll+lib — runtime .cpp will compile (slow). Rebuild host first.\n");
     }
 
     // EXE named after project/game folder (e.g. "God of War III.exe")

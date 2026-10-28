@@ -550,6 +550,28 @@ static int wild_log2 = 0;
                             (unsigned long long)c.pc, (unsigned long long)ret, external_escapes + 1);
                         ++logged;
                     }
+                    // Do not land on a region-banned PC (sticky island like 0x331aac)
+                    if (is_banned(ret)) {
+                        uint64_t alt = 0;
+                        if (last_good_ret && !is_banned(last_good_ret)) alt = last_good_ret;
+                        if (!alt && c.lr && (c.lr & 3ull) == 0 && pc_in_chunks(c.lr, chunks, n) && !is_banned(c.lr))
+                            alt = c.lr;
+                        if (!alt) {
+                            for (size_t ci = 0; ci < n && !alt; ++ci) {
+                                uint64_t st = chunks[ci].start;
+                                if (st && !is_banned(st)) alt = st;
+                            }
+                        }
+                        if (alt) {
+                            static int s_ib = 0;
+                            if (s_ib < 16) {
+                                ps3rt_log("[ps3] import ret banned 0x%llx -> 0x%llx\n",
+                                    (unsigned long long)ret, (unsigned long long)alt);
+                                ++s_ib;
+                            }
+                            ret = alt;
+                        }
+                    }
                     last_good_ret = ret;
                     c.pc = ret;
                     ++external_escapes;
