@@ -1,4 +1,4 @@
-# Minecraft PS3 — lift notes
+# <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Minecraft_Logo.png" width="140" alt="Minecraft logo" /> Minecraft PS3 — lift notes
 
 - **Date:** 2026-10
 - **Input:** decrypted ELF64-BE
