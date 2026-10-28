@@ -33,6 +33,8 @@ PPSX33 is an open-source research project exploring a different route from full-
 
 The aim is not to pretend the PS3 is simple. The aim is to make each part observable, testable and replaceable, from instruction semantics to graphics output.
 
+PPSX33's optional **Decrypt EBOOT** action launches a separately installed RPCS3 executable. PPSX33 does not bundle RPCS3 or proprietary keys. Users are responsible for confirming that processing their selected inputs is permitted; a disclaimer or ownership claim alone does not guarantee legality.
+
 ### 🔁 The pipeline
 
 <p align="center">
@@ -173,9 +175,7 @@ The live task list is maintained in **[ROADMAP.md](ROADMAP.md)**. Contributions 
 
 PPSX33 includes a controller mapping reference for the current input path:
 
-<p align="center">
-  <img src="assets/PPSX33%20PS3%20Controller%20Key%20Mapping.png" alt="PPSX33 PS3 controller key mapping" width="700">
-</p>
+The repository includes a controller-mapping reference in `assets/PPSX33 PS3 Controller Key Mapping.png`. Its asset provenance and any third-party marks/artwork should be verified before redistribution. See [KEY_MAPPING.md](docs/KEY_MAPPING.md) for the text reference.
 
 See [KEY_MAPPING.md](docs/KEY_MAPPING.md) for the text reference. Actual game input support may depend on the title and runtime path.
 
@@ -207,7 +207,7 @@ Please keep changes scoped, explain assumptions, and do not add copyrighted game
 
 ## ⚖️ Legal and preservation
 
-Use only game data, firmware and keys you are legally entitled to use. PPSX33 does not provide commercial game files, firmware, encryption keys or decrypted game binaries. Users are responsible for complying with applicable law and third-party licenses. See [LEGAL.md](LEGAL.md), [TERMS.md](TERMS.md) and [NOTICE](NOTICE).
+PPSX33 does not bundle commercial game files, firmware, or proprietary keys. Its optional RPCS3 integration can invoke an external EBOOT decryption workflow; this does not establish permission to process a file or guarantee legality. Users must review applicable law and third-party terms. Asset provenance and license compatibility must be checked separately. See [LEGAL.md](LEGAL.md), [TERMS.md](TERMS.md) and [NOTICE](NOTICE).
 
 ## 📄 License
 
