@@ -163,7 +163,7 @@ public sealed partial class MainForm
                 "Could not find EBOOT.BIN in the selected folder.\n\n" +
                 "Select the folder that contains your PS3 game dump\n" +
                 "(folder with PS3_GAME or USRDIR / EBOOT.BIN).\n\n" +
-                "Use a decrypted ELF for Load ELF. Encrypted SELF is not loaded.",
+                "Load a decrypted ELF only. Encrypted SELF is not supported. How you obtain a decrypted ELF is up to you (many people use tools such as RPCS3 offline; PPSX33 does not include or launch them).",
                 "PPSX33", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }

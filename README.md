@@ -27,15 +27,16 @@
 > [!IMPORTANT]
 > **PPSX33 is experimental software, not a finished PS3 compatibility solution.** A successful lift or build does not mean a game is playable. PPU semantics, HLE, SPU/DMA behaviour and real RSX rendering are still being developed and validated.
 
+> [!NOTE]
+> **Input format:** PPSX33 loads **decrypted ELF** files only. It does **not** decrypt EBOOTs, bundle keys, or launch external emulators. Obtaining a decrypted ELF is the user's responsibility (for example, offline tooling some users already have — not provided by this project).
+
 ## ✨ What PPSX33 is building
 
 PPSX33 is an open-source research project exploring a different route from full-system emulation: **static recompilation**. It analyses a decrypted PS3 ELF, lifts supported PowerPC code into generated C++ and links that code against a host runtime intended to reproduce the PS3 services the title expects.
 
 The aim is not to pretend the PS3 is simple. The aim is to make each part observable, testable and replaceable, from instruction semantics to graphics output.
 
-PPSX33's optional **Decrypt EBOOT** action launches a separately installed RPCS3 executable. PPSX33 does not bundle RPCS3 or proprietary keys. Users are responsible for confirming that processing their selected inputs is permitted; a disclaimer or ownership claim alone does not guarantee legality.
 
-PPSX33's optional **Decrypt EBOOT** action launches a separately installed RPCS3 executable. PPSX33 does not bundle RPCS3 or proprietary keys. Users are responsible for confirming that processing their selected inputs is permitted; a disclaimer or ownership claim alone does not guarantee legality.
 
 ### 🔁 The pipeline
 
@@ -72,6 +73,32 @@ Status icons describe the current broad state, not a promise that every title or
 | 🎯 End-to-end game compatibility | 🔴 **Not established generally** | Static lift reports do not establish bootability or playability |
 
 **Legend:** 🟢 implemented baseline · 🟡 partial or under active development · 🔴 not established / major work remains
+
+
+## 📚 Module status (HLE / runtime)
+
+HLE and host services written for this project. Public emulator behaviour may be used as a **reference for expected results**, not as a code source. Counts are approximate; individual titles can still fail on “Complete” rows if a code path is wrong or incomplete.
+
+| Category | Modules (scope) | Status |
+| --- | --- | --- |
+| Kernel threading | PPU thread / mutex / cond / semaphore HLE | 🟡 Partial |
+| Kernel events / timers | Event queues, timer syscalls | 🟡 Partial |
+| Kernel memory | sys_memory-style alloc, mmapper subset | 🟡 Partial |
+| Filesystem | cellFs / path mapping, real host I/O | 🟡 Partial |
+| Save data | cellSaveData / PARAM.SFO paths | 🟡 Partial |
+| Input | cellPad mapping (XInput/host keys) | 🟡 Partial |
+| Audio | cellAudio host path (waveOut-style) | 🟡 Partial |
+| Video out / GCM | cellVideoOut, cellGcmSys control/FIFO kick | 🟡 Partial |
+| Graphics (RSX) | FIFO decode, D3D11 present, limited draws | 🟡 In progress |
+| SPU / MFC / SPURS | Interpreter, DMA/tags, job assist | 🟡 Partial |
+| PRX / NID / LV2 | Import stubs, common syscalls | 🟡 Partial |
+| Codecs / media | PNG/JPG helpers; ATRAC/VDEC deep decode | 🔨 Limited / partial |
+| Network / NP | Not a product goal — stubs only if present | ⚪ Out of scope / stub |
+| USB / Camera / Move | Not required for core recomp path | ⚪ Out of scope / stub |
+
+**Legend:** 🟡 partial · 🔨 limited · ⚪ out of scope for current goals · 🟢 only when end-to-end proven on titles
+
+Task-level tracking: [ROADMAP.md](ROADMAP.md).
 
 For the task-level breakdown, see **[ROADMAP.md](ROADMAP.md)** and **[PPU coverage notes](docs/PPU_COVERAGE.md)**. Game-specific evidence and logs are collected under **[docs/games](docs/games/README.md)**.
 

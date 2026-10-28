@@ -31,7 +31,7 @@ Build from the repository root in a Visual Studio developer command prompt:
 scripts\build_all.bat
 ```
 
-The output is placed in `build\dist\`. The GUI is published when the .NET SDK is available. The current WinForms frontend includes ELF loading, an optional launcher for the separately installed RPCS3 EBOOT `--decrypt` workflow, project decompilation, object-file-based build progress/ETA, run/stop, output copying, persisted graphics/thread/controller settings, and build-cancellation UI. This integration does not bundle RPCS3 or determine whether the user's chosen input and intended processing are legally permitted.
+The output is placed in `build\dist\`. The GUI is published when the .NET SDK is available. The current WinForms frontend includes decrypted-ELF loading, project decompilation, object-file-based build progress/ETA, run/stop, output copying, persisted graphics/thread/controller settings, and build-cancellation UI. PPSX33 does not decrypt EBOOTs or launch external emulators.
 
 ## Alpha packaging and release validation
 
@@ -85,13 +85,13 @@ The runtime contains experimental GCM/HLE, PPU recovery, SPU interpreter/MFC/SPU
 
 ## GUI workflow, status, and cancellation
 
-The GUI creates projects beneath `build/dist/projects/<name>/` with `input/`, `codebase/`, and `output/` directories. **Load ELF** accepts a decrypted ELF/SELF; **Decrypt EBOOT** delegates decryption to the selected RPCS3 executable. Decompilation writes generated C++ plus `lift_report.txt` and `analysis_report.txt` into `codebase/`. The build driver stages runtime and game sources under `output/src/`, invokes the configured host toolchain, and writes output binaries and reports beneath `output/`.
+The GUI creates projects beneath `build/dist/projects/<name>/` with `input/`, `codebase/`, and `output/` directories. **Load ELF** accepts a decrypted ELF only. Decompilation writes generated C++ plus `lift_report.txt` and `analysis_report.txt` into `codebase/`. The build driver stages runtime and game sources under `output/src/`, invokes the configured host toolchain, and writes output binaries and reports beneath `output/`.
 
 Build progress in the GUI is inferred by comparing object-file timestamps while the build is running. It is an advisory estimate, not authoritative compiler progress. A successful operation should display an operation-specific success state; failed and stopped operations should remain distinct in the log/status.
 
 The Stop/Cancel control has context-sensitive behavior: it stops the launched game while a game process is active, and during a build it asks for confirmation before calling the native build-cancel API. The GUI's cancelled-build path removes generated `input/`, `codebase/`, and `output/` folders and clears the active project, so the user must reload the ELF. Do not describe Decompile as cancellable: the current GUI calls the native lift API synchronously and has no matching cancellation API for it. The native build cancellation flag is cooperative and should be tested against actual compiler subprocess behavior before claiming immediate termination.
 
-The settings model is in `src/gui/Settings.cs`; its file is `%APPDATA%/PPSX33/settings.json`. `src/gui/KeyMap.cs` defines defaults, `MainForm.Controller.cs` edits and writes the runtime pad map, and `MainForm.Decrypt.cs` integrates the external RPCS3 launcher. Keep GUI behavior descriptions synchronized with these files and `MainForm.cs`.
+The settings model is in `src/gui/Settings.cs`; its file is `%APPDATA%/PPSX33/settings.json`. `src/gui/KeyMap.cs` defines defaults, `MainForm.Controller.cs` edits and writes the runtime pad map, and External decrypt/emulator launch code has been removed. Keep GUI behavior descriptions synchronized with `MainForm.cs` and related partials.
 
 ## Implementing a PPU opcode
 

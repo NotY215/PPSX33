@@ -127,3 +127,7 @@ By using PPSX33 (including clicking **Yes** on the in-app legal dialog), you con
 ---
 
 *PPSX33 — independent recompiler toolkit. Not affiliated with Sony Interactive Entertainment.*
+
+## Decrypted inputs only
+
+PPSX33 does not include decryption tools, cryptographic keys, or automation that launches third-party emulators for decryption. The application expects a **decrypted ELF** supplied by the user. Users must ensure they have the right to process any file they load.

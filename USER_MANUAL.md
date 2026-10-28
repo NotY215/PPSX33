@@ -14,7 +14,7 @@ PPSX33 is an experimental research toolkit. It is **not** a commercial emulator,
 - PlayStation, PlayStation 3, PS3, CELL, RSX, and related marks are trademarks of Sony Interactive Entertainment Inc.
 - All game software, assets, icons (ICON0.PNG, etc.), and related materials remain the property of their respective copyright holders.
 - PPSX33 does not intentionally bundle commercial game code, game assets, or proprietary keys. Review release contents and third-party asset licenses before redistribution.
-- The optional **Decrypt EBOOT** action can invoke a separately installed RPCS3 executable. It is not a built-in PPSX33 decryption engine, and using it does not establish that a particular file or action is legally permitted.
+- PPSX33 loads **decrypted ELF** files only. It does not decrypt EBOOTs or launch external emulators. Obtaining a decrypted ELF is the user’s responsibility.
 
 ### 1.2 What you may and may not do
 
@@ -47,7 +47,7 @@ PPSX33 is provided **as-is**, without warranty of any kind. Runtime behaviour is
 | Visual C++ | MSVC toolchain (Visual Studio 2019 or newer recommended) for builds |
 | .NET | Compatible .NET runtime for the WinForms GUI |
 | GPU / display | Direct3D 11 capable GPU for the host present path |
-| Optional | RPCS3 (for “Decrypt EBOOT” convenience) |
+| Optional | A decrypted ELF (how you obtain it is outside this app) |
 | Optional | `zlib1.dll` next to the game executable (required for PSARC streaming) |
 | Optional | XInput-compatible controller |
 
@@ -57,7 +57,7 @@ PPSX33 is provided **as-is**, without warranty of any kind. Runtime behaviour is
 
 1. **Launch** `PPSX33` (the GUI).
 2. Accept the **TERMS** dialog if shown.
-3. **Load** an ELF you are authorized to process. The optional **Decrypt EBOOT** action launches the RPCS3 executable you configured; use it only when the input and intended action are permitted.
+3. **Load** a decrypted ELF you are authorized to process. Encrypted SELF is not supported inside PPSX33.
 4. **Decompile** (lift) the ELF — this produces translated chunks.
 5. Optionally set **controller mappings** (must be done before Build).
 6. Click **Build**. Wait until the status shows success.
@@ -72,7 +72,6 @@ A successful build does **not** guarantee the game will play correctly. Runtime 
 
 | Control | Purpose |
 |---------|---------|
-| **Decrypt EBOOT** | Launches (or uses) RPCS3 to help obtain a decrypted ELF. Requires a valid RPCS3 path in settings. |
 | **Load ELF** | Select a decrypted ELF / EBOOT file and create a project. |
 | **Decompile** | Run the PPU static lifter (chunk translation). |
 | **Build** | Compile the lifted code + runtime into a game-named executable and `ps3rt.dll`. |
@@ -82,7 +81,6 @@ A successful build does **not** guarantee the game will play correctly. Runtime 
 | **Controller / pad map** | Map keyboard or XInput buttons to PS3 pad buttons. Saved as `pad_map.json`. |
 | **Graphics / threads** | Host present and thread options (unlocked after successful lift/build stages). |
 | **Log / Report / Roadmap tabs** | Live log, analysis report, and in-app roadmap status. |
-| **RPCS3 button** | Optional visibility/path for the external decrypt helper. |
 
 During a build most action buttons are locked so you cannot start conflicting operations.
 
@@ -93,13 +91,13 @@ During a build most action buttons are locked so you cannot start conflicting op
 ### 5.1 Preparing a game
 
 1. Obtain a **legally owned** copy of the game.
-2. Use an ELF / EBOOT file only when you are authorized to access and process it. If you use the optional RPCS3 integration, obtain RPCS3 separately and follow its own license and applicable law.
+2. Use a decrypted ELF only when you are authorized to access and process it.
 3. Keep the original `PS3_GAME` folder structure if you want ICON0, PSARC assets, and USRDIR layout to work correctly.
 
 ### 5.2 Loading and lifting
 
 1. Click **Load ELF** and select the decrypted file, **or**
-2. Click **Decrypt EBOOT** (configure RPCS3 path first if needed).
+2. Click **Load ELF** and select a decrypted ELF.
 3. Click **Decompile**. Progress and ETA appear in the status area. Large titles can take a long time.
 4. When finished, the Report tab and log show lift statistics.
 
@@ -162,7 +160,7 @@ These items are implemented in the current tree (XX-H … XX-O):
 
 ## 7. Settings and persistence
 
-- Project directory, last ELF, RPCS3 path, graphics/thread choices, and UI state are saved between sessions.
+- Project directory, last ELF, graphics/thread choices, and UI state are saved between sessions.
 - Controller map is stored as `pad_map.json`.
 - Named run logs are written so you can attach them to bug reports.
 - Cancelled builds no longer wipe the entire project folder.

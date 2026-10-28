@@ -99,7 +99,6 @@ public sealed partial class MainForm
     void UpdateButtons() {
         bool locked = _busy || _building;
         // Workflow buttons
-        _btnDecrypt.Enabled = !locked;
         _btnLoad.Enabled = !locked;
         _btnLift.Enabled = _canLift && !locked;
         _btnBuild.Enabled = _canBuild && !locked;
@@ -110,40 +109,14 @@ public sealed partial class MainForm
         // Graphics unlocked only after successful Decompile; locked during build
         _gfx.Enabled = _gfxUnlocked && !locked;
         _threads.Enabled = !locked;
-        if (_btnRpcs3 != null) _btnRpcs3.Enabled = !locked;
         _ = _controllerMapped;
         try { PushState(); } catch { }
     }
     void SaveSettings() { try { _settings.Save(); } catch { } }
-    void UpdateRpcs3Button() {
-        if (_btnRpcs3 == null) return;
-        bool have = !string.IsNullOrWhiteSpace(_settings.Rpcs3Path) && File.Exists(_settings.Rpcs3Path);
-        // Hide when a valid RPCS3.exe is set; show again if missing so user can re-locate
-        _btnRpcs3.Visible = !have;
-        _btnRpcs3.Text = have ? "RPCS3 set" : "RPCS3 path\u2026";
-    }
+    
 
     /// <summary>On startup: if saved RPCS3 path is missing, warn and show the locate button.</summary>
-    void CheckRpcs3OnStartup() {
-        if (string.IsNullOrWhiteSpace(_settings.Rpcs3Path)) {
-            UpdateRpcs3Button();
-            return;
-        }
-        if (File.Exists(_settings.Rpcs3Path)) {
-            UpdateRpcs3Button();
-            return;
-        }
-        Append("RPCS3 path missing: " + _settings.Rpcs3Path);
-        MessageBox.Show(this,
-            "RPCS3 was previously set but the file is missing:\n\n" +
-            _settings.Rpcs3Path + "\n\n" +
-            "Please locate RPCS3.exe again (Decrypt EBOOT needs it).",
-            "PPSX33 — RPCS3 not found",
-            MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        _settings.Rpcs3Path = "";
-        SaveSettings();
-        UpdateRpcs3Button();
-    }
+    
 
     void NotifyBuildComplete(bool success)
     {

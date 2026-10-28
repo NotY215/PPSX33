@@ -27,7 +27,6 @@ public sealed partial class MainForm : Form
     private readonly Ps3HudLabel _project = new();
     private readonly Label _status = new();
     private readonly ProgressBar _progress = new();
-    private readonly Ps3Button _btnDecrypt = new();
     private readonly Ps3Button _btnLoad = new();
     private readonly Ps3Button _btnLift = new();
     private readonly Ps3Button _btnBuild = new();
@@ -39,7 +38,6 @@ public sealed partial class MainForm : Form
     private readonly TabControl _tabs = new();
     private readonly PictureBox _logo = new();
     private readonly Label _eta = new();
-    private Ps3Button? _btnRpcs3;
     private Label? _headerStatus;
     private Panel? _logoRingPanel;
     private System.Windows.Forms.Timer? _animTimer;
@@ -204,18 +202,12 @@ public sealed partial class MainForm : Form
             }
         };
         _animTimer.Start();
-
-        StyleBtn(_btnDecrypt, "Decrypt EBOOT", Panel2);
         StyleBtn(_btnLoad, "Load ELF", Panel2);
         StyleBtn(_btnLift, "Decompile", Panel2);
         StyleBtn(_btnBuild, "Build Project", AccentBlue);
         StyleBtn(_btnRun, "Run Executable", Success);
         StyleBtn(_btnCopy, "Copy to Game Folder", Panel2);
         StyleBtn(_btnCancel, "Stop / Cancel Build", Danger);
-
-        _btnRpcs3 = new Ps3Button();
-        StyleBtn(_btnRpcs3, "Locate RPCS3…", Panel2);
-        _btnRpcs3.Click += (_, _) => LocateRpcs3();
 
         _gfx.DropDownStyle = ComboBoxStyle.DropDownList;
         _gfx.Items.AddRange(new object[] { "D3D11 (DirectX 11)", "OpenGL 3.3 (future)", "Vulkan (not linked)" });
@@ -256,13 +248,11 @@ public sealed partial class MainForm : Form
 
         Add(_logoRingPanel);
         Add(MakeSection("WORKFLOW", "8 ACTIONS"));
-        Add(_btnDecrypt);
         Add(_btnLoad);
         Add(_btnLift);
         Add(_btnBuild);
         Add(_btnRun);
         Add(_btnCopy);
-        Add(_btnRpcs3);
         Add(_btnCancel);
         Add(MakeSection("RECOMPILER SETTINGS", null));
         Add(MakeLabel("GRAPHICS API"));
@@ -355,8 +345,6 @@ public sealed partial class MainForm : Form
         root.Controls.Add(sidebar, 0, 0);
         root.Controls.Add(right, 1, 0);
         Controls.Add(root);
-
-        _btnDecrypt.Click += async (_, _) => await DecryptEbootAndLoad();
         _btnLoad.Click += (_, _) => LoadElf(null);
         _btnLift.Click += async (_, _) => await RunStep("Decompiling", ct => Native.Lift(_projectDir!, out _), afterLift: true);
         _btnBuild.Click += async (_, _) => await BuildWithProgress();
@@ -375,7 +363,6 @@ public sealed partial class MainForm : Form
         UpdateButtons();
         Shown += (_, _) =>
         {
-            CheckRpcs3OnStartup();
             if (_logoRingPanel != null)
             {
                 _logo.Left = (_logoRingPanel.ClientSize.Width - _logo.Width) / 2;
@@ -468,20 +455,6 @@ public sealed partial class MainForm : Form
         return host;
     }
 
-    void LocateRpcs3()
-    {
-        using var ofd = new OpenFileDialog
-        {
-            Title = "Locate RPCS3.exe",
-            Filter = "RPCS3|RPCS3.exe|Executables|*.exe|All|*.*"
-        };
-        if (ofd.ShowDialog(this) != DialogResult.OK) return;
-        _settings.Rpcs3Path = ofd.FileName;
-        SaveSettings();
-        UpdateRpcs3Button();
-        Append("RPCS3 path set: " + _settings.Rpcs3Path);
-    }
-
     /// <summary>No-op bridge kept for partials that call PushState after WebView removal.</summary>
     void PushState()
     {
@@ -533,7 +506,7 @@ public sealed partial class MainForm : Form
         "  Build the Release GUI locally and fix all compiler errors before marking the UI validated.\r\n" +
         "  Then test resize / DPI, rebind & cancel, import/export, save/reload, and build-lock workflow.\r\n\r\n" +
         "WORKFLOW\r\n" +
-        "  Decrypt / Load → Decompile → Build → Copy → Run\r\n" +
+        "  Load ELF → Decompile → Build → Run\r\n" +
         "  Repository roadmap: ROADMAP.md and roadmap/*.md\r\n";
 
     void CleanupAllProjectWorkFolders()

@@ -88,6 +88,10 @@ static void mfc_complete_tag(SPUContext& s) {
     s.mfc_tag_status |= (1u << (s.mfc_tag & 31));
 }
 static int g_mfc_queue_depth[8] = {};
+// MFC atomic reservation (GETLLAR / PUTLLC)
+static uint64_t g_mfc_res_ea[8] = {};
+static uint32_t g_mfc_res_size[8] = {};
+static int g_mfc_res_valid[8] = {};
 
 static void mfc_xfer(SPUContext& s, uint32_t lsa, uint64_t ea, uint32_t size, bool is_get) {
     if (!main_mem() || size == 0) return;
