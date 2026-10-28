@@ -1,4 +1,4 @@
-# <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Theft_Auto_San_Andreas_logo.svg" width="180" alt="Grand Theft Auto: San Andreas logo" /> Grand Theft Auto: San Andreas
+# Grand Theft Auto: San Andreas
 
 This folder records the current PPSX33 static PPU lift and ELF-analysis snapshot for Grand Theft Auto: San Andreas.
 
@@ -39,3 +39,6 @@ This folder records the current PPSX33 static PPU lift and ELF-analysis snapshot
 The 100% figure means the lifter reported all 1,893,428 instruction instances in this input as translated. It does not prove that emitted operations preserve PowerPC semantics or that the title boots or is playable. Zero detected symbols does not mean the input has no functions, and zero embedded SPU images means none were detected by this analysis pass.
 
 Do not commit commercial-game executables, decryption keys, or other copyrighted game data.
+
+
+**Publication note:** This record identifies a test target only and does not imply affiliation, endorsement, or permission to distribute the game. Static-lift counts do not prove compatibility. Publish only sanitized technical reports; do not commit game binaries, decrypted inputs, keys, extracted assets, private paths, or third-party artwork without verified redistribution rights.
