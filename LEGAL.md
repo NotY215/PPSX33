@@ -1,6 +1,6 @@
 # PPSX33 — Legal Notice & Project Position
 
-**Last updated:** 2026-10-13
+**Last updated:** 2026-10-28
 
 This document describes what PPSX33 is, what it is not, and the conditions under which you may use this repository and software. **Read it before using Load ELF, Decrypt EBOOT, Build, or Run.**
 
@@ -27,9 +27,18 @@ Sony Interactive Entertainment, PlayStation, and related marks are property of t
 
 ---
 
-## 3. No proprietary keys, no built-in DRM bypass
+## 3. No bundled keys; external decryption workflow
 
-**PPSX33 does not contain, use, or distribute any proprietary decryption keys, nor does it possess the capability to bypass Digital Rights Management (DRM) or encryption frameworks.**
+PPSX33 does not bundle proprietary decryption keys or ship Sony firmware, game binaries, or a standalone decryption implementation. However, the GUI includes an optional workflow that can launch a separately installed RPCS3 executable with its `--decrypt` option. This is an external-tool integration, not proof that every input or use is lawful, and it must not be described as having no decryption-related functionality.
+
+| Claim | Status |
+|-------|--------|
+| Ships Sony/PlayStation decryption keys | **No** |
+| Bundles retail disc/HDD encryption secrets | **No** |
+| Implements its own standalone DRM-cracking engine | **No** |
+| Can invoke an external tool for a user-selected EBOOT | **Yes, through the optional RPCS3 integration** |
+
+The external tool has its own code, license, and behavior. PPSX33 does not authorize circumvention, determine whether a user is entitled to decrypt a particular file, or make an otherwise restricted act lawful. Do not use the workflow unless you have confirmed that your input and intended use are permitted under applicable law and relevant terms.
 
 In plain terms:
 
@@ -40,7 +49,7 @@ In plain terms:
 | Built-in “one-click” DRM crack engine | **No** |
 | Ability to unlock content you do not already have keys/tools for | **No** (by design of this project) |
 
-Any optional workflow that involves an **EBOOT** or encrypted binary relies on **tools and installations you supply yourself** (for example, a path to software you already installed). PPSX33 **does not promote** decrypting protected binaries, does not ship keys, and does not instruct users to obtain unauthorized dumps.
+The optional EBOOT workflow invokes the RPCS3 executable selected by the user. Users must obtain RPCS3 independently, comply with its license and applicable law, and use only inputs they are authorized to process. PPSX33 does not ship RPCS3 or keys and does not instruct users to obtain unauthorized dumps.
 
 ---
 
@@ -69,7 +78,7 @@ The repository and UI:
 
 - **Do not promote** decrypting `EBOOT.BIN` to ELF as a product feature for the general public.  
 - **Do not promote** downloading or sharing pirated games.  
-- Treat any external decrypt step as **optional, user-supplied, and user-responsible**.  
+- Describe the RPCS3 decrypt action accurately as an optional external-tool workflow; do not imply that a legal acknowledgment establishes permission or guarantees legality.  
 - Require an on-screen **legal acknowledgment** before Load ELF / Decrypt flows in the GUI.
 
 If you decline the acknowledgment, those actions are cancelled.
@@ -98,15 +107,7 @@ Generated `PPSX33.exe` is a **host binary for your local experiments**. It is no
 
 ## 8. Why this project can exist as a public research repo
 
-Public technical projects that:
-
-1. ship **no** proprietary keys,  
-2. do **not** implement a self-contained DRM circumvention product,  
-3. require **user-owned** inputs,  
-4. clearly brand output as **tooling** (here: **PPSX33**), and  
-5. discourage redistribution of copyrighted game assets  
-
-are positioned as **development / research tools**, not as commercial re-releases of PlayStation software.
+A research purpose, an open-source license, user-supplied inputs, or a disclaimer does not by itself establish that every feature or use is lawful. PPSX33 is intended as independent tooling, but the legal treatment of static recompilation, external decryption, reverse engineering, interoperability, and distribution varies by jurisdiction and circumstance. Do not rely on this document as a safe-harbor statement or a conclusion that the project is legally cleared.
 
 **This is not a guarantee that no one will ever dispute your use.** Laws differ by country. Only a qualified attorney can advise on your specific situation. The maintainers are not your lawyers. Misuse (piracy, redistribution of games, trafficking in keys) remains unlawful regardless of this document.
 
@@ -127,7 +128,7 @@ Project maintainers may:
 By using PPSX33 (including clicking **Yes** on the in-app legal dialog), you confirm that:
 
 1. You will use only lawfully obtained materials.  
-2. You understand PPSX33 ships **no** proprietary decrypt keys and **no** built-in DRM bypass.  
+2. You understand PPSX33 ships no proprietary decryption keys and that its optional RPCS3 integration can invoke an external decryption workflow.  
 3. You will **not** distribute game data or claim an official Sony port.  
 4. You accept that the host EXE and window are branded **PPSX33**.  
 5. You use the software **at your own risk**.
