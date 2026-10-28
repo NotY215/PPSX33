@@ -556,7 +556,32 @@ static int wild_log2 = 0;
                                 ps3rt_log("[ps3] null-loop region exhausted (soft_breaks=%d) -- dropping sticky\n", soft_breaks);
                                 last_null_lr = 0;
                                 uint64_t far = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
-                                if (far && far != ret) ret = far;
+                                if (far && far != ret && !is_banned(far)) ret = far;
+                            }
+                            // Hard escape: 0x105e8-class null-loop was observed past 1000+ soft_breaks
+                            if (soft_breaks >= 24) {
+                                add_rban(ret);
+                                add_rban(0x105e8ull);
+                                add_ban(0x105e8ull);
+                                static size_t s_chunk_rot = 0;
+                                uint64_t pick = 0;
+                                for (size_t k = 0; k < n && !pick; ++k) {
+                                    size_t i = (s_chunk_rot + k) % (n ? n : 1);
+                                    uint64_t st = chunks[i].start;
+                                    if (!st || is_banned(st)) continue;
+                                    if (st == ret || st == 0x105e8ull || st == 0x10218ull) continue;
+                                    pick = st;
+                                    s_chunk_rot = i + 1;
+                                }
+                                if (pick) {
+                                    if (soft_breaks <= 64 || (soft_breaks % 64) == 0)
+                                        ps3rt_log("[ps3] null-loop HARD escape 0x%llx -> chunk 0x%llx (soft_breaks=%d)\n",
+                                            (unsigned long long)ret, (unsigned long long)pick, soft_breaks);
+                                    ret = pick;
+                                    c.gpr[3] = 0;
+                                    if (soft_breaks >= 64)
+                                        soft_breaks = 20; // keep bans; cut log flood
+                                }
                             }
                         }
                     } else {
