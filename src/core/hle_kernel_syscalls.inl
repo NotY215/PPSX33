@@ -1141,15 +1141,18 @@ PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
         return true;
     };
     uint32_t maybe_nid = (uint32_t)c->gpr[11];
-    if (!looks_like_nid(maybe_nid)) {
+    // Prefer table hit even when looks_like_nid rejects (r11 sometimes holds full NID)
+    if (maybe_nid && nid_lookup(maybe_nid)) {
+        /* keep r11 */
+    } else if (!looks_like_nid(maybe_nid) || !nid_lookup(maybe_nid)) {
         uint32_t cands[] = {
-            (uint32_t)c->gpr[0], (uint32_t)c->gpr[3], (uint32_t)c->gpr[4],
+            (uint32_t)c->gpr[11], (uint32_t)c->gpr[0], (uint32_t)c->gpr[3], (uint32_t)c->gpr[4],
             (uint32_t)c->gpr[5], (uint32_t)c->gpr[6], (uint32_t)c->gpr[7],
             (uint32_t)c->gpr[10], (uint32_t)(c->gpr[2] & 0xFFFFFFFFu)
         };
         maybe_nid = 0;
         for (uint32_t cand : cands) {
-            if (looks_like_nid(cand) && nid_lookup(cand)) { maybe_nid = cand; break; }
+            if (cand && nid_lookup(cand)) { maybe_nid = cand; break; }
         }
         if (!maybe_nid) {
             for (uint32_t cand : cands) {

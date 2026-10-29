@@ -27,6 +27,13 @@ static inline void ps3rt_log_hle_status_once(void) {
 // Phase XV: import stub before force-out; wild-PC excludes 0x39800000
 // Phase XIV (safe): sustained dwell assist — no PC thrash storm
 // XX-H: stronger null-loop skip, earlier spin assist, sticky region drop
+static inline bool is_null_island_pc(uint64_t p) {
+    if (!p) return true;
+    if (p == 0x199c78ull || p == 0x105e8ull || p == 0x10218ull) return true;
+    if (p == 0x33723cull) return true; // soft-left ping-pong target in GOW3 log
+    return false;
+}
+
 static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, size_t n,
                                          uint64_t exclude_pc = 0,
                                          const uint64_t* ban = nullptr, int nban = 0,
@@ -37,6 +44,7 @@ static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, 
     auto banned_early = [&](uint64_t p) -> bool {
         if (!p || p == exclude_pc) return true;
         if (p < 0x10100ull) return true;
+        if (is_null_island_pc(p)) return true;
         for (int i = 0; i < nban; ++i) if (ban && ban[i] == p) return true;
         for (int i = 0; i < nrban; ++i) {
             uint64_t b = rban ? rban[i] : 0;
@@ -60,6 +68,7 @@ static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, 
     auto banned = [&](uint64_t p) -> bool {
         if (!p || p == exclude_pc) return true;
         if (p < 0x10100ull) return true;
+        if (is_null_island_pc(p)) return true;
         for (int i = 0; i < nban; ++i) if (ban[i] == p) return true;
         for (int i = 0; i < nrban; ++i) {
             uint64_t b = rban[i];
@@ -363,7 +372,8 @@ while (!c.halted) {
                     // Log: sticky alt=lr=0x199c78 but soft-continue skipped LR because lr==alt,
                     // then stack scan picked null-loop 0x105e8. Prefer LR whenever it is in chunks.
                     // XXVI hardening: always take translated LR first (even if lr==alt); stack is fallback only.
-                    if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr >= 0x10000ull) {
+                    if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr >= 0x10000ull
+                        && !is_null_island_pc(lr) && !is_banned(lr)) {
                         next = lr;
                         s_same_alt = 0;
                         static int s_lr_pref = 0;
@@ -372,6 +382,17 @@ while (!c.halted) {
                                 (unsigned long long)lr, (unsigned long long)alt);
                             ++s_lr_pref;
                         }
+                    } else if (is_null_island_pc(lr) || is_null_island_pc(alt)) {
+                        add_ban(0x199c78ull);
+                        add_ban(0x105e8ull);
+                        add_rban(0x199c78ull);
+                        add_rban(0x33723cull);
+                        for (size_t ci = 0; ci < n && !next; ++ci) {
+                            uint64_t st = chunks[ci].start;
+                            if (st && !is_banned(st) && !is_null_island_pc(st) && st != alt)
+                                next = st;
+                        }
+                        if (next && entry_toc) c.gpr[2] = entry_toc;
                     }
                     if (!next) {
                         uint64_t sp = c.gpr[1];
@@ -736,19 +757,48 @@ static int wild_log2 = 0;
                         uint64_t cand = rd64(c, a);
                         if (!cand || (cand & 3ull) != 0) continue;
                         if (!pc_in_chunks(cand, chunks, n)) continue;
+                        if (is_null_island_pc(cand) || is_banned(cand)) continue;
                         if (cand == last_good_ret || cand == c.pc) continue;
                         dest = cand;
                     }
                 }
-                if (!dest && last_good_ret && pc_in_chunks(last_good_ret, chunks, n))
+                if (!dest && last_good_ret && pc_in_chunks(last_good_ret, chunks, n)
+                    && !is_null_island_pc(last_good_ret) && !is_banned(last_good_ret))
                     dest = last_good_ret;
+                if (!dest) {
+                    static size_t s_chunk_rot = 0;
+                    for (size_t k = 0; k < n && !dest; ++k) {
+                        size_t ci = (s_chunk_rot + k) % (n ? n : 1);
+                        uint64_t st = chunks[ci].start;
+                        if (st && !is_banned(st) && !is_null_island_pc(st)) {
+                            dest = st;
+                            s_chunk_rot = ci + 1;
+                        }
+                    }
+                }
                 if (dest) {
+                    static uint64_t s_soft_dest = 0;
+                    static int s_soft_dest_n = 0;
+                    if (dest == s_soft_dest) ++s_soft_dest_n; else { s_soft_dest = dest; s_soft_dest_n = 1; }
+                    if (s_soft_dest_n >= 4) {
+                        add_ban(dest);
+                        add_rban(dest);
+                        s_soft_dest_n = 0;
+                        uint64_t alt2 = 0;
+                        for (size_t ci = 0; ci < n && !alt2; ++ci) {
+                            uint64_t st = chunks[ci].start;
+                            if (st && st != dest && !is_banned(st) && !is_null_island_pc(st))
+                                alt2 = st;
+                        }
+                        if (alt2) dest = alt2;
+                    }
                     static int s_soft_left = 0;
                     if (s_soft_left < 32) {
                         ps3rt_log("[ps3] soft left-range pc=0x%llx -> 0x%llx (escapes=%d n=%d)\n",
                             (unsigned long long)c.pc, (unsigned long long)dest, external_escapes, s_left_n);
                         ++s_soft_left;
                     }
+                    if (entry_toc && !c.gpr[2]) c.gpr[2] = entry_toc;
                     c.pc = dest;
                     c.gpr[3] = 0;
                     external_escapes = 0;
