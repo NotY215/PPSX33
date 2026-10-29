@@ -1255,7 +1255,21 @@ PS3RT_API void ps3rt_progress_hw(void) {
         if ((s_n & 0x07) == 0) { // XXV-E: denser flip/present assist
             uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000u;
             uint32_t put = g_gcm_control ? (gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz) : 0;
-            uint32_t get = g_gcm_control ? (gcm_rd_ctrl_u32(g_gcm_control + 4) % fsz) : 0;
+            uint32_t get4 = g_gcm_control ? (gcm_rd_ctrl_u32(g_gcm_control + 4) % fsz) : 0;
+            uint32_t get8 = g_gcm_control ? (gcm_rd_ctrl_u32(g_gcm_control + 8) % fsz) : 0;
+            uint32_t get = get8;
+            if (get == put && get4 != put) get = get4;
+            {
+                static uint32_t s_last_put = 0;
+                static int s_put_log = 0;
+                if (put != s_last_put) {
+                    if (s_put_log < 32) {
+                        ps3rt_log("[rsx] guest-PUT put=0x%x get=0x%x ref=0x%x\n", put, get, get4);
+                        ++s_put_log;
+                    }
+                    s_last_put = put;
+                }
+            }
             {
                 uint32_t dist = (put >= get) ? (put - get) : (fsz - get + put);
                 if (dist > fsz / 2) {

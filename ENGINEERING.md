@@ -29,5 +29,12 @@
 | Variable | Effect |
 | --- | --- |
 | `PS3RT_STRICT_FAULT=1` | Halt on invalid PC; no invented recovery targets |
-| `PS3RT_INJECT_SEED=0` | Disable boot FIFO assist inject |
-| `PS3RT_SPU_TRACE=1` | Verbose SPU MFC / tag logs |
+| `PS3RT_INJECT_SEED=0` | Disable boot FIFO assist (title stream only) |
+
+## Logging
+
+Per-game runtime logs and lift reports under `docs/games/` and project roots. Treat assist draws and soft recovery as **diagnostic**, not proof of title rendering.
+
+## Diagram tooling
+
+See [docs/DIAGRAMS.md](docs/DIAGRAMS.md) for Mermaid, PlantUML, D2, Graphviz, WaveDrom, Vega-Lite, Nomnoml, Markmap, Kroki, and related formats.

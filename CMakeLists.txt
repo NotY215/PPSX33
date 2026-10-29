@@ -40,8 +40,6 @@ endif()
 if(WIN32)
   add_library(ps3rt SHARED
     src/core/hle_kernel.cpp
-    src/core/hle_log.cpp
-    src/core/hle_hw_progress.cpp
     src/core/assets.cpp
     src/RSX/rsx_device.cpp
     src/RSX/rsx_fifo.cpp
