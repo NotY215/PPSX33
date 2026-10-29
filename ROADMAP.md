@@ -1,5 +1,7 @@
 # PPSX33 Roadmap
 
+**Website:** [https://ppsx33.xo.je/](https://ppsx33.xo.je/) · **Architecture:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · **Diagrams:** [docs/DIAGRAMS.md](docs/DIAGRAMS.md)
+
 Evidence-based status. External code audits are leads until proven by tests or title logs.
 
 Legend: **Done** · **Partial** · **In progress** · **Blocked** · **Planned**
@@ -19,6 +21,30 @@ Legend: **Done** · **Partial** · **In progress** · **Blocked** · **Planned**
 **Evidence note:** Assist cmdstreams can yield non-zero `methods` and guest-counted draws. That validates the host RSX path only.
 
 ---
+
+## Visual roadmap
+
+```mermaid
+flowchart TB
+  P0[Phase 0 Baseline] --> P1[Phase 1 PPU trust]
+  P1 --> P2[Phase 2 Guest runtime]
+  P2 --> P3[Phase 3 SPU]
+  P2 --> P4[Phase 4 RSX]
+  P3 --> P5[Phase 5 HLE measured]
+  P4 --> P5
+  P5 --> P6[Phase 6 Optimization]
+```
+
+```markmap
+# PPSX33 roadmap
+## 0 Baseline
+## 1 PPU
+## 2 Runtime
+## 3 SPU
+## 4 RSX
+## 5 HLE
+## 6 Optimize
+```
 
 ## Phase 0 — Trustworthy baseline
 
@@ -100,3 +126,12 @@ Only after conformance gates: IR opts, shader cache, incremental lift, SPU nativ
 | (default assist) | Probe cmdstream while PUT idle — not title rendering |
 
 See also [ENGINEERING.md](ENGINEERING.md).
+
+## Documentation
+
+| Item | Status |
+| --- | --- |
+| Website [ppsx33.xo.je](https://ppsx33.xo.je/) | Live |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) multi-format diagrams | Maintained |
+| [DIAGRAMS.md](docs/DIAGRAMS.md) language index | Maintained |
+| README status tables | Maintained |
