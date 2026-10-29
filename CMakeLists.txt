@@ -134,3 +134,42 @@ endif()
 message(STATUS "Output directory: ${CMAKE_BINARY_DIR}/dist")
 message(STATUS "Toolchain: system Visual Studio (see dist/redist/README.txt) — no Compilers-files")
 message(STATUS "After build, run:  ${CMAKE_BINARY_DIR}/dist/PS3Recomp.exe")
+
+
+# ------------------------------------------------------------------
+# Modular layout (Processor / GPU / Game-Stuff)
+# See STRUCTURE.md — monoliths in runtime/ remain linked until absorbed.
+# ------------------------------------------------------------------
+option(PPSX33_BUILD_MODULE_STUBS "Compile Processor/GPU/Game-Stuff skeleton units into ps3rt" OFF)
+
+if(PPSX33_BUILD_MODULE_STUBS AND TARGET ps3rt)
+    file(GLOB_RECURSE PPSX33_MODULE_SOURCES
+        ${CMAKE_SOURCE_DIR}/Processor/*.cpp
+        ${CMAKE_SOURCE_DIR}/GPU/*.cpp
+        ${CMAKE_SOURCE_DIR}/Game-Stuff/*.cpp
+    )
+    if(PPSX33_MODULE_SOURCES)
+        target_sources(ps3rt PRIVATE ${PPSX33_MODULE_SOURCES})
+        target_include_directories(ps3rt PRIVATE
+            ${CMAKE_SOURCE_DIR}/Processor/PPU
+            ${CMAKE_SOURCE_DIR}/Processor/SPU
+            ${CMAKE_SOURCE_DIR}/GPU
+            ${CMAKE_SOURCE_DIR}/GPU/dx11
+            ${CMAKE_SOURCE_DIR}/GPU/gl
+            ${CMAKE_SOURCE_DIR}/GPU/vk
+            ${CMAKE_SOURCE_DIR}/Game-Stuff/Audio
+            ${CMAKE_SOURCE_DIR}/Game-Stuff/Video
+        )
+        message(STATUS "PPSX33_BUILD_MODULE_STUBS=ON — module skeletons linked into ps3rt")
+    endif()
+endif()
+
+# Always surface the layout doc next to the app when present
+if(EXISTS "${CMAKE_SOURCE_DIR}/STRUCTURE.md")
+    add_custom_command(TARGET copy_runtime POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CMAKE_SOURCE_DIR}/STRUCTURE.md"
+                "${CMAKE_BINARY_DIR}/dist/STRUCTURE.md"
+        COMMENT "Copy STRUCTURE.md to dist"
+        VERBATIM)
+endif()
