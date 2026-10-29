@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_19-23-19.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-28_19-23-19.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_13-02-20.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_13-02-20.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -43,6 +43,15 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [fs] XX-J asset scan done root=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR  psarcs=30  entries=6978
 [stage] BOOT end
 [stage] PPU run start
+[hle] sys_ppu_thread/mutex/cond = partial (subset)
+[hle] sys_memory/mmapper = partial (subset)
+[hle] cellFs = partial (path map + host I/O)
+[hle] cellPad = partial (XInput/host keys)
+[hle] cellAudio = partial (host path)
+[hle] cellGcmSys = partial (control/FIFO kick)
+[hle] cellSysutil/sysmodule = partial (common NIDs)
+[hle] cellSpurs = partial (job assist)
+[hle] RSX/FIFO = partial (assist draws proven; title stream pending)
 [prx] load "cellSysmodule" id=1 base=0x30100000
 [ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x103ac
 [prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x103ac r11=0x53f96c
@@ -549,226 +558,69 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XV flip #22 guest=88 diag=0 draws=88 shaders=0 tex=0 methods=52 packets=26 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=24)
 [ps3] null-loop region exhausted (soft_breaks=24) -- dropping sticky
+[ps3] null-loop HARD escape 0x105e8 -> chunk 0x18000 (soft_breaks=24)
 [gcm] XXIV-B guest put=0x4e0 get=0x478
 [rsx] XV flip #23 guest=91 diag=0 draws=91 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=25)
+[ps3] null-loop HARD escape 0x10218 -> chunk 0x20000 (soft_breaks=25)
 [rsx] FIFO PUT restart get=0x548 -> 0x478 (put=0x4e0)
 [rsx] XV flip #24 guest=96 diag=0 draws=96 shaders=0 tex=0 methods=52 packets=26 1280x720
 [gcm] XXIV-B guest put=0x548 get=0x4e0
 [rsx] XV flip #25 guest=99 diag=0 draws=99 shaders=0 tex=0 methods=26 packets=13 1280x720
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=26)
 [rsx] XV flip #26 guest=104 diag=0 draws=104 shaders=0 tex=0 methods=52 packets=26 1280x720
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=27)
 [rsx] XV flip #27 guest=107 diag=0 draws=107 shaders=0 tex=0 methods=26 packets=13 1280x720
 [rsx] XV flip #28 guest=112 diag=0 draws=112 shaders=0 tex=0 methods=52 packets=26 1280x720
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=28)
 [rsx] XV flip #29 guest=115 diag=0 draws=115 shaders=0 tex=0 methods=26 packets=13 1280x720
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=29)
-[gcm] boot FIFO assist #16 put/get were idle
-[rsx] XV flip #30 guest=120 diag=0 draws=120 shaders=0 tex=0 methods=52 packets=26 1280x720
-[rsx] XV flip #31 guest=123 diag=0 draws=123 shaders=0 tex=0 methods=26 packets=13 1280x720
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=30)
-[rsx] XV flip #32 guest=128 diag=0 draws=128 shaders=0 tex=0 methods=52 packets=26 1280x720
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=31)
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=32)
-[ps3] null-loop region exhausted (soft_breaks=36) -- dropping sticky
-[gcm] boot FIFO assist #24 put/get were idle
-[ps3] null-loop region exhausted (soft_breaks=48) -- dropping sticky
-[gcm] boot FIFO assist #32 put/get were idle
-[ps3] null-loop region exhausted (soft_breaks=60) -- dropping sticky
-[gcm] boot FIFO assist #40 put/get were idle
-[rsx] XV-H resize 1280x729 rtv=ok
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=64)
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[rsx] XV-H resize 1280x729 rtv=ok
-[ps3] null-loop region exhausted (soft_breaks=72) -- dropping sticky
-[gcm] boot FIFO assist #48 put/get were idle
-[gcm] boot FIFO assist #56 put/get were idle
-[ps3] null-loop region exhausted (soft_breaks=84) -- dropping sticky
-[gcm] boot FIFO assist #64 put/get were idle
-[time] XXIII-K ppu=1024 spu=768 rsx_flips=127 phase=0
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=96)
-[ps3] null-loop region exhausted (soft_breaks=96) -- dropping sticky
-[gcm] boot FIFO assist #72 put/get were idle
-[ps3] null-loop region exhausted (soft_breaks=108) -- dropping sticky
-[gcm] boot FIFO assist #80 put/get were idle
-[ps3] null-loop region exhausted (soft_breaks=120) -- dropping sticky
-[gcm] boot FIFO assist #88 put/get were idle
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=128)
-[ps3] null-loop region exhausted (soft_breaks=132) -- dropping sticky
-[gcm] boot FIFO assist #96 put/get were idle
-[ps3] null-loop region exhausted (soft_breaks=144) -- dropping sticky
-[gcm] boot FIFO assist #104 put/get were idle
-[ps3] null-loop region exhausted (soft_breaks=156) -- dropping sticky
-[gcm] boot FIFO assist #112 put/get were idle
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=160)
-[ps3] null-loop region exhausted (soft_breaks=168) -- dropping sticky
-[gcm] boot FIFO assist #120 put/get were idle
-[ps3] null-loop region exhausted (soft_breaks=180) -- dropping sticky
-[gcm] boot FIFO assist #128 put/get were idle
-[time] XXIII-K ppu=2048 spu=1536 rsx_flips=255 phase=0
-[rsx] XV flip #257 guest=1021 diag=0 draws=1021 shaders=0 tex=0 methods=0 packets=0 1280x729
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=192)
-[ps3] null-loop region exhausted (soft_breaks=192) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=204) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=216) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=224)
-[ps3] null-loop region exhausted (soft_breaks=228) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=240) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=252) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=256)
-[ps3] null-loop region exhausted (soft_breaks=264) -- dropping sticky
-[time] XXIII-K ppu=3072 spu=2304 rsx_flips=383 phase=0
-[ps3] null-loop region exhausted (soft_breaks=276) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=288)
-[ps3] null-loop region exhausted (soft_breaks=288) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=300) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=312) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=320)
-[ps3] null-loop region exhausted (soft_breaks=324) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=336) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=348) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=352)
-[time] XXIII-K ppu=4096 spu=3072 rsx_flips=511 phase=0
-[rsx] XV flip #513 guest=1277 diag=0 draws=1277 shaders=0 tex=0 methods=0 packets=0 1280x729
-[ps3] null-loop region exhausted (soft_breaks=360) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=372) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=384)
-[ps3] null-loop region exhausted (soft_breaks=384) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=396) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=408) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=416)
-[ps3] null-loop region exhausted (soft_breaks=420) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=432) -- dropping sticky
-[time] XXIII-K ppu=5120 spu=3840 rsx_flips=639 phase=0
-[ps3] null-loop region exhausted (soft_breaks=444) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=448)
-[ps3] null-loop region exhausted (soft_breaks=456) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=468) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=480)
-[ps3] null-loop region exhausted (soft_breaks=480) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=492) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=504) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=512)
-[ps3] null-loop region exhausted (soft_breaks=516) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=528) -- dropping sticky
-[time] XXIII-K ppu=6144 spu=4608 rsx_flips=767 phase=0
-[rsx] XV flip #769 guest=1533 diag=0 draws=1533 shaders=0 tex=0 methods=0 packets=0 1280x729
-[ps3] null-loop region exhausted (soft_breaks=540) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=544)
-[ps3] null-loop region exhausted (soft_breaks=552) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=564) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=576)
-[ps3] null-loop region exhausted (soft_breaks=576) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=588) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=600) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=608)
-[ps3] null-loop region exhausted (soft_breaks=612) -- dropping sticky
-[time] XXIII-K ppu=7168 spu=5376 rsx_flips=895 phase=0
-[ps3] null-loop region exhausted (soft_breaks=624) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=636) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=640)
-[ps3] null-loop region exhausted (soft_breaks=648) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=660) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=672)
-[ps3] null-loop region exhausted (soft_breaks=672) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=684) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=696) -- dropping sticky
-[time] XXIII-K ppu=8192 spu=6144 rsx_flips=1023 phase=0
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=704)
-[rsx] XV flip #1025 guest=1789 diag=0 draws=1789 shaders=0 tex=0 methods=0 packets=0 1280x729
-[ps3] null-loop region exhausted (soft_breaks=708) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=720) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=732) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=736)
-[ps3] null-loop region exhausted (soft_breaks=744) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=756) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=768)
-[ps3] null-loop region exhausted (soft_breaks=768) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=780) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=792) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=800)
-[ps3] null-loop region exhausted (soft_breaks=804) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=816) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=828) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=832)
-[ps3] null-loop region exhausted (soft_breaks=840) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=852) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=864)
-[ps3] null-loop region exhausted (soft_breaks=864) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=876) -- dropping sticky
-[rsx] XV flip #1281 guest=2045 diag=0 draws=2045 shaders=0 tex=0 methods=0 packets=0 1280x729
-[ps3] null-loop region exhausted (soft_breaks=888) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=896)
-[ps3] null-loop region exhausted (soft_breaks=900) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=912) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=924) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=928)
-[ps3] null-loop region exhausted (soft_breaks=936) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=948) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=960)
-[ps3] null-loop region exhausted (soft_breaks=960) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=972) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=984) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=992)
-[ps3] null-loop region exhausted (soft_breaks=996) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1008) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1020) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=1024)
-[ps3] null-loop region exhausted (soft_breaks=1032) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1044) -- dropping sticky
-[rsx] XV flip #1537 guest=2301 diag=0 draws=2301 shaders=0 tex=0 methods=0 packets=0 1280x729
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=1056)
-[ps3] null-loop region exhausted (soft_breaks=1056) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1068) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1080) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=1088)
-[ps3] null-loop region exhausted (soft_breaks=1092) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1104) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1116) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=1120)
-[ps3] null-loop region exhausted (soft_breaks=1128) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1140) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=1152)
-[ps3] null-loop region exhausted (soft_breaks=1152) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1164) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1176) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=1184)
-[ps3] null-loop region exhausted (soft_breaks=1188) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1200) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1212) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=1216)
-[ps3] null-loop region exhausted (soft_breaks=1224) -- dropping sticky
-[rsx] XV flip #1793 guest=2557 diag=0 draws=2557 shaders=0 tex=0 methods=0 packets=0 1280x729
-[ps3] null-loop region exhausted (soft_breaks=1236) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=1248)
-[ps3] null-loop region exhausted (soft_breaks=1248) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1260) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1272) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=1280)
-[ps3] null-loop region exhausted (soft_breaks=1284) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1296) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1308) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=1312)
-[ps3] null-loop region exhausted (soft_breaks=1320) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1332) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=1344)
-[ps3] null-loop region exhausted (soft_breaks=1344) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1356) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1368) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=1376)
-[ps3] null-loop region exhausted (soft_breaks=1380) -- dropping sticky
-[ps3] null-loop region exhausted (soft_breaks=1392) -- dropping sticky
-[rsx] XV flip #2049 guest=2813 diag=0 draws=2813 shaders=0 tex=0 methods=0 packets=0 1280x729
-[ps3] null-loop region exhausted (soft_breaks=1404) -- dropping sticky
-[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=1408)
-[ps3] null-loop region exhausted (soft_breaks=1416) -- dropping sticky
-[rsx] window closed by user — exiting
-[ps3rt] force exit
+[ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=26)
+[ps3] null-loop HARD escape 0x10218 -> chunk 0x28000 (soft_breaks=26)
+[ps3] XXV-F recover wild-pc 0x0 -> 0x105e8
+[ps3] XXV-L wild-pc 0x0 -> 0x105e8
+[ps3] XXV-F recover wild-pc 0x0 -> 0x105e8
+[ps3] XXV-L wild-pc 0x0 -> 0x105e8
+[ps3] XXV-F recover wild-pc 0x0 -> 0x10218
+[ps3] XXV-L wild-pc 0x0 -> 0x10218
+[lv2] sc 169 r3=6 r4=0 r5=0 r6=0
+[lv2] sc 48 r3=f0ffc00 r4=f0ffb50 r5=0 r6=0
+[lv2] sc 352 r3=f0ffb88 r4=f0ffb50 r5=0 r6=0
+[lv2] XV-L mem sc=352 size=0xf0ffb50 -> ea=0x0
+[lv2] sc 352 r3=f0ffb60 r4=f0ffb70 r5=0 r6=0
+[lv2] XV-L mem sc=352 size=0xf0ffb70 -> ea=0x0
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[ps3] null-loop recover 0x1b4b4c -> 0x3deea8 (soft_breaks=27)
+[ps3] Phase XI region-ban 0x3dec00 (nrban=1)
+[ps3] null-loop HARD escape 0x3deea8 -> chunk 0x30000 (soft_breaks=27)
+[stage] PPU run end
 
 --- log end ---
