@@ -137,6 +137,9 @@ case 348: case 349: case 350: case 351: case 352: case 353: case 354: {
         if (v < 0x100ull || v > 0x08000000ull) return false;
         if (v >= 0x0E000000ull) return false;
         if ((v & 0xFFF00000ull) == 0x0F000000ull) return false;
+        // TOC/image ptr 0x52d6c8 was accepted as size — reject large unaligned low VAs.
+        if (v >= 0x10000ull && v < 0x01000000ull && (v & 0xFFFull) != 0 && v > 0x100000ull)
+            return false;
         return true;
     };
     auto looks_ptr = [](uint64_t v) -> bool {
@@ -1261,14 +1264,20 @@ PS3RT_API void ps3rt_progress_hw(void) {
                 ps3rt_log("[gcm] boot FIFO assist %s (PS3RT_INJECT_SEED=0 to disable)\n",
                     s_allow_inject ? "ON" : "OFF");
             }
+            extern "C" uint32_t ps3rt_rsx_get_put(void);
             static uint64_t s_inj_flip = (uint64_t)-1;
+            static uint32_t s_max_seen_put = 0;
             uint64_t fc = ps3rt_rsx_flip_count();
+            if (put > s_max_seen_put) s_max_seen_put = put;
+            if (s_max_seen_put > 0x200u) s_allow_inject = 0;
             if (s_allow_inject && (put == get || put <= 0x80) && s_inj_flip != fc && s_boot_n < 128) {
                 s_inj_flip = fc;
                 ++s_boot_n;
                 gcm_inject_clear_draw();
+                put = ps3rt_rsx_get_put();
+                get = ps3rt_rsx_get_get();
                 if (s_boot_n <= 8 || (s_boot_n & 7) == 0)
-                    ps3rt_log("[gcm] boot FIFO assist #%d put/get were idle\n", s_boot_n);
+                    ps3rt_log("[gcm] boot FIFO assist #%d put=0x%x get=0x%x\n", s_boot_n, put, get);
             } else if (put != get && put > 0x80) {
                 static int s_guest = 0;
                 if (s_guest < 12) {
@@ -1277,7 +1286,14 @@ PS3RT_API void ps3rt_progress_hw(void) {
                 }
             }
             if (g_mem) {
-                if (put > 0x20) ps3rt_rsx_set_put(put);
+                // Never rewind internal PUT with a stale control value after inject.
+                uint32_t cur_put = ps3rt_rsx_get_put();
+                if (put > cur_put)
+                    ps3rt_rsx_set_put(put);
+                else if (cur_put > put && g_gcm_control && g_gcm_control + 8 <= g_mem_size) {
+                    wr_be32_guest(g_gcm_control + 0, cur_put);
+                    put = cur_put;
+                }
                 ps3rt_rsx_flush(g_mem);
                 static int s_idle = 0;
                 if (put == get && s_idle < 8) {

@@ -2039,6 +2039,11 @@ static void rsx_process_fifo(uint8_t* mem) {
         ++g_rsx.packets_decoded;
         g_rsx.get = get;
     }
+
+    // Never leave GET ahead of PUT on a non-wrapped low ring (inject/control race).
+    if (g_rsx.put < 0x10000u && g_rsx.get < 0x10000u && g_rsx.get > g_rsx.put) {
+        g_rsx.get = g_rsx.put;
+    }
 }
 
 PS3RT_API void ps3rt_set_graphics_backend(int backend) {
@@ -2070,6 +2075,10 @@ PS3RT_API void ps3rt_rsx_set_put(uint32_t put) {
 PS3RT_API uint32_t ps3rt_rsx_get_get(void) {
     std::lock_guard<std::mutex> lk(g_rsx_mu);
     return g_rsx.get;
+}
+PS3RT_API uint32_t ps3rt_rsx_get_put(void) {
+    std::lock_guard<std::mutex> lk(g_rsx_mu);
+    return g_rsx.put;
 }
 
 PS3RT_API void ps3rt_rsx_flush(uint8_t* mem) {
