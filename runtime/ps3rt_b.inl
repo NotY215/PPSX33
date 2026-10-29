@@ -137,7 +137,6 @@ case 348: case 349: case 350: case 351: case 352: case 353: case 354: {
         if (v < 0x100ull || v > 0x08000000ull) return false;
         if (v >= 0x0E000000ull) return false;
         if ((v & 0xFFF00000ull) == 0x0F000000ull) return false;
-        // TOC/image ptr 0x52d6c8 was accepted as size — reject large unaligned low VAs.
         if (v >= 0x10000ull && v < 0x01000000ull && (v & 0xFFFull) != 0 && v > 0x100000ull)
             return false;
         return true;
@@ -820,7 +819,7 @@ static int gcm_hle(PPUContext* c, uint32_t nid) {
 // XX-M: cellSpurs HLE
 extern "C" int ps3rt_spurs_submit_job(uint32_t entry, uint32_t prio, uint32_t workload_id);
 extern "C" int ps3rt_spurs_job_done(int job_id);
-
+extern "C" uint32_t ps3rt_rsx_get_put(void);
 static int spurs_dispatch(PPUContext* c, uint32_t nid) {
     if (!c) return -1;
     switch (nid) {
@@ -1264,7 +1263,6 @@ PS3RT_API void ps3rt_progress_hw(void) {
                 ps3rt_log("[gcm] boot FIFO assist %s (PS3RT_INJECT_SEED=0 to disable)\n",
                     s_allow_inject ? "ON" : "OFF");
             }
-            extern "C" uint32_t ps3rt_rsx_get_put(void);
             static uint64_t s_inj_flip = (uint64_t)-1;
             static uint32_t s_max_seen_put = 0;
             uint64_t fc = ps3rt_rsx_flip_count();
