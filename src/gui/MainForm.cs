@@ -98,13 +98,13 @@ public sealed partial class MainForm : Form
         }
         catch { }
 
-        // Window icon from png/ico
+        // Window + taskbar icon from built-in .ico only (no separate .png copy)
         try
         {
             foreach (var ico in new[]
             {
-                Path.Combine(AppContext.BaseDirectory, "assets", "ppsx33-logo.ico"),
                 Path.Combine(AppContext.BaseDirectory, "ppsx33-logo.ico"),
+                Path.Combine(AppContext.BaseDirectory, "assets", "ppsx33-logo.ico"),
             })
             {
                 if (File.Exists(ico)) { Icon = new Icon(ico); break; }
@@ -166,17 +166,18 @@ public sealed partial class MainForm : Form
         _logo.Size = new Size(56, 56);
         _logo.SizeMode = PictureBoxSizeMode.Zoom;
         _logo.BackColor = Color.Transparent;
+        // UI logo asset: load from the same in-build .ico (Bitmap), not a second .png file
         try
         {
-            foreach (var png in new[]
+            foreach (var ico in new[]
             {
-                Path.Combine(AppContext.BaseDirectory, "assets", "ppsx33-logo.png"),
-                Path.Combine(AppContext.BaseDirectory, "ppsx33-logo.png"),
-                Path.Combine(AppContext.BaseDirectory, "..", "assets", "ppsx33-logo.png"),
+                Path.Combine(AppContext.BaseDirectory, "ppsx33-logo.ico"),
+                Path.Combine(AppContext.BaseDirectory, "assets", "ppsx33-logo.ico"),
             })
             {
-                if (!File.Exists(png)) continue;
-                _logo.Image = Image.FromFile(png);
+                if (!File.Exists(ico)) continue;
+                using var icon = new Icon(ico, 64, 64);
+                _logo.Image = icon.ToBitmap();
                 break;
             }
         }

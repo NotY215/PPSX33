@@ -480,6 +480,28 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
                 g_rsp << "obj\\g_game_main.obj\n";
             }
             g_rsp << "ps3rt.lib\n";
+            // Embed in-build .ico into generated game EXE (window + taskbar)
+            {
+                fs::path ico_path;
+                fs::path try_ico[] = {
+                    out / "ppsx33-logo.ico",
+                    fs::path(project_dir) / "ppsx33-logo.ico",
+                    fs::path(project_dir).parent_path() / "ppsx33-logo.ico",
+                    fs::path(project_dir).parent_path().parent_path() / "ppsx33-logo.ico",
+                    fs::path(project_dir).parent_path().parent_path() / "assets" / "ppsx33-logo.ico"
+                };
+                for (auto& c : try_ico) {
+                    std::error_code eci;
+                    if (fs::exists(c, eci)) { ico_path = c; break; }
+                }
+                if (!ico_path.empty()) {
+                    std::ofstream rc(out / "game_icon.rc");
+                    std::string ip = ico_path.string();
+                    for (char& ch : ip) if (ch == '\\') ch = '/';
+                    rc << "1 ICON \"" << ip << "\"\n";
+                    g_rsp << "obj\\game_icon.res\n";
+                }
+            }
         }
 
         fs::path bat = out / "build_msvc.bat";
@@ -568,6 +590,10 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             }
             cancel_chk();
             f << "echo LINK " << out_exe << "\n";
+            f << "if exist game_icon.rc (\n";
+            f << "  echo RC game_icon.rc\n";
+            f << "  rc /nologo /fo obj\\game_icon.res game_icon.rc || exit /b 1\n";
+            f << ")\n";
             f << "link @link_game.rsp || exit /b 1\n";
             f << "echo BUILD_OK\n";
             f << "exit /b 0\n";

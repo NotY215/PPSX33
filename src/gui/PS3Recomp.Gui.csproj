@@ -19,10 +19,6 @@
       <Link>ppsx33-logo.ico</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.png" Condition="Exists('$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.png')">
-      <Link>ppsx33-logo.png</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="$(MSBuildThisFileDirectory)..\..\TERMS.md" Condition="Exists('$(MSBuildThisFileDirectory)..\..\TERMS.md')">
       <Link>TERMS.md</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
