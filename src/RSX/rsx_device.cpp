@@ -2108,10 +2108,11 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     int frame_packets = g_rsx.packets_decoded;
     rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] XV flip #%llu guest=%d diag=%d draws=%d shaders=%d tex=%d methods=%d packets=%d %ux%u\n",
+        ps3rt_log("[rsx] flip #%llu guest=%d diag=%d draws=%d methods=%d packets=%d known=%d unk=%d put=0x%x get=0x%x %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws_guest, g_rsx.draws_diagnostic,
-            g_rsx.draws, g_rsx.shader_binds, g_rsx.tex_binds + g_rsx.tex_units_bound,
-            frame_methods, frame_packets,
+            g_rsx.draws, frame_methods, frame_packets,
+            g_rsx.known_methods, g_rsx.unknown_methods,
+            g_rsx.put, g_rsx.get,
             g_rsx.width, g_rsx.height);
     }
     g_rsx.methods_this_frame = 0;

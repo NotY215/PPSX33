@@ -44,6 +44,7 @@ if(WIN32)
     src/core/hle_hw_progress.cpp
     src/core/assets.cpp
     src/RSX/rsx_device.cpp
+    src/RSX/rsx_fifo.cpp
     src/processor/SPU/spu_interpreter.cpp
     src/games-stuff/Audio/audio_device.cpp
   )

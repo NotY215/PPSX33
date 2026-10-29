@@ -365,9 +365,10 @@ while (!c.halted) {
                     // XXVI hardening: always take translated LR first (even if lr==alt); stack is fallback only.
                     if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr >= 0x10000ull) {
                         next = lr;
+                        s_same_alt = 0;
                         static int s_lr_pref = 0;
                         if (s_lr_pref < 12) {
-                            ps3rt_log("[ps3] XXVI sticky prefer-LR=0x%llx (alt was 0x%llx)\n",
+                            ps3rt_log("[ps3] sticky prefer-LR=0x%llx (alt was 0x%llx)\n",
                                 (unsigned long long)lr, (unsigned long long)alt);
                             ++s_lr_pref;
                         }

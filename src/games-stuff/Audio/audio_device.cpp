@@ -234,11 +234,16 @@ PS3RT_API void ps3rt_audio_tick(void) {
     if (g_xa_ready && g_xa_src) {
         XAUDIO2_VOICE_STATE st{};
         g_xa_src->GetState(&st);
+        if (st.BuffersQueued == 0)
+            g_xa_src->Start(0);
         if (st.BuffersQueued < 2) {
             static int16_t quiet[960 * 2];
             audio_queue_s16(quiet, 480);
             static int s_k = 0;
-            if (s_k < 6) { ps3rt_log("[audio] XXVI XAudio2 keepalive (queued=%u)\n", st.BuffersQueued); ++s_k; }
+            if (s_k < 6) {
+                ps3rt_log("[audio] XAudio2 keepalive queued=%u\n", st.BuffersQueued);
+                ++s_k;
+            }
         }
         return;
     }

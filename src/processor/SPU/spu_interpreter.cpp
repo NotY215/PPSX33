@@ -303,12 +303,19 @@ static void ch_write(SPUContext& s, uint32_t ch, uint32_t val) {
     case CH_MFC_WrTagMask:
         s.mfc_tag_mask = val;
         break;
-    case CH_MFC_WrTagUpdate: { // XXIII-F: mark masked tags complete
-        s.mfc_tag_status |= (s.mfc_tag_mask ? s.mfc_tag_mask : 0xFFFFFFFFu);
+    case CH_MFC_WrTagUpdate: {
         uint32_t m = s.mfc_tag_mask ? s.mfc_tag_mask : 0xFFFFFFFFu;
         if (val == 0) s.mfc_tag_status |= m;
         else if (val == 1) { if ((s.mfc_tag_status & m) == 0) s.mfc_tag_status |= m; }
         else s.mfc_tag_status |= m;
+        if (spu_trace_enabled()) {
+            static int s_tu = 0;
+            if (s_tu < 32) {
+                ps3rt_log("[spu] MFC WrTagUpdate val=%u mask=0x%x status=0x%x\n",
+                          val, m, s.mfc_tag_status);
+                ++s_tu;
+            }
+        }
         break;
     }
     case CH_MFC_WrListStallAck:
