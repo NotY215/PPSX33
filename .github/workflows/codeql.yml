@@ -1,0 +1,115 @@
+```yaml
+name: "PPSX33 CodeQL Advanced"
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "LICENSE"
+      - "LICENSE.*"
+
+  pull_request:
+    branches:
+      - main
+      - master
+
+  schedule:
+    # Weekly security scan: Wednesday at 10:42 UTC
+    - cron: "42 10 * * 3"
+
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+  packages: read
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      packages: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Native recompilation, emulator and compiler code.
+          - language: c-cpp
+            build-mode: manual
+
+          # C# tools, if present in PPSX33.
+          - language: csharp
+            build-mode: autobuild
+
+          # JavaScript and TypeScript website components.
+          - language: javascript-typescript
+            build-mode: none
+
+          # Python tooling, if present.
+          - language: python
+            build-mode: none
+
+          # GitHub Actions workflow security.
+          - language: actions
+            build-mode: none
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended
+
+      # Replace this example build with PPSX33's actual native build
+      # commands and required dependencies.
+      - name: Build native code for CodeQL
+        if: matrix.language == 'c-cpp'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -f CMakePresets.json ]; then
+            echo "CMake presets detected."
+            cmake --version
+            cmake --list-presets
+            echo "Configure the appropriate PPSX33 preset and build here."
+          elif [ -f CMakeLists.txt ]; then
+            cmake -S . -B build
+            cmake --build build --parallel 2
+          elif [ -f Makefile ]; then
+            make -j2
+          else
+            echo "::error::No supported native build entry point found."
+            echo "Add the actual PPSX33 build commands to this step."
+            exit 1
+          fi
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
+          upload: true
+          wait-for-processing: true
+```
