@@ -1,5 +1,6 @@
 // WORK: RSX/libgcm host path — Vulkan 1.2 default, OpenGL secondary. DX11 removed.
 #include "rsx_device.h"
+#include "Backends/Vulkan/rsx_vk_backend.h"
 #include <cstdint>
 #include <cstring>
 #include <cstdio>
@@ -43,12 +44,12 @@ static HICON load_pic1_png_as_hicon() {
     char path[512];
     DWORD n = GetModuleFileNameA(nullptr, path, sizeof(path));
     if (!n || n >= sizeof(path)) return nullptr;
-    char* slash = strrchr(path, '\\\\');
+    char* slash = strrchr(path, '\\');
     if (!slash) slash = strrchr(path, '/');
     if (slash) {
         /* parent of USRDIR often holds PIC1.PNG */
         *slash = 0;
-        slash = strrchr(path, '\\\\');
+        slash = strrchr(path, '\\');
         if (!slash) slash = strrchr(path, '/');
         if (slash) {
             std::snprintf(slash + 1, sizeof(path) - (size_t)(slash + 1 - path), "PIC1.PNG");
@@ -74,9 +75,9 @@ static void rsx_probe_api_preference() {
     if (g_backend == 1) g_gfx_api = 1;
     else { g_gfx_api = 0; g_backend = 0; }
     if (g_gfx_api == 0)
-        ps3rt_log("[rsx] XXII-L API preference: Vulkan 1.2 (OpenGL secondary; DX11 removed)\\n");
+        ps3rt_log("[rsx] XXII-L API preference: Vulkan 1.2 (OpenGL secondary; DX11 removed)\n");
     else
-        ps3rt_log("[rsx] XXII-L API preference: OpenGL (Vulkan secondary)\\n");
+        ps3rt_log("[rsx] XXII-L API preference: OpenGL (Vulkan secondary)\n");
 }
 
 static void rsx_host_init(uint32_t w, uint32_t h) {
@@ -100,16 +101,21 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
 #if defined(_WIN32)
     apply_window_icons(g_hwnd);
 #endif
-    ps3rt_log("[rsx] XX-O window title=\\"%s\\"\\n", title);
-    if (g_gfx_api == 0)
-        ps3rt_log("[rsx] host present ready %ux%u (Vulkan 1.2 path; soft clear interim)\\n",
+    ps3rt_log("[rsx] XX-O window title=\"%s\"\n", title);
+    if (g_gfx_api == 0) {
+        if (rsx_vk_init((void*)g_hwnd, g_rsx.width, g_rsx.height)) {
+            ps3rt_log("[rsx] host present ready %ux%u (Vulkan 1.2)\n",
+                (unsigned)g_rsx.width, (unsigned)g_rsx.height);
+        } else {
+            ps3rt_log("[rsx] Vulkan init failed — soft GDI present fallback\n");
+        }
+    } else {
+        ps3rt_log("[rsx] host present ready %ux%u (OpenGL path; soft clear interim)\n",
             (unsigned)g_rsx.width, (unsigned)g_rsx.height);
-    else
-        ps3rt_log("[rsx] host present ready %ux%u (OpenGL path; soft clear interim)\\n",
-            (unsigned)g_rsx.width, (unsigned)g_rsx.height);
+    }
 }
 
-static void rsx_host_present_clear() {
+static void rsx_host_present_soft() {
     if (!g_hwnd) return;
     HDC hdc = GetDC(g_hwnd);
     if (!hdc) return;
@@ -122,6 +128,17 @@ static void rsx_host_present_clear() {
     FillRect(hdc, &bar, br2);
     DeleteObject(br2);
     ReleaseDC(g_hwnd, hdc);
+}
+
+static void rsx_host_present_clear() {
+    if (!g_hwnd) return;
+    if (g_gfx_api == 0 && rsx_vk_ready()) {
+        // Dark blue clear via Vulkan swapchain
+        rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
+        rsx_vk_poll_window();
+        return;
+    }
+    rsx_host_present_soft();
     MSG msg;
     while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) { g_hwnd = nullptr; break; }

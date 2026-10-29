@@ -1,3 +1,2 @@
-// WORK: Vulkan 1.2 host backend (default). Full device/swapchain path in progress.
-// WORK: Explicit VRAM alloc — FUTURE Phase 3.
-// STATUS: Future implementation. Default backend is DX11.
+// WORK: Vulkan host memory — staging buffers for guest RGBA upload (next depth).
+// Allocation helpers reserved for present_guest_rgba full blit path.

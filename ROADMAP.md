@@ -55,6 +55,8 @@ flowchart TB
 | Run from game USRDIR; log in Report tab | Done |
 | Log name `GameName-YYYY-MM-DD_HH-MM-SS.txt` | Done |
 | Default graphics Vulkan 1.2 | Done |
+| Vulkan instance/device/swapchain clear present | Done |
+| Vulkan guest RGBA blit pipeline | Planned |
 
 ## Phase 0 — Trustworthy baseline
 
@@ -101,7 +103,7 @@ flowchart TB
 
 | Item | Status |
 | --- | --- |
-| FIFO parse + host present (Vulkan 1.2 default) | Partial |
+| FIFO parse + Vulkan 1.2 swapchain present | Partial |
 | Assist/boot cmdstream draws | Partial (probe only) |
 | Title GCM stream | Blocked |
 | Shader translation (VP/FP → HLSL) | Partial |

@@ -42,6 +42,7 @@ if(WIN32)
     src/core/hle_kernel.cpp
     src/core/assets.cpp
     src/RSX/rsx_device.cpp
+    src/RSX/Backends/Vulkan/rsx_vk_backend.cpp
     src/RSX/rsx_fifo.cpp
     src/processor/SPU/spu_interpreter.cpp
     src/games-stuff/Audio/audio_device.cpp
@@ -51,7 +52,8 @@ if(WIN32)
     ${CMAKE_SOURCE_DIR}/src/processor/PPU
     ${CMAKE_SOURCE_DIR}/src/processor/SPU
     ${CMAKE_SOURCE_DIR}/src/RSX
-        ${CMAKE_SOURCE_DIR}/src/games-stuff/Audio
+    ${CMAKE_SOURCE_DIR}/src/RSX/Backends/Vulkan
+    ${CMAKE_SOURCE_DIR}/src/games-stuff/Audio
   )
   target_compile_definitions(ps3rt PRIVATE PS3RT_BUILD_DLL=1)
   if(MSVC)
