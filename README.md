@@ -141,32 +141,24 @@ A failure that looks like a graphics bug may actually be caused by a missing imp
 
 ## 🏗️ Project layout
 
+See **[STRUCTURE.md](STRUCTURE.md)** for the full tree. Summary:
+
 ```text
 PPSX33/
 ├── src/
-│   ├── core/              # ELF handling, PPU lifter and build orchestration
-│   ├── cli/               # Command-line tooling
-│   └── gui/               # Windows GUI
-├── runtime/               # Runtime linked with generated game builds
-│   ├── ppu_runtime*.h     # Guest context and execution support
-│   ├── ps3rt*.cpp / *.inl # HLE, imports and system services
-│   ├── rsx_stub.cpp       # RSX/GCM-to-D3D11 work in progress
-│   ├── spu_stub.cpp       # SPU and MFC support in progress
-│   └── assets.cpp         # Asset and path helpers
-├── assets/
-│   ├── ppsx33-logo.png    # Project identity
-│   ├── ppsx33-logo.ico    # Windows icon asset
-│   └── ppsx33-banner.png  # README / project banner
-├── docs/
-│   ├── ARCHITECTURE.md    # System architecture diagrams
-│   ├── DIAGRAMS.md        # Diagram language index
-│   ├── DEVELOPER_GUIDE.md
-│   ├── PPU_COVERAGE.md
-│   └── games/             # Per-title notes, reports and logs
-├── redist/                # Toolchain setup guidance
+│   ├── core/              # ELF loaders, VFS, memory, HLE kernel
+│   ├── processor/PPU|SPU  # Lift, run headers, SPU interpreter
+│   ├── RSX/               # Graphics pipeline + DX11 (GL/VK future)
+│   ├── games-stuff/       # Audio + Video subsystems
+│   ├── UI/                # WinForms GUI
+│   └── cli/               # CLI tooling
+├── assets/ docs/ redist/
+├── STRUCTURE.md
 ├── ROADMAP.md
 └── README.md
 ```
+
+Runtime **sources** live under `src/` (no top-level `runtime/` tree). Built `ps3rt.dll` still ships in `build/dist/runtime/` with headers for game links.
 
 Generated projects may contain a game executable, `ps3rt.dll`, guest image data, generated source files, controller mapping and build logs. Exact output depends on the project and build path.
 

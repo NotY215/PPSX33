@@ -135,3 +135,8 @@ See also [ENGINEERING.md](ENGINEERING.md).
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) multi-format diagrams | Maintained |
 | [DIAGRAMS.md](docs/DIAGRAMS.md) language index | Maintained |
 | README status tables | Maintained |
+
+
+## Source layout
+
+Code is organized under `src/core`, `src/processor`, `src/RSX`, `src/games-stuff`, `src/UI`. See [STRUCTURE.md](STRUCTURE.md). OpenGL/Vulkan backends are documented as future phases inside `src/RSX/Backends/`.

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>PS3Recomp</AssemblyName>
+    <RootNamespace>PS3Recomp.Gui</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ApplicationIcon>$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico</ApplicationIcon>
+    <OutputPath>$(MSBuildThisFileDirectory)..\..\build\dist\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico" Condition="Exists('$(MSBuildThisFileDirectory)..\..\assets\ppsx33-logo.ico')">
+      <Link>ppsx33-logo.ico</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\TERMS.md" Condition="Exists('$(MSBuildThisFileDirectory)..\..\TERMS.md')">
+      <Link>TERMS.md</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\LEGAL.md" Condition="Exists('$(MSBuildThisFileDirectory)..\..\LEGAL.md')">
+      <Link>LEGAL.md</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>
+
