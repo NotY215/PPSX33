@@ -43,7 +43,7 @@ PS3RT_API void ps3rt_syscall(PPUContext* c) {
     uint64_t r3 = c->gpr[3], r4 = c->gpr[4], r5 = c->gpr[5], r6 = c->gpr[6];
     (void)r6;
     static int sys_log = 0;
-    if (sys_log < 120) {
+    if (sys_log < 120 && (uint32_t)num != 141 && (uint32_t)num != 142) {
         ps3rt_log("[lv2] sc %llu r3=%llx r4=%llx r5=%llx r6=%llx\n",
             (unsigned long long)num, (unsigned long long)r3, (unsigned long long)r4,
             (unsigned long long)r5, (unsigned long long)c->gpr[6]);
@@ -89,18 +89,25 @@ case 129: case 130: case 131: case 132: case 133: case 134: case 135:
 case 136: case 137: case 138: case 139:
     c->gpr[3] = 0; break;
 case 141: case 142: {
-    // sys_timer_usleep / sys_timer_sleep — log shows 0x186a0 us (=100ms) tight-loop
+    // sys_timer_usleep / sys_timer_sleep
+    // GOW: sc 141 r3=0x186a0 spam — do not Sleep(ms) on PPU thread.
     uint64_t us = r3;
+    static uint64_t s_us_last = 0;
+    static int s_us_n = 0;
+    if (us == s_us_last) ++s_us_n; else { s_us_last = us; s_us_n = 1; }
 #if defined(_WIN32)
-    if (us >= 1000ull) {
-        DWORD ms = (DWORD)(us / 1000ull);
-        if (ms > 50) ms = 50; // bound so host stays responsive
-        if (ms == 0) ms = 1;
-        Sleep(ms);
-    } else {
-        Sleep(0);
-    }
+    Sleep(0);
 #endif
+    if (s_us_n <= 2 || (s_us_n & 15) == 0) {
+        extern void ps3rt_progress_hw(void);
+        ps3rt_progress_hw();
+    }
+    static int s_us_log = 0;
+    if (s_us_log < 8 || s_us_n == 1 || (s_us_n % 256) == 0) {
+        ps3rt_log("[lv2] timer_usleep us=%llu n=%d (yield+hw)\n",
+            (unsigned long long)us, s_us_n);
+        ++s_us_log;
+    }
     c->gpr[3] = 0; break;
 }
 case 143: {
