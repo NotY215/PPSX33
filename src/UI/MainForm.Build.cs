@@ -128,8 +128,8 @@ public sealed partial class MainForm
             {
                 MessageBox.Show(this,
                     "Build completed successfully.\r\n\r\n" +
-                    "Run and Copy to game folder are now unlocked.\r\n" +
-                    "Phase XXIII runtime is used when present under output/src.\r\n" +
+                    "Copy to Game Folder is now unlocked.\r\n" +
+                    "After a successful copy, Run Game EXE unlocks.\r\n" +
                     "Copy places the game EXE and required files next to EBOOT.BIN\r\n" +
                     "(typically ...\\PS3_GAME\\USRDIR).",
                     "PPSX33 - Build complete",
@@ -223,9 +223,9 @@ public sealed partial class MainForm
         } catch { }
 
         if (ok) {
-            _canCopy = true; _canRun = true;
+            _canCopy = true; _canRun = false;
             SetStatus("Building successful", false, 100, "");
-            Append("Building successful \u2014 Run and Copy unlocked.");
+            Append("Building successful \u2014 Copy to Game Folder unlocked. Run unlocks after copy.");
         } else if (_buildCancelRequested) {
             SetStatus("Build cancelled");
             Append("Build cancelled.");
@@ -290,7 +290,7 @@ public sealed partial class MainForm
                     }
                 } catch (Exception ex) { Append("lift_report read failed: " + ex.Message); }
             }
-            if (afterBuild && ok) { _canCopy = true; _canRun = true; }
+            if (afterBuild && ok) { _canCopy = true; _canRun = false; }
             string workName = status.Contains("Decompil", StringComparison.OrdinalIgnoreCase) ? "Decompiling" : status.Contains("Build", StringComparison.OrdinalIgnoreCase) ? "Building" : status.TrimEnd('\u2026', '.', ' ');
             Append(ok ? workName + " successful." : workName + " failed.");
             if (ok && afterLift) Append("Decompiling successful \u2014 Build and Graphics backend unlocked.");

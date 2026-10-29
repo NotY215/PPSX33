@@ -51,14 +51,13 @@ if(WIN32)
     ${CMAKE_SOURCE_DIR}/src/processor/PPU
     ${CMAKE_SOURCE_DIR}/src/processor/SPU
     ${CMAKE_SOURCE_DIR}/src/RSX
-    ${CMAKE_SOURCE_DIR}/src/RSX/Backends/DX11
-    ${CMAKE_SOURCE_DIR}/src/games-stuff/Audio
+        ${CMAKE_SOURCE_DIR}/src/games-stuff/Audio
   )
   target_compile_definitions(ps3rt PRIVATE PS3RT_BUILD_DLL=1)
   if(MSVC)
     target_compile_options(ps3rt PRIVATE /bigobj)
   endif()
-  target_link_libraries(ps3rt PRIVATE d3d11 dxgi d3dcompiler user32 gdi32 ole32 winmm xaudio2)
+  target_link_libraries(ps3rt PRIVATE user32 gdi32 ole32 winmm xaudio2)
   set_target_properties(ps3rt PROPERTIES PREFIX "" OUTPUT_NAME "ps3rt")
   add_custom_command(TARGET ps3rt POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/dist/runtime

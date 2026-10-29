@@ -8,7 +8,7 @@ namespace PS3Recomp.Gui;
 /// </summary>
 public sealed class Settings
 {
-    public string GraphicsBackend { get; set; } = "D3D11";
+    public string GraphicsBackend { get; set; } = "Vulkan";
     public int PpuThreads { get; set; } = Math.Clamp(Environment.ProcessorCount, 1, 16);
     public string Rpcs3Path { get; set; } = "";
     /// <summary>Last decrypted/loaded ELF path.</summary>

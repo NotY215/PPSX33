@@ -15,7 +15,7 @@ This guide describes the repository layout, development workflow, and implementa
 | Core API | `src/core/ps3core.h`, `src/core/ps3core_api.cpp` | Public native interface consumed by frontends |
 | Runtime | `src/processor/PPU/ppu_runtime.h`, `src/core/hle_kernel.cpp` | Guest memory, CPU state helpers, log, and HLE runtime |
 | SPU runtime | `src/processor/SPU/spu_interpreter.cpp` | SPU context, ISA step, mailboxes, and MFC; SPURS coverage remains partial |
-| RSX runtime | `src/RSX/rsx_device.cpp`, `src/RSX/rsx_fifo.cpp` | FIFO/method processing and D3D11 present; not a complete RSX implementation |
+| RSX runtime | `src/RSX/rsx_device.cpp`, `src/RSX/rsx_fifo.cpp` | FIFO/method processing and Vulkan 1.2 host present; not a complete RSX implementation |
 | CLI | `src/cli/ps3_cli.cpp` | Command-line entry point for project processing |
 | GUI | `src/UI/` | C# WinForms interface and native interop |
 | Synthetic tests | `tests/make_test_elf.py` | Generate a small PPC64 ELF for pipeline regression tests |
@@ -147,7 +147,7 @@ When updating a checkout after Phase XX work, keep these files in sync as a set:
 | Context | `src/processor/PPU/ppu_runtime_core_a.h` | `SPUContext` MFC/SPURS fields |
 | LV2 extras | `src/core/lv2_syscalls.inl` | `sys_spu_thread_*` range |
 | Audio / save | `src/games-stuff/Audio/audio_device.cpp` | cellAudio → XAudio2/waveOut (XX-N) |
-| RSX host | `src/RSX/rsx_device.cpp` | Present, FIFO, D3D11 (XX-N) |
+| RSX host | `src/RSX/rsx_device.cpp` | Present, FIFO, Vulkan 1.2 host (DX11 removed) |
 
 ### Host dependencies (Windows)
 

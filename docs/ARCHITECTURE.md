@@ -14,7 +14,7 @@ flowchart LR
   GUI --> Core[ps3core lifter]
   Core --> Game[Generated game EXE]
   Game --> RT[ps3rt.dll]
-  RT --> D3D[D3D11]
+  RT --> Vulkan[Vulkan]
   Core --> MSVC[MSVC cl/link]
 ```
 
@@ -26,7 +26,7 @@ User --> (Lift)
 User --> (Build)
 (Build) --> (Game EXE)
 (Game EXE) --> (ps3rt)
-(ps3rt) --> (D3D11)
+(ps3rt) --> (Vulkan)
 @enduml
 ```
 
@@ -98,7 +98,7 @@ flowchart TB
   PPU --> PRX[PRX/NID]
   PRX --> LIB[cell* services]
   GCM[GCM FIFO] --> RSX[RSX decode]
-  RSX --> D3D[D3D11 present]
+  RSX --> Vulkan[Vulkan present]
   SPU[SPU/MFC] --> MEM
   LIB --> PAD[Pad]
   LIB --> AUD[Audio]
@@ -109,8 +109,8 @@ flowchart TB
 blockdiag {
   group guest { PPU; MEM; FIFO; SPU; }
   group hle { LV2; PRX; }
-  group host { D3D11; Audio; Pad; }
-  PPU -> LV2; PPU -> PRX; FIFO -> D3D11;
+  group host { Vulkan; Audio; Pad; }
+  PPU -> LV2; PPU -> PRX; FIFO -> Vulkan;
 }
 ```
 
@@ -118,7 +118,7 @@ blockdiag {
 [PPU] -> [LV2]
 [PPU] -> [PRX]
 [FIFO] -> [RSX]
-[RSX] -> [D3D11]
+[RSX] -> [Vulkan]
 ```
 
 ## 5. RSX path

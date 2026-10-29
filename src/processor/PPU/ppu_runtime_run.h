@@ -33,6 +33,7 @@ static inline bool is_null_island_pc(uint64_t p) {
     if (p == 0x33723cull) return true;
     if (p == 0x336660ull || p == 0x336750ull) return true;
     if (p >= 0x336000ull && p < 0x338000ull) return true;
+    if (p == 0x430000ull) return true;
     return false;
 }
 

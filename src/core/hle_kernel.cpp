@@ -20,6 +20,7 @@ PS3RT_API void ps3rt_assets_boot_scan(void);
 #include <vector>
 #include <cstdarg>
 #include <ctime>
+extern "C" const char* ps3rt_get_game_name(void);
 #include <atomic>
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -89,18 +90,40 @@ static void ps3rt_log_open(void) {
     localtime_r(&t, &tm_buf);
 #endif
     int in_game = path_looks_like_game_folder(dir);
-    char name[96];
-    if (in_game) {
-        std::snprintf(name, sizeof(name),
-            "ppsx33_log_in_game_folder_%04d-%02d-%02d_%02d-%02d-%02d.txt",
-            tm_buf.tm_year + 1900, tm_buf.tm_mon + 1, tm_buf.tm_mday,
-            tm_buf.tm_hour, tm_buf.tm_min, tm_buf.tm_sec);
-    } else {
-        std::snprintf(name, sizeof(name),
-            "ppsx33_log_outside_game_%04d-%02d-%02d_%02d-%02d-%02d.txt",
-            tm_buf.tm_year + 1900, tm_buf.tm_mon + 1, tm_buf.tm_mday,
-            tm_buf.tm_hour, tm_buf.tm_min, tm_buf.tm_sec);
+    char gsafe[48]; gsafe[0] = 0;
+    {
+        const char* gn = ps3rt_get_game_name();
+        auto sanitize = [&](const char* src) {
+            size_t i = 0;
+            for (const char* p = src; p && *p && i + 1 < sizeof(gsafe); ++p) {
+                char c = *p;
+                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                    (c >= '0' && c <= '9') || c == '_' || c == '-')
+                    gsafe[i++] = c;
+                else if (c == ' ')
+                    gsafe[i++] = '_';
+            }
+            gsafe[i] = 0;
+        };
+        if (gn && gn[0]) sanitize(gn);
+        if (!gsafe[0]) {
+            size_t L = std::strlen(dir);
+            while (L > 0 && (dir[L-1] == '\\' || dir[L-1] == '/')) --L;
+            size_t e = L;
+            while (e > 0 && dir[e-1] != '\\' && dir[e-1] != '/') --e;
+            char tmp[96]; size_t n = 0;
+            for (; e < L && n + 1 < sizeof(tmp); ++e) tmp[n++] = dir[e];
+            tmp[n] = 0;
+            sanitize(tmp[0] ? tmp : "PS3Title");
+        }
+        if (!gsafe[0]) std::snprintf(gsafe, sizeof(gsafe), "PS3Title");
     }
+    char name[128];
+    std::snprintf(name, sizeof(name),
+        "%s-%04d-%02d-%02d_%02d-%02d-%02d.txt",
+        gsafe,
+        tm_buf.tm_year + 1900, tm_buf.tm_mon + 1, tm_buf.tm_mday,
+        tm_buf.tm_hour, tm_buf.tm_min, tm_buf.tm_sec);
     char full[600];
     std::snprintf(full, sizeof(full), "%s%s", dir, name);
     g_logf = std::fopen(full, "w");

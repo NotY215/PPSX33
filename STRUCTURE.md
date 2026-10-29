@@ -131,18 +131,17 @@ All runtime logic lives under `src/`; the old `runtime/`, `GPU/`, `Processor/`, 
     │   ├── rsx_shader_decoder.h/.cpp# Microcode binary → intermediate representation
     │   ├── rsx_shader_compiler.h/.cpp # IR → HLSL / GLSL / SPIR-V
     │   └── 📂 Backends/
-    │       ├── 📂 DX11/             # [PHASE 1 – DEFAULT] Windows Native
     │       │   ├── rsx_dx11_backend.h/.cpp  # Context, swapchain, frame loop
     │       │   ├── rsx_dx11_state.cpp       # RSX → ID3D11Blend/Rasterizer/Depth
     │       │   ├── rsx_dx11_resources.cpp   # Buffers, layouts, textures
     │       │   └── rsx_dx11_shaders.cpp     # HLSL compile via D3DCompiler
-    │       ├── 📂 OpenGL/           # [PHASE 2 – NEXT] Cross-platform
+    │       ├── 📂 OpenGL/           # [SECONDARY] OpenGL path
     │       │   ├── rsx_gl_backend.h/.cpp    # WGL/GLX context, flush, swap
     │       │   ├── rsx_gl_state.cpp         # Pipeline → glCullFace / glEnable(BLEND) …
     │       │   ├── rsx_gl_vao.cpp           # VAO + buffer layout bindings
     │       │   └── rsx_gl_shaders.cpp       # Dynamic GLSL compile/link
     │       │                                # (stubs contain “implement in future” comments)
-    │       └── 📂 Vulkan/           # [PHASE 3 – FUTURE] High-performance
+    │       └── 📂 Vulkan/           # [DEFAULT] Vulkan 1.2 host path
     │           ├── rsx_vk_backend.h/.cpp    # VkInstance / Device / physical selection
     │           ├── rsx_vk_pipelines.cpp     # Explicit Pipeline State Objects
     │           ├── rsx_vk_command.cpp       # FIFO → VkCommandBuffer rings
@@ -173,7 +172,6 @@ All runtime logic lives under `src/`; the old `runtime/`, `GPU/`, `Processor/`, 
     │       ├── video_pamf.h/.cpp              # Sony .pam container demux
     │       ├── video_demuxer.h/.cpp           # Generic packet splitter
     │       ├── video_color_space.h/.cpp       # YUV → RGB conversion
-    │       ├── video_presenter.h/.cpp         # Surfaces → DX11/GL textures
     │       └── video_clock.h/.cpp             # Master frame pacing vs audio
     │
     └── 📂 UI/                       # User Interface, Debugger, Front-end
@@ -207,5 +205,4 @@ All runtime logic lives under `src/`; the old `runtime/`, `GPU/`, `Processor/`, 
 - **Removed** (intentionally): `runtime/`, `GPU/`, `Processor/`, `Game-Stuff/`, top-level `src/` legacy copies, `tests/`, `scripts/`, duplicate decoder sources that lived outside `Decoders/`.
 - **Legal** documents live under `docs/legal/` except the four root-required files: `LICENSE`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `SECURITY.md`.
 - OpenGL and Vulkan backend files currently contain stub implementations with explicit “will be implemented in future” comments and a short description of each file’s intended responsibility.
-- DX11 is the default and primary graphics backend; audio defaults to XAudio2.
 - All paths in CMakeLists.txt and the GUI `.csproj` have been updated to the layout above.

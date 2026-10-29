@@ -206,12 +206,12 @@ public sealed partial class MainForm : Form
         StyleBtn(_btnLoad, "Load ELF", Panel2);
         StyleBtn(_btnLift, "Decompile", Panel2);
         StyleBtn(_btnBuild, "Build Project", AccentBlue);
-        StyleBtn(_btnRun, "Run Executable", Success);
+        StyleBtn(_btnRun, "Run Game EXE", Success);
         StyleBtn(_btnCopy, "Copy to Game Folder", Panel2);
         StyleBtn(_btnCancel, "Stop / Cancel Build", Danger);
 
         _gfx.DropDownStyle = ComboBoxStyle.DropDownList;
-        _gfx.Items.AddRange(new object[] { "D3D11 (DirectX 11)", "OpenGL 3.3 (future)", "Vulkan (not linked)" });
+        _gfx.Items.AddRange(new object[] { "Vulkan 1.2 (default)", "OpenGL 3.3" });
         _gfx.SelectedIndex = 0;
         _gfx.Enabled = false;
         StyleCombo(_gfx);
@@ -252,8 +252,8 @@ public sealed partial class MainForm : Form
         Add(_btnLoad);
         Add(_btnLift);
         Add(_btnBuild);
-        Add(_btnRun);
         Add(_btnCopy);
+        Add(_btnRun);
         Add(_btnCancel);
         Add(MakeSection("RECOMPILER SETTINGS", null));
         Add(MakeLabel("GRAPHICS API"));

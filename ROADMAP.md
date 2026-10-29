@@ -46,6 +46,16 @@ flowchart TB
 ## 6 Optimize
 ```
 
+## GUI workflow
+
+| Item | Status |
+| --- | --- |
+| Build → unlock Copy to Game Folder | Done |
+| Copy complete → unlock Run Game EXE | Done |
+| Run from game USRDIR; log in Report tab | Done |
+| Log name `GameName-YYYY-MM-DD_HH-MM-SS.txt` | Done |
+| Default graphics Vulkan 1.2 | Done |
+
 ## Phase 0 — Trustworthy baseline
 
 | Item | Status |
@@ -91,13 +101,14 @@ flowchart TB
 
 | Item | Status |
 | --- | --- |
-| FIFO parse + D3D11 present | Partial |
+| FIFO parse + host present (Vulkan 1.2 default) | Partial |
 | Assist/boot cmdstream draws | Partial (probe only) |
 | Title GCM stream | Blocked |
 | Shader translation (VP/FP → HLSL) | Partial |
 | Textures, depth, blend, RTs | Partial |
 | Split cmd processor / state / backend files | Planned |
-| Second backend (Vulkan/etc.) | Planned after common pipeline |
+| OpenGL secondary backend | Planned after Vulkan 1.2 present |
+| DX11 backend | Removed |
 
 ## Phase 5 — HLE coverage (measured)
 
@@ -139,4 +150,4 @@ See also [ENGINEERING.md](ENGINEERING.md).
 
 ## Source layout
 
-Code is organized under `src/core`, `src/processor`, `src/RSX`, `src/games-stuff`, `src/UI`. See [STRUCTURE.md](STRUCTURE.md). OpenGL/Vulkan backends are documented as future phases inside `src/RSX/Backends/`.
+Code is organized under `src/core`, `src/processor`, `src/RSX`, `src/games-stuff`, `src/UI`. See [STRUCTURE.md](STRUCTURE.md). Vulkan 1.2 is the default host graphics path; OpenGL is secondary. DX11 has been removed.

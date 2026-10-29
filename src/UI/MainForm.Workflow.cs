@@ -95,19 +95,101 @@ public sealed partial class MainForm
 
     async Task RunGame() {
         if (_projectDir == null) return;
-        string outDir = Path.Combine(_projectDir, "output");
         string want = SafeGameExeName(_projectDir);
-        string exe = Path.Combine(outDir, want);
-        if (!File.Exists(exe))
-            exe = Path.Combine(outDir, "PPSX33.exe");
-        if (!File.Exists(exe))
-            exe = Directory.GetFiles(outDir, "*.exe").FirstOrDefault() ?? "";
-        if (string.IsNullOrEmpty(exe) || !File.Exists(exe)) { Append("No game EXE in output/"); return; }
-        _settings.LastOutputFolderPath = outDir;
+        string? workDir = null;
+        string? exe = null;
+
+        // Prefer game folder (USRDIR) after copy
+        if (!string.IsNullOrWhiteSpace(_settings.LastGameFolderPath) &&
+            Directory.Exists(_settings.LastGameFolderPath))
+        {
+            string cand = Path.Combine(_settings.LastGameFolderPath, want);
+            if (File.Exists(cand)) { exe = cand; workDir = _settings.LastGameFolderPath; }
+            if (exe == null)
+            {
+                var any = Directory.GetFiles(_settings.LastGameFolderPath, "*.exe");
+                if (any.Length > 0) { exe = any[0]; workDir = _settings.LastGameFolderPath; }
+            }
+        }
+
+        string outDir = Path.Combine(_projectDir, "output");
+        if (exe == null)
+        {
+            workDir = outDir;
+            exe = Path.Combine(outDir, want);
+            if (!File.Exists(exe)) exe = Path.Combine(outDir, "PPSX33.exe");
+            if (!File.Exists(exe))
+                exe = Directory.Exists(outDir)
+                    ? (Directory.GetFiles(outDir, "*.exe").FirstOrDefault() ?? "")
+                    : "";
+        }
+
+        if (string.IsNullOrEmpty(exe) || !File.Exists(exe))
+        {
+            Append("No game EXE found. Build, then Copy to Game Folder first.");
+            return;
+        }
+
+        _settings.LastOutputFolderPath = workDir ?? outDir;
         SaveSettings();
-        _gameProc = Process.Start(new ProcessStartInfo { FileName = exe, WorkingDirectory = outDir, UseShellExecute = false });
+        _gameProc = Process.Start(new ProcessStartInfo
+        {
+            FileName = exe,
+            WorkingDirectory = workDir ?? outDir,
+            UseShellExecute = false
+        });
         Append("Running: " + exe);
+        Append("Work dir: " + (workDir ?? outDir));
+        UpdateButtons();
+
+        // When process exits, load newest GameName-date-time log into Report tab
+        if (_gameProc != null)
+        {
+            var proc = _gameProc;
+            string dir = workDir ?? outDir;
+            _ = Task.Run(() =>
+            {
+                try { proc.WaitForExit(); } catch { }
+                try
+                {
+                    BeginInvoke(() =>
+                    {
+                        _gameProc = null;
+                        UpdateButtons();
+                        LoadNewestRunLogIntoReport(dir);
+                    });
+                }
+                catch { }
+            });
+        }
         await Task.CompletedTask;
+    }
+
+    void LoadNewestRunLogIntoReport(string dir)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir)) return;
+            var logs = Directory.GetFiles(dir, "*.txt")
+                .Where(f =>
+                {
+                    var n = Path.GetFileName(f);
+                    return n.Contains('-') && (n.StartsWith("GOW", StringComparison.OrdinalIgnoreCase)
+                        || n.Contains("202") || n.EndsWith(".txt"));
+                })
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .ToList();
+            // Prefer *YYYY-MM-DD_HH-MM-SS.txt style
+            var timed = logs.Where(f => System.Text.RegularExpressions.Regex.IsMatch(
+                Path.GetFileName(f), @"-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.txt$")).ToList();
+            string? pick = timed.FirstOrDefault() ?? logs.FirstOrDefault();
+            if (pick == null) return;
+            string text = File.ReadAllText(pick);
+            _report.Text = text;
+            Append("Report tab: loaded " + Path.GetFileName(pick));
+            try { _tabs.SelectedTab = _tabs.TabPages.Cast<TabPage>().FirstOrDefault(p => p.Text.Contains("Report")) ?? _tabs.SelectedTab; } catch { }
+        }
+        catch (Exception ex) { Append("Report log load: " + ex.Message); }
     }
 
     /// <summary>Search folder (and common subfolders) for EBOOT.BIN.</summary>
@@ -194,6 +276,10 @@ public sealed partial class MainForm
         _settings.LastBinPath = eboot;
         _settings.LastOutputFolderPath = Path.Combine(_projectDir, "output");
         SaveSettings();
+        _canRun = true;
+        UpdateButtons();
+        Append("Copy complete — Run Game EXE unlocked.");
+
 
         Append("EBOOT.BIN: " + eboot);
         Append("DESTINATION (must be USRDIR / next to EBOOT): " + dest);
