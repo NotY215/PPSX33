@@ -156,6 +156,17 @@ case 348: case 349: case 350: case 351: case 352: case 353: case 354: {
             if (looks_size(s1)) { sz = s1; out = r3; }
             else if (looks_size(s2)) { sz = s2; out = r4; }
         }
+        if (!sz) {
+            for (int off = 0; off <= 0x40 && !sz; off += 4) {
+                uint64_t bases[2] = { r3, r4 };
+                for (int bi = 0; bi < 2 && !sz; ++bi) {
+                    uint64_t cand = rd_be32_guest(bases[bi] + (uint64_t)off);
+                    if (looks_size(cand)) { sz = cand; out = r3; break; }
+                    cand = rd_be64_guest(bases[bi] + (uint64_t)off);
+                    if (looks_size(cand)) { sz = cand; out = r3; break; }
+                }
+            }
+        }
     }
     if (!sz) {
         static int s_bad = 0;

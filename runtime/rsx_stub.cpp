@@ -127,23 +127,7 @@ static ID3D11SamplerState* g_samp = nullptr;
 static ID3D11ShaderResourceView* g_srv_tex = nullptr;
 static int g_hlsl_ready = 0;
 
-static const char* kBlitHLSL = R"(
-struct VSIn { float2 pos : POSITION; float2 uv : TEXCOORD0; };
-struct VSOut { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
-Texture2D tex0 : register(t0);
-SamplerState samp0 : register(s0);
-VSOut VSMain(VSIn i) {
-  VSOut o;
-  o.pos = float4(i.pos, 0, 1);
-  o.uv = i.uv;
-  return o;
-}
-float4 PSMain(VSOut i) : SV_Target {
-  // XXIII-Y: sample guest texture; solid fallback tint if unbound
-  float4 c = tex0.Sample(samp0, i.uv);
-  return c;
-}
-)";
+static const char* kBlitHLSL = R"(\nstruct VSIn { float2 pos : POSITION; float2 uv : TEXCOORD0; };\nstruct VSOut { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };\nTexture2D tex0 : register(t0);\nSamplerState samp0 : register(s0);\nVSOut VSMain(VSIn i) {\n  VSOut o;\n  o.pos = float4(i.pos, 0, 1);\n  o.uv = i.uv;\n  return o;\n}\nfloat4 PSMain(VSOut i) : SV_Target {\n  // XXIII-Y: sample guest texture; solid fallback tint if unbound\n  float4 c = tex0.Sample(samp0, i.uv);\n  return c;\n}\n)";
 
 static bool rsx_ensure_hlsl() {
     if (g_hlsl_ready) return g_vs_blit && g_ps_blit;
@@ -238,12 +222,7 @@ static void rsx_sync_guest_host(uint8_t* mem);
 
 static int g_solid_ready = 0;
 
-static const char* kSolidHLSL = R"(
-struct VSIn { float2 pos : POSITION; float4 col : COLOR0; };
-struct VSOut { float4 pos : SV_POSITION; float4 col : COLOR0; };
-VSOut VSMain(VSIn i) { VSOut o; o.pos = float4(i.pos, 0, 1); o.col = i.col; return o; }
-float4 PSMain(VSOut i) : SV_Target { return i.col; }
-)";
+static const char* kSolidHLSL = R"(\nstruct VSIn { float2 pos : POSITION; float4 col : COLOR0; };\nstruct VSOut { float4 pos : SV_POSITION; float4 col : COLOR0; };\nVSOut VSMain(VSIn i) { VSOut o; o.pos = float4(i.pos, 0, 1); o.col = i.col; return o; }\nfloat4 PSMain(VSOut i) : SV_Target { return i.col; }\n)";
 
 static bool rsx_ensure_solid() {
     if (g_solid_ready) return g_vs_solid && g_ps_solid;
@@ -1300,27 +1279,7 @@ static bool rsx_compile_sce_shaders(uint8_t* mem) {
 #endif
 }
 
-static const char* kNv40HLSL = R"(
-struct VSIn { float3 pos : POSITION; float2 uv : TEXCOORD0; };
-struct VSOut { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float3 col : COLOR0; };
-VSOut VSMain(VSIn i) {
-  VSOut o;
-  o.pos = float4(i.pos.xy, 0.1, 1.0);
-  o.uv = i.uv;
-  o.col = float3(0.55 + 0.45 * saturate(i.pos.x * 0.5 + 0.5),
-                 0.35 + 0.55 * saturate(i.pos.y * 0.5 + 0.5),
-                 0.90);
-  return o;
-}
-Texture2D tex0 : register(t0);
-SamplerState samp0 : register(s0);
-float4 PSMain(VSOut i) : SV_Target {
-  float4 t = tex0.Sample(samp0, i.uv);
-  bool tex_ok = (t.a > 0.5) && any(t.rgb > 0.12) && any(t.rgb < 0.92);
-  if (tex_ok) return t;
-  return float4(i.col, 1);
-}
-)";
+static const char* kNv40HLSL = R"(\nstruct VSIn { float3 pos : POSITION; float2 uv : TEXCOORD0; };\nstruct VSOut { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float3 col : COLOR0; };\nVSOut VSMain(VSIn i) {\n  VSOut o;\n  o.pos = float4(i.pos.xy, 0.1, 1.0);\n  o.uv = i.uv;\n  o.col = float3(0.55 + 0.45 * saturate(i.pos.x * 0.5 + 0.5),\n                 0.35 + 0.55 * saturate(i.pos.y * 0.5 + 0.5),\n                 0.90);\n  return o;\n}\nTexture2D tex0 : register(t0);\nSamplerState samp0 : register(s0);\nfloat4 PSMain(VSOut i) : SV_Target {\n  float4 t = tex0.Sample(samp0, i.uv);\n  bool tex_ok = (t.a > 0.5) && any(t.rgb > 0.12) && any(t.rgb < 0.92);\n  if (tex_ok) return t;\n  return float4(i.col, 1);\n}\n)";
 
 static bool rsx_ensure_nv40_pipeline() {
     if (g_nv40_ready) return g_vs_nv40 && g_ps_nv40 && g_layout_nv40;
@@ -1977,21 +1936,29 @@ static void rsx_process_fifo(uint8_t* mem) {
     {
         // AIFIAR: do not drop the stream when GET is stale-ahead of PUT after a ring restart.
         // Log evidence: get=0xd0 put=0x68 dist=0xfff98 — false "full ring" wipe skipped real cmds.
-        if (put < get && put < 0x10000u) {
-            // Prefer processing only the new tail: if put moved backward, start at 0
-            // but remember last processed put to avoid re-decoding the whole ring forever
-            static uint32_t s_last_put = 0;
+        if (put < get && put < 0x10000u && get < 0x10000u) {
+            // Log: get=0x548 put=0x4e0 — GET slightly ahead is STALE, not a full-ring wrap.
+            uint32_t ahead = get - put;
             static int s_rw = 0;
-            uint32_t start = 0;
-            if (put > s_last_put && s_last_put < put)
-                start = s_last_put; // continue from last committed end when growing
-            if (s_rw < 12) {
-                ps3rt_log("[rsx] FIFO PUT restart get=0x%x -> 0x%x (put=0x%x)\n", get, start, put);
-                ++s_rw;
+            if (ahead < 0x10000u) {
+                if (s_rw < 16) {
+                    ps3rt_log("[rsx] FIFO stale GET snap get=0x%x -> put=0x%x (ahead=0x%x)\n",
+                        get, put, ahead);
+                    ++s_rw;
+                }
+                get = put;
+                g_rsx.get = put;
+            } else {
+                static uint32_t s_last_put = 0;
+                uint32_t start = (put > s_last_put) ? s_last_put : 0;
+                if (s_rw < 16) {
+                    ps3rt_log("[rsx] FIFO PUT restart get=0x%x -> 0x%x (put=0x%x)\n", get, start, put);
+                    ++s_rw;
+                }
+                get = start;
+                g_rsx.get = start;
+                s_last_put = put;
             }
-            get = start;
-            g_rsx.get = start;
-            s_last_put = put;
         } else {
             uint32_t dist = (put >= get) ? (put - get) : (fsz0 - get + put);
             if (dist > (fsz0 * 3u / 4u)) {
