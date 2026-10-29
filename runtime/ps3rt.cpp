@@ -489,18 +489,3 @@ static void pad_poll_host() {
 }
 
 #include "ps3rt_b.inl"
-
-
-extern "C" PS3RT_API void ps3rt_log_hle_status_once(void) {
-    static int done = 0;
-    if (done) return;
-    done = 1;
-    for (int i = 0; i < k_ps3_hle_modules_count; ++i) {
-        const char* st =
-            k_ps3_hle_modules[i].status == PS3_HLE_COMPLETE ? "complete" :
-            k_ps3_hle_modules[i].status == PS3_HLE_PARTIAL ? "partial" :
-            k_ps3_hle_modules[i].status == PS3_HLE_STUB ? "stub" : "oos";
-        ps3rt_log("[hle] %s = %s (%s)\n", k_ps3_hle_modules[i].name, st,
-                  k_ps3_hle_modules[i].notes ? k_ps3_hle_modules[i].notes : "");
-    }
-}
