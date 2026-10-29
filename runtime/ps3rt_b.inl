@@ -132,8 +132,12 @@ case 176: case 177: case 178: case 179: case 180: case 181:
 case 330: case 331: case 332: case 333: case 334:
     c->gpr[3] = 0; break;
 case 348: case 349: case 350: case 351: case 352: case 353: case 354: {
+    // GOW: sc 352 r3/r4 = 0xf0ffbxx stack addrs were accepted as size (<=0x10000000).
     auto looks_size = [](uint64_t v) -> bool {
-        return v >= 0x100ull && v <= 0x10000000ull;
+        if (v < 0x100ull || v > 0x08000000ull) return false;
+        if (v >= 0x0E000000ull) return false;
+        if ((v & 0xFFF00000ull) == 0x0F000000ull) return false;
+        return true;
     };
     auto looks_ptr = [](uint64_t v) -> bool {
         return v >= 0x10000ull && v < g_mem_size;
@@ -142,9 +146,20 @@ case 348: case 349: case 350: case 351: case 352: case 353: case 354: {
     if (looks_size(r4) && looks_ptr(r3)) { out = r3; sz = r4; flags = r5; }
     else if (looks_size(r3)) { sz = r3; flags = r4; out = (r5 && looks_ptr(r5)) ? r5 : 0; }
     else if (looks_size(r4)) { sz = r4; out = looks_ptr(r3) ? r3 : 0; flags = r5; }
+    else if (looks_ptr(r3) && looks_ptr(r4)) {
+        uint64_t s1 = rd_be32_guest(r4);
+        uint64_t s2 = rd_be32_guest(r3);
+        if (looks_size(s1)) { sz = s1; out = r3; flags = r5; }
+        else if (looks_size(s2)) { sz = s2; out = r4; flags = r5; }
+        else {
+            s1 = rd_be64_guest(r4); s2 = rd_be64_guest(r3);
+            if (looks_size(s1)) { sz = s1; out = r3; }
+            else if (looks_size(s2)) { sz = s2; out = r4; }
+        }
+    }
     if (!sz) {
         static int s_bad = 0;
-        if (s_bad < 16) {
+        if (s_bad < 24) {
             ps3rt_log("[lv2] mem REJECT sc=%u r3=0x%llx r4=0x%llx (not a size)\n",
                 (unsigned)num, (unsigned long long)r3, (unsigned long long)r4);
             ++s_bad;
