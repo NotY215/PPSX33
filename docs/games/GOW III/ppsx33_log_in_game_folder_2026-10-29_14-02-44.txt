@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_13-44-20.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_13-44-20.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_14-02-44.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_14-02-44.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -189,7 +189,7 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] PIC1 window/taskbar icon from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR/../PIC1.PNG
 [rsx] XX-O window title="PPSX33 presents GOW3"
 [rsx] D3D11 host present ready 1280x720 (depth+stencil)
-[rsx] XXIV-C HLSL blit VS/PS ready
+[rsx] XXIV-C VS compile fail
 [rsx] init fifo=0x83e0000 size=0x100000 backend=1
 [lv2] alloc VA=0x84e0000 size=0x4000
 [lv2] alloc VA=0x84f0000 size=0x1000000
@@ -329,20 +329,15 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XV-O CLEAR color=0x402020 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
-[rsx] NV40 VS/PS pipeline ready (guest vertex fetch)
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
+[rsx] NV40 VS compile fail
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
 [gcm] boot FIFO assist #1 put/get were idle
 [gcm] FIFO idle put=get=0x0 (no guest commands yet)
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXIII-T/V HLSL textured quad draw
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=1 color=0x402020 tex=0x84f0000 draws=3
-[rsx] XV flip #1 guest=3 diag=0 draws=3 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XXV-FRAME present flip=1 color=0x402020 tex=0x84f0000 draws=1
+[rsx] XV flip #1 guest=1 diag=4 draws=1 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] Phase M touch-progress n=8192
 [ps3] null-loop recover 0x331c30 -> 0x345228 (soft_breaks=7)
 [ps3] null-loop recover 0x331c30 -> 0x345228 (soft_breaks=8)
@@ -356,27 +351,15 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XV-O CLEAR color=0x204028 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
 [gcm] boot FIFO assist #2 put/get were idle
-[rsx] FIFO PUT restart get=0xd0 -> 0x0 (put=0x68)
-[rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
-[rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
-[rsx] XV-O CLEAR color=0x402020 1280x720
-[rsx] VA0 offset=0x8cf0000 stride=12
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=3
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
+[rsx] FIFO stale GET snap get=0xd0 -> put=0x68 (ahead=0x68)
 [gcm] FIFO idle put=get=0x68 (no guest commands yet)
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXIII-T/V HLSL textured quad draw
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=2 color=0x402020 tex=0x84f0000 draws=8
-[rsx] XV flip #2 guest=8 diag=0 draws=8 shaders=0 tex=0 methods=52 packets=26 1280x720
+[rsx] XXV-FRAME present flip=2 color=0x204028 tex=0x84f0000 draws=2
+[rsx] XV flip #2 guest=2 diag=8 draws=2 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x345228 -> 0x105e8 (soft_breaks=9)
 [ps3] Phase M touch-progress n=65536
 [ps3] Phase M touch-progress n=73728
@@ -389,188 +372,171 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XV-O CLEAR color=0x204028 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXIII-T/V HLSL textured quad draw
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=3 color=0x204028 tex=0x84f0000 draws=11
-[rsx] XV flip #3 guest=11 diag=0 draws=11 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XXV-FRAME present flip=3 color=0x204028 tex=0x84f0000 draws=3
+[rsx] XV flip #3 guest=3 diag=12 draws=3 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x345228 -> 0x105e8 (soft_breaks=11)
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XV-O CLEAR color=0x202848 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
 [gcm] boot FIFO assist #3 put/get were idle
-[rsx] FIFO PUT restart get=0x138 -> 0x68 (put=0xd0)
-[rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
-[rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
-[rsx] XV-O CLEAR color=0x204028 1280x720
-[rsx] VA0 offset=0x8cf0000 stride=12
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=3
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
+[rsx] FIFO stale GET snap get=0x138 -> put=0xd0 (ahead=0x68)
 [gcm] FIFO idle put=get=0xd0 (no guest commands yet)
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXIII-T/V HLSL textured quad draw
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=4 color=0x204028 tex=0x84f0000 draws=16
-[rsx] XV flip #4 guest=16 diag=0 draws=16 shaders=0 tex=0 methods=52 packets=26 1280x720
+[rsx] XXV-FRAME present flip=4 color=0x202848 tex=0x84f0000 draws=4
+[rsx] XV flip #4 guest=4 diag=16 draws=4 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x345228 -> 0x105e8 (soft_breaks=12)
 [ps3] null-loop region exhausted (soft_breaks=12) -- dropping sticky
 [gcm] XXIV-B guest put=0x138 get=0xd0
+[rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
+[rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XV-O CLEAR color=0x202848 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXIII-T/V HLSL textured quad draw
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=5 color=0x202848 tex=0x84f0000 draws=19
-[rsx] XV flip #5 guest=19 diag=0 draws=19 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XXV-FRAME present flip=5 color=0x202848 tex=0x84f0000 draws=5
+[rsx] XV flip #5 guest=5 diag=20 draws=5 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
+[rsx] XXV-D surface_bind color=0x84f0000 pitch=5120 1280x720
 [rsx] XV-O CLEAR color=0x403828 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
 [gcm] boot FIFO assist #4 put/get were idle
-[rsx] FIFO PUT restart get=0x1a0 -> 0xd0 (put=0x138)
-[rsx] VA0 offset=0x8cf0000 stride=12
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=3
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
+[rsx] FIFO stale GET snap get=0x1a0 -> put=0x138 (ahead=0x68)
 [gcm] FIFO idle put=get=0x138 (no guest commands yet)
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXIII-T/V HLSL textured quad draw
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXIII-T/V HLSL textured quad draw
-[rsx] XV-D draw verts=3 idx=no va0=0x8cf0000 va1=0x0 stride0=12 max_vi=2
-[rsx] XXV-FRAME present flip=6 color=0x202848 tex=0x84f0000 draws=24
-[rsx] XV flip #6 guest=24 diag=0 draws=24 shaders=0 tex=0 methods=52 packets=26 1280x720
+[rsx] XXV-FRAME present flip=6 color=0x403828 tex=0x84f0000 draws=6
+[rsx] XV flip #6 guest=6 diag=24 draws=6 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=13)
 [gcm] XXIV-B guest put=0x1a0 get=0x138
+[rsx] XV-O CLEAR color=0x403828 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXV-FRAME present flip=7 color=0x403828 tex=0x84f0000 draws=27
-[rsx] XV flip #7 guest=27 diag=0 draws=27 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XXV-FRAME present flip=7 color=0x403828 tex=0x84f0000 draws=7
+[rsx] XV flip #7 guest=7 diag=28 draws=7 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=14)
+[rsx] XV-O CLEAR color=0x402020 1280x720
 [rsx] VA0 offset=0x8cf0000 stride=12
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
 [gcm] boot FIFO assist #5 put/get were idle
-[rsx] FIFO PUT restart get=0x208 -> 0x138 (put=0x1a0)
-[rsx] VA0 offset=0x8cf0000 stride=12
-[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=3
+[rsx] FIFO stale GET snap get=0x208 -> put=0x1a0 (ahead=0x68)
 [gcm] FIFO idle put=get=0x1a0 (no guest commands yet)
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
 [rsx] XXIII-P upload off=0x84f0000 1280x720 pitch=5120 fmt=0x0 bpp=4
-[rsx] XXV-FRAME present flip=8 color=0x403828 tex=0x84f0000 draws=32
-[rsx] XV flip #8 guest=32 diag=0 draws=32 shaders=0 tex=0 methods=52 packets=26 1280x720
+[rsx] XXV-FRAME present flip=8 color=0x402020 tex=0x84f0000 draws=8
+[rsx] XV flip #8 guest=8 diag=32 draws=8 shaders=0 tex=0 methods=26 packets=13 1280x720
 [e2e] XXV-J checklist
 [e2e]   boot_mem=OK gcm=1 pad_init=0
 [e2e]   flips=7 ppu_slices=65 spu_ticks=49
 [e2e]   fs/audio/save/pad services installed (I)
 [e2e]   remaining: guest RSX geometry (K), wild-pc stability (L)
 [gcm] XXIV-B guest put=0x208 get=0x1a0
+[rsx] VA0 offset=0x8cf0000 stride=12
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
-[rsx] XXV-FRAME present flip=9 color=0x402020 tex=0x84f0000 draws=35
-[rsx] XV flip #9 guest=35 diag=0 draws=35 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XXV-FRAME present flip=9 color=0x402020 tex=0x84f0000 draws=9
+[rsx] XV flip #9 guest=9 diag=36 draws=9 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=15)
+[rsx] VA0 offset=0x8cf0000 stride=12
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
 [gcm] boot FIFO assist #6 put/get were idle
-[rsx] FIFO PUT restart get=0x270 -> 0x1a0 (put=0x208)
-[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=3
+[rsx] FIFO stale GET snap get=0x270 -> put=0x208 (ahead=0x68)
 [gcm] FIFO idle put=get=0x208 (no guest commands yet)
-[rsx] XXV-FRAME present flip=10 color=0x402020 tex=0x84f0000 draws=40
-[rsx] XV flip #10 guest=40 diag=0 draws=40 shaders=0 tex=0 methods=52 packets=26 1280x720
+[rsx] XXV-FRAME present flip=10 color=0x204028 tex=0x84f0000 draws=10
+[rsx] XV flip #10 guest=10 diag=40 draws=10 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=16)
 [gcm] XXIV-B guest put=0x270 get=0x208
+[rsx] VA0 offset=0x8cf0000 stride=12
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
-[rsx] XXV-FRAME present flip=11 color=0x204028 tex=0x84f0000 draws=43
-[rsx] XV flip #11 guest=43 diag=0 draws=43 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XXV-FRAME present flip=11 color=0x204028 tex=0x84f0000 draws=11
+[rsx] XV flip #11 guest=11 diag=44 draws=11 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] VA0 offset=0x8cf0000 stride=12
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
 [gcm] boot FIFO assist #7 put/get were idle
-[rsx] FIFO PUT restart get=0x2d8 -> 0x208 (put=0x270)
-[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=3
+[rsx] FIFO stale GET snap get=0x2d8 -> put=0x270 (ahead=0x68)
 [gcm] FIFO idle put=get=0x270 (no guest commands yet)
-[rsx] XXV-FRAME present flip=12 color=0x204028 tex=0x84f0000 draws=48
-[rsx] XV flip #12 guest=48 diag=0 draws=48 shaders=0 tex=0 methods=52 packets=26 1280x720
+[rsx] XXV-FRAME present flip=12 color=0x202848 tex=0x84f0000 draws=12
+[rsx] XV flip #12 guest=12 diag=48 draws=12 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=17)
 [gcm] XXIV-B guest put=0x2d8 get=0x270
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
-[rsx] XXV-FRAME present flip=13 color=0x202848 tex=0x84f0000 draws=51
-[rsx] XV flip #13 guest=51 diag=0 draws=51 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XXV-FRAME present flip=13 color=0x202848 tex=0x84f0000 draws=13
+[rsx] XV flip #13 guest=13 diag=52 draws=13 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=18)
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
 [gcm] inject CMDSTREAM color=0x84f0000 va0=0x8cf0000 draw3
 [gcm] boot FIFO assist #8 put/get were idle
-[rsx] FIFO PUT restart get=0x340 -> 0x270 (put=0x2d8)
-[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=3
+[rsx] FIFO stale GET snap get=0x340 -> put=0x2d8 (ahead=0x68)
 [gcm] FIFO idle put=get=0x2d8 (no guest commands yet)
-[rsx] XXV-FRAME present flip=14 color=0x202848 tex=0x84f0000 draws=56
-[rsx] XV flip #14 guest=56 diag=0 draws=56 shaders=0 tex=0 methods=52 packets=26 1280x720
+[rsx] XXV-FRAME present flip=14 color=0x403828 tex=0x84f0000 draws=14
+[rsx] XV flip #14 guest=14 diag=56 draws=14 shaders=0 tex=0 methods=26 packets=13 1280x720
 [gcm] XXIV-B guest put=0x340 get=0x2d8
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
-[rsx] XXV-FRAME present flip=15 color=0x403828 tex=0x84f0000 draws=59
-[rsx] XV flip #15 guest=59 diag=0 draws=59 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XXV-FRAME present flip=15 color=0x403828 tex=0x84f0000 draws=15
+[rsx] XV flip #15 guest=15 diag=60 draws=15 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=19)
 [rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
-[rsx] FIFO PUT restart get=0x3a8 -> 0x2d8 (put=0x340)
-[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=3
-[rsx] XXV-FRAME present flip=16 color=0x403828 tex=0x84f0000 draws=64
-[rsx] XV flip #16 guest=64 diag=0 draws=64 shaders=0 tex=0 methods=52 packets=26 1280x720
+[rsx] FIFO stale GET snap get=0x3a8 -> put=0x340 (ahead=0x68)
+[rsx] XXV-FRAME present flip=16 color=0x402020 tex=0x84f0000 draws=16
+[rsx] XV flip #16 guest=16 diag=64 draws=16 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=20)
 [gcm] XXIV-B guest put=0x3a8 get=0x340
-[rsx] XXV-FRAME present flip=17 color=0x402020 tex=0x84f0000 draws=67
-[rsx] XV flip #17 guest=67 diag=0 draws=67 shaders=0 tex=0 methods=26 packets=13 1280x720
-[rsx] FIFO PUT restart get=0x410 -> 0x340 (put=0x3a8)
-[rsx] XXV-FRAME present flip=18 color=0x402020 tex=0x84f0000 draws=72
-[rsx] XV flip #18 guest=72 diag=0 draws=72 shaders=0 tex=0 methods=52 packets=26 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
+[rsx] XXV-FRAME present flip=17 color=0x402020 tex=0x84f0000 draws=17
+[rsx] XV flip #17 guest=17 diag=68 draws=17 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
+[rsx] FIFO stale GET snap get=0x410 -> put=0x3a8 (ahead=0x68)
+[rsx] XXV-FRAME present flip=18 color=0x204028 tex=0x84f0000 draws=18
+[rsx] XV flip #18 guest=18 diag=72 draws=18 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=21)
 [gcm] XXIV-B guest put=0x410 get=0x3a8
-[rsx] XXV-FRAME present flip=19 color=0x204028 tex=0x84f0000 draws=75
-[rsx] XV flip #19 guest=75 diag=0 draws=75 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
+[rsx] XXV-FRAME present flip=19 color=0x204028 tex=0x84f0000 draws=19
+[rsx] XV flip #19 guest=19 diag=76 draws=19 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=22)
-[rsx] FIFO PUT restart get=0x478 -> 0x3a8 (put=0x410)
-[rsx] XXV-FRAME present flip=20 color=0x204028 tex=0x84f0000 draws=80
-[rsx] XV flip #20 guest=80 diag=0 draws=80 shaders=0 tex=0 methods=52 packets=26 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
+[rsx] FIFO stale GET snap get=0x478 -> put=0x410 (ahead=0x68)
+[rsx] XXV-FRAME present flip=20 color=0x202848 tex=0x84f0000 draws=20
+[rsx] XV flip #20 guest=20 diag=80 draws=20 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=23)
 [gcm] XXIV-B guest put=0x478 get=0x410
-[rsx] XV flip #21 guest=83 diag=0 draws=83 shaders=0 tex=0 methods=26 packets=13 1280x720
-[rsx] FIFO PUT restart get=0x4e0 -> 0x410 (put=0x478)
-[rsx] XV flip #22 guest=88 diag=0 draws=88 shaders=0 tex=0 methods=52 packets=26 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
+[rsx] XV flip #21 guest=21 diag=84 draws=21 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
+[rsx] FIFO stale GET snap get=0x4e0 -> put=0x478 (ahead=0x68)
+[rsx] XV flip #22 guest=22 diag=88 draws=22 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=24)
 [ps3] null-loop region exhausted (soft_breaks=24) -- dropping sticky
 [ps3] null-loop HARD escape 0x105e8 -> chunk 0x18000 (soft_breaks=24)
 [gcm] XXIV-B guest put=0x4e0 get=0x478
-[rsx] XV flip #23 guest=91 diag=0 draws=91 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
+[rsx] XV flip #23 guest=23 diag=92 draws=23 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=25)
 [ps3] null-loop HARD escape 0x10218 -> chunk 0x20000 (soft_breaks=25)
-[rsx] FIFO PUT restart get=0x548 -> 0x478 (put=0x4e0)
-[rsx] XV flip #24 guest=96 diag=0 draws=96 shaders=0 tex=0 methods=52 packets=26 1280x720
+[rsx] XV-O draw method=0x1814 arg=0x2000000 count=3 tex=0x84f0000 color=0x84f0000 guest_frame=1
+[rsx] FIFO stale GET snap get=0x548 -> put=0x4e0 (ahead=0x68)
+[rsx] XV flip #24 guest=24 diag=96 draws=24 shaders=0 tex=0 methods=26 packets=13 1280x720
 [gcm] XXIV-B guest put=0x548 get=0x4e0
-[rsx] XV flip #25 guest=99 diag=0 draws=99 shaders=0 tex=0 methods=26 packets=13 1280x720
-[rsx] XV flip #26 guest=104 diag=0 draws=104 shaders=0 tex=0 methods=52 packets=26 1280x720
-[rsx] XV flip #27 guest=107 diag=0 draws=107 shaders=0 tex=0 methods=26 packets=13 1280x720
-[rsx] XV flip #28 guest=112 diag=0 draws=112 shaders=0 tex=0 methods=52 packets=26 1280x720
-[rsx] XV flip #29 guest=115 diag=0 draws=115 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV flip #25 guest=25 diag=100 draws=25 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] FIFO stale GET snap get=0x5b0 -> put=0x548 (ahead=0x68)
+[rsx] XV flip #26 guest=26 diag=104 draws=26 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV flip #27 guest=27 diag=108 draws=27 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] FIFO stale GET snap get=0x618 -> put=0x5b0 (ahead=0x68)
+[rsx] XV flip #28 guest=28 diag=112 draws=28 shaders=0 tex=0 methods=26 packets=13 1280x720
+[rsx] XV flip #29 guest=29 diag=116 draws=29 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x105e8 -> 0x10218 (soft_breaks=26)
 [ps3] null-loop HARD escape 0x10218 -> chunk 0x28000 (soft_breaks=26)
 [ps3] XXV-F recover wild-pc 0x0 -> 0x105e8
@@ -585,7 +551,8 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [lv2] alloc VA=0x94f0000 size=0x3e8
 [lv2] XV-L mem sc=352 size=0x3e8 -> ea=0x94f0000
 [lv2] sc 352 r3=f0ffb60 r4=f0ffb70 r5=0 r6=0
-[lv2] mem REJECT sc=352 r3=0xf0ffb60 r4=0xf0ffb70 (not a size)
+[lv2] alloc VA=0x9500000 size=0x52d6c8
+[lv2] XV-L mem sc=352 size=0x52d6c8 -> ea=0x9500000
 [lv2] timer_usleep us=100000 n=1 (yield+hw)
 [lv2] timer_usleep us=100000 n=2 (yield+hw)
 [lv2] timer_usleep us=100000 n=3 (yield+hw)
@@ -595,7 +562,8 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [lv2] timer_usleep us=100000 n=7 (yield+hw)
 [lv2] timer_usleep us=100000 n=8 (yield+hw)
 [gcm] boot FIFO assist #16 put/get were idle
-[rsx] XV flip #30 guest=120 diag=0 draws=120 shaders=0 tex=0 methods=52 packets=26 1280x720
+[rsx] FIFO stale GET snap get=0x680 -> put=0x618 (ahead=0x68)
+[rsx] XV flip #30 guest=30 diag=120 draws=30 shaders=0 tex=0 methods=26 packets=13 1280x720
 [ps3] null-loop recover 0x1b4b4c -> 0x3deea8 (soft_breaks=27)
 [ps3] Phase XI region-ban 0x3dec00 (nrban=1)
 [ps3] null-loop HARD escape 0x3deea8 -> chunk 0x30000 (soft_breaks=27)
