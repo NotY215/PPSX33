@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_20-27-06.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_20-27-06.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_20-42-47.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_20-42-47.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -136,7 +136,7 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [rsx] PIC1 window/taskbar icon from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR/../PIC1.PNG
 [rsx] XX-O window title="PPSX33 presents GOW3"
 [rsx] D3D11 host present ready 1280x720 (depth+stencil)
-[rsx] XXIV-C VS compile fail
+[rsx] XXIV-C HLSL blit VS/PS ready
 [rsx] init fifo=0x83e0000 size=0x100000 backend=1 (guest-PUT probe ready)
 [lv2] alloc VA=0x84e0000 size=0x4000
 [lv2] alloc VA=0x84f0000 size=0x1000000
@@ -146,7 +146,6 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [stage] RUNNING
 [ps3] null-loop recover 0x336660 -> 0x430000 (soft_breaks=1)
 [ps3] import stub pc=0x39800000 -> ret=0x430000 (#30)
-[vmx] dispatch xo11=401 vd=19 va=31 vb=30
 [stage] PPU run end
 
 --- log end ---
