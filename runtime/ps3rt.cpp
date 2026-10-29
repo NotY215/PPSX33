@@ -150,6 +150,10 @@ static uint32_t rd_be32_guest(uint64_t addr) {
     return ((uint32_t)g_mem[addr] << 24) | ((uint32_t)g_mem[addr+1] << 16) |
            ((uint32_t)g_mem[addr+2] << 8) | (uint32_t)g_mem[addr+3];
 }
+static uint64_t rd_be64_guest(uint64_t addr) {
+    if (!g_mem || addr + 8 > g_mem_size) return 0;
+    return ((uint64_t)rd_be32_guest(addr) << 32) | (uint64_t)rd_be32_guest(addr + 4);
+}
 static uint64_t guest_alloc(uint64_t size, uint64_t align) {
     if (size == 0) size = 0x1000;
     if (align < 0x1000) align = 0x1000;

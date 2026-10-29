@@ -132,7 +132,7 @@ case 176: case 177: case 178: case 179: case 180: case 181:
 case 330: case 331: case 332: case 333: case 334:
     c->gpr[3] = 0; break;
 case 348: case 349: case 350: case 351: case 352: case 353: case 354: {
-    // GOW: sc 352 r3/r4 = 0xf0ffbxx stack addrs were accepted as size (<=0x10000000).
+    // GOW: sc 352 r3/r4 = 0xf0ffbxx stack addrs must not count as size.
     auto looks_size = [](uint64_t v) -> bool {
         if (v < 0x100ull || v > 0x08000000ull) return false;
         if (v >= 0x0E000000ull) return false;
