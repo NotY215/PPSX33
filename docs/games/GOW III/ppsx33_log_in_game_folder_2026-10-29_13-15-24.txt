@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_13-02-20.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_13-02-20.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_13-15-24.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_13-15-24.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -585,39 +585,16 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [lv2] XV-L mem sc=352 size=0xf0ffb50 -> ea=0x0
 [lv2] sc 352 r3=f0ffb60 r4=f0ffb70 r5=0 r6=0
 [lv2] XV-L mem sc=352 size=0xf0ffb70 -> ea=0x0
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
-[lv2] sc 141 r3=186a0 r4=f0ffcf4 r5=a r6=5eea48
+[lv2] timer_usleep us=100000 n=1 (yield+hw)
+[lv2] timer_usleep us=100000 n=2 (yield+hw)
+[lv2] timer_usleep us=100000 n=3 (yield+hw)
+[lv2] timer_usleep us=100000 n=4 (yield+hw)
+[lv2] timer_usleep us=100000 n=5 (yield+hw)
+[lv2] timer_usleep us=100000 n=6 (yield+hw)
+[lv2] timer_usleep us=100000 n=7 (yield+hw)
+[lv2] timer_usleep us=100000 n=8 (yield+hw)
+[gcm] boot FIFO assist #16 put/get were idle
+[rsx] XV flip #30 guest=120 diag=0 draws=120 shaders=0 tex=0 methods=52 packets=26 1280x720
 [ps3] null-loop recover 0x1b4b4c -> 0x3deea8 (soft_breaks=27)
 [ps3] Phase XI region-ban 0x3dec00 (nrban=1)
 [ps3] null-loop HARD escape 0x3deea8 -> chunk 0x30000 (soft_breaks=27)
