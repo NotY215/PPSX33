@@ -131,17 +131,13 @@ All runtime logic lives under `src/`; the old `runtime/`, `GPU/`, `Processor/`, 
     │   ├── rsx_shader_decoder.h/.cpp# Microcode binary → intermediate representation
     │   ├── rsx_shader_compiler.h/.cpp # IR → HLSL / GLSL / SPIR-V
     │   └── 📂 Backends/
-    │       │   ├── rsx_dx11_backend.h/.cpp  # Context, swapchain, frame loop
-    │       │   ├── rsx_dx11_state.cpp       # RSX → ID3D11Blend/Rasterizer/Depth
-    │       │   ├── rsx_dx11_resources.cpp   # Buffers, layouts, textures
-    │       │   └── rsx_dx11_shaders.cpp     # HLSL compile via D3DCompiler
     │       ├── 📂 OpenGL/           # [SECONDARY] OpenGL path
     │       │   ├── rsx_gl_backend.h/.cpp    # WGL/GLX context, flush, swap
     │       │   ├── rsx_gl_state.cpp         # Pipeline → glCullFace / glEnable(BLEND) …
     │       │   ├── rsx_gl_vao.cpp           # VAO + buffer layout bindings
     │       │   └── rsx_gl_shaders.cpp       # Dynamic GLSL compile/link
     │       │                                # (stubs contain “implement in future” comments)
-    │       └── 📂 Vulkan/           # [DEFAULT] Vulkan 1.2 host path
+    │       └── 📂 Vulkan/           # [DEFAULT] Vulkan 1.2 — instance/device/swapchain/present
     │           ├── rsx_vk_backend.h/.cpp    # VkInstance / Device / physical selection
     │           ├── rsx_vk_pipelines.cpp     # Explicit Pipeline State Objects
     │           ├── rsx_vk_command.cpp       # FIFO → VkCommandBuffer rings

@@ -56,7 +56,8 @@ flowchart TB
 | Log name `GameName-YYYY-MM-DD_HH-MM-SS.txt` | Done |
 | Default graphics Vulkan 1.2 | Done |
 | Vulkan instance/device/swapchain clear present | Done |
-| Vulkan guest RGBA blit pipeline | Planned |
+| Vulkan guest RGBA staging upload to swapchain | Done |
+| Vulkan fullscreen SPIR-V blit pipeline | Planned |
 
 ## Phase 0 — Trustworthy baseline
 
@@ -104,6 +105,8 @@ flowchart TB
 | Item | Status |
 | --- | --- |
 | FIFO parse + Vulkan 1.2 swapchain present | Partial |
+| dist/ single DLL location (no runtime/ duplicate) | Done |
+| CMake copies vulkan-1.dll next to EXE | Done |
 | Assist/boot cmdstream draws | Partial (probe only) |
 | Title GCM stream | Blocked |
 | Shader translation (VP/FP → HLSL) | Partial |

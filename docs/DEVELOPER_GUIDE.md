@@ -15,7 +15,7 @@ This guide describes the repository layout, development workflow, and implementa
 | Core API | `src/core/ps3core.h`, `src/core/ps3core_api.cpp` | Public native interface consumed by frontends |
 | Runtime | `src/processor/PPU/ppu_runtime.h`, `src/core/hle_kernel.cpp` | Guest memory, CPU state helpers, log, and HLE runtime |
 | SPU runtime | `src/processor/SPU/spu_interpreter.cpp` | SPU context, ISA step, mailboxes, and MFC; SPURS coverage remains partial |
-| RSX runtime | `src/RSX/rsx_device.cpp`, `src/RSX/rsx_fifo.cpp` | FIFO/method processing and Vulkan 1.2 host present; not a complete RSX implementation |
+| RSX runtime | `src/RSX/rsx_device.cpp`, `src/RSX/rsx_fifo.cpp` | FIFO/method processing and Vulkan 1.2 host present (swapchain + guest RGBA); not a complete RSX implementation |
 | CLI | `src/cli/ps3_cli.cpp` | Command-line entry point for project processing |
 | GUI | `src/UI/` | C# WinForms interface and native interop |
 | Synthetic tests | `tests/make_test_elf.py` | Generate a small PPC64 ELF for pipeline regression tests |
@@ -31,7 +31,7 @@ Build from the repository root in a Visual Studio developer command prompt:
 scripts\build_all.bat
 ```
 
-The output is placed in `build\dist\`. The GUI is published when the .NET SDK is available. The current WinForms frontend includes decrypted-ELF loading, project decompilation, object-file-based build progress/ETA, run/stop, output copying, persisted graphics/thread/controller settings, and build-cancellation UI. PPSX33 does not decrypt EBOOTs or launch external emulators.
+The output is placed in `build\dist\` with **ps3rt.dll**, **vulkan-1.dll**, and **PS3Recomp.exe** side by side. `dist\runtime\` holds headers only (no duplicate DLL). The GUI is published when the .NET SDK is available. The current WinForms frontend includes decrypted-ELF loading, project decompilation, object-file-based build progress/ETA, run/stop, output copying, persisted graphics/thread/controller settings, and build-cancellation UI. PPSX33 does not decrypt EBOOTs or launch external emulators.
 
 ## Alpha packaging and release validation
 

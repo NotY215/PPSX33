@@ -155,6 +155,9 @@ PS3RT_API void ps3rt_log(const char* fmt, ...) {
 
 static uint8_t* g_mem = nullptr;
 static size_t g_mem_size = 0;
+PS3RT_API uint8_t* ps3rt_guest_mem_ptr(void) { return g_mem; }
+PS3RT_API size_t ps3rt_guest_mem_size(void) { return g_mem_size; }
+
 static const uint64_t kStackBase = 0x0F000000ull;
 static const size_t kStackSize = 0x100000;
 static std::mutex g_lock;

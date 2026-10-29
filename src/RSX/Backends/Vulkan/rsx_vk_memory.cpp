@@ -1,2 +1,1 @@
-// WORK: Vulkan host memory — staging buffers for guest RGBA upload (next depth).
-// Allocation helpers reserved for present_guest_rgba full blit path.
+// WORK: Vulkan host memory — staging for guest RGBA is in rsx_vk_present_guest_rgba.

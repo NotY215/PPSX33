@@ -68,8 +68,8 @@ PPSX33 is being developed toward full recompilation. These statuses describe imp
 | 🧰 GUI, project flow and build orchestration | 🟡 **Partial / evolving** | Windows GUI and native build pipeline; title-specific failures remain possible |
 | 📦 ELF loading and PPU lifting | 🟡 **Partial** | Supported code can be lifted; translation coverage is not semantic correctness |
 | 🧠 PPU runtime and control flow | 🟡 **In progress** | Guest context and execution paths exist; unsupported or inaccurate paths can break execution |
-| 🪟 D3D11 host window and presentation | 🟢 **Implemented baseline** | Host graphics window/present path exists |
-| 🧱 RSX/GCM command processing | 🟡 **In progress** | FIFO decode and D3D11 draws proven on boot-assist cmdstreams (`methods` / guest draw counts in logs); title-authored GCM and shaders still incomplete |
+| 🪟 Vulkan 1.2 host window and presentation | 🟢 **Implemented baseline** | Swapchain clear + guest RGBA upload path |
+| 🧱 RSX/GCM command processing | 🟡 **In progress** | FIFO decode and Vulkan present; assist draws proven; title-authored GCM and shaders still incomplete |
 | 🧩 LV2, PRX and NID services | 🟡 **Partial** | HLE coverage is incomplete and individual API semantics require validation |
 | ⚡ SPU, MFC/DMA and SPURS | 🟡 **Partial** | Assist/runtime paths exist; full instruction and scheduling behaviour is not complete |
 | 🔊 Audio, 🎮 input and 💾 save services | 🟡 **Partial** | Basic host paths exist; title-level behaviour still needs verification |
@@ -91,7 +91,7 @@ HLE and host services written for this project. Public emulator behaviour may be
 | Input | cellPad mapping (XInput/host keys) | 🟡 Partial |
 | Audio | cellAudio host path (waveOut-style) | 🟡 Partial |
 | Video out / GCM | cellVideoOut, cellGcmSys control/FIFO kick | 🟡 Partial |
-| Graphics (RSX) | FIFO decode, D3D11 present; assist draws proven; title stream pending | 🟡 In progress |
+| Graphics (RSX) | FIFO decode, Vulkan 1.2 present; assist draws proven; title stream pending | 🟡 In progress |
 | SPU / MFC / SPURS | Interpreter, DMA/tags, job assist | 🟡 Partial |
 | PRX / NID / LV2 | Import stubs, common syscalls | 🟡 Partial |
 | Codecs / media | PNG/JPG helpers; ATRAC/VDEC deep decode | 🔨 Limited / partial |
@@ -121,7 +121,7 @@ flowchart LR
   ELF[Decrypted ELF] --> Lift[PPU lift]
   Lift --> Build[MSVC game EXE]
   Build --> RT[ps3rt runtime]
-  RT --> D3D[D3D11 present]
+  RT --> VK[Vulkan 1.2 present]
 ```
 
 ## 🧩 Why this is difficult
@@ -148,7 +148,7 @@ PPSX33/
 ├── src/
 │   ├── core/              # ELF loaders, VFS, memory, HLE kernel
 │   ├── processor/PPU|SPU  # Lift, run headers, SPU interpreter
-│   ├── RSX/               # Graphics pipeline + DX11 (GL/VK future)
+│   ├── RSX/               # Graphics pipeline + Vulkan 1.2 (OpenGL secondary)
 │   ├── games-stuff/       # Audio + Video subsystems
 │   ├── UI/                # WinForms GUI
 │   └── cli/               # CLI tooling
@@ -158,7 +158,10 @@ PPSX33/
 └── README.md
 ```
 
-Runtime **sources** live under `src/` (no top-level `runtime/` tree). Built `ps3rt.dll` still ships in `build/dist/runtime/` with headers for game links.
+Runtime **sources** live under `src/` (no top-level `runtime/` tree).
+Built artefacts in `build/dist/`:
+- **`ps3rt.dll` / `ps3rt.lib` / `vulkan-1.dll` / `PS3Recomp.exe`** — next to each other at `dist/` root (single location)
+- **`dist/runtime/`** — headers only for game link (no DLL/LIB duplicate)
 
 Generated projects may contain a game executable, `ps3rt.dll`, guest image data, generated source files, controller mapping and build logs. Exact output depends on the project and build path.
 

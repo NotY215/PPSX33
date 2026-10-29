@@ -376,10 +376,11 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     // Fall back to compiling .cpp sources if no DLL is present.
     bool prebuilt_rt = false;
     {
-        fs::path pre_dll = fs::path(runtime_dir) / "ps3rt.dll";
-        fs::path pre_lib = fs::path(runtime_dir) / "ps3rt.lib";
-        if (!fs::exists(pre_dll)) pre_dll = fs::path(runtime_dir) / ".." / "ps3rt.dll";
-        if (!fs::exists(pre_lib)) pre_lib = fs::path(runtime_dir) / ".." / "ps3rt.lib";
+        // Prefer DLL/LIB next to the host EXE (dist/), then dist/runtime/ legacy
+        fs::path pre_dll = fs::path(runtime_dir) / ".." / "ps3rt.dll";
+        fs::path pre_lib = fs::path(runtime_dir) / ".." / "ps3rt.lib";
+        if (!fs::exists(pre_dll)) pre_dll = fs::path(runtime_dir) / "ps3rt.dll";
+        if (!fs::exists(pre_lib)) pre_lib = fs::path(runtime_dir) / "ps3rt.lib";
         if (fs::exists(pre_dll) && fs::exists(pre_lib)) {
             prebuilt_rt = true;
             fs::copy_file(pre_dll, out / "ps3rt.dll", fs::copy_options::overwrite_existing, ec);

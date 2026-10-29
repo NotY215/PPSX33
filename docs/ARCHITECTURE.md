@@ -194,3 +194,8 @@ digraph {
 - [DIAGRAMS.md](DIAGRAMS.md)
 - [ENGINEERING.md](../ENGINEERING.md)
 - [README.md](../README.md)
+
+
+## Host ship layout
+
+`build/dist/`: `PS3Recomp.exe`, `ps3rt.dll`, `ps3rt.lib`, `vulkan-1.dll` together. `dist/runtime/` = headers only.

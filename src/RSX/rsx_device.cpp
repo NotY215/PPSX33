@@ -10,6 +10,8 @@
 
 extern "C" void ps3rt_log(const char* fmt, ...);
 extern "C" const char* ps3rt_get_game_name(void);
+extern "C" uint8_t* ps3rt_guest_mem_ptr(void);
+extern "C" size_t ps3rt_guest_mem_size(void);
 
 static int g_backend = 0; /* 0=Vulkan1.2 1=OpenGL */
 
@@ -378,7 +380,22 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     g_rsx.flip_pending = false;
     int frame_methods = g_rsx.methods_this_frame;
     int frame_packets = g_rsx.packets_decoded;
-    rsx_host_present_clear();
+    // Prefer guest color surface upload when bound and memory is live
+    int presented = 0;
+    if (g_gfx_api == 0 && rsx_vk_ready() && g_rsx.color_offset) {
+        uint8_t* mem = ps3rt_guest_mem_ptr();
+        size_t msz = ps3rt_guest_mem_size();
+        uint32_t off = g_rsx.color_offset;
+        uint32_t gw = g_rsx.width ? g_rsx.width : 1280;
+        uint32_t gh = g_rsx.height ? g_rsx.height : 720;
+        size_t need = (size_t)off + (size_t)gw * gh * 4u;
+        if (mem && need <= msz) {
+            presented = rsx_vk_present_guest_rgba(mem + off, gw, gh, gw * 4u);
+            if (presented) rsx_vk_poll_window();
+        }
+    }
+    if (!presented)
+        rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
         ps3rt_log("[rsx] flip #%llu guest=%d diag=%d draws=%d methods=%d packets=%d known=%d unk=%d put=0x%x get=0x%x %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws_guest, g_rsx.draws_diagnostic,

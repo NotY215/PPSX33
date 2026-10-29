@@ -61,11 +61,14 @@ if(WIN32)
   endif()
   target_link_libraries(ps3rt PRIVATE user32 gdi32 ole32 winmm xaudio2)
   set_target_properties(ps3rt PROPERTIES PREFIX "" OUTPUT_NAME "ps3rt")
+  # Single layout: ps3rt.dll / ps3rt.lib stay in dist/ next to PS3Recomp.exe
+  # (do not also copy into dist/runtime/ — headers only live there)
   add_custom_command(TARGET ps3rt POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/dist/runtime
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ps3rt> ${CMAKE_BINARY_DIR}/dist/runtime/
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_LINKER_FILE:ps3rt> ${CMAKE_BINARY_DIR}/dist/runtime/
-    COMMENT "Install ps3rt into dist/runtime"
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/dist
+    COMMAND ${CMAKE_COMMAND}
+      -DPS3_DIST=${CMAKE_BINARY_DIR}/dist
+      -P ${CMAKE_SOURCE_DIR}/cmake/CopyVulkanRuntime.cmake
+    COMMENT "Ensure dist/ has ps3rt + vulkan-1.dll (single location next to EXE)"
   )
 endif()
 
@@ -77,7 +80,7 @@ set(PS3RT_DIST_HEADERS
 )
 add_custom_target(copy_runtime ALL
   COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/dist/runtime
-  COMMENT "Preparing dist/runtime headers"
+  COMMENT "Preparing dist/runtime headers only (no DLL/LIB duplicate)"
 )
 # Map header names from new locations
 set(_HDR_MAP
@@ -144,3 +147,4 @@ endif()
 
 message(STATUS "Layout: src/core, src/processor, src/RSX, src/games-stuff, src/UI")
 message(STATUS "Output: ${CMAKE_BINARY_DIR}/dist")
+message(STATUS "Layout: dist/ps3rt.dll + dist/vulkan-1.dll next to EXE; dist/runtime/ = headers only")

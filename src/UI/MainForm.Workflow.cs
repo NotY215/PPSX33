@@ -309,9 +309,11 @@ public sealed partial class MainForm
             n++;
         }
 
-        foreach (var fname in new[] { "ps3rt.dll", "guest_image.bin", "pad_map.json" })
+        foreach (var fname in new[] { "ps3rt.dll", "vulkan-1.dll", "guest_image.bin", "pad_map.json" })
         {
             string src = Path.Combine(outDir, fname);
+            if (!File.Exists(src))
+                src = Path.Combine(AppContext.BaseDirectory, fname);
             if (!File.Exists(src)) continue;
             File.Copy(src, Path.Combine(dest, fname), true);
             Append("  + " + fname);
@@ -327,7 +329,7 @@ public sealed partial class MainForm
             MessageBox.Show(this,
                 "Copied to:\n" + dest + "\n\n" +
                 "EXE: " + gameExeName + "\n" +
-                "Also: ps3rt.dll, guest_image.bin, pad_map.json\n\n" +
+                "Also: ps3rt.dll, vulkan-1.dll, guest_image.bin, pad_map.json\n\n" +
                 "Run the EXE from that USRDIR folder.\n" +
                 "Runtime includes lettered work through Z (texture/fs helpers).\n" +
                 "Attach the newest run log if something fails.",

@@ -59,6 +59,7 @@ public sealed partial class MainForm : Form
     /// <summary>True after user saves controller map or build locks mapping.</summary>
     internal bool ControllerMapped => _controllerMapped;
 
+    // Headers under runtime/; ps3rt.dll + vulkan-1.dll live next to the EXE (BaseDirectory)
     private static string RuntimeDir => Path.Combine(AppContext.BaseDirectory, "runtime");
     private static string CompilersDir => Path.Combine(AppContext.BaseDirectory, "redist");
     private static string ProjectsRoot => Path.Combine(AppContext.BaseDirectory, "projects");
@@ -472,8 +473,8 @@ public sealed partial class MainForm : Form
         "  OS            64-bit Windows 10/11\r\n" +
         "  Disk          SSD recommended\r\n" +
         "  RAM           8 GB minimum\r\n" +
-        "  GPU           D3D11 Feature Level 11_0\r\n" +
-        "  Graphics API  D3D11 (current)\r\n" +
+        "  GPU           Vulkan 1.2 capable GPU + driver\r\n" +
+        "  Graphics API  Vulkan 1.2 (default); OpenGL secondary\r\n" +
         "  Toolchain     Visual Studio Community (see redist/README.txt)\r\n\r\n" +
         "Recommended\r\n" +
         "  RAM           16 GB+\r\n" +

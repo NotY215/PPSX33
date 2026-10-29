@@ -844,10 +844,133 @@ int rsx_vk_present_clear(float r, float g, float b, float a) {
     return pr == VK_SUCCESS || pr == VK_SUBOPTIMAL_KHR;
 }
 
+static uint32_t vk_find_mem_type(uint32_t type_bits, uint32_t props) {
+    VkPhysicalDeviceMemoryProperties mp{};
+    g_vk.GetPhysicalDeviceMemoryProperties(g_vk.phys, &mp);
+    for (uint32_t i = 0; i < mp.memoryTypeCount; ++i) {
+        if ((type_bits & (1u << i)) && (mp.memoryTypes[i].propertyFlags & props) == props)
+            return i;
+    }
+    return 0;
+}
+
 int rsx_vk_present_guest_rgba(const void* pixels, uint32_t w, uint32_t h, uint32_t pitch_bytes) {
-    // Staging path: upload then clear-present for now (full blit pipeline next depth)
-    (void)pixels; (void)w; (void)h; (void)pitch_bytes;
-    return rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
+    std::lock_guard<std::mutex> lk(g_vk_mu);
+    if (!g_vk.ready || !pixels || !w || !h) return 0;
+    if (!pitch_bytes) pitch_bytes = w * 4u;
+
+    g_vk.WaitForFences(g_vk.device, 1, &g_vk.in_flight, VK_TRUE, UINT64_MAX);
+    g_vk.ResetFences(g_vk.device, 1, &g_vk.in_flight);
+
+    uint32_t imageIndex = 0;
+    VkResult ar = g_vk.AcquireNextImageKHR(g_vk.device, g_vk.swapchain, UINT64_MAX,
+        g_vk.image_available, nullptr, &imageIndex);
+    if (ar == VK_ERROR_OUT_OF_DATE_KHR || ar == VK_SUBOPTIMAL_KHR) {
+        destroy_swapchain_objects();
+        if (!create_swapchain()) return 0;
+        return 0;
+    }
+    if (ar != VK_SUCCESS || imageIndex >= g_vk.images.size()) return 0;
+
+    VkDeviceSize buf_size = (VkDeviceSize)pitch_bytes * h;
+    void* staging = nullptr;
+    void* staging_mem = nullptr;
+    {
+        VkBufferCreateInfo bci{};
+        bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bci.size = buf_size;
+        bci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        if (g_vk.CreateBuffer(g_vk.device, &bci, nullptr, &staging) != VK_SUCCESS) return 0;
+        VkMemoryRequirements mr{};
+        g_vk.GetBufferMemoryRequirements(g_vk.device, staging, &mr);
+        VkMemoryAllocateInfo mai{};
+        mai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        mai.allocationSize = mr.size;
+        mai.memoryTypeIndex = vk_find_mem_type(mr.memoryTypeBits,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        if (g_vk.AllocateMemory(g_vk.device, &mai, nullptr, &staging_mem) != VK_SUCCESS) {
+            g_vk.DestroyBuffer(g_vk.device, staging, nullptr);
+            return 0;
+        }
+        g_vk.BindBufferMemory(g_vk.device, staging, staging_mem, 0);
+        void* mapped = nullptr;
+        g_vk.MapMemory(g_vk.device, staging_mem, 0, buf_size, 0, &mapped);
+        if (mapped) {
+            std::memcpy(mapped, pixels, (size_t)buf_size);
+            g_vk.UnmapMemory(g_vk.device, staging_mem);
+        }
+    }
+
+    if (g_vk.ResetCommandBuffer) g_vk.ResetCommandBuffer(g_vk.cmd, 0);
+    VkCommandBufferBeginInfo begin{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
+        VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr };
+    g_vk.BeginCommandBuffer(g_vk.cmd, &begin);
+
+    // UNDEFINED -> TRANSFER_DST
+    VkImageMemoryBarrier to_dst{};
+    to_dst.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    to_dst.srcAccessMask = 0;
+    to_dst.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    to_dst.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    to_dst.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    to_dst.srcQueueFamilyIndex = 0xFFFFFFFFu;
+    to_dst.dstQueueFamilyIndex = 0xFFFFFFFFu;
+    to_dst.image = g_vk.images[imageIndex];
+    to_dst.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    to_dst.subresourceRange.levelCount = 1;
+    to_dst.subresourceRange.layerCount = 1;
+    g_vk.CmdPipelineBarrier(g_vk.cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0, 0, nullptr, 0, nullptr, 1, &to_dst);
+
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0;
+    region.bufferRowLength = pitch_bytes / 4u;
+    region.bufferImageHeight = h;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageExtent.width = w < g_vk.width ? w : g_vk.width;
+    region.imageExtent.height = h < g_vk.height ? h : g_vk.height;
+    region.imageExtent.depth = 1;
+    g_vk.CmdCopyBufferToImage(g_vk.cmd, staging, g_vk.images[imageIndex],
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    // TRANSFER_DST -> PRESENT
+    VkImageMemoryBarrier to_present = to_dst;
+    to_present.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    to_present.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    to_present.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    to_present.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    g_vk.CmdPipelineBarrier(g_vk.cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        0, 0, nullptr, 0, nullptr, 1, &to_present);
+
+    g_vk.EndCommandBuffer(g_vk.cmd);
+
+    VkFlags waitStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    VkSubmitInfo si{};
+    si.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    si.waitSemaphoreCount = 1;
+    si.pWaitSemaphores = &g_vk.image_available;
+    si.pWaitDstStageMask = &waitStage;
+    si.commandBufferCount = 1;
+    si.pCommandBuffers = &g_vk.cmd;
+    si.signalSemaphoreCount = 1;
+    si.pSignalSemaphores = &g_vk.render_finished;
+    int ok = (g_vk.QueueSubmit(g_vk.queue, 1, &si, g_vk.in_flight) == VK_SUCCESS);
+
+    VkPresentInfoKHR pi{};
+    pi.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    pi.waitSemaphoreCount = 1;
+    pi.pWaitSemaphores = &g_vk.render_finished;
+    pi.swapchainCount = 1;
+    pi.pSwapchains = &g_vk.swapchain;
+    pi.pImageIndices = &imageIndex;
+    g_vk.QueuePresentKHR(g_vk.queue, &pi);
+
+    g_vk.DeviceWaitIdle(g_vk.device);
+    g_vk.DestroyBuffer(g_vk.device, staging, nullptr);
+    g_vk.FreeMemory(g_vk.device, staging_mem, nullptr);
+    return ok;
 }
 
 void rsx_vk_poll_window(void) {
