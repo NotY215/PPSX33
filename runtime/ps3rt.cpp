@@ -491,7 +491,7 @@ static void pad_poll_host() {
 #include "ps3rt_b.inl"
 
 
-extern "C" void ps3rt_log_hle_status_once(void) {
+PS3RT_API void ps3rt_log_hle_status_once(void) {
     static int done = 0;
     if (done) return;
     done = 1;

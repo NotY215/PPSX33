@@ -1,4 +1,4 @@
-extern "C" void ps3rt_log_hle_status_once(void);
+PS3RT_API void ps3rt_log_hle_status_once(void);
 // XXV-L: sticky wild-pc break + LR-first recovery
 // XXV-F full depth: validate_guest_pc, capture_guest_fault, strict/storm
 #include <cstdlib>
