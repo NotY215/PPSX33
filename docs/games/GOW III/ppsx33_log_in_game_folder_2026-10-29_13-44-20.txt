@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_13-15-24.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_13-15-24.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_13-44-20.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_13-44-20.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -582,9 +582,10 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [lv2] sc 169 r3=6 r4=0 r5=0 r6=0
 [lv2] sc 48 r3=f0ffc00 r4=f0ffb50 r5=0 r6=0
 [lv2] sc 352 r3=f0ffb88 r4=f0ffb50 r5=0 r6=0
-[lv2] XV-L mem sc=352 size=0xf0ffb50 -> ea=0x0
+[lv2] alloc VA=0x94f0000 size=0x3e8
+[lv2] XV-L mem sc=352 size=0x3e8 -> ea=0x94f0000
 [lv2] sc 352 r3=f0ffb60 r4=f0ffb70 r5=0 r6=0
-[lv2] XV-L mem sc=352 size=0xf0ffb70 -> ea=0x0
+[lv2] mem REJECT sc=352 r3=0xf0ffb60 r4=0xf0ffb70 (not a size)
 [lv2] timer_usleep us=100000 n=1 (yield+hw)
 [lv2] timer_usleep us=100000 n=2 (yield+hw)
 [lv2] timer_usleep us=100000 n=3 (yield+hw)
