@@ -31,7 +31,9 @@ static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, 
                                          uint64_t exclude_pc = 0,
                                          const uint64_t* ban = nullptr, int nban = 0,
                                          const uint64_t* rban = nullptr, int nrban = 0) {
-    // XXV-L: prefer LR when translated and not region-banned
+    // XXV-L / XXVI: prefer LR when translated and not region-banned.
+    // Hardening: raise sticky-hit budget and always prefer a fresh LR that is
+    // in-chunks over stack scan (import-island null loops often leave LR valid).
     auto banned_early = [&](uint64_t p) -> bool {
         if (!p || p == exclude_pc) return true;
         if (p < 0x10100ull) return true;
@@ -46,7 +48,12 @@ static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, 
         static uint64_t s_lr_sticky = 0;
         static int s_lr_hits = 0;
         if (c.lr == s_lr_sticky) ++s_lr_hits; else { s_lr_sticky = c.lr; s_lr_hits = 1; }
-        if (s_lr_hits < 8)
+        // XXVI: allow more consecutive LR hits before falling through to stack
+        // (was 8; sticky import recovery needs headroom under soft-continue)
+        if (s_lr_hits < 32)
+            return c.lr;
+        // After budget, still return LR once more if it differs from exclude_pc
+        if (c.lr != exclude_pc)
             return c.lr;
     }
 
@@ -355,8 +362,17 @@ while (!c.halted) {
                     uint64_t lr = c.lr;
                     // Log: sticky alt=lr=0x199c78 but soft-continue skipped LR because lr==alt,
                     // then stack scan picked null-loop 0x105e8. Prefer LR whenever it is in chunks.
-                    if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr >= 0x10000ull)
+                    // XXVI hardening: always take translated LR first (even if lr==alt); stack is fallback only.
+                    if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr >= 0x10000ull) {
                         next = lr;
+                        static int s_lr_pref = 0;
+                        if (s_lr_pref < 12) {
+                            ps3rt_log("[ps3] XXVI sticky prefer-LR=0x%llx (alt was 0x%llx)
+",
+                                (unsigned long long)lr, (unsigned long long)alt);
+                            ++s_lr_pref;
+                        }
+                    }
                     if (!next) {
                         uint64_t sp = c.gpr[1];
                         for (int off = 0; off < 0x4000 && !next; off += 8) {

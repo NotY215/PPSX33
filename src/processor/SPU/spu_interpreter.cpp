@@ -11,6 +11,7 @@
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include <cstring>
+#include <cstdlib>
 #include <cstdint>
 #include <cmath>
 
@@ -86,6 +87,15 @@ enum {
 };
 
 // XX-L: MFC command set + list DMA + barriers + tag completion
+// XXVI: PS3RT_SPU_TRACE=1 enables verbose MFC / local-store transfer logs
+static int spu_trace_enabled() {
+    static int v = -1;
+    if (v < 0) {
+        const char* e = std::getenv("PS3RT_SPU_TRACE");
+        v = (e && e[0] && e[0] != '0') ? 1 : 0;
+    }
+    return v;
+}
 static void mfc_complete_tag(SPUContext& s) {
     s.mfc_tag_status |= (1u << (s.mfc_tag & 31));
 }
@@ -132,9 +142,11 @@ static void mfc_list_dma(SPUContext& s, bool is_get) {
         if (done >= 256 * 1024) break;
     }
     static int s_list = 0;
-    if (s_list < 16) {
-        ps3rt_log("[spu] D MFC LIST %s elems=%u xfer=%u tag=%u stall=%u\n",
-                  is_get ? "GETL" : "PUTL", elems, done, s.mfc_tag, s.mfc_list_stall);
+    if (spu_trace_enabled() || s_list < 16) {
+        if (s_list < 64 || spu_trace_enabled()) {
+            ps3rt_log("[spu] D MFC LIST %s elems=%u xfer=%u tag=%u stall=%u\n",
+                      is_get ? "GETL" : "PUTL", elems, done, s.mfc_tag, s.mfc_list_stall);
+        }
         ++s_list;
     }
     mfc_complete_tag(s);
@@ -200,9 +212,13 @@ static void mfc_do_dma(SPUContext& s) {
     mfc_xfer(s, lsa, ea, size, is_get);
     mfc_complete_tag(s);
     static int s_dma = 0;
-    if (s_dma < 20) {
-        ps3rt_log("[spu] D MFC %s lsa=0x%x ea=0x%llx size=%u tag=%u\n",
-                  is_get ? "GET" : "PUT", lsa, (unsigned long long)ea, size, s.mfc_tag);
+    if (spu_trace_enabled() || s_dma < 20) {
+        if (s_dma < 128 || spu_trace_enabled()) {
+            ps3rt_log("[spu] D MFC %s lsa=0x%x ea=0x%llx size=%u tag=%u ls[0..3]=%02x%02x%02x%02x\n",
+                      is_get ? "GET" : "PUT", lsa, (unsigned long long)ea, size, s.mfc_tag,
+                      s.ls[lsa & 0x3FFFF], s.ls[(lsa+1) & 0x3FFFF],
+                      s.ls[(lsa+2) & 0x3FFFF], s.ls[(lsa+3) & 0x3FFFF]);
+        }
         ++s_dma;
     }
 }

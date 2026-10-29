@@ -18,8 +18,10 @@
 #include <windows.h>
 #include <shlobj.h>
 #include <mmsystem.h>
+#include <xaudio2.h>
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "shell32.lib")
+#pragma comment(lib, "ole32.lib")
 #endif
 
 static int g_audio_inited = 0;
@@ -29,6 +31,14 @@ static HWAVEOUT g_wo = nullptr;
 static WAVEHDR g_wh[4]{};
 static int16_t g_pcm[4][2048]; // 4 buffers x 1024 stereo frames
 static int g_wh_idx = 0;
+// XXVI: XAudio2 buffer path (preferred when available; waveOut remains fallback)
+static IXAudio2* g_xa = nullptr;
+static IXAudio2MasteringVoice* g_xa_master = nullptr;
+static IXAudio2SourceVoice* g_xa_src = nullptr;
+static int g_xa_ready = 0;
+static int g_xa_failed = 0;
+static int16_t g_xa_pcm[4][2048];
+static int g_xa_idx = 0;
 static uint32_t g_audio_block = 256;
 static uint64_t g_audio_read_idx = 0;
 static uint64_t g_port_addr = 0; // guest EA of ring (if known)
@@ -89,7 +99,50 @@ static void audio_queue_s16(const int16_t* samples, size_t nframes); // forward
 
 static void audio_host_open() {
 #if defined(_WIN32)
-    if (g_wo || g_audio_open_failed) return; // XXIV-A: never retry after fail
+    if (g_xa_ready || g_wo || g_audio_open_failed) return; // XXIV-A: never retry after fail
+
+    // XXVI: try XAudio2 first (cellAudio -> XAudio2 buffer path)
+    if (!g_xa_failed && !g_xa_ready) {
+        HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+        (void)hr;
+        hr = XAudio2Create(&g_xa, 0, XAUDIO2_DEFAULT_PROCESSOR);
+        if (SUCCEEDED(hr) && g_xa) {
+            hr = g_xa->CreateMasteringVoice(&g_xa_master);
+            if (SUCCEEDED(hr) && g_xa_master) {
+                WAVEFORMATEX wfx{};
+                wfx.wFormatTag = WAVE_FORMAT_PCM;
+                wfx.nChannels = 2;
+                wfx.nSamplesPerSec = 48000;
+                wfx.wBitsPerSample = 16;
+                wfx.nBlockAlign = 4;
+                wfx.nAvgBytesPerSec = 48000 * 4;
+                hr = g_xa->CreateSourceVoice(&g_xa_src, &wfx);
+                if (SUCCEEDED(hr) && g_xa_src) {
+                    g_xa_src->Start(0);
+                    g_xa_ready = 1;
+                    ps3rt_log("[audio] XXVI XAudio2 48kHz stereo source ready\n");
+                }
+            }
+        }
+        if (!g_xa_ready) {
+            g_xa_failed = 1;
+            if (g_xa_src) { g_xa_src->DestroyVoice(); g_xa_src = nullptr; }
+            if (g_xa_master) { g_xa_master->DestroyVoice(); g_xa_master = nullptr; }
+            if (g_xa) { g_xa->Release(); g_xa = nullptr; }
+            ps3rt_log("[audio] XXVI XAudio2 init failed — falling back to waveOut\n");
+        }
+    }
+    if (g_xa_ready) {
+        int16_t tone[48000 / 10 * 2];
+        for (int i = 0; i < 48000 / 10; ++i) {
+            int16_t s = (int16_t)(8000.0 * sin(2.0 * 3.14159265 * 440.0 * i / 48000.0));
+            tone[i * 2] = s; tone[i * 2 + 1] = s;
+        }
+        audio_queue_s16(tone, 48000 / 10);
+        ps3rt_log("[audio] XXVI XAudio2 prove-tone 440Hz 100ms queued\n");
+        return;
+    }
+
     WAVEFORMATEX wfx{};
     wfx.wFormatTag = WAVE_FORMAT_PCM;
     wfx.nChannels = 2;
@@ -114,9 +167,8 @@ static void audio_host_open() {
         waveOutPrepareHeader(g_wo, &g_wh[i], sizeof(g_wh[i]));
     }
     ps3rt_log("[audio] G/K host waveOut 48kHz stereo ready (4 buffers)\n");
-    // XXIV: one short prove-tone so host path is audible even before cellAudio feeds
     {
-        int16_t tone[48000 / 10 * 2]; // 100ms
+        int16_t tone[48000 / 10 * 2];
         for (int i = 0; i < 48000 / 10; ++i) {
             int16_t s = (int16_t)(8000.0 * sin(2.0 * 3.14159265 * 440.0 * i / 48000.0));
             tone[i * 2] = s; tone[i * 2 + 1] = s;
@@ -127,19 +179,40 @@ static void audio_host_open() {
 #endif
 }
 
-// Push interleaved stereo s16 samples to waveOut
+// Push interleaved stereo s16 samples to XAudio2 (preferred) or waveOut
 static void audio_queue_s16(const int16_t* samples, size_t nframes) {
 #if defined(_WIN32)
-    if (!g_wo || !samples || nframes == 0) return;
+    if (!samples || nframes == 0) return;
+    if (g_xa_ready && g_xa_src) {
+        size_t left = nframes;
+        const int16_t* src = samples;
+        while (left > 0) {
+            XAUDIO2_VOICE_STATE st{};
+            g_xa_src->GetState(&st);
+            if (st.BuffersQueued >= 3) break; // backpressure
+            size_t cap = sizeof(g_xa_pcm[0]) / 4;
+            size_t n = left < cap ? left : cap;
+            std::memcpy(g_xa_pcm[g_xa_idx], src, n * 4);
+            if (n < cap) std::memset((uint8_t*)g_xa_pcm[g_xa_idx] + n * 4, 0, (cap - n) * 4);
+            XAUDIO2_BUFFER xb{};
+            xb.AudioBytes = (UINT32)(n * 4);
+            xb.pAudioData = (const BYTE*)g_xa_pcm[g_xa_idx];
+            g_xa_src->SubmitSourceBuffer(&xb);
+            g_xa_idx = (g_xa_idx + 1) & 3;
+            src += n * 2;
+            left -= n;
+        }
+        return;
+    }
+    if (!g_wo) return;
     size_t left = nframes;
     const int16_t* src = samples;
     while (left > 0) {
         WAVEHDR* h = &g_wh[g_wh_idx];
         if (h->dwFlags & WHDR_INQUEUE) {
-            // all busy — drop
             break;
         }
-        size_t cap = sizeof(g_pcm[0]) / 4; // frames
+        size_t cap = sizeof(g_pcm[0]) / 4;
         size_t n = left < cap ? left : cap;
         std::memcpy(g_pcm[g_wh_idx], src, n * 4);
         if (n < cap) std::memset((uint8_t*)g_pcm[g_wh_idx] + n * 4, 0, (cap - n) * 4);
@@ -157,7 +230,19 @@ static void audio_queue_s16(const int16_t* samples, size_t nframes) {
 PS3RT_API void ps3rt_audio_tick(void) {
     audio_host_open(); // XXIV-A once
 #if defined(_WIN32)
-    if (!g_wo || !g_audio_inited) return;
+    if (!g_audio_inited) return;
+    if (g_xa_ready && g_xa_src) {
+        XAUDIO2_VOICE_STATE st{};
+        g_xa_src->GetState(&st);
+        if (st.BuffersQueued < 2) {
+            static int16_t quiet[960 * 2];
+            audio_queue_s16(quiet, 480);
+            static int s_k = 0;
+            if (s_k < 6) { ps3rt_log("[audio] XXVI XAudio2 keepalive (queued=%u)\n", st.BuffersQueued); ++s_k; }
+        }
+        return;
+    }
+    if (!g_wo) return;
     // XXV-I: keep waveOut fed — underrun causes the single beep then silence
     int queued = 0;
     for (int i = 0; i < 4; ++i) if (g_wh[i].dwFlags & WHDR_PREPARED) {

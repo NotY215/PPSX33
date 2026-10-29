@@ -17,6 +17,7 @@
 // XXII-A: RSX present/color-buffer fidelity · // A+I+L+T+V+Y: + fullscreen blit of uploaded guest texture to backbuffer
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
+#include "rsx_fifo.h"
 #include <mutex>
 #include <cstring>
 #include <cstdarg>
@@ -1762,6 +1763,13 @@ static void rsx_fifo_decode_word(uint8_t* mem, uint32_t method, uint32_t arg) {
         ++g_rsx.unknown_methods;
         ++g_rsx.methods_seen;
         ++g_rsx.methods_this_frame;
+        // XXVI: sample unknown methods so FIFO probe diagnosis is actionable
+        static int s_unk = 0;
+        if (s_unk < 32) {
+            ps3rt_log("[rsx] XXVI unknown method=0x%x arg=0x%x (seen=%d unk=%d)\n",
+                method, arg, g_rsx.methods_seen, g_rsx.unknown_methods);
+            ++s_unk;
+        }
     }
 }
 
@@ -2059,9 +2067,11 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
     g_rsx.fifo_addr = fifo_addr;
     g_rsx.fifo_size = fifo_size ? fifo_size : 0x100000;
     g_rsx.put = g_rsx.get = 0;
+    ppsx33::rsx::rsx_fifo_init(); // XXVI: fifo depth surface linked
     if (!g_hwnd) rsx_host_init(1280, 720);
     rsx_ensure_hlsl(); // XXIV-C prove HLSL at init
-    ps3rt_log("[rsx] init fifo=0x%llx size=0x%x backend=%d\n", (unsigned long long)fifo_addr, g_rsx.fifo_size, g_backend);
+    ps3rt_log("[rsx] init fifo=0x%llx size=0x%x backend=%d (guest-PUT probe ready)\n",
+        (unsigned long long)fifo_addr, g_rsx.fifo_size, g_backend);
 }
 
 PS3RT_API void ps3rt_rsx_set_color_surface(uint32_t offset, uint32_t w, uint32_t h) {

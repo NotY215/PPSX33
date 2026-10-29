@@ -1,11 +1,11 @@
-// WORK: HW progress tick.
-
+// WORK: HW progress tick + guest-PUT probe (XXVI depth).
 // Phase H: hardware progress helper (linked into ps3rt.dll)
+// Depth: stronger CellGcm control probe, PUT advance log, method flush.
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
 #include <cstdint>
 
-// These symbols live in ps3rt.cpp
+// These symbols live in hle_kernel / syscalls
 extern uint8_t* g_mem;
 extern size_t g_mem_size;
 extern uint64_t g_gcm_control;
@@ -28,16 +28,40 @@ static uint32_t rd32(uint64_t addr) {
 
 PS3RT_API void ps3rt_progress_hw(void) {
     if (!g_mem) return;
+
+    // XXVI: guest-PUT probe — always re-read control block when present
     if (g_gcm_control && g_gcm_control + 12 <= g_mem_size) {
         uint32_t put = rd32(g_gcm_control + 0);
+        uint32_t ref = rd32(g_gcm_control + 4);
         uint32_t get = rd32(g_gcm_control + 8);
+        // Prefer +8 GET; some titles keep working GET in +4 (REF slot misused)
+        if (get == put && ref != put)
+            get = ref;
+
+        static uint32_t s_last_put = 0;
+        static int s_put_log = 0;
+        if (put != s_last_put) {
+            if (s_put_log < 24) {
+                ps3rt_log("[rsx] guest-PUT probe put=0x%x get=0x%x ref=0x%x (delta)\n",
+                    put, get, ref);
+                ++s_put_log;
+            }
+            s_last_put = put;
+        }
+
         if (put != get) {
+            // Advance host GET view to match guest PUT then flush decode
             wr32(g_gcm_control + 8, put);
             ps3rt_rsx_set_put(put);
             ps3rt_rsx_flush(g_mem);
+            // After flush, host GET may lag; write back current host GET if API available
+            uint32_t host_get = ps3rt_rsx_get_get();
+            wr32(g_gcm_control + 8, host_get);
         }
+        // Keep REF slot coherent with latest PUT (many titles poll +4)
         wr32(g_gcm_control + 4, put);
     }
+
     g_gcm_flip_status = 0;
     static uint32_t s_flip_div = 0;
     if ((++s_flip_div & 0xF) == 0) {
