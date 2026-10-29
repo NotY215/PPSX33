@@ -1,0 +1,152 @@
+PPSX33 run log
+mode=launch_in_game_folder
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_20-27-06.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_20-27-06.txt
+[stage] BOOT start
+[ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
+[ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
+[ps3rt] PS3IMG1 loaded from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\guest_image.bin (2 segments)
+[stage] MEM map end
+[save] root=C:\Users\shrey\OneDrive\Documents\GOW3\PS3_SAVEDATA (PS3-native only; no savestates)
+[psarc] XX-J zlib loaded
+[fs] game_root=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\BAS.PSARC entries=76 block_size=65536 blocks=23700 zlib=1 data_start=0xc230
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CAV.PSARC entries=43 block_size=65536 blocks=40462 zlib=1 data_start=0x14146
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CHALLENGE.PSARC entries=43 block_size=65536 blocks=190 zlib=1 data_start=0x6a6
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CRN.PSARC entries=22 block_size=65536 blocks=8357 zlib=1 data_start=0x43fe
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ENGLISH.PSARC entries=2012 block_size=65536 blocks=16119 zlib=1 data_start=0x169d6
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAME.PSARC entries=122 block_size=65536 blocks=5311 zlib=1 data_start=0x37ea
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAME_SUB.PSARC entries=33 block_size=65536 blocks=6247 zlib=1 data_start=0x34cc
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAZ.PSARC entries=34 block_size=65536 blocks=15909 zlib=1 data_start=0x8066
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\HDS.PSARC entries=112 block_size=65536 blocks=61470 zlib=1 data_start=0x1ed7c
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ICA.PSARC entries=46 block_size=65536 blocks=21910 zlib=1 data_start=0xb0b0
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\LAB.PSARC entries=28 block_size=65536 blocks=17989 zlib=1 data_start=0x8ff2
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\MUSIC.PSARC entries=375 block_size=65536 blocks=29788 zlib=1 data_start=0x114ca
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\OLY.PSARC entries=123 block_size=65536 blocks=67841 zlib=1 data_start=0x2208c
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\POS.PSARC entries=52 block_size=65536 blocks=34108 zlib=1 data_start=0x110b0
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\RES.PSARC entries=368 block_size=65536 blocks=46981 zlib=1 data_start=0x19a4a
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\BAS.PSARC entries=76 block_size=65536 blocks=23700 zlib=1 data_start=0xc230
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CAV.PSARC entries=43 block_size=65536 blocks=40462 zlib=1 data_start=0x14146
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CHALLENGE.PSARC entries=43 block_size=65536 blocks=190 zlib=1 data_start=0x6a6
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\CRN.PSARC entries=22 block_size=65536 blocks=8357 zlib=1 data_start=0x43fe
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ENGLISH.PSARC entries=2012 block_size=65536 blocks=16119 zlib=1 data_start=0x169d6
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAME.PSARC entries=122 block_size=65536 blocks=5311 zlib=1 data_start=0x37ea
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAME_SUB.PSARC entries=33 block_size=65536 blocks=6247 zlib=1 data_start=0x34cc
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GAZ.PSARC entries=34 block_size=65536 blocks=15909 zlib=1 data_start=0x8066
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\HDS.PSARC entries=112 block_size=65536 blocks=61470 zlib=1 data_start=0x1ed7c
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ICA.PSARC entries=46 block_size=65536 blocks=21910 zlib=1 data_start=0xb0b0
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\LAB.PSARC entries=28 block_size=65536 blocks=17989 zlib=1 data_start=0x8ff2
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\MUSIC.PSARC entries=375 block_size=65536 blocks=29788 zlib=1 data_start=0x114ca
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\OLY.PSARC entries=123 block_size=65536 blocks=67841 zlib=1 data_start=0x2208c
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\POS.PSARC entries=52 block_size=65536 blocks=34108 zlib=1 data_start=0x110b0
+[psarc] XX-J E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\RES.PSARC entries=368 block_size=65536 blocks=46981 zlib=1 data_start=0x19a4a
+[fs] XX-J asset scan done root=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR  psarcs=30  entries=6978
+[stage] BOOT end
+[stage] PPU run start
+[hle] sys_ppu_thread/mutex/cond = partial (subset)
+[hle] sys_memory/mmapper = partial (subset)
+[hle] cellFs = partial (path map + host I/O)
+[hle] cellPad = partial (XInput/host keys)
+[hle] cellAudio = partial (host path)
+[hle] cellGcmSys = partial (control/FIFO kick)
+[hle] cellSysutil/sysmodule = partial (common NIDs)
+[hle] cellSpurs = partial (job assist)
+[hle] RSX/FIFO = partial (assist draws proven; title stream pending)
+[prx] load "cellSysmodule" id=1 base=0x30100000
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x103ac
+[prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x103ac r11=0x53f96c
+[ps3] import stub pc=0x39800000 -> ret=0x103ac (#1)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x33aec8
+[ps3] import stub pc=0x39800000 -> ret=0x33aec8 (#2)
+[lv2] sc 352 r3=f0ffe04 r4=3cc7f8 r5=4 r6=0
+[lv2] alloc VA=0x8000000 size=0x3cc7f8
+[lv2] XV-L mem sc=352 size=0x3cc7f8 -> ea=0x8000000
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336750
+[ps3] import stub pc=0x39800000 -> ret=0x336750 (#3)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#4)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#5)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#6)
+[prx] load "cellSysutil" id=2 base=0x30200000
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0065F088 kind=7 mod=cellSysutil lr=0x336660
+[prx] stub kind=7 cellSysutil pc=0x39800000 nid=0x0065F088 lr=0x336660 r11=0x65f088
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#7)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#8)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#9)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#10)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#11)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0065F9C8 kind=7 mod=cellSysutil lr=0x10464
+[prx] stub kind=7 cellSysutil pc=0x39800000 nid=0x0065F9C8 lr=0x10464 r11=0x65f9c8
+[ps3] import stub pc=0x39800000 -> ret=0x10464 (#12)
+[ps3] XXV-F recover wild-pc 0x0 -> 0x331c30
+[ps3] XXV-L wild-pc 0x0 -> 0x331c30
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#13)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#14)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#15)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#16)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#17)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#18)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#19)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#20)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#21)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#22)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#23)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#24)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#25)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#26)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#27)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#28)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] import stub pc=0x39800000 -> ret=0x336660 (#29)
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[stage] PPU progress start
+[stage] SPU progress end
+[pad] XInput loaded from xinput1_4.dll
+[audio] XXVI XAudio2 48kHz stereo source ready
+[audio] XXVI XAudio2 prove-tone 440Hz 100ms queued
+[lv2] alloc VA=0x83cd000 size=0x1000
+[gcm] control @ 0x83cd000
+[lv2] alloc VA=0x83ce000 size=0x10000
+[gcm] labels  @ 0x83ce000
+[lv2] alloc VA=0x83e0000 size=0x100000
+[rsx] XXII-L API preference: D3D11 (OpenGL 3.3/2.1 fallback not linked yet)
+[rsx] PIC1 window/taskbar icon from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR/../PIC1.PNG
+[rsx] PIC1 window/taskbar icon from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR/../PIC1.PNG
+[rsx] XX-O window title="PPSX33 presents GOW3"
+[rsx] D3D11 host present ready 1280x720 (depth+stencil)
+[rsx] XXIV-C VS compile fail
+[rsx] init fifo=0x83e0000 size=0x100000 backend=1 (guest-PUT probe ready)
+[lv2] alloc VA=0x84e0000 size=0x4000
+[lv2] alloc VA=0x84f0000 size=0x1000000
+[gcm] local_addr @ 0x84f0000
+[gcm] XX-I state ready fifo=0x83e0000 ctrl=0x83cd000 labels=0x83ce000
+[stage] GCM ready end
+[stage] RUNNING
+[ps3] null-loop recover 0x336660 -> 0x430000 (soft_breaks=1)
+[ps3] import stub pc=0x39800000 -> ret=0x430000 (#30)
+[vmx] dispatch xo11=401 vd=19 va=31 vb=30
+[stage] PPU run end
+
+--- log end ---
