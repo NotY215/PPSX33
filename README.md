@@ -4,8 +4,8 @@
 </p>
 
 <h1 align="center">PPSX33</h1>
-<p align="center"><strong>PlayStation 3 Static Recompiler Research</strong></p>
-<p align="center">From decrypted PowerPC64 code to a native Windows build, one subsystem at a time.</p>
+<p align="center"><strong>PlayStation 3 Full Recompiler</strong></p>
+<p align="center">A native Windows recompiler focused on translating PS3 game code and rebuilding the runtime needed to execute it.</p>
 
 <p align="center">
   <img src="assets/ppsx33-banner.png" alt="PPSX33 banner" width="100%">
@@ -22,20 +22,20 @@
 <p align="center">
   <img alt="Platform: Windows x64" src="https://img.shields.io/badge/platform-Windows%20x64-0078D4?style=for-the-badge">
   <img alt="Graphics: Direct3D 11" src="https://img.shields.io/badge/graphics-Direct3D%2011-6A5ACD?style=for-the-badge">
-  <img alt="Project stage: Experimental" src="https://img.shields.io/badge/stage-experimental-orange?style=for-the-badge">
+  <img alt="Goal: Full Recompilation" src="https://img.shields.io/badge/goal-full%20recompilation-6A5ACD?style=for-the-badge">
 </p>
 
 > [!IMPORTANT]
-> **PPSX33 is experimental software, not a finished PS3 compatibility solution.** A successful lift or build does not mean a game is playable. Control-flow recovery and boot FIFO assist are **diagnostic**; use `PS3RT_STRICT_FAULT=1` when validating correctness. PPU semantics, HLE, SPU/DMA behaviour and real RSX rendering are still being developed and validated.
+> **PPSX33's primary goal is full PlayStation 3 game recompilation into native Windows builds.** This is the project's intended direction, not a claim that every PS3 title is already compatible. Full recompilation requires accurate PPU and SPU execution, system-library and kernel behaviour, DMA, and real RSX/GCM rendering. A successful lift or build alone does not prove that a game boots or is playable. Control-flow recovery and boot FIFO assist are diagnostic; use `PS3RT_STRICT_FAULT=1` when validating correctness.
 
 > [!NOTE]
 > **Input format:** PPSX33 loads **decrypted ELF** files only. It does **not** decrypt EBOOTs, bundle keys, or launch external emulators. Obtaining a decrypted ELF is the user's responsibility (for example, offline tooling some users already have — not provided by this project).
 
 ## ✨ What PPSX33 is building
 
-PPSX33 is an open-source research project exploring a different route from full-system emulation: **static recompilation**. It analyses a decrypted PS3 ELF, lifts supported PowerPC code into generated C++ and links that code against a host runtime intended to reproduce the PS3 services the title expects.
+PPSX33 is an open-source PlayStation 3 recompiler whose main objective is **full recompilation**: translate a game's PowerPC code and supporting execution paths into a native Windows build, with a host runtime that reproduces the PS3 system services and hardware behaviour the title depends on.
 
-The aim is not to pretend the PS3 is simple. The aim is to make each part observable, testable and replaceable, from instruction semantics to graphics output.
+This is a whole-system engineering target, not just an ELF-to-C++ conversion. The project must progressively cover instruction semantics, control flow, kernel and library services, SPU/MFC/DMA behaviour, and RSX/GCM graphics so that generated builds can execute real games correctly. Implementation status is reported explicitly below and in the roadmap.
 
 
 
@@ -57,9 +57,9 @@ The aim is not to pretend the PS3 is simple. The aim is to make each part observ
 
 The last step matters: generated code is only one milestone. Correct execution and rendered gameplay must be demonstrated separately.
 
-## 🚦 Implementation status
+## 🚦 Full-recompilation status
 
-Status icons describe the current broad state, not a promise that every title or code path works.
+PPSX33 is being developed toward full recompilation. These statuses describe implemented subsystems and remaining gaps; they do not imply universal game compatibility.
 
 | Area | Status | Current scope |
 | --- | --- | --- |
@@ -176,9 +176,9 @@ Linux and macOS are **not supported host-runtime targets at present**. Requireme
 
 Build outputs and paths may vary by configuration. If a step fails, capture the complete error and toolchain version instead of assuming the project built successfully. The [developer guide](docs/DEVELOPER_GUIDE.md) and [user manual](USER_MANUAL.md) provide more detail.
 
-## 🧪 How compatibility is evaluated
+## 🧪 How full recompilation is evaluated
 
-PPSX33 tracks different milestones separately:
+PPSX33 tracks the full-recompilation pipeline in separate, verifiable stages:
 
 - **Decode/lift coverage:** which instruction encodings the tool recognises or translates.
 - **Semantic correctness:** whether translated instructions reproduce expected guest state.
@@ -188,16 +188,16 @@ PPSX33 tracks different milestones separately:
 
 A percentage in a lift report is not a compatibility rating. A title should only be described as playable when that claim is backed by reproducible end-to-end testing. See [PPU coverage](docs/PPU_COVERAGE.md) and the individual reports in [game documentation](docs/games/README.md).
 
-## 🧭 Current engineering priorities
+## 🧭 Full-recompilation priorities
 
-The most useful work is correctness-first:
+The engineering target is to close the gaps between translated code and a working native game build:
 
-1. Make unsupported PPU instructions fail visibly rather than silently becoming no-ops.
-2. Trace invalid guest PCs and unresolved imports without guessing a recovery path.
-3. Implement and test HLE APIs against their actual contracts.
-4. Build a real RSX path incrementally: vertex input, shaders, textures, depth and render targets.
-5. Validate SPU instructions, channels and DMA ordering with isolated tests.
-6. Add regression tests and record the first successful real frame, audio output and input event.
+1. Expand PPU translation and validate instruction semantics, branches, register state, memory behaviour and control flow.
+2. Replace incomplete runtime paths with correct LV2, PRX, NID and cell-library implementations.
+3. Implement SPU execution and accurate MFC/DMA ordering, tags, stalls and synchronization.
+4. Complete the RSX/GCM path, including FIFO processing, shaders, vertex attributes, textures, surfaces, depth, render targets and presentation.
+5. Validate generated native builds with repeatable per-title boot, input, audio and rendering tests.
+6. Add regression coverage and keep unsupported behaviour visible instead of silently treating it as successful execution.
 
 The live task list is maintained in **[ROADMAP.md](ROADMAP.md)**. Contributions should include test evidence or a clear explanation of what remains unverified.
 
