@@ -1,18 +1,20 @@
 
-// HLE status dump is header-local so prebuilt ps3rt.dll need not export the symbol.
-#include "hle_status.h"
+// HLE status dump is fully header-local (no hle_status.h required for game builds).
 static inline void ps3rt_log_hle_status_once(void) {
     static int done = 0;
     if (done) return;
     done = 1;
-    for (int i = 0; i < k_ps3_hle_modules_count; ++i) {
-        const char* st =
-            k_ps3_hle_modules[i].status == PS3_HLE_COMPLETE ? "complete" :
-            k_ps3_hle_modules[i].status == PS3_HLE_PARTIAL ? "partial" :
-            k_ps3_hle_modules[i].status == PS3_HLE_STUB ? "stub" : "oos";
-        ps3rt_log("[hle] %s = %s (%s)\n", k_ps3_hle_modules[i].name, st,
-                  k_ps3_hle_modules[i].notes ? k_ps3_hle_modules[i].notes : "");
-    }
+    static const char* const k_names[] = {
+        "sys_ppu_thread/mutex/cond", "sys_memory/mmapper", "cellFs", "cellPad",
+        "cellAudio", "cellGcmSys", "cellSysutil/sysmodule", "cellSpurs", "RSX/FIFO"
+    };
+    static const char* const k_notes[] = {
+        "subset", "subset", "path map + host I/O", "XInput/host keys",
+        "host path", "control/FIFO kick", "common NIDs", "job assist",
+        "assist draws proven; title stream pending"
+    };
+    for (int i = 0; i < 9; ++i)
+        ps3rt_log("[hle] %s = partial (%s)\n", k_names[i], k_notes[i]);
 }
 
 // XXV-L: sticky wild-pc break + LR-first recovery
