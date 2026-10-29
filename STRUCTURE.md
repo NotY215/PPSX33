@@ -1,20 +1,22 @@
 # PPSX33 source layout
 
 ```
-src/core/          Host tools: ELF, lifter, project API
-src/UI/            GUI target path (sources still in src/gui until path flip)
-src/gui/           Current WinForms project
-Processor/PPU/     PPU module surface
-Processor/SPU/     SPU / MFC / SPURS surface
-GPU/               RSX HAL, memory, shaders
-GPU/dx11/          Default Direct3D 11 backend
-GPU/gl/            Next OpenGL backend
-GPU/vk/            Future Vulkan backend
-Game-Stuff/Audio/  cellAudio, mix, codecs, host backends
-Game-Stuff/Video/  PAMF, demux, decode, present, AV sync
-runtime/           Active ps3rt bodies (rsx_stub, spu_stub, audio_save) until absorbed
+src/
+  core/           loaders/, fs/, memory, HLE kernel (former runtime/ps3rt*)
+  processor/
+    PPU/          lifter, runtime headers, interpreter/JIT surface
+    SPU/          interpreter (former spu_stub), local store, JIT future
+  RSX/            device (former rsx_stub), FIFO/state/memory/shaders
+    Backends/
+      DX11/       default
+      OpenGL/     future phase 2
+      Vulkan/     future phase 3
+  games-stuff/
+    Audio/        device (former audio_save), drivers, decoders
+    Video/        PAMF, demux, codecs, present
+  UI/             WinForms GUI (former src/gui) + future C++ panels
 ```
 
-**Migration:** new code in module folders. Monoliths stay linked until each symbol moves. Assist FIFO is probe-only; title PUT required for real scenes.
+There is **no** top-level `runtime/` source tree. Prebuilt `ps3rt.dll` and run headers still install under `build/dist/runtime/` for game linking.
 
-Site: https://ppsx33.xo.je/
+Website: https://ppsx33.xo.je/
