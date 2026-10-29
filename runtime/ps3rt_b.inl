@@ -72,8 +72,13 @@ case 41: case 43: case 44: case 45: case 46: case 47: {
     if ((uint32_t)num == 41 && r3 && r3 + 4 <= g_mem_size) wr_be32_guest(r3, s_tid++);
     c->gpr[3] = 0; break;
 }
-case 48: case 49: case 50: case 51: case 52: case 53:
-    c->gpr[3] = 0; break;
+case 48: case 49: case 50: case 51: case 52: case 53: {
+    // 48: sys_ppu_thread_join — return success so boot does not wait forever
+    c->gpr[3] = 0;
+    extern void ps3rt_progress_hw(void);
+    ps3rt_progress_hw();
+    break;
+}
 case 90: case 91: case 92: case 93: case 94: case 95: case 96:
     c->gpr[3] = 0; break;
 case 100: case 101: case 102: case 103: case 104: case 105: case 106: case 107:
@@ -127,8 +132,13 @@ case 145:
 case 156: case 157: case 158: case 159:
 case 160: case 161: case 162: case 163: case 165: case 166: case 167:
 case 169: case 170: case 171: case 172: case 173: case 174: case 175:
-case 176: case 177: case 178: case 179: case 180: case 181:
-    c->gpr[3] = 0; break;
+case 176: case 177: case 178: case 179: case 180: case 181: {
+    // SPU thread group / event-family syscalls — success + HW progress (GOW sc 169 r3=6)
+    c->gpr[3] = 0;
+    extern void ps3rt_progress_hw(void);
+    ps3rt_progress_hw();
+    break;
+}
 case 330: case 331: case 332: case 333: case 334:
     c->gpr[3] = 0; break;
 case 348: case 349: case 350: case 351: case 352: case 353: case 354: {

@@ -351,7 +351,9 @@ while (!c.halted) {
                     }
                     uint64_t next = 0;
                     uint64_t lr = c.lr;
-                    if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr != alt)
+                    // Log: sticky alt=lr=0x199c78 but soft-continue skipped LR because lr==alt,
+                    // then stack scan picked null-loop 0x105e8. Prefer LR whenever it is in chunks.
+                    if (lr && (lr & 3ull) == 0 && pc_in_chunks(lr, chunks, n) && lr >= 0x10000ull)
                         next = lr;
                     if (!next) {
                         uint64_t sp = c.gpr[1];
@@ -361,7 +363,23 @@ while (!c.halted) {
                             uint64_t cand = rd64(c, a);
                             if (!cand || (cand & 3ull) != 0) continue;
                             if (!pc_in_chunks(cand, chunks, n)) continue;
-                            if (cand == alt || cand == c.pc) continue;
+                            if (cand == c.pc) continue;
+                            // Avoid known soft-null islands when better candidates may exist later
+                            if (cand == 0x105e8ull || cand == 0x10218ull) continue;
+                            if (cand == alt) continue;
+                            next = cand;
+                        }
+                    }
+                    // Last resort stack candidates including 0x105e8-class only if nothing else
+                    if (!next) {
+                        uint64_t sp = c.gpr[1];
+                        for (int off = 0; off < 0x4000 && !next; off += 8) {
+                            uint64_t a = sp + (uint64_t)off;
+                            if (!guest_ok(c, a, 8)) break;
+                            uint64_t cand = rd64(c, a);
+                            if (!cand || (cand & 3ull) != 0) continue;
+                            if (!pc_in_chunks(cand, chunks, n)) continue;
+                            if (cand == c.pc || cand == alt) continue;
                             next = cand;
                         }
                     }
@@ -536,13 +554,28 @@ static int wild_log2 = 0;
                         (ret == last_null_lr ||
                          (ret >= (last_null_lr & ~0xFFull) && ret < (last_null_lr & ~0xFFull) + 0x100));
                     if (same_site) {
-                        if (++stub_same_lr > 32) {
-                            // XX-H: sticky null-loop at same LR — skip forward and force HW progress
+                        if (++stub_same_lr > 16) {
+                            // Escalate earlier: GOW spins import->0x336660 for dozens of calls
                             ++soft_breaks;
                             stub_same_lr = 0;
                             ps3rt_progress_hw();
                             ++progress_pokes;
-                            uint64_t alt = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
+                            // Prefer LR if different from ret; then TOC-region chunk starts; then recover
+                            uint64_t alt = 0;
+                            if (c.lr && c.lr != ret && pc_in_chunks(c.lr, chunks, n) && !is_banned(c.lr))
+                                alt = c.lr;
+                            if (!alt && c.gpr[2]) {
+                                uint64_t toc = c.gpr[2] & 0xFFFFFFFFull;
+                                for (size_t ci = 0; ci < n; ++ci) {
+                                    uint64_t st = chunks[ci].start;
+                                    if (!st || is_banned(st)) continue;
+                                    if (st >= (toc > 0x100000 ? toc - 0x100000 : 0) && st < toc + 0x200000) {
+                                        alt = st; break;
+                                    }
+                                }
+                            }
+                            if (!alt)
+                                alt = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
                             if (alt && alt != ret && !is_banned(alt)) {
                                 if (soft_breaks <= 32 || (soft_breaks & 0x1F) == 0)
                                     ps3rt_log("[ps3] null-loop recover 0x%llx -> 0x%llx (soft_breaks=%d)\n",
