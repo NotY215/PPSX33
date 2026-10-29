@@ -12,7 +12,10 @@
 </p>
 
 <p align="center">
+  <a href="https://ppsx33.xo.je/">🌐 Website</a> ·
   <a href="ROADMAP.md">🧭 Roadmap</a> ·
+  <a href="docs/ARCHITECTURE.md">🏗️ Architecture</a> ·
+  <a href="docs/DIAGRAMS.md">📊 Diagrams</a> ·
   <a href="ENGINEERING.md">📐 Engineering</a> ·
   <a href="docs/DEVELOPER_GUIDE.md">🛠️ Developer guide</a> ·
   <a href="USER_MANUAL.md">📘 User manual</a> ·
@@ -20,6 +23,7 @@
 </p>
 
 <p align="center">
+  <a href="https://ppsx33.xo.je/"><img alt="Website" src="https://img.shields.io/badge/website-ppsx33.xo.je-00B4D8?style=for-the-badge"></a>
   <img alt="Platform: Windows x64" src="https://img.shields.io/badge/platform-Windows%20x64-0078D4?style=for-the-badge">
   <img alt="Graphics: Direct3D 11" src="https://img.shields.io/badge/graphics-Direct3D%2011-6A5ACD?style=for-the-badge">
   <img alt="Goal: Full Recompilation" src="https://img.shields.io/badge/goal-full%20recompilation-6A5ACD?style=for-the-badge">
@@ -36,8 +40,6 @@
 PPSX33 is an open-source PlayStation 3 recompiler whose main objective is **full recompilation**: translate a game's PowerPC code and supporting execution paths into a native Windows build, with a host runtime that reproduces the PS3 system services and hardware behaviour the title depends on.
 
 This is a whole-system engineering target, not just an ELF-to-C++ conversion. The project must progressively cover instruction semantics, control flow, kernel and library services, SPU/MFC/DMA behaviour, and RSX/GCM graphics so that generated builds can execute real games correctly. Implementation status is reported explicitly below and in the roadmap.
-
-
 
 ### 🔁 The pipeline
 
@@ -75,7 +77,6 @@ PPSX33 is being developed toward full recompilation. These statuses describe imp
 
 **Legend:** 🟢 implemented baseline · 🟡 partial or under active development · 🔴 not established / major work remains
 
-
 ## 📚 Module status (HLE / runtime)
 
 HLE and host services written for this project. Public emulator behaviour may be used as a **reference for expected results**, not as a code source. Counts are approximate; individual titles can still fail on “Complete” rows if a code path is wrong or incomplete.
@@ -102,6 +103,26 @@ HLE and host services written for this project. Public emulator behaviour may be
 Task-level tracking: [ROADMAP.md](ROADMAP.md).
 
 For the task-level breakdown and longer-term architecture plan, see **[ROADMAP.md](ROADMAP.md)** and **[PPU coverage notes](docs/PPU_COVERAGE.md)**. Game-specific evidence and logs are collected under **[docs/games](docs/games/README.md)**.
+
+## 🏗️ Architecture & documentation
+
+| Document | Description |
+| --- | --- |
+| **[Website](https://ppsx33.xo.je/)** | Project site |
+| **[Architecture](docs/ARCHITECTURE.md)** | Containers, runtime layers, PPU/RSX pipelines (Mermaid, PlantUML, D2, C4, …) |
+| **[Diagrams index](docs/DIAGRAMS.md)** | Mermaid, PlantUML, Graphviz, WaveDrom, Vega-Lite, Nomnoml, Markmap, Kroki, … |
+| **[Roadmap](ROADMAP.md)** | Phased gates and status |
+| **[Engineering](ENGINEERING.md)** | Build and contributor notes |
+
+High-level flow:
+
+```mermaid
+flowchart LR
+  ELF[Decrypted ELF] --> Lift[PPU lift]
+  Lift --> Build[MSVC game EXE]
+  Build --> RT[ps3rt runtime]
+  RT --> D3D[D3D11 present]
+```
 
 ## 🧩 Why this is difficult
 
@@ -137,6 +158,8 @@ PPSX33/
 │   ├── ppsx33-logo.ico    # Windows icon asset
 │   └── ppsx33-banner.png  # README / project banner
 ├── docs/
+│   ├── ARCHITECTURE.md    # System architecture diagrams
+│   ├── DIAGRAMS.md        # Diagram language index
 │   ├── DEVELOPER_GUIDE.md
 │   ├── PPU_COVERAGE.md
 │   └── games/             # Per-title notes, reports and logs
@@ -167,7 +190,7 @@ Linux and macOS are **not supported host-runtime targets at present**. Requireme
 4. Run the repository build helper:
 
    ```bat
-   scripts\build_all.bat
+   scripts\\build_all.bat
    ```
 
 5. Launch the generated GUI if the build completes successfully.
@@ -224,7 +247,10 @@ Please keep changes scoped, explain assumptions, and do not add copyrighted game
 
 ## 🔗 Project references
 
+- 🌐 [Website](https://ppsx33.xo.je/)
 - 🧭 [Roadmap](ROADMAP.md)
+- 🏗️ [Architecture](docs/ARCHITECTURE.md)
+- 📊 [Diagrams](docs/DIAGRAMS.md)
 - 🛠️ [Developer guide](docs/DEVELOPER_GUIDE.md)
 - 📘 [User manual](USER_MANUAL.md)
 - 🧪 [PPU coverage report](docs/PPU_COVERAGE.md)
