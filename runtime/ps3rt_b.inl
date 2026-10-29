@@ -134,6 +134,14 @@ case 330: case 331: case 332: case 333: case 334:
 case 348: case 349: case 350: case 351: case 352: case 353: case 354: {
     // GOW: sc 352 r3/r4 = 0xf0ffbxx stack addrs must not count as size.
     auto looks_size = [](uint64_t v) -> bool {
+        // Direct register sizes may be unaligned (GOW: 0x3cc7f8).
+        if (v < 0x100ull || v > 0x08000000ull) return false;
+        if (v >= 0x0E000000ull) return false;
+        if ((v & 0xFFF00000ull) == 0x0F000000ull) return false;
+        return true;
+    };
+    auto looks_size_scan = [](uint64_t v) -> bool {
+        // Stack-scan only: reject TOC-like unaligned mid VAs (0x52d6c8).
         if (v < 0x100ull || v > 0x08000000ull) return false;
         if (v >= 0x0E000000ull) return false;
         if ((v & 0xFFF00000ull) == 0x0F000000ull) return false;
@@ -151,21 +159,21 @@ case 348: case 349: case 350: case 351: case 352: case 353: case 354: {
     else if (looks_ptr(r3) && looks_ptr(r4)) {
         uint64_t s1 = rd_be32_guest(r4);
         uint64_t s2 = rd_be32_guest(r3);
-        if (looks_size(s1)) { sz = s1; out = r3; flags = r5; }
-        else if (looks_size(s2)) { sz = s2; out = r4; flags = r5; }
+        if (looks_size_scan(s1)) { sz = s1; out = r3; flags = r5; }
+        else if (looks_size_scan(s2)) { sz = s2; out = r4; flags = r5; }
         else {
             s1 = rd_be64_guest(r4); s2 = rd_be64_guest(r3);
-            if (looks_size(s1)) { sz = s1; out = r3; }
-            else if (looks_size(s2)) { sz = s2; out = r4; }
+            if (looks_size_scan(s1)) { sz = s1; out = r3; }
+            else if (looks_size_scan(s2)) { sz = s2; out = r4; }
         }
         if (!sz) {
             for (int off = 0; off <= 0x40 && !sz; off += 4) {
                 uint64_t bases[2] = { r3, r4 };
                 for (int bi = 0; bi < 2 && !sz; ++bi) {
                     uint64_t cand = rd_be32_guest(bases[bi] + (uint64_t)off);
-                    if (looks_size(cand)) { sz = cand; out = r3; break; }
+                    if (looks_size_scan(cand)) { sz = cand; out = r3; break; }
                     cand = rd_be64_guest(bases[bi] + (uint64_t)off);
-                    if (looks_size(cand)) { sz = cand; out = r3; break; }
+                    if (looks_size_scan(cand)) { sz = cand; out = r3; break; }
                 }
             }
         }
@@ -1267,17 +1275,26 @@ PS3RT_API void ps3rt_progress_hw(void) {
             static uint32_t s_max_seen_put = 0;
             uint64_t fc = ps3rt_rsx_flip_count();
             if (put > s_max_seen_put) s_max_seen_put = put;
-            if (s_max_seen_put > 0x200u) s_allow_inject = 0;
-            if (s_allow_inject && (put == get || put <= 0x80) && s_inj_flip != fc && s_boot_n < 128) {
+            // Do not kill inject on inject's own cursor (was put=0x208 > 0x200).
+            // Guest stream detection below.
+            int did_inject = 0;
+            if (s_allow_inject && (put == get || put <= 0x80) && s_inj_flip != fc && s_boot_n < 256) {
                 s_inj_flip = fc;
                 ++s_boot_n;
                 gcm_inject_clear_draw();
+                did_inject = 1;
                 put = ps3rt_rsx_get_put();
                 get = ps3rt_rsx_get_get();
                 if (s_boot_n <= 8 || (s_boot_n & 7) == 0)
                     ps3rt_log("[gcm] boot FIFO assist #%d put=0x%x get=0x%x\n", s_boot_n, put, get);
-            } else if (put != get && put > 0x80) {
+            } else if (!did_inject && put != get && put > 0x100) {
+                static int s_guest_put_hits = 0;
                 static int s_guest = 0;
+                ++s_guest_put_hits;
+                if (s_guest_put_hits >= 3 && s_allow_inject) {
+                    s_allow_inject = 0;
+                    ps3rt_log("[gcm] inject OFF — guest PUT stream (put=0x%x get=0x%x)\n", put, get);
+                }
                 if (s_guest < 12) {
                     ps3rt_log("[gcm] XXIV-B guest put=0x%x get=0x%x\n", put, get);
                     ++s_guest;
