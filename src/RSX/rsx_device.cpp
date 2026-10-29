@@ -130,7 +130,21 @@ static ID3D11SamplerState* g_samp = nullptr;
 static ID3D11ShaderResourceView* g_srv_tex = nullptr;
 static int g_hlsl_ready = 0;
 
-static const char* kBlitHLSL = R"(\nstruct VSIn { float2 pos : POSITION; float2 uv : TEXCOORD0; };\nstruct VSOut { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };\nTexture2D tex0 : register(t0);\nSamplerState samp0 : register(s0);\nVSOut VSMain(VSIn i) {\n  VSOut o;\n  o.pos = float4(i.pos, 0, 1);\n  o.uv = i.uv;\n  return o;\n}\nfloat4 PSMain(VSOut i) : SV_Target {\n  // XXIII-Y: sample guest texture; solid fallback tint if unbound\n  float4 c = tex0.Sample(samp0, i.uv);\n  return c;\n}\n)";
+static const char* kBlitHLSL = R"(
+struct VSIn { float2 pos : POSITION; float2 uv : TEXCOORD0; };
+struct VSOut { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
+Texture2D tex0 : register(t0);
+SamplerState samp0 : register(s0);
+VSOut VSMain(VSIn i) {
+  VSOut o;
+  o.pos = float4(i.pos, 0, 1);
+  o.uv = i.uv;
+  return o;
+}
+float4 PSMain(VSOut i) : SV_Target {
+  return tex0.Sample(samp0, i.uv);
+}
+)";
 
 static bool rsx_ensure_hlsl() {
     if (g_hlsl_ready) return g_vs_blit && g_ps_blit;
@@ -151,8 +165,11 @@ static bool rsx_ensure_hlsl() {
     HRESULT hr = pCompile(kBlitHLSL, strlen(kBlitHLSL), "blit", nullptr, nullptr,
         "VSMain", "vs_4_0", 0, 0, &vsb, &err);
     if (FAILED(hr) || !vsb) {
-        ps3rt_log("[rsx] XXIV-C VS compile fail\n");
-        if (err) err->Release();
+        ps3rt_log("[rsx] XXIV-C VS compile fail hr=0x%08X\n", (unsigned)hr);
+        if (err) {
+            ps3rt_log("[rsx] D3DCompile: %s\n", (const char*)err->GetBufferPointer());
+            err->Release();
+        }
         return false;
     }
     hr = pCompile(kBlitHLSL, strlen(kBlitHLSL), "blit", nullptr, nullptr,
@@ -225,7 +242,17 @@ static void rsx_sync_guest_host(uint8_t* mem);
 
 static int g_solid_ready = 0;
 
-static const char* kSolidHLSL = R"(\nstruct VSIn { float2 pos : POSITION; float4 col : COLOR0; };\nstruct VSOut { float4 pos : SV_POSITION; float4 col : COLOR0; };\nVSOut VSMain(VSIn i) { VSOut o; o.pos = float4(i.pos, 0, 1); o.col = i.col; return o; }\nfloat4 PSMain(VSOut i) : SV_Target { return i.col; }\n)";
+static const char* kSolidHLSL = R"(
+struct VSIn { float2 pos : POSITION; float4 col : COLOR0; };
+struct VSOut { float4 pos : SV_POSITION; float4 col : COLOR0; };
+VSOut VSMain(VSIn i) {
+  VSOut o;
+  o.pos = float4(i.pos, 0, 1);
+  o.col = i.col;
+  return o;
+}
+float4 PSMain(VSOut i) : SV_Target { return i.col; }
+)";
 
 static bool rsx_ensure_solid() {
     if (g_solid_ready) return g_vs_solid && g_ps_solid;

@@ -30,7 +30,9 @@ static inline void ps3rt_log_hle_status_once(void) {
 static inline bool is_null_island_pc(uint64_t p) {
     if (!p) return true;
     if (p == 0x199c78ull || p == 0x105e8ull || p == 0x10218ull) return true;
-    if (p == 0x33723cull) return true; // soft-left ping-pong target in GOW3 log
+    if (p == 0x33723cull) return true;
+    if (p == 0x336660ull || p == 0x336750ull) return true;
+    if (p >= 0x336000ull && p < 0x338000ull) return true;
     return false;
 }
 
@@ -616,10 +618,22 @@ static int wild_log2 = 0;
                             if (!alt)
                                 alt = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
                             if (alt && alt != ret && !is_banned(alt)) {
-                                if (soft_breaks <= 32 || (soft_breaks & 0x1F) == 0)
-                                    ps3rt_log("[ps3] null-loop recover 0x%llx -> 0x%llx (soft_breaks=%d)\n",
-                                        (unsigned long long)ret, (unsigned long long)alt, soft_breaks);
-                                ret = alt;
+                                if (is_null_island_pc(alt) || (alt >= 0x336000ull && alt < 0x337000ull))
+                                    alt = 0;
+                                if (!alt) {
+                                    for (size_t ci = 0; ci < n && !alt; ++ci) {
+                                        uint64_t st = chunks[ci].start;
+                                        if (st && !is_banned(st) && !is_null_island_pc(st)
+                                            && !(st >= 0x336000ull && st < 0x337000ull))
+                                            alt = st;
+                                    }
+                                }
+                                if (alt) {
+                                    if (soft_breaks <= 32 || (soft_breaks & 0x1F) == 0)
+                                        ps3rt_log("[ps3] null-loop recover 0x%llx -> 0x%llx (soft_breaks=%d)\n",
+                                            (unsigned long long)ret, (unsigned long long)alt, soft_breaks);
+                                    ret = alt;
+                                }
                             } else {
                                 // Growing stride: 0x400 → 0x1000 → 0x4000 → 0x10000
                                 uint64_t stride = 0x400ull;

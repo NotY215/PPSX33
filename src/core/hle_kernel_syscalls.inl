@@ -1503,6 +1503,20 @@ PS3RT_API void ps3rt_vmx_dispatch(PPUContext* c, unsigned xo11, unsigned vd, uns
         for (int i = 0; i < 16; ++i) d[i] = (uint8_t)(a[i] & ~b[i]); break;
     case 388: // vaddubm
         for (int i = 0; i < 16; ++i) d[i] = (uint8_t)(a[i] + b[i]); break;
+    case 400: // vadduhm
+        for (int i = 0; i < 8; ++i) {
+            uint16_t xa = (uint16_t)(a[i*2] << 8 | a[i*2+1]);
+            uint16_t xb = (uint16_t)(b[i*2] << 8 | b[i*2+1]);
+            uint16_t xr = (uint16_t)(xa + xb);
+            d[i*2] = (uint8_t)(xr >> 8); d[i*2+1] = (uint8_t)xr;
+        } break;
+    case 401: case 128: // vadduwm (XO forms seen as 401 in log)
+        for (int i = 0; i < 4; ++i) {
+            uint32_t xa = ((uint32_t)a[i*4]<<24)|((uint32_t)a[i*4+1]<<16)|((uint32_t)a[i*4+2]<<8)|a[i*4+3];
+            uint32_t xb = ((uint32_t)b[i*4]<<24)|((uint32_t)b[i*4+1]<<16)|((uint32_t)b[i*4+2]<<8)|b[i*4+3];
+            uint32_t xr = xa + xb;
+            d[i*4]=(uint8_t)(xr>>24); d[i*4+1]=(uint8_t)(xr>>16); d[i*4+2]=(uint8_t)(xr>>8); d[i*4+3]=(uint8_t)xr;
+        } break;
     case 1408: case 1412: // vcmpequb / h
         for (int i = 0; i < 16; ++i) d[i] = (a[i] == b[i]) ? 0xFF : 0; break;
     case 1476: // vcmpequw bytes-as-words eq soft
