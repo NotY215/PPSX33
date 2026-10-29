@@ -592,9 +592,21 @@ static int gcm_hle(PPUContext* c, uint32_t nid) {
             uint32_t id = (uint32_t)c->gpr[3];
             if (id < 8) g_gcm_current_fb = id;
             {
-                // NV406E_SET_REFERENCE-style / user command marker so put != get
                 uint32_t arg = id & 7u;
-                gcm_fifo_emit_method(0x0050, 1, &arg); // SET_REFERENCE-ish method slot
+                gcm_fifo_emit_method(0x0050, 1, &arg);
+            }
+            if (g_gcm_control && g_mem) {
+                uint32_t put = gcm_rd_ctrl_u32(g_gcm_control + 0);
+                uint32_t get = gcm_rd_ctrl_u32(g_gcm_control + 4);
+                if (put == get || put <= 0x80u) {
+                    static int s_flip_inj = 0;
+                    gcm_inject_clear_draw();
+                    if (s_flip_inj < 16) {
+                        ps3rt_log("[gcm] SetFlip FIFO kick inject fb=%u put=0x%x get=0x%x\n",
+                            id, put, get);
+                        ++s_flip_inj;
+                    }
+                }
             }
             if (g_mem) ps3rt_rsx_flush(g_mem);
             ps3rt_rsx_flip(id);

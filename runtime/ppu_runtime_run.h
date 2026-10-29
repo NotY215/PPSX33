@@ -1,4 +1,20 @@
-PS3RT_API void ps3rt_log_hle_status_once(void);
+
+// HLE status dump is header-local so prebuilt ps3rt.dll need not export the symbol.
+#include "hle_status.h"
+static inline void ps3rt_log_hle_status_once(void) {
+    static int done = 0;
+    if (done) return;
+    done = 1;
+    for (int i = 0; i < k_ps3_hle_modules_count; ++i) {
+        const char* st =
+            k_ps3_hle_modules[i].status == PS3_HLE_COMPLETE ? "complete" :
+            k_ps3_hle_modules[i].status == PS3_HLE_PARTIAL ? "partial" :
+            k_ps3_hle_modules[i].status == PS3_HLE_STUB ? "stub" : "oos";
+        ps3rt_log("[hle] %s = %s (%s)\n", k_ps3_hle_modules[i].name, st,
+                  k_ps3_hle_modules[i].notes ? k_ps3_hle_modules[i].notes : "");
+    }
+}
+
 // XXV-L: sticky wild-pc break + LR-first recovery
 // XXV-F full depth: validate_guest_pc, capture_guest_fault, strict/storm
 #include <cstdlib>
