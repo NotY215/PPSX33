@@ -1,3 +1,7 @@
 #pragma once
-// WORK: IR to HLSL/GLSL/SPIR-V.
-namespace ppsx33::rsx { void rsx_shader_compiler_init(); }
+#include <cstdint>
+namespace ppsx33 { namespace rsx {
+// Host shader path is Vulkan clear/blit for now; SCE VP/FP compile is future.
+void rsx_shader_compiler_init();
+int rsx_shader_compiler_has_program();
+}}

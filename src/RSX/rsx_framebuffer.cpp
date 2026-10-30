@@ -1,4 +1,23 @@
-// WORK: Render targets.
-// Split surface — active path in rsx_device.cpp until further extraction.
+// WORK: Guest color/depth surface binding for present path.
 #include "rsx_framebuffer.h"
-namespace ppsx33::rsx { void rsx_framebuffer_init(){} }
+#include <mutex>
+namespace ppsx33 { namespace rsx {
+static ColorSurface g_color;
+static std::mutex g_fb_mu;
+void rsx_framebuffer_init() {
+    std::lock_guard<std::mutex> lk(g_fb_mu);
+    g_color = {};
+}
+void rsx_framebuffer_bind_color(uint32_t offset, uint32_t pitch, uint32_t w, uint32_t h, uint32_t format) {
+    std::lock_guard<std::mutex> lk(g_fb_mu);
+    g_color.offset = offset;
+    g_color.pitch = pitch ? pitch : (w ? ((w * 4u + 63u) & ~63u) : 0);
+    if (w) g_color.width = w;
+    if (h) g_color.height = h;
+    g_color.format = format;
+}
+ColorSurface rsx_framebuffer_color() {
+    std::lock_guard<std::mutex> lk(g_fb_mu);
+    return g_color;
+}
+}}

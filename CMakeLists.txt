@@ -47,6 +47,12 @@ if(WIN32)
     src/RSX/Backends/Vulkan/rsx_vk_command.cpp
     src/RSX/Backends/Vulkan/rsx_vk_pipelines.cpp
     src/RSX/rsx_fifo.cpp
+    src/RSX/rsx_framebuffer.cpp
+    src/RSX/rsx_memory.cpp
+    src/RSX/rsx_state.cpp
+    src/RSX/rsx_texture.cpp
+    src/RSX/rsx_shader_compiler.cpp
+    src/RSX/rsx_shader_decoder.cpp
     src/processor/SPU/spu_interpreter.cpp
     src/games-stuff/Audio/audio_device.cpp
   )
@@ -62,7 +68,7 @@ if(WIN32)
   if(MSVC)
     target_compile_options(ps3rt PRIVATE /bigobj)
   endif()
-  target_link_libraries(ps3rt PRIVATE user32 gdi32 ole32 winmm xaudio2)
+  target_link_libraries(ps3rt PRIVATE user32 gdi32 ole32 uuid windowscodecs winmm xaudio2)
   set_target_properties(ps3rt PROPERTIES PREFIX "" OUTPUT_NAME "ps3rt")
   # Single layout: ps3rt.dll / ps3rt.lib stay in dist/ next to PS3Recomp.exe
   # (do not also copy into dist/runtime/ — headers only live there)

@@ -1,3 +1,6 @@
 #pragma once
-// WORK: NV40 microcode to IR.
-namespace ppsx33::rsx { void rsx_shader_decoder_init(); }
+#include <cstdint>
+namespace ppsx33 { namespace rsx {
+void rsx_shader_decoder_init();
+void rsx_shader_decoder_note_ucode(uint32_t offset, uint32_t size);
+}}

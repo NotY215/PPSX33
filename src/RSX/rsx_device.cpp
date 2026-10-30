@@ -1,14 +1,24 @@
 // WORK: RSX/libgcm host path — Vulkan 1.2 default, OpenGL secondary. DX11 removed.
 #include "rsx_device.h"
 #include "rsx_fifo.h"
+#include "rsx_framebuffer.h"
+#include "rsx_memory.h"
+#include "rsx_state.h"
+#include "rsx_texture.h"
+#include "rsx_shader_compiler.h"
+#include "rsx_shader_decoder.h"
 #include "Backends/Vulkan/rsx_vk_backend.h"
 #include <cstdint>
 #include <cstddef>
+#include <cstdlib>
 #include <cstring>
 #include <cstdio>
 #include <algorithm>
 #include <mutex>
 #include <windows.h>
+#include <wincodec.h>
+#pragma comment(lib, "windowscodecs.lib")
+#pragma comment(lib, "ole32.lib")
 
 #ifndef PS3RT_API
 #  if defined(_WIN32) && defined(PS3RT_BUILD_DLL)
@@ -56,6 +66,7 @@ static void rsx_surface_bind_color(uint32_t offset, uint32_t pitch, uint32_t w, 
     g_rsx.color_pitch = pitch;
     if (w) g_rsx.width = w;
     if (h) g_rsx.height = h;
+    ppsx33::rsx::rsx_framebuffer_bind_color(offset, pitch, w, h, 0);
 }
 
 
@@ -66,33 +77,134 @@ static LRESULT CALLBACK RsxWndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
 }
 
 #if defined(_WIN32)
-static HICON load_pic1_png_as_hicon() {
-    char path[512];
-    DWORD n = GetModuleFileNameA(nullptr, path, sizeof(path));
-    if (!n || n >= sizeof(path)) return nullptr;
-    char* slash = strrchr(path, '\\');
-    if (!slash) slash = strrchr(path, '/');
-    if (slash) {
-        /* parent of USRDIR often holds PIC1.PNG */
-        *slash = 0;
-        slash = strrchr(path, '\\');
-        if (!slash) slash = strrchr(path, '/');
-        if (slash) {
-            std::snprintf(slash + 1, sizeof(path) - (size_t)(slash + 1 - path), "PIC1.PNG");
-        }
-    }
-    /* LoadImage only for .ico; PNG needs GDI+ — skip if not ico */
-    return nullptr;
+// Resolve PS3_GAME path: EXE in USRDIR → parent is PS3_GAME
+static int rsx_game_root(char* out, size_t out_sz) {
+    if (!out || out_sz < 8) return 0;
+    DWORD n = GetModuleFileNameA(nullptr, out, (DWORD)out_sz);
+    if (!n || n >= out_sz) return 0;
+    char* slash = strrchr(out, '\\');
+    if (!slash) slash = strrchr(out, '/');
+    if (!slash) return 0;
+    *slash = 0; // drop EXE name → USRDIR
+    slash = strrchr(out, '\\');
+    if (!slash) slash = strrchr(out, '/');
+    if (!slash) return 0;
+    *slash = 0; // drop USRDIR → PS3_GAME
+    return 1;
 }
+
+// PNG/JPG → HICON via Windows Imaging Component (windowscodecs)
+static HICON rsx_load_png_as_hicon(const char* path, int cx, int cy) {
+    if (!path || !path[0]) return nullptr;
+    HRESULT hr_co = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    bool need_uninit = SUCCEEDED(hr_co);
+    HICON hicon = nullptr;
+    IWICImagingFactory* factory = nullptr;
+    hr_co = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
+        IID_IWICImagingFactory, (void**)&factory);
+    if (FAILED(hr_co) || !factory) {
+        if (need_uninit) CoUninitialize();
+        return nullptr;
+    }
+    wchar_t wpath[512];
+    MultiByteToWideChar(CP_ACP, 0, path, -1, wpath, 512);
+    IWICBitmapDecoder* dec = nullptr;
+    hr_co = factory->CreateDecoderFromFilename(wpath, nullptr, GENERIC_READ,
+        WICDecodeMetadataCacheOnLoad, &dec);
+    if (SUCCEEDED(hr_co) && dec) {
+        IWICBitmapFrameDecode* frame = nullptr;
+        if (SUCCEEDED(dec->GetFrame(0, &frame)) && frame) {
+            IWICFormatConverter* conv = nullptr;
+            if (SUCCEEDED(factory->CreateFormatConverter(&conv)) && conv) {
+                if (SUCCEEDED(conv->Initialize(frame, GUID_WICPixelFormat32bppBGRA,
+                        WICBitmapDitherTypeNone, nullptr, 0.0, WICBitmapPaletteTypeCustom))) {
+                    UINT w = 0, h = 0;
+                    conv->GetSize(&w, &h);
+                    if (w && h) {
+                        UINT stride = w * 4;
+                        UINT sz = stride * h;
+                        BYTE* bits = (BYTE*)malloc(sz);
+                        if (bits && SUCCEEDED(conv->CopyPixels(nullptr, stride, sz, bits))) {
+                            // Scale via StretchDIBits into DIB section if size mismatch
+                            int dw = cx > 0 ? cx : (int)w;
+                            int dh = cy > 0 ? cy : (int)h;
+                            BITMAPV5HEADER bi{};
+                            bi.bV5Size = sizeof(bi);
+                            bi.bV5Width = dw;
+                            bi.bV5Height = -dh;
+                            bi.bV5Planes = 1;
+                            bi.bV5BitCount = 32;
+                            bi.bV5Compression = BI_BITFIELDS;
+                            bi.bV5RedMask = 0x00FF0000;
+                            bi.bV5GreenMask = 0x0000FF00;
+                            bi.bV5BlueMask = 0x000000FF;
+                            bi.bV5AlphaMask = 0xFF000000;
+                            void* dib_bits = nullptr;
+                            HDC hdc = GetDC(nullptr);
+                            HBITMAP hbmp = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS, &dib_bits, nullptr, 0);
+                            if (hbmp && dib_bits) {
+                                if (dw == (int)w && dh == (int)h) {
+                                    memcpy(dib_bits, bits, sz);
+                                } else {
+                                    // nearest-neighbor scale
+                                    const uint32_t* src = (const uint32_t*)bits;
+                                    uint32_t* dst = (uint32_t*)dib_bits;
+                                    for (int y = 0; y < dh; ++y) {
+                                        int sy = y * (int)h / dh;
+                                        for (int x = 0; x < dw; ++x) {
+                                            int sx = x * (int)w / dw;
+                                            dst[y * dw + x] = src[sy * (int)w + sx];
+                                        }
+                                    }
+                                }
+                                ICONINFO ii{};
+                                ii.fIcon = TRUE;
+                                ii.hbmColor = hbmp;
+                                ii.hbmMask = CreateBitmap(dw, dh, 1, 1, nullptr);
+                                hicon = CreateIconIndirect(&ii);
+                                if (ii.hbmMask) DeleteObject(ii.hbmMask);
+                                DeleteObject(hbmp);
+                            }
+                            ReleaseDC(nullptr, hdc);
+                        }
+                        free(bits);
+                    }
+                }
+                conv->Release();
+            }
+            frame->Release();
+        }
+        dec->Release();
+    }
+    factory->Release();
+    if (need_uninit) CoUninitialize();
+    return hicon;
+}
+
 static void apply_window_icons(HWND hwnd) {
     if (!hwnd) return;
-    HICON big = load_pic1_png_as_hicon();
-    if (big) {
-        SendMessageA(hwnd, WM_SETICON, ICON_BIG, (LPARAM)big);
-        SendMessageA(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)big);
+    char root[512];
+    if (!rsx_game_root(root, sizeof(root))) return;
+    char path_icon0[560], path_pic1[560];
+    std::snprintf(path_icon0, sizeof(path_icon0), "%s\\ICON0.PNG", root);
+    std::snprintf(path_pic1, sizeof(path_pic1), "%s\\PIC1.PNG", root);
+    // Also try USRDIR parent already = PS3_GAME; fallback same folder as EXE
+    HICON small_i = rsx_load_png_as_hicon(path_icon0, 32, 32);
+    HICON big_i = rsx_load_png_as_hicon(path_pic1, 48, 48);
+    if (!big_i) big_i = rsx_load_png_as_hicon(path_icon0, 48, 48);
+    if (!small_i) small_i = big_i;
+    if (big_i) {
+        SendMessageA(hwnd, WM_SETICON, ICON_BIG, (LPARAM)big_i);
+        ps3rt_log("[rsx] window icon from %s\n", path_pic1[0] ? path_pic1 : path_icon0);
+    }
+    if (small_i) {
+        SendMessageA(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)small_i);
+        if (small_i != big_i)
+            ps3rt_log("[rsx] taskbar/small icon from %s\n", path_icon0);
     }
 }
 #endif
+
 
 static void rsx_probe_api_preference() {
     static int once = 0;
@@ -174,9 +286,26 @@ static void rsx_host_present_clear() {
 }
 
 static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
-    (void)arg;
-    if (method <= 0x2000u || (method >= 0x1800u && method <= 0x1C00u)) return true;
-    return false;
+    // NV4097-class methods (method is byte offset style as seen in FIFO decode)
+    switch (method) {
+    case 0x182c: case 0x1830: // color surface offset variants
+        rsx_surface_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height);
+        ppsx33::rsx::rsx_framebuffer_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height, 0);
+        return true;
+    case 0x1d88: case 0x1a00: // texture offset unit0
+        g_rsx.tex_offset = arg;
+        ppsx33::rsx::rsx_texture_bind(0, arg, 0, g_rsx.width, g_rsx.height, 0);
+        return true;
+    case 0x8c0: case 0x8c4: // viewport-ish
+        if (arg) ppsx33::rsx::rsx_state_set_viewport(arg & 0xffffu, (arg >> 16) & 0xffffu);
+        return true;
+    case 0x8c8: case 0x8cc:
+        ppsx33::rsx::rsx_state_set_scissor(arg & 0xffffu, (arg >> 16) & 0xffffu, g_rsx.width, g_rsx.height);
+        return true;
+    default:
+        if (method <= 0x2000u || (method >= 0x1800u && method <= 0x1C00u)) return true;
+        return false;
+    }
 }
 static bool rsx_state_apply_method_p2(uint32_t method, uint32_t arg) {
     (void)method; (void)arg; return false;
@@ -185,7 +314,22 @@ static void rsx_draw_host(uint8_t* mem) {
     (void)mem;
     ++g_rsx.draws_guest_frame;
     ++g_rsx.draws;
-    rsx_host_present_clear();
+    ++g_rsx.draws_diagnostic;
+    ppsx33::rsx::rsx_state_set_draw(4 /* triangles */, g_draw_count ? (uint32_t)g_draw_count : 3u);
+    // Present guest color if bound; else clear
+    int presented = 0;
+    if (g_gfx_api == 0 && rsx_vk_ready() && g_rsx.color_offset) {
+        uint8_t* gmem = ps3rt_guest_mem_ptr();
+        size_t msz = ps3rt_guest_mem_size();
+        auto fb = ppsx33::rsx::rsx_framebuffer_color();
+        uint32_t off = fb.offset ? fb.offset : g_rsx.color_offset;
+        uint32_t gw = fb.width ? fb.width : (g_rsx.width ? g_rsx.width : 1280);
+        uint32_t gh = fb.height ? fb.height : (g_rsx.height ? g_rsx.height : 720);
+        uint32_t pitch = fb.pitch ? fb.pitch : gw * 4u;
+        if (gmem && (size_t)off + (size_t)pitch * gh <= msz)
+            presented = rsx_vk_present_guest_rgba(gmem + off, gw, gh, pitch);
+    }
+    if (!presented) rsx_host_present_clear();
 }
 
 
@@ -365,7 +509,13 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
     g_rsx.fifo_addr = fifo_addr;
     g_rsx.fifo_size = fifo_size ? fifo_size : 0x100000;
     g_rsx.put = g_rsx.get = 0;
-    ppsx33::rsx::rsx_fifo_init(); // XXVI: fifo depth surface linked
+    ppsx33::rsx::rsx_fifo_init();
+    ppsx33::rsx::rsx_framebuffer_init();
+    ppsx33::rsx::rsx_memory_init();
+    ppsx33::rsx::rsx_state_init();
+    ppsx33::rsx::rsx_texture_init();
+    ppsx33::rsx::rsx_shader_compiler_init();
+    ppsx33::rsx::rsx_shader_decoder_init();
     if (!g_hwnd) rsx_host_init(1280, 720);
     ; // XXIV-C prove HLSL at init
     ps3rt_log("[rsx] init fifo=0x%llx size=0x%x backend=%d (guest-PUT probe ready)\n", (unsigned long long)fifo_addr, (unsigned)fifo_size, g_backend);
@@ -412,9 +562,14 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
         uint32_t off = g_rsx.color_offset;
         uint32_t gw = g_rsx.width ? g_rsx.width : 1280;
         uint32_t gh = g_rsx.height ? g_rsx.height : 720;
-        size_t need = (size_t)off + (size_t)gw * gh * 4u;
+        auto fb = ppsx33::rsx::rsx_framebuffer_color();
+        if (fb.width) gw = fb.width;
+        if (fb.height) gh = fb.height;
+        if (fb.offset) off = fb.offset;
+        uint32_t pitch = fb.pitch ? fb.pitch : (gw * 4u);
+        size_t need = (size_t)off + (size_t)pitch * gh;
         if (mem && need <= msz) {
-            presented = rsx_vk_present_guest_rgba(mem + off, gw, gh, gw * 4u);
+            presented = rsx_vk_present_guest_rgba(mem + off, gw, gh, pitch);
             if (presented) rsx_vk_poll_window();
         }
     }
