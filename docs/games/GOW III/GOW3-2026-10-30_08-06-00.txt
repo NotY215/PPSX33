@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_20-42-47.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-10-29_20-42-47.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-10-30_08-06-00.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-10-30_08-06-00.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -131,21 +131,8 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\ppsx33_log_in_game_folder_2026-
 [lv2] alloc VA=0x83ce000 size=0x10000
 [gcm] labels  @ 0x83ce000
 [lv2] alloc VA=0x83e0000 size=0x100000
-[rsx] XXII-L API preference: D3D11 (OpenGL 3.3/2.1 fallback not linked yet)
-[rsx] PIC1 window/taskbar icon from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR/../PIC1.PNG
-[rsx] PIC1 window/taskbar icon from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR/../PIC1.PNG
+[rsx] XXII-L API preference: Vulkan 1.2 (OpenGL secondary; DX11 removed)
 [rsx] XX-O window title="PPSX33 presents GOW3"
-[rsx] D3D11 host present ready 1280x720 (depth+stencil)
-[rsx] XXIV-C HLSL blit VS/PS ready
-[rsx] init fifo=0x83e0000 size=0x100000 backend=1 (guest-PUT probe ready)
-[lv2] alloc VA=0x84e0000 size=0x4000
-[lv2] alloc VA=0x84f0000 size=0x1000000
-[gcm] local_addr @ 0x84f0000
-[gcm] XX-I state ready fifo=0x83e0000 ctrl=0x83cd000 labels=0x83ce000
-[stage] GCM ready end
-[stage] RUNNING
-[ps3] null-loop recover 0x336660 -> 0x430000 (soft_breaks=1)
-[ps3] import stub pc=0x39800000 -> ret=0x430000 (#30)
-[stage] PPU run end
-
---- log end ---
+[rsx] Vulkan: instance API 1.2
+[rsx] Vulkan: device "NVIDIA GeForce GT 740" qfamily=0
+[rsx] Vulkan 1.2 host present ready 1280x720 images=3
