@@ -218,6 +218,7 @@ static void rsx_probe_api_preference() {
         ps3rt_log("[rsx] XXII-L API preference: OpenGL (Vulkan secondary)\n");
 }
 
+static void rsx_host_present_soft();
 static void rsx_host_init(uint32_t w, uint32_t h) {
     if (g_hwnd) return;
     rsx_probe_api_preference();
@@ -244,8 +245,12 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
         if (rsx_vk_init((void*)g_hwnd, g_rsx.width, g_rsx.height)) {
             ps3rt_log("[rsx] host present ready %ux%u (Vulkan 1.2)\n",
                 (unsigned)g_rsx.width, (unsigned)g_rsx.height);
+            /* First frame + message pump so the window is not "Not Responding" */
+            rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
+            rsx_vk_poll_window();
         } else {
             ps3rt_log("[rsx] Vulkan init failed — soft GDI present fallback\n");
+            rsx_host_present_soft();
         }
     } else {
         ps3rt_log("[rsx] host present ready %ux%u (OpenGL path; soft clear interim)\n",
@@ -585,6 +590,19 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     }
     g_rsx.methods_this_frame = 0;
     g_rsx.packets_decoded = 0;
+}
+
+PS3RT_API void ps3rt_rsx_tick(void) {
+    if (g_hwnd) {
+        if (g_gfx_api == 0 && rsx_vk_ready()) {
+            static uint64_t s_tick = 0;
+            if ((++s_tick & 0x3F) == 0)
+                rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
+            rsx_vk_poll_window();
+        } else {
+            rsx_host_present_soft();
+        }
+    }
 }
 
 PS3RT_API uint64_t ps3rt_rsx_flip_count(void) {

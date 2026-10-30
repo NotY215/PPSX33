@@ -170,28 +170,8 @@ public sealed class TermsForm : Form
 
     static string LoadTermsRaw()
     {
-        string[] candidates =
-        {
-            Path.Combine(AppContext.BaseDirectory, "TERMS.md"),
-            Path.Combine(AppContext.BaseDirectory, "..", "TERMS.md"),
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "TERMS.md"),
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "TERMS.md"),
-        };
-        foreach (var p in candidates)
-        {
-            try
-            {
-                string full = Path.GetFullPath(p);
-                if (File.Exists(full))
-                    return File.ReadAllText(full, Encoding.UTF8);
-            }
-            catch { }
-        }
-        return "# PPSX33 — Terms and Conditions\n\n"
-             + "TERMS.md was not found next to the application.\n\n"
-             + "By continuing you agree to use only lawfully owned materials, "
-             + "not to redistribute game data, and acknowledge that PPSX33 ships "
-             + "no proprietary decrypt keys. See repository LEGAL.md and TERMS.md.\n";
+        // Embedded — no TERMS.md file required next to the EXE
+        return EmbeddedTerms.Markdown;
     }
 
     public static string MarkdownToHtml(string md, string user)

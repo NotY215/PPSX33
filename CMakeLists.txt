@@ -126,12 +126,6 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/redist")
     COMMENT "Copy redist/"
     VERBATIM)
 endif()
-if(EXISTS "${CMAKE_SOURCE_DIR}/STRUCTURE.md")
-  add_custom_command(TARGET copy_runtime POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      "${CMAKE_SOURCE_DIR}/STRUCTURE.md" "${CMAKE_BINARY_DIR}/dist/STRUCTURE.md"
-    VERBATIM)
-endif()
 
 find_program(DOTNET_EXE dotnet)
 if(DOTNET_EXE)

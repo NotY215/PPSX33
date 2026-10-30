@@ -781,7 +781,7 @@ int rsx_vk_present_clear(float r, float g, float b, float a) {
     std::lock_guard<std::mutex> lk(g_vk_mu);
     if (!g_vk.ready) return 0;
 
-    g_vk.WaitForFences(g_vk.device, 1, &g_vk.in_flight, VK_TRUE, UINT64_MAX);
+    g_vk.WaitForFences(g_vk.device, 1, &g_vk.in_flight, VK_TRUE, 100000000ull); /* 100ms */
     g_vk.ResetFences(g_vk.device, 1, &g_vk.in_flight);
 
     uint32_t imageIndex = 0;
@@ -859,7 +859,7 @@ int rsx_vk_present_guest_rgba(const void* pixels, uint32_t w, uint32_t h, uint32
     if (!g_vk.ready || !pixels || !w || !h) return 0;
     if (!pitch_bytes) pitch_bytes = w * 4u;
 
-    g_vk.WaitForFences(g_vk.device, 1, &g_vk.in_flight, VK_TRUE, UINT64_MAX);
+    g_vk.WaitForFences(g_vk.device, 1, &g_vk.in_flight, VK_TRUE, 100000000ull); /* 100ms */
     g_vk.ResetFences(g_vk.device, 1, &g_vk.in_flight);
 
     uint32_t imageIndex = 0;
@@ -967,7 +967,8 @@ int rsx_vk_present_guest_rgba(const void* pixels, uint32_t w, uint32_t h, uint32
     pi.pImageIndices = &imageIndex;
     g_vk.QueuePresentKHR(g_vk.queue, &pi);
 
-    g_vk.DeviceWaitIdle(g_vk.device);
+    /* avoid DeviceWaitIdle — free staging after fence on next frame */
+    g_vk.WaitForFences(g_vk.device, 1, &g_vk.in_flight, VK_TRUE, 100000000ull);
     g_vk.DestroyBuffer(g_vk.device, staging, nullptr);
     g_vk.FreeMemory(g_vk.device, staging_mem, nullptr);
     return ok;

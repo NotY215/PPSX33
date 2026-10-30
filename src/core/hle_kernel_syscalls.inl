@@ -1228,7 +1228,9 @@ static void frame_pace_wait() {
 
 PS3RT_API void ps3rt_progress_hw(void) {
     extern void ps3rt_spu_tick_all(void);
+    extern void ps3rt_rsx_tick(void);
     ps3rt_spu_tick_all();
+    ps3rt_rsx_tick(); // keep Vulkan HWND responsive during sticky HLE/boot
 
     if (ps3rt_should_exit()) { ps3rt_force_exit(); return; }
     static int s_ppu_once = 0;
