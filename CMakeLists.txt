@@ -43,6 +43,9 @@ if(WIN32)
     src/core/assets.cpp
     src/RSX/rsx_device.cpp
     src/RSX/Backends/Vulkan/rsx_vk_backend.cpp
+    src/RSX/Backends/Vulkan/rsx_vk_memory.cpp
+    src/RSX/Backends/Vulkan/rsx_vk_command.cpp
+    src/RSX/Backends/Vulkan/rsx_vk_pipelines.cpp
     src/RSX/rsx_fifo.cpp
     src/processor/SPU/spu_interpreter.cpp
     src/games-stuff/Audio/audio_device.cpp

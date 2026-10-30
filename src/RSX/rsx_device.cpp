@@ -1,17 +1,31 @@
 // WORK: RSX/libgcm host path — Vulkan 1.2 default, OpenGL secondary. DX11 removed.
 #include "rsx_device.h"
+#include "rsx_fifo.h"
 #include "Backends/Vulkan/rsx_vk_backend.h"
 #include <cstdint>
+#include <cstddef>
 #include <cstring>
 #include <cstdio>
 #include <algorithm>
 #include <mutex>
 #include <windows.h>
 
+#ifndef PS3RT_API
+#  if defined(_WIN32) && defined(PS3RT_BUILD_DLL)
+#    define PS3RT_API extern "C" __declspec(dllexport)
+#  elif defined(_WIN32)
+#    define PS3RT_API extern "C" __declspec(dllimport)
+#  else
+#    define PS3RT_API extern "C"
+#  endif
+#endif
+
 extern "C" void ps3rt_log(const char* fmt, ...);
 extern "C" const char* ps3rt_get_game_name(void);
 extern "C" uint8_t* ps3rt_guest_mem_ptr(void);
 extern "C" size_t ps3rt_guest_mem_size(void);
+PS3RT_API int  ps3rt_should_exit(void);
+PS3RT_API void ps3rt_force_exit(void);
 
 static int g_backend = 0; /* 0=Vulkan1.2 1=OpenGL */
 
@@ -21,18 +35,28 @@ struct RsxState {
     uint32_t fifo_size = 0;
     uint32_t put = 0, get = 0;
     uint32_t color_offset = 0;
+    uint32_t color_pitch = 0;
     uint64_t flip_count = 0;
     uint32_t methods_seen = 0, unknown_methods = 0, draws_guest_frame = 0;
     uint32_t known_methods = 0, methods_this_frame = 0, draws_guest = 0, draws = 0;
+    int draws_diagnostic = 0;
     uint32_t tex_offset = 0;
     uint32_t fifo_bytes_consumed = 0, packets_decoded = 0;
     bool flip_pending = false;
 };
 static RsxState g_rsx;
+static std::mutex g_rsx_mu;
 static HWND g_hwnd = nullptr;
 static int g_gfx_api = 0; /* 0=Vulkan1.2 1=OpenGL */
 static int g_draw_count = 0;
 static uint32_t g_va_offset[8] = {};
+
+static void rsx_surface_bind_color(uint32_t offset, uint32_t pitch, uint32_t w, uint32_t h) {
+    g_rsx.color_offset = offset;
+    g_rsx.color_pitch = pitch;
+    if (w) g_rsx.width = w;
+    if (h) g_rsx.height = h;
+}
 
 
 static LRESULT CALLBACK RsxWndProc(HWND h, UINT m, WPARAM w, LPARAM l) {

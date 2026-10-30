@@ -1,12 +1,6 @@
-// WORK: Vulkan 1.2 host present — instance, device, swapchain, clear+present.
+// WORK: Vulkan 1.2 host present — instance, device, swapchain, clear+guest present.
 #pragma once
 #include <cstdint>
-
-struct RsxVkPresent {
-    int ready;
-    uint32_t width;
-    uint32_t height;
-};
 
 int  rsx_vk_init(void* hwnd, uint32_t width, uint32_t height);
 void rsx_vk_shutdown(void);
