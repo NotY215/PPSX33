@@ -778,14 +778,15 @@ void rsx_vk_shutdown(void) {
 int rsx_vk_ready(void) { return g_vk.ready; }
 
 int rsx_vk_present_clear(float r, float g, float b, float a) {
-    std::lock_guard<std::mutex> lk(g_vk_mu);
+    if (!g_vk_mu.try_lock()) return 0; // skip frame if busy — never block HWND pump
+    std::lock_guard<std::mutex> lk(g_vk_mu, std::adopt_lock);
     if (!g_vk.ready) return 0;
 
-    g_vk.WaitForFences(g_vk.device, 1, &g_vk.in_flight, VK_TRUE, 100000000ull); /* 100ms */
+    g_vk.WaitForFences(g_vk.device, 1, &g_vk.in_flight, VK_TRUE, 50000000ull); /* 50ms */
     g_vk.ResetFences(g_vk.device, 1, &g_vk.in_flight);
 
     uint32_t imageIndex = 0;
-    VkResult ar = g_vk.AcquireNextImageKHR(g_vk.device, g_vk.swapchain, UINT64_MAX,
+    VkResult ar = g_vk.AcquireNextImageKHR(g_vk.device, g_vk.swapchain, 50000000ull,
         g_vk.image_available, nullptr, &imageIndex);
     if (ar == VK_ERROR_OUT_OF_DATE_KHR || ar == VK_SUBOPTIMAL_KHR) {
         destroy_swapchain_objects();

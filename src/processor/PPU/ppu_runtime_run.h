@@ -596,7 +596,7 @@ static int wild_log2 = 0;
                         (ret == last_null_lr ||
                          (ret >= (last_null_lr & ~0xFFull) && ret < (last_null_lr & ~0xFFull) + 0x100));
                     if (same_site) {
-                        if (++stub_same_lr > 16) {
+                        if (++stub_same_lr > 6) {
                             // Escalate earlier: GOW spins import->0x336660 for dozens of calls
                             ++soft_breaks;
                             stub_same_lr = 0;

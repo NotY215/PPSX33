@@ -72,7 +72,22 @@ static void rsx_surface_bind_color(uint32_t offset, uint32_t pitch, uint32_t w, 
 
 static LRESULT CALLBACK RsxWndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
     if (m == WM_CLOSE) { DestroyWindow(h); return 0; }
-    if (m == WM_DESTROY) { g_hwnd = nullptr; return 0; }
+    if (m == WM_DESTROY) { g_hwnd = nullptr; PostQuitMessage(0); return 0; }
+    if (m == WM_PAINT) {
+        PAINTSTRUCT ps; BeginPaint(h, &ps); EndPaint(h, &ps);
+        if (g_gfx_api == 0 && rsx_vk_ready())
+            rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
+        else {
+            HDC hdc = GetDC(h);
+            if (hdc) {
+                RECT rc; GetClientRect(h, &rc);
+                HBRUSH br = CreateSolidBrush(RGB(8, 16, 32));
+                FillRect(hdc, &rc, br); DeleteObject(br); ReleaseDC(h, hdc);
+            }
+        }
+        return 0;
+    }
+    if (m == WM_ERASEBKGND) return 1;
     return DefWindowProcA(h, m, w, l);
 }
 
@@ -219,6 +234,43 @@ static void rsx_probe_api_preference() {
 }
 
 static void rsx_host_present_soft();
+
+#if defined(_WIN32)
+static HANDLE g_pump_thread = nullptr;
+static volatile long g_pump_run = 0;
+static DWORD WINAPI rsx_pump_thread_main(void*) {
+    while (InterlockedCompareExchange(&g_pump_run, 1, 1) == 1) {
+        if (g_hwnd) {
+            if (g_gfx_api == 0 && rsx_vk_ready()) {
+                static int n = 0;
+                if ((++n & 7) == 0)
+                    rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
+            }
+            MSG msg;
+            while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
+                if (msg.message == WM_QUIT) {
+                    InterlockedExchange(&g_pump_run, 0);
+                    break;
+                }
+                TranslateMessage(&msg);
+                DispatchMessageA(&msg);
+            }
+        }
+        Sleep(16);
+    }
+    return 0;
+}
+static void rsx_start_pump_thread() {
+    if (g_pump_thread) return;
+    InterlockedExchange(&g_pump_run, 1);
+    g_pump_thread = CreateThread(nullptr, 0, rsx_pump_thread_main, nullptr, 0, nullptr);
+    if (g_pump_thread)
+        ps3rt_log("[rsx] HWND pump thread started\n");
+}
+#else
+static void rsx_start_pump_thread() {}
+#endif
+
 static void rsx_host_init(uint32_t w, uint32_t h) {
     if (g_hwnd) return;
     rsx_probe_api_preference();
@@ -237,25 +289,29 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
     g_hwnd = CreateWindowExA(0, "PPSX33_RSX", title, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         80, 80, (int)g_rsx.width + 16, (int)g_rsx.height + 39, nullptr, nullptr, wc.hInstance, nullptr);
     if (!g_hwnd) return;
-#if defined(_WIN32)
-    apply_window_icons(g_hwnd);
-#endif
+    ShowWindow(g_hwnd, SW_SHOW);
+    UpdateWindow(g_hwnd);
     ps3rt_log("[rsx] XX-O window title=\"%s\"\n", title);
     if (g_gfx_api == 0) {
         if (rsx_vk_init((void*)g_hwnd, g_rsx.width, g_rsx.height)) {
             ps3rt_log("[rsx] host present ready %ux%u (Vulkan 1.2)\n",
                 (unsigned)g_rsx.width, (unsigned)g_rsx.height);
-            /* First frame + message pump so the window is not "Not Responding" */
-            rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
+            if (!rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f))
+                ps3rt_log("[rsx] first present_clear failed - will retry on tick\n");
             rsx_vk_poll_window();
         } else {
-            ps3rt_log("[rsx] Vulkan init failed — soft GDI present fallback\n");
+            ps3rt_log("[rsx] Vulkan init failed - soft GDI present fallback\n");
             rsx_host_present_soft();
         }
     } else {
         ps3rt_log("[rsx] host present ready %ux%u (OpenGL path; soft clear interim)\n",
             (unsigned)g_rsx.width, (unsigned)g_rsx.height);
+        rsx_host_present_soft();
     }
+#if defined(_WIN32)
+    apply_window_icons(g_hwnd);
+#endif
+    rsx_start_pump_thread();
 }
 
 static void rsx_host_present_soft() {
@@ -510,21 +566,24 @@ PS3RT_API void ps3rt_set_graphics_backend(int backend) {
 PS3RT_API int ps3rt_get_graphics_backend(void) { return g_backend; }
 
 PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
-    std::lock_guard<std::mutex> lk(g_rsx_mu);
-    g_rsx.fifo_addr = fifo_addr;
-    g_rsx.fifo_size = fifo_size ? fifo_size : 0x100000;
-    g_rsx.put = g_rsx.get = 0;
-    ppsx33::rsx::rsx_fifo_init();
-    ppsx33::rsx::rsx_framebuffer_init();
-    ppsx33::rsx::rsx_memory_init();
-    ppsx33::rsx::rsx_state_init();
-    ppsx33::rsx::rsx_texture_init();
-    ppsx33::rsx::rsx_shader_compiler_init();
-    ppsx33::rsx::rsx_shader_decoder_init();
+    {
+        std::lock_guard<std::mutex> lk(g_rsx_mu);
+        g_rsx.fifo_addr = fifo_addr;
+        g_rsx.fifo_size = fifo_size ? fifo_size : 0x100000;
+        g_rsx.put = g_rsx.get = 0;
+        ppsx33::rsx::rsx_fifo_init();
+        ppsx33::rsx::rsx_framebuffer_init();
+        ppsx33::rsx::rsx_memory_init();
+        ppsx33::rsx::rsx_state_init();
+        ppsx33::rsx::rsx_texture_init();
+        ppsx33::rsx::rsx_shader_compiler_init();
+        ppsx33::rsx::rsx_shader_decoder_init();
+    }
     if (!g_hwnd) rsx_host_init(1280, 720);
-    ; // XXIV-C prove HLSL at init
-    ps3rt_log("[rsx] init fifo=0x%llx size=0x%x backend=%d (guest-PUT probe ready)\n", (unsigned long long)fifo_addr, (unsigned)fifo_size, g_backend);
+    ps3rt_log("[rsx] init fifo=0x%llx size=0x%x backend=%d (guest-PUT probe ready)\n",
+        (unsigned long long)fifo_addr, (unsigned)fifo_size, g_backend);
 }
+
 
 PS3RT_API void ps3rt_rsx_set_color_surface(uint32_t offset, uint32_t w, uint32_t h) {
     rsx_surface_bind_color(offset, w ? ((w*4+63)&~63u) : 0, w, h);
