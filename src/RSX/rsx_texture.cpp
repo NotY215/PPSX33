@@ -13,9 +13,9 @@ void rsx_texture_bind(uint32_t unit, uint32_t offset, uint32_t format, uint32_t 
     std::lock_guard<std::mutex> lk(g_tex_mu);
     g_tex[unit].offset = offset;
     g_tex[unit].format = format;
-    g_tex[unit].width = w;
-    g_tex[unit].height = h;
-    g_tex[unit].pitch = pitch ? pitch : (w * 4u);
+    g_tex[unit].width = w ? w : 1280;
+    g_tex[unit].height = h ? h : 720;
+    g_tex[unit].pitch = pitch ? pitch : ((g_tex[unit].width) * 4u);
 }
 TexUnit rsx_texture_get(uint32_t unit) {
     if (unit >= 8) return {};

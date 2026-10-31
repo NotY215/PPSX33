@@ -469,47 +469,24 @@ StyleTextBox(_roadmap);
     }
 
     static string BuildRequirementsText() =>
-        "PPSX33 — Game Rendering Requirements
-" +
-        "========================================
-
-" +
-        "Applies to running a recompiled game (not the recompiler toolchain).
-
-" +
-        "Supported APIs
-" +
-        "  Vulkan 1.2     DEFAULT host renderer
-" +
-        "  OpenGL 4.3     Secondary path
-" +
-        "  Direct3D 11    Removed — not supported
-
-" +
-        "Output
-" +
-        "  Resolution     1280x720 (720p) fixed present
-
-" +
-        "Minimum (game window / clear present)
-" +
-        "  OS             64-bit Windows 10/11
-" +
-        "  GPU            Vulkan 1.2 or OpenGL 4.3 driver
-" +
-        "  Loader         vulkan-1.dll next to game EXE
-" +
-        "  VRAM           ~1 GB usable
-
-" +
-        "Recommended
-" +
-        "  GPU            Discrete, current drivers
-" +
-        "  VRAM           2 GB+
-" +
-        "  System RAM     8 GB+
-";
+        "PPSX33 — Game Rendering Requirements\r\n" +
+        "========================================\r\n\r\n" +
+        "Applies to running a recompiled game (not the recompiler toolchain).\r\n\r\n" +
+        "Supported APIs\r\n" +
+        "  Vulkan 1.2     DEFAULT host renderer\r\n" +
+        "  OpenGL 4.3     Secondary path\r\n" +
+        "  Direct3D 11    Removed — not supported\r\n\r\n" +
+        "Output\r\n" +
+        "  Resolution     1280x720 (720p) fixed present\r\n\r\n" +
+        "Minimum (game window / clear present)\r\n" +
+        "  OS             64-bit Windows 10/11\r\n" +
+        "  GPU            Vulkan 1.2 or OpenGL 4.3 driver\r\n" +
+        "  Loader         vulkan-1.dll next to game EXE\r\n" +
+        "  VRAM           ~1 GB usable\r\n\r\n" +
+        "Recommended\r\n" +
+        "  GPU            Discrete, current drivers\r\n" +
+        "  VRAM           2 GB+\r\n" +
+        "  System RAM     8 GB+\r\n";
 
     static string BuildRoadmapText() =>
         "PPSX33 — Roadmap / Live GUI Status\r\n" +
