@@ -213,7 +213,7 @@ public sealed partial class MainForm : Form
         StyleBtn(_btnCancel, "Stop / Cancel Build", Danger);
 
         _gfx.DropDownStyle = ComboBoxStyle.DropDownList;
-        _gfx.Items.AddRange(new object[] { "Vulkan 1.2 (default)", "OpenGL 3.3" });
+        _gfx.Items.AddRange(new object[] { "Vulkan 1.2 (default)", "OpenGL 4.3" });
         _gfx.SelectedIndex = 0;
         _gfx.Enabled = false;
         StyleCombo(_gfx);
@@ -469,20 +469,47 @@ StyleTextBox(_roadmap);
     }
 
     static string BuildRequirementsText() =>
-        "PPSX33 — Requirements\r\n" +
-        "========================================\r\n\r\n" +
-        "Required\r\n" +
-        "  OS            64-bit Windows 10/11\r\n" +
-        "  Disk          SSD recommended\r\n" +
-        "  RAM           8 GB minimum\r\n" +
-        "  GPU           Vulkan 1.2 capable GPU + driver\r\n" +
-        "  Graphics API  Vulkan 1.2 (default); OpenGL secondary\r\n" +
-        "  Toolchain     Visual Studio Community (see redist/README.txt)\r\n\r\n" +
-        "Recommended\r\n" +
-        "  RAM           16 GB+\r\n" +
-        "  GPU           Discrete, 2 GB+ VRAM\r\n" +
-        "  Monitor       1920x1080\r\n" +
-        "  Future API    OpenGL 3.3 / 2.1 fallback\r\n";
+        "PPSX33 — Game Rendering Requirements
+" +
+        "========================================
+
+" +
+        "Applies to running a recompiled game (not the recompiler toolchain).
+
+" +
+        "Supported APIs
+" +
+        "  Vulkan 1.2     DEFAULT host renderer
+" +
+        "  OpenGL 4.3     Secondary path
+" +
+        "  Direct3D 11    Removed — not supported
+
+" +
+        "Output
+" +
+        "  Resolution     1280x720 (720p) fixed present
+
+" +
+        "Minimum (game window / clear present)
+" +
+        "  OS             64-bit Windows 10/11
+" +
+        "  GPU            Vulkan 1.2 or OpenGL 4.3 driver
+" +
+        "  Loader         vulkan-1.dll next to game EXE
+" +
+        "  VRAM           ~1 GB usable
+
+" +
+        "Recommended
+" +
+        "  GPU            Discrete, current drivers
+" +
+        "  VRAM           2 GB+
+" +
+        "  System RAM     8 GB+
+";
 
     static string BuildRoadmapText() =>
         "PPSX33 — Roadmap / Live GUI Status\r\n" +

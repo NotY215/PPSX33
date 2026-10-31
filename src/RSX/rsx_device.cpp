@@ -3,6 +3,9 @@
 #include "rsx_fifo.h"
 #include "rsx_method_table.h"
 #include "rsx_present_queue.h"
+#include "rsx_draw_batch.h"
+#include "rsx_surface_fmt.h"
+#include "rsx_render_frame.h"
 #include "ps3rt_be.h"
 
 static void rsx_force_720p(uint32_t* w, uint32_t* h) {
@@ -394,6 +397,7 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
     rsx_method_kind kind = rsx_classify_method(method);
     if (kind == RSX_M_SURFACE_COLOR_OFFSET) {
         rsx_surface_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height);
+        rsx_draw_batch_set_color(arg, g_rsx.color_pitch, 1280, 720);
         ppsx33::rsx::rsx_framebuffer_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height, 0);
         return true;
     }
@@ -404,7 +408,15 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
     }
     if (kind == RSX_M_DRAW) {
         ++g_rsx.draws;
+        rsx_draw_batch_note_draw();
         return true;
+    }
+    if (kind == RSX_M_CLEAR) {
+        rsx_draw_batch_note_clear(1);
+        return true;
+    }
+    if (kind == RSX_M_SURFACE_COLOR_OFFSET) {
+        /* already handled above in some paths */
     }
     // NV4097-class methods (method is byte offset style as seen in FIFO decode)
     switch (method) {
@@ -632,6 +644,7 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
         g_rsx.put = g_rsx.get = 0;
         ppsx33::rsx::rsx_fifo_init();
         rsx_present_queue_init();
+        rsx_draw_batch_reset();
         ppsx33::rsx::rsx_framebuffer_init();
         ppsx33::rsx::rsx_memory_init();
         ppsx33::rsx::rsx_state_init();
@@ -692,11 +705,10 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
         if (pitch < gw * 4u) pitch = gw * 4u;
         size_t need = (size_t)off + (size_t)pitch * gh;
         if (mem && need <= msz) {
-            { rsx_present_req rq{}; rq.color_offset = off; rq.width = gw; rq.height = gh;
-                  rq.pitch = pitch; rq.flags = 2;
-                  if (!rsx_present_queue_push(&rq))
-                    presented = rsx_vk_present_guest_rgba(mem + off, gw, gh, pitch);
-                  else presented = 1; }
+            if (rsx_render_frame_on_flip(off, pitch))
+                presented = 1;
+            else
+                presented = rsx_vk_present_guest_rgba(mem + off, 1280, 720, pitch);
             if (presented) rsx_vk_poll_window();
         }
     }

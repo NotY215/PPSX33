@@ -1,50 +1,54 @@
-# PPSX33 Host Requirements
+# PPSX33 — Game Rendering Requirements
 
-**Last updated:** 2026-10-15
+**Last updated:** 2026-10-31
 
-This document describes the host PC requirements for building and running the experimental PPSX33 static recompiler. Meeting these requirements does **not** guarantee that any particular PS3 title will boot, render correctly, or be playable.
+Requirements below apply to **running a recompiled game** (the generated game EXE + `ps3rt.dll` present path).  
+They do **not** describe the Visual Studio / .NET toolchain used only to **build** the recompiler GUI or lift projects.
 
-## Minimum target
+## Supported graphics APIs (game runtime)
+
+| API | Version | Role |
+|-----|---------|------|
+| **Vulkan** | **1.2** | **Default** host renderer (`vulkan-1.dll` next to the game EXE) |
+| **OpenGL** | **4.3** | Secondary path (core profile); parity with Vulkan is in progress |
+
+Direct3D 11 is **not** supported and has been removed from the runtime.
+
+## Display / output
+
+| Item | Requirement |
+|------|-------------|
+| Output resolution | **1280×720 (720p)** fixed host present for the current path |
+| Monitor | 1280×720 or higher physical display recommended |
+| VRAM | Enough for a 720p swapchain + staging (typically ≥ 1 GB usable) |
+
+## Minimum (to open the game window and clear/present)
 
 | Component | Requirement |
-|---|---|
-| Operating system | 64-bit Windows 10 or later |
-| CPU | 64-bit x86 processor supported by the required Windows and MSVC toolchain |
-| Memory | 8 GB RAM |
-| Storage | HDD or SSD; SSD recommended for builds and game data |
-| Graphics | GPU with a working WDDM driver and Direct3D 11 support, Feature Level 10_0 or higher for the current graphics path |
-| Video memory | Dedicated or shared GPU memory sufficient for a D3D11 swap chain; clear/present-only operation may work on modest integrated graphics |
-| Display | 1280×720 or higher recommended |
-| Game input | Keyboard mapping; XInput-compatible controller support where available |
-| Input files | A legally obtained, decrypted PS3 ELF/EBOOT that the user is authorized to use; encrypted SELF loading is not supported by the current documented path |
+|-----------|-------------|
+| OS | 64-bit Windows 10 or later |
+| GPU | Driver that exposes **Vulkan 1.2** *or* **OpenGL 4.3** |
+| Vulkan loader | `vulkan-1.dll` (copied beside the game EXE by the build) |
+| Input | Keyboard / XInput pad where the title uses them |
+| Game data | Lawfully obtained title files the user is authorized to run |
 
-## Recommended target
+## Recommended (smoother present + larger FIFO/texture traffic)
 
 | Component | Recommendation |
-|---|---|
-| Operating system | 64-bit Windows 10 or later, fully updated |
-| Memory | 16 GB RAM or more |
-| Storage | SSD or NVMe SSD with enough free space for source, generated projects, logs, and game data |
-| Graphics | Discrete GPU with Direct3D 11 Feature Level 11_0 or better |
-| Video memory | 2 GB dedicated VRAM or more |
-| Display | 1920×1080 or higher |
+|-----------|----------------|
+| GPU | Discrete GPU with current vendor drivers (Vulkan 1.2+) |
+| VRAM | 2 GB+ |
+| RAM | 8 GB+ system memory for guest + host buffers |
+| Storage | SSD for game data and logs |
 
-## Build tools
+## What this document is not
 
-- Use a compatible Visual Studio / MSVC C++ toolchain and the Windows SDK required by the solution and build scripts.
-- Run `scripts\\build_all.bat` from a suitable Windows development environment.
-- Consult [USER_MANUAL.md](USER_MANUAL.md) and [ROADMAP.md](ROADMAP.md) for workflow and current implementation status.
+- Not a list of MSVC / CMake / .NET SDK versions for *recompiling* PPSX33 itself.
+- Not a guarantee that any title will boot or draw correctly.
+- Not support for encrypted SELF/EBOOT load without a user-supplied decrypted ELF.
 
-## Important limitations
+## Related
 
-- These are practical host targets, not measured guarantees or strict pass/fail gates.
-- Graphics support remains incomplete. A system that can open the D3D11 window may still show a clear color, black screen, or incorrect rendering.
-- PPU/SPU instruction coverage, syscall and HLE behavior, filesystem support, audio, timing, and PRX loading remain title-dependent and incomplete.
-- OpenGL fallback is a future direction, not a currently guaranteed alternative to D3D11.
-- Supply your own legally obtained game files. PPSX33 does not include proprietary decryption keys or copyrighted game assets.
-
-## Related documentation
-
-- [README.md](README.md)
-- [ROADMAP.md](ROADMAP.md)
-- [USER_MANUAL.md](USER_MANUAL.md)
+- [README.md](README.md) — project overview  
+- [ROADMAP.md](ROADMAP.md) — implementation status  
+- [USER_MANUAL.md](USER_MANUAL.md) — GUI workflow  

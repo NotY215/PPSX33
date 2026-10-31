@@ -12,8 +12,8 @@ void rsx_framebuffer_bind_color(uint32_t offset, uint32_t pitch, uint32_t w, uin
     std::lock_guard<std::mutex> lk(g_fb_mu);
     g_color.offset = offset;
     g_color.pitch = pitch ? pitch : (w ? ((w * 4u + 63u) & ~63u) : 0);
-    if (w) g_color.width = w;
-    if (h) g_color.height = h;
+    if (w) g_color.width = 1280;
+    if (h) g_color.height = 720;
     g_color.format = format;
 }
 ColorSurface rsx_framebuffer_color() {

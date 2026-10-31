@@ -64,6 +64,9 @@ if(WIN32)
     src/core/import/import_stub_map.c
     src/RSX/fifo/rsx_method_table.c
     src/RSX/present/rsx_present_queue.c
+    src/RSX/draw/rsx_draw_batch.c
+    src/RSX/draw/rsx_surface_fmt.c
+    src/RSX/render/rsx_render_frame.c
     src/processor/PPU/translate/ppu_import_bridge.c
     src/processor/SPU/spu_interpreter.cpp
     src/games-stuff/Audio/audio_device.cpp
@@ -78,6 +81,8 @@ if(WIN32)
     ${CMAKE_SOURCE_DIR}/src/RSX
     ${CMAKE_SOURCE_DIR}/src/RSX/fifo
     ${CMAKE_SOURCE_DIR}/src/RSX/present
+    ${CMAKE_SOURCE_DIR}/src/RSX/draw
+    ${CMAKE_SOURCE_DIR}/src/RSX/render
     ${CMAKE_SOURCE_DIR}/src/RSX/Backends/Vulkan
     ${CMAKE_SOURCE_DIR}/src/games-stuff/Audio
   )
@@ -87,6 +92,9 @@ if(WIN32)
     src/RSX/fifo/rsx_method_table.c
     src/RSX/present/rsx_present_queue.c
     src/processor/PPU/translate/ppu_import_bridge.c
+    src/RSX/draw/rsx_draw_batch.c
+    src/RSX/draw/rsx_surface_fmt.c
+    src/RSX/render/rsx_render_frame.c
     PROPERTIES LANGUAGE C)
   target_compile_definitions(ps3rt PRIVATE PS3RT_BUILD_DLL=1)
   if(MSVC)
