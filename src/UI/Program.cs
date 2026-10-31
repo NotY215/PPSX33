@@ -3,7 +3,7 @@ namespace PS3Recomp.Gui;
 internal static class Program
 {
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
 
@@ -41,6 +41,11 @@ internal static class Program
             MessageBoxButtons.OK,
             MessageBoxIcon.Information);
 
-        Application.Run(new MainForm());
+        bool renderMode = args.Any(a => string.Equals(a, "-render", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(a, "--render", StringComparison.OrdinalIgnoreCase));
+        if (renderMode)
+            Application.Run(new RenderWorkbenchForm());
+        else
+            Application.Run(new MainForm());
     }
 }

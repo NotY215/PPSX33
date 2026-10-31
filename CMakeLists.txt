@@ -43,6 +43,17 @@ if(WIN32)
   set_target_properties(ps3core PROPERTIES PREFIX "")
 endif()
 
+
+# ---- Modular graphics DLLs (rebuild independently via PPSX33.exe -render) ----
+if(WIN32)
+  add_library(ppsx33_resolution SHARED src/RSX/resolution/rsx_resolution.c)
+  target_include_directories(ppsx33_resolution PUBLIC ${CMAKE_SOURCE_DIR}/src/RSX/resolution)
+  target_compile_definitions(ppsx33_resolution PRIVATE PPSX33_RES_BUILD=1)
+  set_target_properties(ppsx33_resolution PROPERTIES PREFIX "" OUTPUT_NAME "resolution")
+  set_source_files_properties(src/RSX/resolution/rsx_resolution.c PROPERTIES LANGUAGE C)
+
+endif()
+
 # ---- ps3rt (game runtime) — sources under src/ only (no runtime/) ----
 if(WIN32)
   add_library(ps3rt SHARED
@@ -85,6 +96,7 @@ if(WIN32)
     ${CMAKE_SOURCE_DIR}/src/RSX/present
     ${CMAKE_SOURCE_DIR}/src/RSX/draw
     ${CMAKE_SOURCE_DIR}/src/RSX/render
+    ${CMAKE_SOURCE_DIR}/src/RSX/resolution
     ${CMAKE_SOURCE_DIR}/src/core/stats
     ${CMAKE_SOURCE_DIR}/src/RSX/Backends/Vulkan
     ${CMAKE_SOURCE_DIR}/src/games-stuff/Audio
@@ -105,15 +117,21 @@ if(WIN32)
   if(MSVC)
     target_compile_options(ps3rt PRIVATE /bigobj)
   endif()
-  target_link_libraries(ps3rt PRIVATE user32 gdi32 ole32 uuid windowscodecs winmm xaudio2 psapi)
+  target_link_libraries(ps3rt PRIVATE user32 gdi32 ole32 uuid windowscodecs winmm xaudio2 psapi
+    $<TARGET_NAME_IF_EXISTS:ppsx33_resolution>)
   set_target_properties(ps3rt PROPERTIES PREFIX "" OUTPUT_NAME "ps3rt")
-  # Single layout: ps3rt.dll / ps3rt.lib stay in dist/ next to PS3Recomp.exe
+  # Shim targets for PPSX33.exe -render (full source split continues next milestones)
+  add_custom_target(ppsx33_api DEPENDS ps3rt)
+  add_custom_target(ppsx33_rsx DEPENDS ps3rt)
+  add_custom_target(ppsx33_render DEPENDS ps3rt)
+  # Single layout: ps3rt.dll / ps3rt.lib stay in dist/ next to PPSX33.exe
   # (do not also copy into dist/runtime/ — headers only live there)
   add_custom_command(TARGET ps3rt POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/dist
     COMMAND ${CMAKE_COMMAND}
       -DPS3_DIST=${CMAKE_BINARY_DIR}/dist
       -P ${CMAKE_SOURCE_DIR}/cmake/CopyVulkanRuntime.cmake
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ppsx33_resolution> ${CMAKE_BINARY_DIR}/dist/resolution.dll
     COMMENT "Ensure dist/ has ps3rt + vulkan-1.dll (single location next to EXE)"
   )
 endif()
@@ -174,7 +192,7 @@ if(DOTNET_EXE)
       /p:AppendTargetFrameworkToOutputPath=false
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     DEPENDS ps3core copy_runtime
-    COMMENT "Building GUI → dist/PS3Recomp.exe"
+    COMMENT "Building GUI → dist/PPSX33.exe"
     VERBATIM)
   add_dependencies(PS3Recomp ps3core copy_runtime)
   if(TARGET ps3rt)

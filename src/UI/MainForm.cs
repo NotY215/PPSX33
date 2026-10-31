@@ -213,9 +213,9 @@ public sealed partial class MainForm : Form
         StyleBtn(_btnCancel, "Stop / Cancel Build", Danger);
 
         _gfx.DropDownStyle = ComboBoxStyle.DropDownList;
-        _gfx.Items.AddRange(new object[] { "Vulkan 1.2 (default)", "OpenGL 4.3" });
+        _gfx.Items.AddRange(new object[] { "Vulkan 1.2 (only)" });
         _gfx.SelectedIndex = 0;
-        _gfx.Enabled = false;
+        _gfx.Enabled = false; // OpenGL not selectable yet
         StyleCombo(_gfx);
 
         // Threads: ComboBox is reliable; range mirrored for UX

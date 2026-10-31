@@ -8,11 +8,14 @@
 #include "rsx_render_frame.h"
 #include "rsx_light_present.h"
 #include "host_stats.h"
+#include "rsx_resolution.h"
 #include "ps3rt_be.h"
 
 static void rsx_force_576p(uint32_t* w, uint32_t* h) {
-    if (w) *w = 720;
-    if (h) *h = 576;
+    uint32_t rw = 720, rh = 576;
+    rsx_res_get(&rw, &rh);
+    if (w) *w = rw;
+    if (h) *h = rh;
 }
 
 #include "rsx_framebuffer.h"
@@ -300,10 +303,17 @@ static DWORD WINAPI rsx_pump_thread_main(void*) {
                     else
                         rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
                 } else if (rsx_light_present_allow()) {
-                    // ~8 Hz clear — light load for weak GPUs (GT 740 class)
-                    if (rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f)) {
+                    // Visible diagnostic pulse so user sees host present is alive
+                    static int pulse = 0;
+                    float phase = (float)((++pulse) & 63) / 63.0f;
+                    float r = 0.02f + 0.08f * phase;
+                    float g = 0.04f + 0.10f * (1.0f - phase);
+                    float b = 0.10f + 0.15f * phase;
+                    if (rsx_vk_present_clear(r, g, b, 1.0f)) {
                         rsx_light_present_note();
                         host_stats_note_present();
+                        if ((pulse & 15) == 1)
+                            ps3rt_log("[rsx] host present pulse #%d (render path live)\n", pulse);
                     }
                 }
                 (void)tick;

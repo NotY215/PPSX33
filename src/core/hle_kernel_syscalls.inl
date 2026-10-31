@@ -1261,7 +1261,7 @@ PS3RT_API void ps3rt_progress_hw(void) {
         extern uint64_t ps3rt_rsx_flip_count(void);
         static int s_assist = 0;
         if (rsx_vk_ready() && ps3rt_rsx_flip_count() == 0) {
-            if ((++s_assist % 32) == 0) {
+            if ((++s_assist % 8) == 0) {
                 ps3rt_rsx_flip(0);
             }
         }

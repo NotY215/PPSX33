@@ -5,7 +5,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyName>PS3Recomp</AssemblyName>
+    <AssemblyName>PPSX33</AssemblyName>
     <RootNamespace>PS3Recomp.Gui</RootNamespace>
     <LangVersion>latest</LangVersion>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
