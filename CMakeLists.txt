@@ -5,7 +5,9 @@ project(PS3Recomp LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist)
 foreach(cfg DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
@@ -44,26 +46,70 @@ if(WIN32)
 endif()
 
 
-# ---- Modular graphics DLLs (rebuild independently via PPSX33.exe -render) ----
+# ---- Modular graphics DLLs (PPSX33.exe -render targets) ----
+set(PPSX33_COMMON_INCLUDES
+  ${CMAKE_SOURCE_DIR}/src/core
+  ${CMAKE_SOURCE_DIR}/src/core/import
+  ${CMAKE_SOURCE_DIR}/src/native/x64
+  ${CMAKE_SOURCE_DIR}/src/processor/PPU
+  ${CMAKE_SOURCE_DIR}/src/processor/PPU/translate
+  ${CMAKE_SOURCE_DIR}/src/processor/SPU
+  ${CMAKE_SOURCE_DIR}/src/RSX
+  ${CMAKE_SOURCE_DIR}/src/RSX/fifo
+  ${CMAKE_SOURCE_DIR}/src/RSX/present
+  ${CMAKE_SOURCE_DIR}/src/RSX/draw
+  ${CMAKE_SOURCE_DIR}/src/RSX/render
+  ${CMAKE_SOURCE_DIR}/src/RSX/resolution
+  ${CMAKE_SOURCE_DIR}/src/core/stats
+  ${CMAKE_SOURCE_DIR}/src/RSX/Backends/Vulkan
+  ${CMAKE_SOURCE_DIR}/src/games-stuff/Audio
+)
+
 if(WIN32)
   add_library(ppsx33_resolution SHARED src/RSX/resolution/rsx_resolution.c)
   target_include_directories(ppsx33_resolution PUBLIC ${CMAKE_SOURCE_DIR}/src/RSX/resolution)
   target_compile_definitions(ppsx33_resolution PRIVATE PPSX33_RES_BUILD=1)
-  set_target_properties(ppsx33_resolution PROPERTIES PREFIX "" OUTPUT_NAME "resolution")
+  set_target_properties(ppsx33_resolution PROPERTIES PREFIX "" OUTPUT_NAME "resolution" RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist)
   set_source_files_properties(src/RSX/resolution/rsx_resolution.c PROPERTIES LANGUAGE C)
 
-endif()
-
-# ---- ps3rt (game runtime) — sources under src/ only (no runtime/) ----
-if(WIN32)
-  add_library(ps3rt SHARED
-    src/core/hle_kernel.cpp
-    src/core/assets.cpp
-    src/RSX/rsx_device.cpp
+  add_library(ppsx33_api SHARED
     src/RSX/Backends/Vulkan/rsx_vk_backend.cpp
     src/RSX/Backends/Vulkan/rsx_vk_memory.cpp
     src/RSX/Backends/Vulkan/rsx_vk_command.cpp
     src/RSX/Backends/Vulkan/rsx_vk_pipelines.cpp
+  )
+  target_include_directories(ppsx33_api PRIVATE ${PPSX33_COMMON_INCLUDES})
+  target_compile_definitions(ppsx33_api PRIVATE PPSX33_API_BUILD=1)
+  target_link_libraries(ppsx33_api PRIVATE user32)
+  set_target_properties(ppsx33_api PROPERTIES PREFIX "" OUTPUT_NAME "api" RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist)
+
+  add_library(ppsx33_render SHARED
+    src/RSX/present/rsx_present_queue.c
+    src/RSX/draw/rsx_draw_batch.c
+    src/RSX/draw/rsx_surface_fmt.c
+    src/RSX/render/rsx_render_frame.c
+    src/RSX/render/rsx_light_present.c
+  )
+  target_include_directories(ppsx33_render PRIVATE ${PPSX33_COMMON_INCLUDES})
+  target_compile_definitions(ppsx33_render PRIVATE PPSX33_RENDER_BUILD=1)
+  set_source_files_properties(
+    src/RSX/present/rsx_present_queue.c
+    src/RSX/draw/rsx_draw_batch.c
+    src/RSX/draw/rsx_surface_fmt.c
+    src/RSX/render/rsx_render_frame.c
+    src/RSX/render/rsx_light_present.c
+    PROPERTIES LANGUAGE C)
+  target_link_libraries(ppsx33_render PRIVATE ppsx33_resolution)
+  set_target_properties(ppsx33_render PROPERTIES PREFIX "" OUTPUT_NAME "render" RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist)
+
+  # rsx.dll: FIFO/state helpers (device stays in ps3rt to use HLE log/mem)
+  add_library(ppsx33_rsx SHARED
     src/RSX/rsx_fifo.cpp
     src/RSX/rsx_framebuffer.cpp
     src/RSX/rsx_memory.cpp
@@ -71,20 +117,32 @@ if(WIN32)
     src/RSX/rsx_texture.cpp
     src/RSX/rsx_shader_compiler.cpp
     src/RSX/rsx_shader_decoder.cpp
-    src/native/x64/ps3rt_be.c
-    src/core/import/import_stub_map.c
     src/RSX/fifo/rsx_method_table.c
-    src/RSX/present/rsx_present_queue.c
-    src/RSX/draw/rsx_draw_batch.c
-    src/RSX/draw/rsx_surface_fmt.c
-    src/RSX/render/rsx_render_frame.c
-    src/RSX/render/rsx_light_present.c
+    src/native/x64/ps3rt_be.c
+  )
+  target_include_directories(ppsx33_rsx PRIVATE ${PPSX33_COMMON_INCLUDES})
+  target_compile_definitions(ppsx33_rsx PRIVATE PPSX33_RSX_BUILD=1)
+  set_source_files_properties(src/RSX/fifo/rsx_method_table.c src/native/x64/ps3rt_be.c PROPERTIES LANGUAGE C)
+  target_link_libraries(ppsx33_rsx PRIVATE ppsx33_render ppsx33_resolution)
+  set_target_properties(ppsx33_rsx PROPERTIES PREFIX "" OUTPUT_NAME "rsx" RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist)
+endif()
+
+# ---- ps3rt (HLE + RSX device + SPU + audio); links modular DLLs ----
+if(WIN32)
+  add_library(ps3rt SHARED
+    src/core/hle_kernel.cpp
+    src/core/assets.cpp
+    src/RSX/rsx_device.cpp
+    src/core/import/import_stub_map.c
     src/core/stats/host_stats.c
     src/processor/PPU/translate/ppu_import_bridge.c
     src/processor/SPU/spu_interpreter.cpp
     src/games-stuff/Audio/audio_device.cpp
   )
   target_include_directories(ps3rt PRIVATE
+    ${PPSX33_COMMON_INCLUDES}
     ${CMAKE_SOURCE_DIR}/src/core
     ${CMAKE_SOURCE_DIR}/src/core/import
     ${CMAKE_SOURCE_DIR}/src/native/x64
@@ -102,37 +160,32 @@ if(WIN32)
     ${CMAKE_SOURCE_DIR}/src/games-stuff/Audio
   )
   set_source_files_properties(
-    src/native/x64/ps3rt_be.c
     src/core/import/import_stub_map.c
-    src/RSX/fifo/rsx_method_table.c
-    src/RSX/present/rsx_present_queue.c
     src/processor/PPU/translate/ppu_import_bridge.c
-    src/RSX/draw/rsx_draw_batch.c
-    src/RSX/draw/rsx_surface_fmt.c
-    src/RSX/render/rsx_render_frame.c
-    src/RSX/render/rsx_light_present.c
     src/core/stats/host_stats.c
     PROPERTIES LANGUAGE C)
   target_compile_definitions(ps3rt PRIVATE PS3RT_BUILD_DLL=1)
   if(MSVC)
     target_compile_options(ps3rt PRIVATE /bigobj)
   endif()
-  target_link_libraries(ps3rt PRIVATE user32 gdi32 ole32 uuid windowscodecs winmm xaudio2 psapi
-    $<TARGET_NAME_IF_EXISTS:ppsx33_resolution>)
-  set_target_properties(ps3rt PROPERTIES PREFIX "" OUTPUT_NAME "ps3rt")
-  # Shim targets for PPSX33.exe -render (full source split continues next milestones)
-  add_custom_target(ppsx33_api DEPENDS ps3rt)
-  add_custom_target(ppsx33_rsx DEPENDS ps3rt)
-  add_custom_target(ppsx33_render DEPENDS ps3rt)
-  # Single layout: ps3rt.dll / ps3rt.lib stay in dist/ next to PPSX33.exe
-  # (do not also copy into dist/runtime/ — headers only live there)
+  target_link_libraries(ps3rt PRIVATE
+    user32 gdi32 ole32 uuid windowscodecs winmm xaudio2 psapi
+    ppsx33_api ppsx33_render ppsx33_rsx ppsx33_resolution)
+  set_target_properties(ps3rt PROPERTIES PREFIX "" OUTPUT_NAME "ps3rt"
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist)
+  add_dependencies(ps3rt ppsx33_api ppsx33_render ppsx33_rsx ppsx33_resolution)
   add_custom_command(TARGET ps3rt POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/dist
     COMMAND ${CMAKE_COMMAND}
       -DPS3_DIST=${CMAKE_BINARY_DIR}/dist
       -P ${CMAKE_SOURCE_DIR}/cmake/CopyVulkanRuntime.cmake
     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ppsx33_resolution> ${CMAKE_BINARY_DIR}/dist/resolution.dll
-    COMMENT "Ensure dist/ has ps3rt + vulkan-1.dll (single location next to EXE)"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ppsx33_api> ${CMAKE_BINARY_DIR}/dist/api.dll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ppsx33_render> ${CMAKE_BINARY_DIR}/dist/render.dll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ppsx33_rsx> ${CMAKE_BINARY_DIR}/dist/rsx.dll
+    COMMENT "dist/: ps3rt + resolution + api + render + rsx + vulkan-1.dll"
   )
 endif()
 

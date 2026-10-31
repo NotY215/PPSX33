@@ -309,11 +309,15 @@ static DWORD WINAPI rsx_pump_thread_main(void*) {
                     float r = 0.02f + 0.08f * phase;
                     float g = 0.04f + 0.10f * (1.0f - phase);
                     float b = 0.10f + 0.15f * phase;
-                    if (rsx_vk_present_clear(r, g, b, 1.0f)) {
-                        rsx_light_present_note();
-                        host_stats_note_present();
-                        if ((pulse & 15) == 1)
-                            ps3rt_log("[rsx] host present pulse #%d (render path live)\n", pulse);
+                    __try {
+                        if (rsx_vk_present_clear(r, g, b, 1.0f)) {
+                            rsx_light_present_note();
+                            host_stats_note_present();
+                            if ((pulse & 15) == 1)
+                                ps3rt_log("[rsx] host present pulse #%d (render path live)\n", pulse);
+                        }
+                    } __except(EXCEPTION_EXECUTE_HANDLER) {
+                        ps3rt_log("[rsx] present SEH caught — skipping frame\n");
                     }
                 }
                 (void)tick;
@@ -745,18 +749,12 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
 }
 
 PS3RT_API void ps3rt_rsx_tick(void) {
+    // Present only on HWND pump thread — tick only pumps messages / light poll
     if (g_hwnd) {
-        if (g_gfx_api == 0 && rsx_vk_ready()) {
-            if (rsx_light_present_allow()) {
-                if (rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f)) {
-                    rsx_light_present_note();
-                    host_stats_note_present();
-                }
-            }
+        if (g_gfx_api == 0 && rsx_vk_ready())
             rsx_vk_poll_window();
-        } else {
+        else
             rsx_host_present_soft();
-        }
     }
 }
 

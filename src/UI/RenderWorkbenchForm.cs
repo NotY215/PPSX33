@@ -73,6 +73,30 @@ public sealed class RenderWorkbenchForm : Form
         StyleBtn(_btnAll, "Select all", Panel2);
         StyleBtn(_btnNone, "Select none", Panel2);
         StyleBtn(_btnBuild, "Build selected DLLs", AccentBlue);
+        var btnLoad = new Button();
+        var btnDecomp = new Button();
+        StyleBtn(btnLoad, "Load ELF…", Panel2);
+        StyleBtn(btnDecomp, "Decompile (note)", Panel2);
+        btnLoad.Width = 110;
+        btnDecomp.Width = 130;
+        btnLoad.Click += (_, _) =>
+        {
+            using var ofd = new OpenFileDialog
+            {
+                Filter = "Decrypted ELF|*.elf;*.bin|All|*.*",
+                Title = "Load decrypted ELF (for module rebuild context)"
+            };
+            if (ofd.ShowDialog(this) == DialogResult.OK)
+            {
+                Log("ELF: " + ofd.FileName);
+                Log("Note: -render does not re-lift PPU; use main UI for full decompile.");
+            }
+        };
+        btnDecomp.Click += (_, _) =>
+        {
+            Log("Decompile in -render: use main PPSX33 UI for PPU/SPU lift.");
+            Log("Here you only rebuild runtime DLLs (api/rsx/render/resolution/ps3rt).");
+        };
         _btnAll.Click += (_, _) => { for (int i = 0; i < _dlls.Items.Count; i++) _dlls.SetItemChecked(i, true); };
         _btnNone.Click += (_, _) => { for (int i = 0; i < _dlls.Items.Count; i++) _dlls.SetItemChecked(i, false); };
         _btnBuild.Click += async (_, _) => await BuildSelectedAsync();
@@ -80,7 +104,7 @@ public sealed class RenderWorkbenchForm : Form
         var btnRow = new FlowLayoutPanel
         {
             Dock = DockStyle.Bottom,
-            Height = 52,
+            Height = 88,
             BackColor = Panel,
             Padding = new Padding(8, 8, 8, 8),
             FlowDirection = FlowDirection.LeftToRight
@@ -88,6 +112,8 @@ public sealed class RenderWorkbenchForm : Form
         btnRow.Controls.Add(_btnAll);
         btnRow.Controls.Add(_btnNone);
         btnRow.Controls.Add(_btnBuild);
+        btnRow.Controls.Add(btnLoad);
+        btnRow.Controls.Add(btnDecomp);
 
         var left = new Panel { Dock = DockStyle.Fill, BackColor = Panel, Padding = new Padding(4) };
         left.Controls.Add(_dlls);

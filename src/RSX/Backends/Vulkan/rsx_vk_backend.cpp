@@ -2,6 +2,8 @@
 #include "rsx_vk_backend.h"
 #include <cstring>
 #include <cstdint>
+#include <cstdarg>
+#include <cstdio>
 #include <cstdio>
 #include <mutex>
 #include <vector>
@@ -16,7 +18,15 @@
 #include <windows.h>
 #endif
 
-extern "C" void ps3rt_log(const char* fmt, ...);
+static void api_log(const char* fmt, ...) {
+    char buf[1024];
+    va_list ap; va_start(ap, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
+    fputs(buf, stderr);
+    OutputDebugStringA(buf);
+}
+#define ps3rt_log api_log
 
 // Minimal Vulkan types (avoid requiring SDK headers at compile time)
 using VkFlags = uint32_t;
