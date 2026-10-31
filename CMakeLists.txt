@@ -69,9 +69,16 @@ if(WIN32)
   add_library(ppsx33_resolution SHARED src/RSX/resolution/rsx_resolution.c)
   target_include_directories(ppsx33_resolution PUBLIC ${CMAKE_SOURCE_DIR}/src/RSX/resolution)
   target_compile_definitions(ppsx33_resolution PRIVATE PPSX33_RES_BUILD=1)
-  set_target_properties(ppsx33_resolution PROPERTIES PREFIX "" OUTPUT_NAME "resolution" RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+  set_target_properties(ppsx33_resolution PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "resolution"
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist)
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
+    WINDOWS_EXPORT_ALL_SYMBOLS ON)
   set_source_files_properties(src/RSX/resolution/rsx_resolution.c PROPERTIES LANGUAGE C)
 
   add_library(ppsx33_api SHARED
@@ -83,9 +90,16 @@ if(WIN32)
   target_include_directories(ppsx33_api PRIVATE ${PPSX33_COMMON_INCLUDES})
   target_compile_definitions(ppsx33_api PRIVATE PPSX33_API_BUILD=1)
   target_link_libraries(ppsx33_api PRIVATE user32)
-  set_target_properties(ppsx33_api PROPERTIES PREFIX "" OUTPUT_NAME "api" RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+  set_target_properties(ppsx33_api PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "api"
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist)
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
+    WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
   add_library(ppsx33_render SHARED
     src/RSX/present/rsx_present_queue.c
@@ -104,9 +118,16 @@ if(WIN32)
     src/RSX/render/rsx_light_present.c
     PROPERTIES LANGUAGE C)
   target_link_libraries(ppsx33_render PRIVATE ppsx33_resolution)
-  set_target_properties(ppsx33_render PROPERTIES PREFIX "" OUTPUT_NAME "render" RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+  set_target_properties(ppsx33_render PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "render"
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist)
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
+    WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
   # rsx.dll: FIFO/state helpers (device stays in ps3rt to use HLE log/mem)
   add_library(ppsx33_rsx SHARED
@@ -119,14 +140,22 @@ if(WIN32)
     src/RSX/rsx_shader_decoder.cpp
     src/RSX/fifo/rsx_method_table.c
     src/native/x64/ps3rt_be.c
+    src/RSX/rsx_exports.c
   )
   target_include_directories(ppsx33_rsx PRIVATE ${PPSX33_COMMON_INCLUDES})
   target_compile_definitions(ppsx33_rsx PRIVATE PPSX33_RSX_BUILD=1)
-  set_source_files_properties(src/RSX/fifo/rsx_method_table.c src/native/x64/ps3rt_be.c PROPERTIES LANGUAGE C)
+  set_source_files_properties(src/RSX/fifo/rsx_method_table.c src/native/x64/ps3rt_be.c src/RSX/rsx_exports.c PROPERTIES LANGUAGE C)
   target_link_libraries(ppsx33_rsx PRIVATE ppsx33_render ppsx33_resolution)
-  set_target_properties(ppsx33_rsx PROPERTIES PREFIX "" OUTPUT_NAME "rsx" RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+  set_target_properties(ppsx33_rsx PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "rsx"
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist)
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
+    WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
 # ---- ps3rt (HLE + RSX device + SPU + audio); links modular DLLs ----
@@ -170,7 +199,8 @@ if(WIN32)
   endif()
   target_link_libraries(ps3rt PRIVATE
     user32 gdi32 ole32 uuid windowscodecs winmm xaudio2 psapi
-    ppsx33_api ppsx33_render ppsx33_rsx ppsx33_resolution)
+    ppsx33_api ppsx33_rsx ppsx33_render ppsx33_resolution)
+  # Import libs must exist: WINDOWS_EXPORT_ALL_SYMBOLS + explicit rsx export
   set_target_properties(ps3rt PROPERTIES PREFIX "" OUTPUT_NAME "ps3rt"
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist

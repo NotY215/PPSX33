@@ -1,4 +1,13 @@
 #pragma once
+#ifndef PPSX33_RSX_API
+#  if defined(_WIN32) && defined(PPSX33_RSX_BUILD)
+#    define PPSX33_RSX_API __declspec(dllexport)
+#  elif defined(_WIN32)
+#    define PPSX33_RSX_API __declspec(dllimport)
+#  else
+#    define PPSX33_RSX_API
+#  endif
+#endif
 #include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
@@ -16,8 +25,8 @@ typedef enum {
     RSX_M_UNKNOWN = 255
 } rsx_method_kind;
 
-rsx_method_kind rsx_classify_method(uint32_t method_byte_offset);
-const char*     rsx_method_name(rsx_method_kind k);
+rsx_method_kind PPSX33_RSX_API rsx_classify_method(uint32_t method_byte_offset);
+const char*     PPSX33_RSX_API rsx_method_name(rsx_method_kind k);
 
 /* Decode one FIFO word pair: method header style (count<<18)|method */
 void rsx_fifo_decode_header(uint32_t hdr, uint32_t* out_method, uint32_t* out_count);
