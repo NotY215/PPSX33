@@ -58,6 +58,11 @@ flowchart TB
 | Vulkan instance/device/swapchain clear present | Done |
 | Vulkan guest RGBA staging upload to swapchain | Done |
 | Vulkan fullscreen SPIR-V blit pipeline | Planned |
+| HWND pump thread (non-blocking present) | Done |
+| Game icons from `PS3_GAME/ICON0.PNG` + `PIC1.PNG` | Done |
+| Legal tab (embedded markdown → HTML) | Done |
+| Controller tab hides after Build start/finish/cancel | Done |
+| Build/Copy/Run popups aligned to Vulkan workflow | Done |
 
 ## Phase 0 — Trustworthy baseline
 
@@ -86,7 +91,7 @@ flowchart TB
 | Item | Status |
 | --- | --- |
 | Guest memory + image load | Partial |
-| Import / NID dispatch | Partial |
+| Import / NID dispatch | Partial (static-style LR/PC→NID binds + recovery) |
 | Threads / sync primitives | Partial |
 | Filesystem / save / audio / pad | Partial |
 | Module-level HLE tests | Planned |
@@ -105,6 +110,8 @@ flowchart TB
 | Item | Status |
 | --- | --- |
 | FIFO parse + Vulkan 1.2 swapchain present | Partial |
+| Async present (pump thread; try_lock present) | Done |
+| Thin cellGcmSys (map/flip/status) + FIFO consumer | In progress |
 | dist/ single DLL location (no runtime/ duplicate) | Done |
 | CMake copies vulkan-1.dll next to EXE | Done |
 | Assist/boot cmdstream draws | Partial (probe only) |
@@ -126,6 +133,15 @@ Only after conformance gates: IR opts, shader cache, incremental lift, SPU nativ
 ---
 
 ## Packaging / UI
+
+| Item | Status |
+| --- | --- |
+| Single `dist/` layout (EXE + ps3rt.dll + vulkan-1.dll) | Done |
+| No STRUCTURE.md / TERMS.md / LEGAL.md required beside EXE | Done (embedded Legal/Terms) |
+| Legal tab HTML styling | Done |
+
+## Packaging / UI (detail)
+
 
 | Item | Status |
 | --- | --- |

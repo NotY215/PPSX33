@@ -1226,10 +1226,17 @@ PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
         ++s;
     }
     int rc = prx_dispatch(c, maybe_nid, kind);
-    // XXIV-D: always return to LR when it looks like a valid code address
-    if (c->lr && (c->lr & 3ull) == 0 && c->lr >= 0x10000ull && c->lr < 0x30000000ull) {
-        // leave LR for blr semantics; caller of stub uses r3 = rc
-        (void)0;
+    if (!maybe_nid) {
+        static int s_zero = 0;
+        if (s_zero < 12)
+            ps3rt_log("[prx] static-stub miss pc=0x%llx lr=0x%llx — soft 0\n",
+                (unsigned long long)pc, (unsigned long long)c->lr);
+        ++s_zero;
+        prx_note_hit(0, 2);
+        rc = 0;
+    } else if (maybe_nid) {
+        import_stub_bind(c->lr, maybe_nid);
+        import_stub_bind(pc, maybe_nid);
     }
     c->gpr[3] = (uint64_t)(int64_t)rc;
     return rc;

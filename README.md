@@ -25,7 +25,7 @@
 <p align="center">
   <a href="https://ppsx33.xo.je/"><img alt="Website" src="https://img.shields.io/badge/website-ppsx33.xo.je-00B4D8?style=for-the-badge"></a>
   <img alt="Platform: Windows x64" src="https://img.shields.io/badge/platform-Windows%20x64-0078D4?style=for-the-badge">
-  <img alt="Graphics: Direct3D 11" src="https://img.shields.io/badge/graphics-Direct3D%2011-6A5ACD?style=for-the-badge">
+  <img alt="Graphics: Vulkan 1.2" src="https://img.shields.io/badge/graphics-Vulkan%201.2-AC162C?style=for-the-badge">
   <img alt="Goal: Full Recompilation" src="https://img.shields.io/badge/goal-full%20recompilation-6A5ACD?style=for-the-badge">
 </p>
 
@@ -68,12 +68,19 @@ PPSX33 is being developed toward full recompilation. These statuses describe imp
 | 🧰 GUI, project flow and build orchestration | 🟡 **Partial / evolving** | Windows GUI and native build pipeline; title-specific failures remain possible |
 | 📦 ELF loading and PPU lifting | 🟡 **Partial** | Supported code can be lifted; translation coverage is not semantic correctness |
 | 🧠 PPU runtime and control flow | 🟡 **In progress** | Guest context and execution paths exist; unsupported or inaccurate paths can break execution |
-| 🪟 Vulkan 1.2 host window and presentation | 🟢 **Implemented baseline** | Swapchain clear + guest RGBA upload path |
+| 🪟 Vulkan 1.2 host window and presentation | 🟢 **Implemented baseline** | Async HWND pump + swapchain clear + guest RGBA upload |
 | 🧱 RSX/GCM command processing | 🟡 **In progress** | FIFO decode and Vulkan present; assist draws proven; title-authored GCM and shaders still incomplete |
-| 🧩 LV2, PRX and NID services | 🟡 **Partial** | HLE coverage is incomplete and individual API semantics require validation |
+| 🧩 LV2, PRX and NID services | 🟡 **Partial** | Static-style stub binds (LR/PC→NID); runtime recovery fallback; coverage still incomplete |
 | ⚡ SPU, MFC/DMA and SPURS | 🟡 **Partial** | Assist/runtime paths exist; full instruction and scheduling behaviour is not complete |
 | 🔊 Audio, 🎮 input and 💾 save services | 🟡 **Partial** | Basic host paths exist; title-level behaviour still needs verification |
 | 🎯 End-to-end game compatibility | 🔴 **Not established generally** | Static lift reports do not establish bootability or playability |
+
+### Host graphics (current)
+
+- **Default:** Vulkan 1.2 (dynamic `vulkan-1.dll` load; CMake copies DLL into `dist/`).
+- **Secondary:** OpenGL (planned parity).
+- **Removed:** Direct3D 11 backend and DX11 dependencies.
+- **Present path:** Dedicated HWND pump thread so the game window stays responsive during boot HLE; PPU thread does not block on `vkQueuePresent`.
 
 **Legend:** 🟢 implemented baseline · 🟡 partial or under active development · 🔴 not established / major work remains
 
@@ -170,7 +177,7 @@ Generated projects may contain a game executable, `ps3rt.dll`, guest image data,
 | Item | Current target |
 | --- | --- |
 | Operating system | Windows x64 |
-| Graphics backend | Direct3D 11; GPU feature support must be suitable for the build |
+| Graphics backend | **Vulkan 1.2** (default); OpenGL secondary; `vulkan-1.dll` next to EXE |
 | Native compiler | Microsoft C++ toolchain |
 | GUI framework | .NET 8 or the version specified by the project |
 | Build tooling | CMake / Ninja for the relevant host targets |
