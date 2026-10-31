@@ -16,6 +16,6 @@ uint32_t rsx_surface_fmt_bpp(rsx_color_fmt f) {
     }
 }
 
-uint32_t rsx_surface_fmt_pitch_720p(rsx_color_fmt f) {
-    return 1280u * rsx_surface_fmt_bpp(f);
+uint32_t rsx_surface_fmt_pitch_576p(rsx_color_fmt f) {
+    return 720u * rsx_surface_fmt_bpp(f);
 }

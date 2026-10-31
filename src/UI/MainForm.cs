@@ -477,7 +477,7 @@ StyleTextBox(_roadmap);
         "  OpenGL 4.3     Secondary path\r\n" +
         "  Direct3D 11    Removed — not supported\r\n\r\n" +
         "Output\r\n" +
-        "  Resolution     1280x720 (720p) fixed present\r\n\r\n" +
+        "  Resolution     720x576 (576p) fixed present\r\n\r\n" +
         "Minimum (game window / clear present)\r\n" +
         "  OS             64-bit Windows 10/11\r\n" +
         "  GPU            Vulkan 1.2 or OpenGL 4.3 driver\r\n" +

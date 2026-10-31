@@ -13,7 +13,7 @@ typedef enum {
 
 rsx_color_fmt rsx_surface_fmt_from_gcm(uint32_t gcm_fmt);
 uint32_t      rsx_surface_fmt_bpp(rsx_color_fmt f);
-uint32_t      rsx_surface_fmt_pitch_720p(rsx_color_fmt f);
+uint32_t      rsx_surface_fmt_pitch_576p(rsx_color_fmt f);
 
 #ifdef __cplusplus
 }

@@ -6,9 +6,9 @@ static int g_dirty;
 void rsx_draw_batch_reset(void) {
     g_cur.color_offset = 0;
     g_cur.depth_offset = 0;
-    g_cur.width = 1280;
-    g_cur.height = 720;
-    g_cur.pitch = 1280 * 4;
+    g_cur.width = 720;
+    g_cur.height = 576;
+    g_cur.pitch = 720 * 4;
     g_cur.tex_offset = 0;
     g_cur.draw_count = 0;
     g_cur.clear_mask = 0;
@@ -18,9 +18,9 @@ void rsx_draw_batch_reset(void) {
 
 void rsx_draw_batch_set_color(uint32_t offset, uint32_t pitch, uint32_t w, uint32_t h) {
     g_cur.color_offset = offset;
-    g_cur.pitch = pitch ? pitch : (1280u * 4u);
-    g_cur.width = 1280;
-    g_cur.height = 720;
+    g_cur.pitch = pitch ? pitch : (720u * 4u);
+    g_cur.width = 720;
+    g_cur.height = 576;
     (void)w; (void)h;
     g_dirty = 1;
 }

@@ -18,9 +18,9 @@ Direct3D 11 is **not** supported and has been removed from the runtime.
 
 | Item | Requirement |
 |------|-------------|
-| Output resolution | **1280×720 (720p)** fixed host present for the current path |
-| Monitor | 1280×720 or higher physical display recommended |
-| VRAM | Enough for a 720p swapchain + staging (typically ≥ 1 GB usable) |
+| Output resolution | **720×576 (576p)** fixed host present for the current path |
+| Monitor | 720×576 or higher physical display recommended |
+| VRAM | Enough for a 576p swapchain + staging (typically ≥ 1 GB usable) |
 
 ## Minimum (to open the game window and clear/present)
 

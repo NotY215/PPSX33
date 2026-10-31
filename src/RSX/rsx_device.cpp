@@ -10,9 +10,9 @@
 #include "host_stats.h"
 #include "ps3rt_be.h"
 
-static void rsx_force_720p(uint32_t* w, uint32_t* h) {
-    if (w) *w = 1280;
-    if (h) *h = 720;
+static void rsx_force_576p(uint32_t* w, uint32_t* h) {
+    if (w) *w = 720;
+    if (h) *h = 576;
 }
 
 #include "rsx_framebuffer.h"
@@ -54,7 +54,7 @@ PS3RT_API void ps3rt_force_exit(void);
 static int g_backend = 0; /* 0=Vulkan1.2 1=OpenGL */
 
 struct RsxState {
-    uint32_t width = 1280, height = 720;
+    uint32_t width = 720, height = 576;
     uint64_t fifo_addr = 0;
     uint32_t fifo_size = 0;
     uint32_t put = 0, get = 0;
@@ -289,7 +289,7 @@ static DWORD WINAPI rsx_pump_thread_main(void*) {
             if (g_gfx_api == 0 && rsx_vk_ready()) {
                 rsx_present_req req{};
                 if (rsx_present_queue_pop(&req) && req.flags == 2 && req.color_offset) {
-                    uint32_t w = 1280, h = 720;
+                    uint32_t w = 720, h = 576;
                     uint32_t pitch = req.pitch ? req.pitch : (w * 4);
                     if (pitch < w * 4) pitch = w * 4;
                     uint8_t* mem = ps3rt_guest_mem_ptr();
@@ -328,8 +328,8 @@ static void rsx_start_pump_thread() {}
 static void rsx_host_init(uint32_t w, uint32_t h) {
     if (g_hwnd) return;
     rsx_probe_api_preference();
-    g_rsx.width = 1280;
-    g_rsx.height = 720;
+    g_rsx.width = 720;
+    g_rsx.height = 576;
     (void)w; (void)h;
     WNDCLASSA wc{};
     wc.lpfnWndProc = RsxWndProc;
@@ -403,7 +403,7 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
     rsx_method_kind kind = rsx_classify_method(method);
     if (kind == RSX_M_SURFACE_COLOR_OFFSET) {
         rsx_surface_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height);
-        rsx_draw_batch_set_color(arg, g_rsx.color_pitch, 1280, 720);
+        rsx_draw_batch_set_color(arg, g_rsx.color_pitch, 720, 576);
         ppsx33::rsx::rsx_framebuffer_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height, 0);
         return true;
     }
@@ -461,8 +461,8 @@ static void rsx_draw_host(uint8_t* mem) {
         size_t msz = ps3rt_guest_mem_size();
         auto fb = ppsx33::rsx::rsx_framebuffer_color();
         uint32_t off = fb.offset ? fb.offset : g_rsx.color_offset;
-        uint32_t gw = 1280;
-        uint32_t gh = 720;
+        uint32_t gw = 720;
+        uint32_t gh = 576;
         uint32_t pitch = fb.pitch ? fb.pitch : gw * 4u;
         if (gmem && (size_t)off + (size_t)pitch * gh <= msz)
             presented = rsx_vk_present_guest_rgba(gmem + off, gw, gh, pitch);
@@ -658,7 +658,7 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
         ppsx33::rsx::rsx_shader_compiler_init();
         ppsx33::rsx::rsx_shader_decoder_init();
     }
-    if (!g_hwnd) rsx_host_init(1280, 720);
+    if (!g_hwnd) rsx_host_init(720, 576);
     ps3rt_log("[rsx] init fifo=0x%llx size=0x%x backend=%d (guest-PUT probe ready)\n",
         (unsigned long long)fifo_addr, (unsigned)fifo_size, g_backend);
 }
@@ -703,8 +703,8 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
         uint8_t* mem = ps3rt_guest_mem_ptr();
         size_t msz = ps3rt_guest_mem_size();
         uint32_t off = g_rsx.color_offset;
-        uint32_t gw = 1280;
-        uint32_t gh = 720;
+        uint32_t gw = 720;
+        uint32_t gh = 576;
         auto fb = ppsx33::rsx::rsx_framebuffer_color();
         if (fb.offset) off = fb.offset;
         uint32_t pitch = fb.pitch ? fb.pitch : (gw * 4u);
@@ -716,7 +716,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
                 host_stats_note_present();
             }
             else
-                presented = rsx_vk_present_guest_rgba(mem + off, 1280, 720, pitch);
+                presented = rsx_vk_present_guest_rgba(mem + off, 720, 576, pitch);
             if (presented) rsx_vk_poll_window();
         }
     }

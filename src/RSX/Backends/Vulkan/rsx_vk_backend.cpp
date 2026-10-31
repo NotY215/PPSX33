@@ -612,12 +612,12 @@ static int create_swapchain() {
     return 1;
 }
 
-int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
+extern "C" int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
     std::lock_guard<std::mutex> lk(g_vk_mu);
     if (g_vk.ready) return 1;
     if (!hwnd) return 0;
-    g_vk.width = width ? width : 1280;
-    g_vk.height = height ? height : 720;
+    g_vk.width = width ? width : 720;
+    g_vk.height = height ? height : 576;
 
     if (!load_vulkan_lib()) return 0;
 
@@ -751,7 +751,7 @@ int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
     return 1;
 }
 
-void rsx_vk_shutdown(void) {
+extern "C" void rsx_vk_shutdown(void) {
     std::lock_guard<std::mutex> lk(g_vk_mu);
     if (!g_vk.device) {
         g_vk.ready = 0;
@@ -775,9 +775,9 @@ void rsx_vk_shutdown(void) {
     g_vk.ready = 0;
 }
 
-int rsx_vk_ready(void) { return g_vk.ready; }
+extern "C" int rsx_vk_ready(void) { return g_vk.ready; }
 
-int rsx_vk_present_clear(float r, float g, float b, float a) {
+extern "C" int rsx_vk_present_clear(float r, float g, float b, float a) {
     if (!g_vk_mu.try_lock()) return 0; // skip frame if busy — never block HWND pump
     std::lock_guard<std::mutex> lk(g_vk_mu, std::adopt_lock);
     if (!g_vk.ready) return 0;
@@ -856,14 +856,13 @@ static uint32_t vk_find_mem_type(uint32_t type_bits, uint32_t props) {
     return 0;
 }
 
-int rsx_vk_present_guest_rgba(const void* pixels, uint32_t w, uint32_t h, uint32_t pitch_bytes) {
+extern "C" int rsx_vk_present_guest_rgba(const void* pixels, uint32_t w, uint32_t h, uint32_t pitch_bytes) {
     if (!g_vk_mu.try_lock()) return 0;
     std::lock_guard<std::mutex> lk(g_vk_mu, std::adopt_lock);
     if (!g_vk.ready || !pixels || !w || !h) return 0;
-    // Host present always 720p
-    w = 1280; h = 720;
+    // Host present always 576p (720x576) — lighter than 720p
+    w = 720; h = 576;
     if (!pitch_bytes || pitch_bytes < w * 4u) pitch_bytes = w * 4u;
-    // Cap copy size to 720p RGBA
     if (pitch_bytes > w * 4u) pitch_bytes = w * 4u;
 
     VkResult wf = g_vk.WaitForFences(g_vk.device, 1, &g_vk.in_flight, VK_TRUE, 16000000ull);
@@ -981,7 +980,7 @@ int rsx_vk_present_guest_rgba(const void* pixels, uint32_t w, uint32_t h, uint32
     return ok;
 }
 
-void rsx_vk_poll_window(void) {
+extern "C" void rsx_vk_poll_window(void) {
 #if defined(_WIN32)
     MSG msg;
     while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
