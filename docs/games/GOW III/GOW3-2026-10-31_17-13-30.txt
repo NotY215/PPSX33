@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-10-31_16-40-38.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-10-31_16-40-38.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-10-31_17-13-30.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-10-31_17-13-30.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -56,24 +56,26 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-10-31_16-40-38.txt
 [ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x103ac
 [prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x103ac r11=0x53f96c
 [ps3] import stub pc=0x39800000 -> ret=0x103ac (#1)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x33aec8
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x33aec8
+[prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x33aec8 r11=0x53f96c
 [ps3] import stub pc=0x39800000 -> ret=0x33aec8 (#2)
 [lv2] sc 352 r3=f0ffe04 r4=3cc7f8 r5=4 r6=0
 [lv2] alloc VA=0x8000000 size=0x3cc7f8
 [lv2] XV-L mem sc=352 size=0x3cc7f8 -> ea=0x8000000
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336750
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x336750
+[prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x336750 r11=0x53f96c
 [ps3] import stub pc=0x39800000 -> ret=0x336750 (#3)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x336660
+[prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x336660 r11=0x53f96c
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#4)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x336660
+[prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x336660 r11=0x53f96c
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#5)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x336660
+[prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x336660 r11=0x53f96c
 [ps3] import stub pc=0x39800000 -> ret=0x336660 (#6)
-[prx] load "cellSysutil" id=2 base=0x30200000
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0065F088 kind=7 mod=cellSysutil lr=0x336660
-[prx] stub kind=7 cellSysutil pc=0x39800000 nid=0x0065F088 lr=0x336660 r11=0x65f088
-[ps3] import stub pc=0x39800000 -> ret=0x336660 (#7)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x00000000 kind=0 mod=? lr=0x336660
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x336660
+[prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x336660 r11=0x53f96c
 [stage] PPU progress start
 [stage] SPU progress end
 [pad] XInput loaded from xinput1_4.dll
