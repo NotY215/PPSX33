@@ -202,3 +202,15 @@ All runtime logic lives under `src/`; the old `runtime/`, `GPU/`, `Processor/`, 
 - **Legal** documents live under `docs/legal/` except the four root-required files: `LICENSE`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `SECURITY.md`.
 - OpenGL and Vulkan backend files currently contain stub implementations with explicit “will be implemented in future” comments and a short description of each file’s intended responsibility.
 - All paths in CMakeLists.txt and the GUI `.csproj` have been updated to the layout above.
+
+## Native / translation / RSX (2026-10-31)
+
+| Path | Role |
+|------|------|
+| `src/native/x64/ps3rt_be.c` | Big-endian load/store (C, fast host path) |
+| `src/native/x64/ps3rt_be_masm.asm` | Optional MASM bswap helper |
+| `src/core/import/import_stub_map.c` | Static-style LR/PC → NID binds |
+| `src/processor/PPU/translate/ppu_import_bridge.c` | Import PC detect + NID resolve |
+| `src/RSX/fifo/rsx_method_table.c` | FIFO method classify (C) |
+| `src/RSX/present/rsx_present_queue.c` | Async double-buffer present queue |
+| `src/UI/Tabs/` | Legal and other tab controls |

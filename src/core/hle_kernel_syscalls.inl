@@ -1124,43 +1124,14 @@ PS3RT_API int ps3rt_prx_call(PPUContext* c, uint32_t nid) {
 
 // Called from ppu_run when PC lands on a null/import-like address.
 
-// Static-style stub binds: guest call-site / trampoline → NID (no GPR scan when hit)
-struct ImportStubBind { uint64_t ea; uint32_t nid; };
-static ImportStubBind g_stub_binds[512];
-static int g_stub_bind_n = 0;
-static void import_stub_bind(uint64_t ea, uint32_t nid) {
-    if (!ea || !nid) return;
-    ea &= ~3ull;
-    for (int i = 0; i < g_stub_bind_n; ++i) {
-        if (g_stub_binds[i].ea == ea) { g_stub_binds[i].nid = nid; return; }
-    }
-    if (g_stub_bind_n < 512)
-        g_stub_binds[g_stub_bind_n++] = { ea, nid };
-}
-static uint32_t import_stub_lookup(uint64_t ea) {
-    ea &= ~3ull;
-    for (int i = 0; i < g_stub_bind_n; ++i)
-        if (g_stub_binds[i].ea == ea) return g_stub_binds[i].nid;
-    // also try LR-4 call site style
-    uint64_t ea4 = (ea > 4) ? ((ea - 4) & ~3ull) : 0;
-    for (int i = 0; i < g_stub_bind_n; ++i)
-        if (g_stub_binds[i].ea == ea4) return g_stub_binds[i].nid;
-    return 0;
-}
-static void import_stub_seed_common() {
-    static int once = 0;
-    if (once) return;
-    once = 1;
-    // Common cellSysmodule / cellSysutil NIDs seen on GOW boot path
-    // Binds filled dynamically on first successful nid_lookup; seeds are NID-only helpers via r11 prefer
-}
+// Import binds live in src/core/import/import_stub_map.c (C).
+#include "import_stub_map.h"
+#include "ppu_import_bridge.h"
 
 PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
     if (!c) return -1;
-    import_stub_seed_common();
-    // Static bind: LR (return site) or PC → known NID (avoids runtime GPR scan)
-    uint32_t bound = import_stub_lookup(c->lr);
-    if (!bound) bound = import_stub_lookup(pc);
+    // Static bind: LR / PC → NID (C table) then r11
+    uint32_t bound = ps3rt_resolve_import_nid(pc, c->lr, (uint32_t)c->gpr[11]);
     if (bound && nid_lookup(bound)) {
         c->gpr[11] = bound;
     }
@@ -1218,7 +1189,7 @@ PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
 
     static int s = 0;
     if (s < 40) {
-        if (maybe_nid) { import_stub_bind(c->lr, maybe_nid); import_stub_bind(pc, maybe_nid); }
+        if (maybe_nid) { ps3rt_import_bind(c->lr, maybe_nid); ps3rt_import_bind(pc, maybe_nid); }
         ps3rt_log("[ps3] XXIV-D prx_import pc=0x%llx nid=0x%08X kind=%d mod=%s lr=0x%llx\n",
             (unsigned long long)pc, maybe_nid, kind,
             (e && e->module) ? e->module : "?",
@@ -1235,8 +1206,8 @@ PS3RT_API int ps3rt_prx_import_stub(PPUContext* c, uint64_t pc) {
         prx_note_hit(0, 2);
         rc = 0;
     } else if (maybe_nid) {
-        import_stub_bind(c->lr, maybe_nid);
-        import_stub_bind(pc, maybe_nid);
+        ps3rt_import_bind(c->lr, maybe_nid);
+        ps3rt_import_bind(pc, maybe_nid);
     }
     c->gpr[3] = (uint64_t)(int64_t)rc;
     return rc;

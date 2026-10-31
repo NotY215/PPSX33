@@ -592,6 +592,29 @@ static int wild_log2 = 0;
                     ret = last_good_ret;
                 if (ret && external_escapes < 262144) {
                     ps3rt_prx_import_stub(&c, c.pc);
+                    // Never resume into banned/null-island LR (GOW 0x336660 sticky)
+                    if (is_null_island_pc(ret) || is_banned(ret)) {
+                        uint64_t alt0 = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
+                        if (!alt0 || is_null_island_pc(alt0) || is_banned(alt0)) {
+                            for (size_t ci = 0; ci < n; ++ci) {
+                                uint64_t st = chunks[ci].start;
+                                if (st && !is_banned(st) && !is_null_island_pc(st) && st != ret) {
+                                    alt0 = st; break;
+                                }
+                            }
+                        }
+                        if (alt0 && alt0 != ret) {
+                            static int s_isl = 0;
+                            if (s_isl < 24)
+                                ps3rt_log("[ps3] import-island escape 0x%llx -> 0x%llx\n",
+                                    (unsigned long long)ret, (unsigned long long)alt0);
+                            ++s_isl;
+                            ret = alt0;
+                            add_ban(0x336660ull);
+                            add_ban(0x336750ull);
+                            ++soft_breaks;
+                        }
+                    }
                     bool same_site = last_null_lr &&
                         (ret == last_null_lr ||
                          (ret >= (last_null_lr & ~0xFFull) && ret < (last_null_lr & ~0xFFull) + 0x100));

@@ -1,6 +1,9 @@
 // WORK: RSX/libgcm host path — Vulkan 1.2 default, OpenGL secondary. DX11 removed.
 #include "rsx_device.h"
 #include "rsx_fifo.h"
+#include "rsx_method_table.h"
+#include "rsx_present_queue.h"
+#include "ps3rt_be.h"
 #include "rsx_framebuffer.h"
 #include "rsx_memory.h"
 #include "rsx_state.h"
@@ -262,9 +265,20 @@ static volatile long g_pump_run = 0;
 static DWORD WINAPI rsx_pump_thread_main(void*) {
     while (InterlockedCompareExchange(&g_pump_run, 1, 1) == 1) {
         if (g_hwnd) {
-            if (g_gfx_api == 0 && rsx_vk_ready())
-                rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
-            else if (g_hwnd)
+            if (g_gfx_api == 0 && rsx_vk_ready()) {
+                rsx_present_req req{};
+                if (rsx_present_queue_pop(&req) && req.flags == 2 && req.color_offset) {
+                    uint8_t* mem = ps3rt_guest_mem_ptr();
+                    size_t msz = ps3rt_guest_mem_size();
+                    size_t need = (size_t)req.color_offset + (size_t)req.pitch * req.height;
+                    if (mem && need <= msz)
+                        rsx_vk_present_guest_rgba(mem + req.color_offset, req.width, req.height, req.pitch);
+                    else
+                        rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
+                } else {
+                    rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
+                }
+            } else if (g_hwnd)
                 rsx_host_present_soft();
             MSG msg;
             while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
@@ -365,6 +379,21 @@ static void rsx_host_present_clear() {
 }
 
 static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
+    rsx_method_kind kind = rsx_classify_method(method);
+    if (kind == RSX_M_SURFACE_COLOR_OFFSET) {
+        rsx_surface_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height);
+        ppsx33::rsx::rsx_framebuffer_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height, 0);
+        return true;
+    }
+    if (kind == RSX_M_TEXTURE_OFFSET) {
+        g_rsx.tex_offset = arg;
+        ppsx33::rsx::rsx_texture_bind(0, arg, 0, g_rsx.width, g_rsx.height, 0);
+        return true;
+    }
+    if (kind == RSX_M_DRAW) {
+        ++g_rsx.draws;
+        return true;
+    }
     // NV4097-class methods (method is byte offset style as seen in FIFO decode)
     switch (method) {
     case 0x182c: case 0x1830: // color surface offset variants
@@ -590,6 +619,7 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
         g_rsx.fifo_size = fifo_size ? fifo_size : 0x100000;
         g_rsx.put = g_rsx.get = 0;
         ppsx33::rsx::rsx_fifo_init();
+        rsx_present_queue_init();
         ppsx33::rsx::rsx_framebuffer_init();
         ppsx33::rsx::rsx_memory_init();
         ppsx33::rsx::rsx_state_init();
@@ -651,7 +681,11 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
         uint32_t pitch = fb.pitch ? fb.pitch : (gw * 4u);
         size_t need = (size_t)off + (size_t)pitch * gh;
         if (mem && need <= msz) {
-            presented = rsx_vk_present_guest_rgba(mem + off, gw, gh, pitch);
+            { rsx_present_req rq{}; rq.color_offset = off; rq.width = gw; rq.height = gh;
+                  rq.pitch = pitch; rq.flags = 2;
+                  if (!rsx_present_queue_push(&rq))
+                    presented = rsx_vk_present_guest_rgba(mem + off, gw, gh, pitch);
+                  else presented = 1; }
             if (presented) rsx_vk_poll_window();
         }
     }

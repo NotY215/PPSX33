@@ -1,3 +1,5 @@
+# ASM_MASM optional — enable in MSVC builds when assembler present
+# enable_language(ASM_MASM)
 cmake_minimum_required(VERSION 3.20)
 project(PS3Recomp LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
@@ -27,6 +29,11 @@ add_library(ps3core SHARED
 )
 target_include_directories(ps3core PRIVATE
   ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/processor/PPU/translate
+    ${CMAKE_SOURCE_DIR}/src/RSX/present
+    ${CMAKE_SOURCE_DIR}/src/RSX/fifo
+    ${CMAKE_SOURCE_DIR}/src/core/import
+    ${CMAKE_SOURCE_DIR}/src/native/x64
   ${CMAKE_SOURCE_DIR}/src/core/loaders
   ${CMAKE_SOURCE_DIR}/src/core/fs
   ${CMAKE_SOURCE_DIR}/src/processor/PPU
@@ -53,6 +60,11 @@ if(WIN32)
     src/RSX/rsx_texture.cpp
     src/RSX/rsx_shader_compiler.cpp
     src/RSX/rsx_shader_decoder.cpp
+    src/native/x64/ps3rt_be.c
+    src/core/import/import_stub_map.c
+    src/RSX/fifo/rsx_method_table.c
+    src/RSX/present/rsx_present_queue.c
+    src/processor/PPU/translate/ppu_import_bridge.c
     src/processor/SPU/spu_interpreter.cpp
     src/games-stuff/Audio/audio_device.cpp
   )

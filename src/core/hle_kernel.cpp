@@ -1,3 +1,5 @@
+#include "import_stub_map.h"
+#include "ppu_import_bridge.h"
 // WORK: Runtime lifecycle + HLE dispatch entry.
 
 // ps3rt Phase XVI-XVIII — audio/save (audio_save.cpp) + pad/input

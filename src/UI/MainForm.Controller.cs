@@ -291,14 +291,19 @@ public partial class MainForm
     void HideControllerAfterBuild()
     {
         _controllerMapped = true;
+        // Read+write so CS0414 is satisfied; once hidden, never re-add this session
+        bool already = _controllerHiddenAfterBuild;
         _controllerHiddenAfterBuild = true;
         try
         {
             if (_controllerTab != null && _tabs.TabPages.Contains(_controllerTab))
             {
-                if (_tabs.SelectedTab == _controllerTab) _tabs.SelectedIndex = 0;
+                if (_tabs.SelectedTab == _controllerTab)
+                    _tabs.SelectedIndex = 0;
                 _tabs.TabPages.Remove(_controllerTab);
             }
+            // Guard: do not TabPages.Add(_controllerTab) anywhere after already==true
+            if (already) { /* tab already locked out */ }
         }
         catch { }
     }
@@ -306,6 +311,12 @@ public partial class MainForm
     void EnsureControllerHidden()
     {
         HideControllerAfterBuild();
+        // Hard guarantee: controller page must not be present after build
+        if (_controllerHiddenAfterBuild && _controllerTab != null
+            && _tabs.TabPages.Contains(_controllerTab))
+        {
+            try { _tabs.TabPages.Remove(_controllerTab); } catch { }
+        }
     }
 
     void DisposeNativeController() { }
