@@ -120,6 +120,7 @@ For the task-level breakdown and longer-term architecture plan, see **[ROADMAP.m
 | **[Diagrams index](docs/DIAGRAMS.md)** | Mermaid, PlantUML, Graphviz, WaveDrom, Vega-Lite, Nomnoml, Markmap, Kroki, … |
 | **[Roadmap](ROADMAP.md)** | Phased gates and status |
 | **[Engineering](ENGINEERING.md)** | Build and contributor notes |
+| **[Game runtime requirements](requirements.md)** | Supported graphics APIs, display output and runtime hardware requirements |
 
 High-level flow:
 
@@ -172,17 +173,49 @@ Built artefacts in `build/dist/`:
 
 Generated projects may contain a game executable, `ps3rt.dll`, guest image data, generated source files, controller mapping and build logs. Exact output depends on the project and build path.
 
-## 🖥️ Host support
+## 🖥️ Game runtime requirements
 
-| Item | Current target |
+The following requirements apply to **running a recompiled game** (the generated game executable with `ps3rt.dll`). They are separate from the Visual Studio, .NET and CMake tools used to build PPSX33 itself.
+
+### Supported graphics APIs
+
+| API | Version | Role |
+| --- | --- | --- |
+| **Vulkan** | **1.2** | Default host renderer. `vulkan-1.dll` must be beside the generated game executable. |
+| **OpenGL** | **4.3** | Secondary core-profile path. Feature parity with Vulkan is in progress. |
+| Direct3D 11 | — | **Not supported.** The D3D11 runtime and dependencies have been removed. |
+
+### Minimum requirements
+
+These are the current minimums for opening the game window and clearing/presenting a frame. They do not guarantee that a particular game will boot or render correctly.
+
+| Component | Requirement |
 | --- | --- |
-| Operating system | Windows x64 |
-| Graphics backend | **Vulkan 1.2** (default); OpenGL secondary; `vulkan-1.dll` next to EXE |
-| Native compiler | Microsoft C++ toolchain |
-| GUI framework | .NET 8 or the version specified by the project |
-| Build tooling | CMake / Ninja for the relevant host targets |
+| Operating system | 64-bit Windows 10 or later |
+| GPU | A driver exposing **Vulkan 1.2** or **OpenGL 4.3** |
+| Vulkan loader | `vulkan-1.dll` beside the generated game executable when using Vulkan |
+| Display output | Fixed **1280×720 (720p)** host presentation for the current path |
+| Monitor | A physical display of 1280×720 or higher is recommended |
+| VRAM | Enough for the 720p swapchain and staging buffers; typically **1 GB or more usable** |
+| Input | Keyboard or XInput controller, where supported by the title |
+| Game data | Lawfully obtained title files that you are authorized to run |
 
-Linux and macOS are **not supported host-runtime targets at present**. Requirements can change as the project evolves; check the build files and [redistributable/toolchain notes](redist/README.txt) before setting up a development machine.
+### Recommended configuration
+
+| Component | Recommendation |
+| --- | --- |
+| GPU | Discrete GPU with current vendor drivers and Vulkan 1.2 support |
+| VRAM | **2 GB or more** |
+| System memory | **8 GB or more** for guest and host buffers |
+| Storage | SSD for game data and logs |
+
+These are renderer and presentation requirements, not compatibility guarantees. Game behaviour still depends on the implemented PPU, SPU, RSX/GCM and system-service paths. A machine meeting the minimum requirements may open and present a window while a specific title remains unsupported or fails during execution.
+
+### Building PPSX33
+
+The requirements above are **not** the development-toolchain requirements for building the recompiler or its GUI. For the current build setup, install the Visual Studio C++ desktop development tools and Windows SDK, the .NET SDK required by the GUI project, and the CMake/Ninja tools required by the relevant targets. Check the [redistributable and toolchain notes](redist/README.txt) and the project build files for configuration-specific details.
+
+See [requirements.md](requirements.md) for the maintained game-rendering requirements.
 
 ## 🚀 Build and try the tools
 
@@ -258,6 +291,7 @@ Please keep changes scoped, explain assumptions, and do not add copyrighted game
 - 🧪 [PPU coverage report](docs/PPU_COVERAGE.md)
 - 🎮 [Game notes and test logs](docs/games/README.md)
 - ⌨️ [Controller key mapping](docs/KEY_MAPPING.md)
+- 🖥️ [Game runtime requirements](requirements.md)
 - 🧰 [Toolchain setup](redist/README.txt)
 - 🛡️ [Security policy](SECURITY.md)
 - 📜 [Legal notes](LEGAL.md)
