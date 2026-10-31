@@ -1,216 +1,212 @@
-# PPSX33 Repository Structure
+# PPSX33 Build Structure
 
-**Website:** https://ppsx33.xo.je/  
-**Last updated:** 2026-10-29
+**Repository:** [NotY215/PPSX33](https://github.com/NotY215/PPSX33)  
+**Last updated:** 2026-10-31
 
-This document is the canonical map of the repository after the modular `src/` restructure.  
-All runtime logic lives under `src/`; the old `runtime/`, `GPU/`, `Processor/`, and `Game-Stuff/` trees have been removed.
+This file documents the files and directories that make up the PPSX33 application and its build pipeline. Documentation-only folders and Markdown files are intentionally omitted. This is a structure reference only; it does not delete or move anything in the repository.
 
-```
-📦 Project_Root/
-├── .gitattributes
-├── .gitignore
-├── CITATION.cff
-├── CMakeLists.txt
-├── CMakePresets.json
-├── CMakeSettings.json
-├── CODE_OF_CONDUCT.md
-├── CONTRIBUTING.md
-├── Directory.Build.props
-├── ENGINEERING.md
-├── LICENSE                          # Apache-2.0 (stays at root)
-├── PS3Recomp.sln
-├── README.md
-├── ROADMAP.md
-├── SECURITY.md                      # stays at root
-├── STRUCTURE.md                     # this file
-├── USER_MANUAL.md
-├── launch.vs.json
-├── requirements.md
-│
-├── .github/
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── build_error.yml
-│   │   ├── config.yml
-│   │   ├── game_launch.yml
-│   │   ├── other.yml
-│   │   ├── performance_delay.yml
-│   │   └── spu_coverage.yml
-│   └── workflows/
-│       └── validate.yml
-│
+```text
+PPSX33/
+├── CMakeLists.txt                    # Native targets, GUI publish, and output staging
+├── CMakePresets.json                 # Configure/build presets
+├── CMakeSettings.json                # Visual Studio CMake settings
+├── Directory.Build.props             # Shared MSBuild properties
+├── PS3Recomp.sln                     # Visual Studio solution
+├── launch.vs.json                    # Visual Studio launch configuration
 ├── assets/
-│   ├── PPSX33 PS3 Controller Key Mapping.png
-│   ├── ppsx33-banner.png
-│   ├── ppsx33-logo.ico
-│   └── ppsx33-logo.png
-│
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── DEVELOPER_GUIDE.md
-│   ├── DIAGRAMS.md
-│   ├── KEY_MAPPING.md
-│   ├── PPU_COVERAGE.md
-│   ├── legal/                       # All legal / policy docs (except LICENSE, CoC, CONTRIBUTING, SECURITY)
-│   │   ├── LEGAL.md
-│   │   ├── TERMS.md
-│   │   ├── PRIVACY.md
-│   │   ├── NOTICE
-│   │   ├── THIRD_PARTY.md
-│   │   ├── GOVERNANCE.md
-│   │   └── Redist.md
-│   └── games/                       # Per-title analysis notes & lift logs
-│       ├── README.md
-│       ├── DemonsSouls/
-│       ├── GOW III/
-│       ├── Grand Theft Auto - San Andreas/
-│       ├── Grand Theft Auto V/
-│       ├── Mineacraft/
-│       └── Uncharted2/
-│
-├── redist/
-│   └── README.txt
-│
-├── releases/
-│   ├── PPSX33-Alpha-01.md
-│   └── README.md
-│
-└── 📂 src/                          # Main Application Source Tree
-    ├── 📂 cli/
-    │   └── ps3_cli.cpp              # Headless CLI entry (lift / run helpers)
-    │
-    ├── 📂 core/                     # OS Kernel, Unencrypted ELF Loader, File Systems, HLE
-    │   ├── 📂 loaders/              # Binary Executable Parsers
-    │   │   ├── elf_loader.h
-    │   │   └── elf_loader.cpp       # Parses unencrypted 64-bit PowerPC ELF headers, segments, symbols (no decryption)
-    │   ├── 📂 fs/                   # Virtual File System (VFS) Layer
-    │   │   ├── vfs.h / vfs.cpp      # Maps dev_flash, dev_hdd0, dev_bdvd to host paths
-    │   │   ├── psarc_parser.h/.cpp  # Unpacks unencrypted PSARC game assets
-    │   │   └── sfo_parser.h/.cpp    # Reads param.sfo metadata, titles, save profiles
-    │   ├── memory.h / memory.cpp    # Main system RAM allocator (global address space)
-    │   ├── hle_kernel.h / .cpp      # Intercepts native OS syscalls (threads, mutexes, file IO, modules)
-    │   ├── hle_kernel_syscalls.inl  # Syscall table / dispatch bodies
+│   └── ppsx33-logo.ico               # GUI application icon
+├── cmake/
+│   └── CopyVulkanRuntime.cmake       # Stages the Vulkan runtime DLL
+├── redist/                           # Files staged into the build output
+└── src/
+    ├── cli/
+    │   └── ps3_cli.cpp               # Command-line entry point
+    ├── core/
+    │   ├── fs/
+    │   │   ├── psarc_parser.cpp
+    │   │   ├── psarc_parser.h
+    │   │   ├── sfo_parser.cpp
+    │   │   ├── sfo_parser.h
+    │   │   ├── vfs.cpp
+    │   │   └── vfs.h
+    │   ├── import/
+    │   │   ├── import_stub_map.c
+    │   │   └── import_stub_map.h
+    │   ├── loaders/
+    │   │   ├── elf_loader.cpp
+    │   │   └── elf_loader.h
+    │   ├── assets.cpp
+    │   ├── hle_hw_progress.cpp
+    │   ├── hle_kernel.cpp
+    │   ├── hle_kernel.h
     │   ├── hle_kernel_internal.h
-    │   ├── lv2_syscalls.inl
-    │   ├── hle_log.cpp              # Optional/reference only — ps3rt_log lives in hle_kernel.cpp (do not dual-link)
-    │   ├── hle_hw_progress.cpp      # Optional/reference only — ps3rt_progress_hw lives in hle_kernel_syscalls.inl
+    │   ├── hle_kernel_syscalls.inl
+    │   ├── hle_log.cpp
     │   ├── hle_registry.h
     │   ├── hle_stage.h
     │   ├── hle_status.h
+    │   ├── lv2_syscalls.inl
+    │   ├── memory.cpp
+    │   ├── memory.h
     │   ├── nid_table.h
-    │   ├── assets.cpp
-    │   ├── project.h / project.cpp  # Project / game session management
+    │   ├── project.cpp
+    │   ├── project.h
+    │   ├── ps3_util.c
+    │   ├── ps3_util.h
     │   ├── ps3core.h
-    │   ├── ps3core_api.cpp
-    │   └── ps3_util.h / ps3_util.c
-    │
-    ├── 📂 processor/                # Cell Broadband Engine Architecture Emulation
-    │   ├── 📂 PPU/                  # PowerPC Processor Unit (Main Core)
-    │   │   ├── ppu_interpreter.h/.cpp  # Interprets standard 64-bit PowerPC instructions sequentially
-    │   │   ├── ppu_jit.h/.cpp          # [FUTURE] Dynamic compiler → native x86_64 / ARM64
-    │   │   ├── ppu_disasm.h/.cpp       # Disassembles PPU binary segments for debug tracking
-    │   │   ├── ppu_lifter.h/.cpp       # Static lift of PPU blocks to host C++ (core of recompiler)
+    │   └── ps3core_api.cpp
+    ├── games-stuff/
+    │   ├── Audio/
+    │   │   ├── Decoders/
+    │   │   │   ├── decode_adpcm.cpp
+    │   │   │   ├── decode_adpcm.h
+    │   │   │   ├── decode_at3.cpp
+    │   │   │   ├── decode_at3.h
+    │   │   │   ├── decode_celp.cpp
+    │   │   │   └── decode_celp.h
+    │   │   ├── Drivers/
+    │   │   │   ├── audio_cubeb_backend.cpp
+    │   │   │   ├── audio_sdl2_backend.cpp
+    │   │   │   └── audio_xaudio2_backend.cpp
+    │   │   ├── audio_aub.cpp
+    │   │   ├── audio_aub.h
+    │   │   ├── audio_device.cpp
+    │   │   ├── audio_device.h
+    │   │   ├── audio_dsp.cpp
+    │   │   ├── audio_dsp.h
+    │   │   ├── audio_mixer.cpp
+    │   │   ├── audio_mixer.h
+    │   │   ├── audio_voice.cpp
+    │   │   ├── audio_voice.h
+    │   │   ├── libaudio.cpp
+    │   │   └── libaudio.h
+    │   └── Video/
+    │       ├── Decoders/
+    │       │   ├── decode_divx.cpp
+    │       │   ├── decode_divx.h
+    │       │   ├── decode_h264.cpp
+    │       │   ├── decode_h264.h
+    │       │   ├── decode_mpeg2.cpp
+    │       │   └── decode_mpeg2.h
+    │       ├── video_clock.cpp
+    │       ├── video_clock.h
+    │       ├── video_color_space.cpp
+    │       ├── video_color_space.h
+    │       ├── video_demuxer.cpp
+    │       ├── video_demuxer.h
+    │       ├── video_pamf.cpp
+    │       ├── video_pamf.h
+    │       ├── video_presenter.cpp
+    │       └── video_presenter.h
+    ├── native/
+    │   └── x64/
+    │       ├── ps3rt_be.c
+    │       ├── ps3rt_be.h
+    │       └── ps3rt_be_masm.asm
+    ├── processor/
+    │   ├── PPU/
+    │   │   ├── translate/
+    │   │   │   ├── ppu_import_bridge.c
+    │   │   │   └── ppu_import_bridge.h
+    │   │   ├── ppu_disasm.cpp
+    │   │   ├── ppu_disasm.h
+    │   │   ├── ppu_interpreter.cpp
+    │   │   ├── ppu_interpreter.h
+    │   │   ├── ppu_jit.cpp
+    │   │   ├── ppu_jit.h
+    │   │   ├── ppu_lifter.cpp
+    │   │   ├── ppu_lifter.h
     │   │   ├── ppu_runtime.h
     │   │   ├── ppu_runtime_core.h
     │   │   ├── ppu_runtime_core_a.h
     │   │   ├── ppu_runtime_core_b.h
     │   │   └── ppu_runtime_run.h
-    │   └── 📂 SPU/                  # Synergistic Processing Units
-    │       ├── spu_interpreter.h/.cpp  # Custom 128-bit SIMD ISA interpreter
-    │       ├── spu_jit.h/.cpp          # [FUTURE] High-efficiency JIT for SPU loops
-    │       └── spu_local_store.h/.cpp  # Isolated 256 KB Local Store model per SPU
-    │
-    ├── 📂 RSX/                      # Core Graphics Pipeline Emulation
-    │   ├── rsx_backend_interface.h  # Pure-virtual Strategy Pattern API for backends
-    │   ├── rsx_device.h/.cpp        # Decodes core libgcm commands & hardware register sets (ex-rsx_stub)
-    │   ├── rsx_fifo.h/.cpp          # Ring-buffer command queue / raw GPU token parser
-    │   ├── rsx_state.h/.cpp         # Tracks blend, depth, scissor, viewport, etc.
-    │   ├── rsx_memory.h/.cpp        # Virtual address manager (PS3 VRAM + CPU XDR)
-    │   ├── rsx_texture.h/.cpp       # Swizzle unpacker (cell formats → host formats)
-    │   ├── rsx_framebuffer.h/.cpp   # PS3 render targets → modern FBOs / RTVs
-    │   ├── rsx_shader_decoder.h/.cpp# Microcode binary → intermediate representation
-    │   ├── rsx_shader_compiler.h/.cpp # IR → HLSL / GLSL / SPIR-V
-    │   └── 📂 Backends/
-    │       ├── 📂 OpenGL/           # [SECONDARY] OpenGL path
-    │       │   ├── rsx_gl_backend.h/.cpp    # WGL/GLX context, flush, swap
-    │       │   ├── rsx_gl_state.cpp         # Pipeline → glCullFace / glEnable(BLEND) …
-    │       │   ├── rsx_gl_vao.cpp           # VAO + buffer layout bindings
-    │       │   └── rsx_gl_shaders.cpp       # Dynamic GLSL compile/link
-    │       │                                # (stubs contain “implement in future” comments)
-    │       └── 📂 Vulkan/           # [DEFAULT] Vulkan 1.2 — instance/device/swapchain/present
-    │           ├── rsx_vk_backend.h/.cpp    # VkInstance / Device / physical selection
-    │           ├── rsx_vk_pipelines.cpp     # Explicit Pipeline State Objects
-    │           ├── rsx_vk_command.cpp       # FIFO → VkCommandBuffer rings
-    │           └── rsx_vk_memory.cpp        # Explicit VRAM sub-allocation
-    │                                        # (stubs contain “implement in future” comments)
-    │
-    ├── 📂 games-stuff/              # Non-Graphics Subsystems & Media
-    │   ├── 📂 Audio/                # Cell Audio Subsystem
-    │   │   ├── 📂 Drivers/
-    │   │   │   ├── audio_xaudio2_backend.cpp  # [DEFAULT] Native low-latency Windows
-    │   │   │   ├── audio_sdl2_backend.cpp     # [NEXT] Portable fallback
-    │   │   │   └── audio_cubeb_backend.cpp    # [FUTURE] Multi-threaded engine
-    │   │   ├── 📂 Decoders/
-    │   │   │   ├── decode_at3.h/.cpp          # ATRAC3plus → PCM
-    │   │   │   ├── decode_adpcm.h/.cpp        # VAG / ADPCM sound effects
-    │   │   │   └── decode_celp.h/.cpp         # Voice / dialogue CELP
-    │   │   ├── audio_device.h/.cpp            # 48 kHz hardware clocking / port open
-    │   │   ├── audio_aub.h/.cpp               # Audio Web memory & pointer loops
-    │   │   ├── libaudio.h/.cpp                # cellAudio* HLE surface
-    │   │   ├── audio_mixer.h/.cpp             # Multi-stream → 2.0 / 5.1 / 7.1
-    │   │   ├── audio_voice.h/.cpp             # Playback state, loops, volume, pitch
-    │   │   └── audio_dsp.h/.cpp               # Reverb / environmental effects
-    │   └── 📂 Video/                # Cinematics & Video Playback
-    │       ├── 📂 Decoders/
-    │       │   ├── decode_h264.h/.cpp         # AVC / H.264 (DXVA2 path planned)
-    │       │   ├── decode_mpeg2.h/.cpp        # Legacy intro clips
-    │       │   └── decode_divx.h/.cpp         # DivX / commercial middleware
-    │       ├── video_pamf.h/.cpp              # Sony .pam container demux
-    │       ├── video_demuxer.h/.cpp           # Generic packet splitter
-    │       ├── video_color_space.h/.cpp       # YUV → RGB conversion
-    │       └── video_clock.h/.cpp             # Master frame pacing vs audio
-    │
-    └── 📂 UI/                       # User Interface, Debugger, Front-end
-        ├── 📂 panels/
-        │   ├── game_list_panel.h/.cpp   # VFS scan → grid/list of games
-        │   ├── debugger_panel.h/.cpp    # PPU/SPU step, registers, memory view
-        │   └── settings_panel.h/.cpp    # Backend / audio driver toggles
-        ├── ui_manager.h/.cpp            # Main window events, init, frame pacing
-        ├── ui_renderer.h/.cpp           # Basic shapes/text (ImGui-style abstraction)
-        ├── MainForm.cs                  # Primary WinForms surface
+    │   └── SPU/
+    │       ├── spu_interpreter.cpp
+    │       ├── spu_interpreter.h
+    │       ├── spu_jit.cpp
+    │       ├── spu_jit.h
+    │       ├── spu_local_store.cpp
+    │       └── spu_local_store.h
+    ├── RSX/
+    │   ├── Backends/
+    │   │   ├── OpenGL/
+    │   │   │   ├── rsx_gl_backend.cpp
+    │   │   │   ├── rsx_gl_backend.h
+    │   │   │   ├── rsx_gl_shaders.cpp
+    │   │   │   ├── rsx_gl_state.cpp
+    │   │   │   └── rsx_gl_vao.cpp
+    │   │   └── Vulkan/
+    │   │       ├── rsx_vk_backend.cpp
+    │   │       ├── rsx_vk_backend.h
+    │   │       ├── rsx_vk_command.cpp
+    │   │       ├── rsx_vk_memory.cpp
+    │   │       └── rsx_vk_pipelines.cpp
+    │   ├── fifo/
+    │   │   ├── rsx_method_table.c
+    │   │   └── rsx_method_table.h
+    │   ├── present/
+    │   │   ├── rsx_present_queue.c
+    │   │   └── rsx_present_queue.h
+    │   ├── rsx_backend_interface.h
+    │   ├── rsx_device.cpp
+    │   ├── rsx_device.h
+    │   ├── rsx_fifo.cpp
+    │   ├── rsx_fifo.h
+    │   ├── rsx_fifo_guest_put_notes.h
+    │   ├── rsx_framebuffer.cpp
+    │   ├── rsx_framebuffer.h
+    │   ├── rsx_memory.cpp
+    │   ├── rsx_memory.h
+    │   ├── rsx_shader_compiler.cpp
+    │   ├── rsx_shader_compiler.h
+    │   ├── rsx_shader_decoder.cpp
+    │   ├── rsx_shader_decoder.h
+    │   ├── rsx_state.cpp
+    │   ├── rsx_state.h
+    │   ├── rsx_texture.cpp
+    │   └── rsx_texture.h
+    └── UI/
+        ├── panels/
+        │   ├── debugger_panel.cpp
+        │   ├── debugger_panel.h
+        │   ├── game_list_panel.cpp
+        │   ├── game_list_panel.h
+        │   ├── settings_panel.cpp
+        │   └── settings_panel.h
+        ├── Tabs/
+        │   └── LegalTab.cs
+        ├── Ui/
+        │   ├── LiquidBackdrop.cs
+        │   └── UiKit.cs
+        ├── EmbeddedLegal.cs
+        ├── EmbeddedTerms.cs
+        ├── KeyMap.cs
         ├── MainForm.Build.cs
         ├── MainForm.Controller.cs
         ├── MainForm.Decrypt.cs
         ├── MainForm.Workflow.cs
-        ├── Program.cs
+        ├── MainForm.cs
+        ├── MarkdownHtml.cs
         ├── Native.cs
-        ├── Settings.cs
-        ├── KeyMap.cs
+        ├── PS3Recomp.Gui.csproj
+        ├── Program.cs
         ├── PromptDialog.cs
-        ├── TermsForm.cs
         ├── Ps3Visuals.cs
         ├── Rpcs3Launcher.cs
-        ├── PS3Recomp.Gui.csproj
-        └── Ui/
-            ├── LiquidBackdrop.cs
-            └── UiKit.cs
+        ├── Settings.cs
+        └── TermsForm.cs
 ```
 
-## Notes
+## Build entry points
 
-- **Removed** (intentionally): `runtime/`, `GPU/`, `Processor/`, `Game-Stuff/`, top-level `src/` legacy copies, `tests/`, `scripts/`, duplicate decoder sources that lived outside `Decoders/`.
-- **Legal** documents live under `docs/legal/` except the four root-required files: `LICENSE`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `SECURITY.md`.
-- OpenGL and Vulkan backend files currently contain stub implementations with explicit “will be implemented in future” comments and a short description of each file’s intended responsibility.
-- All paths in CMakeLists.txt and the GUI `.csproj` have been updated to the layout above.
+- **CMake:** `CMakeLists.txt` defines the native `ps3core` and Windows `ps3rt` libraries, stages runtime headers and redistributables, and publishes the GUI when the .NET SDK is available.
+- **CMake presets:** `CMakePresets.json` provides the `x64-release` configure and build presets.
+- **GUI project:** `src/UI/PS3Recomp.Gui.csproj` builds the Windows Forms application targeting `.NET 8`.
+- **Solution:** `PS3Recomp.sln` opens the project in Visual Studio.
+- **Application icon:** `assets/ppsx33-logo.ico` is referenced by the GUI project.
+- **Vulkan staging:** `cmake/CopyVulkanRuntime.cmake` is invoked by the native build to stage the Vulkan runtime.
 
-## Native / translation / RSX (2026-10-31)
+## Scope
 
-| Path | Role |
-|------|------|
-| `src/native/x64/ps3rt_be.c` | Big-endian load/store (C, fast host path) |
-| `src/native/x64/ps3rt_be_masm.asm` | Optional MASM bswap helper |
-| `src/core/import/import_stub_map.c` | Static-style LR/PC → NID binds |
-| `src/processor/PPU/translate/ppu_import_bridge.c` | Import PC detect + NID resolve |
-| `src/RSX/fifo/rsx_method_table.c` | FIFO method classify (C) |
-| `src/RSX/present/rsx_present_queue.c` | Async double-buffer present queue |
-| `src/UI/Tabs/` | Legal and other tab controls |
+This is a build-focused map, not a complete repository inventory. It intentionally omits `docs/`, `tests/`, `releases/`, root-level Markdown documentation, issue templates, and other project-management files. Those files remain in the repository and are not deleted by this document update.
