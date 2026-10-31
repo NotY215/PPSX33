@@ -12,8 +12,6 @@ They do **not** describe the Visual Studio / .NET toolchain used only to **build
 | **Vulkan** | **1.2** | **Default** host renderer (`vulkan-1.dll` next to the game EXE) |
 | **OpenGL** | **4.3** | Secondary path (core profile); parity with Vulkan is in progress |
 
-Direct3D 11 is **not** supported and has been removed from the runtime.
-
 ## Display / output
 
 | Item | Requirement |

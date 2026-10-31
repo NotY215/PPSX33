@@ -194,9 +194,9 @@ These are the current minimums for opening the game window and clearing/presenti
 | Operating system | 64-bit Windows 10 or later |
 | GPU | A driver exposing **Vulkan 1.2** or **OpenGL 4.3** |
 | Vulkan loader | `vulkan-1.dll` beside the generated game executable when using Vulkan |
-| Display output | Fixed **1280×720 (720p)** host presentation for the current path |
-| Monitor | A physical display of 1280×720 or higher is recommended |
-| VRAM | Enough for the 720p swapchain and staging buffers; typically **1 GB or more usable** |
+| Display output | Fixed **720×576 (576p)** host present for the current path |
+| Monitor | A physical display of **720×576** or higher is recommended |
+| VRAM | Enough for a 576p swapchain and staging buffers; typically **1 GB or more usable** |
 | Input | Keyboard or XInput controller, where supported by the title |
 | Game data | Lawfully obtained title files that you are authorized to run |
 
