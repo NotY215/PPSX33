@@ -22,7 +22,7 @@ public sealed partial class MainForm : Form
     private readonly Settings _settings = Settings.Load();
     private readonly TextBox _log = new();
     private readonly TextBox _report = new();
-    private readonly TextBox _legal = new();
+    private readonly WebBrowser _legalBrowser = new();
     private readonly TextBox _roadmap = new();
     private readonly TextBox _requirements = new();
     private readonly Ps3HudLabel _project = new();
@@ -305,8 +305,18 @@ public sealed partial class MainForm : Form
 
         StyleTextBox(_log);
         StyleTextBox(_report);
-        StyleTextBox(_legal);
-        _legal.Text = EmbeddedLegal.Markdown;
+        _legalBrowser.Dock = DockStyle.Fill;
+        _legalBrowser.DocumentText = MarkdownHtml.ToHtml(
+            EmbeddedLegal.Markdown,
+            "Legal notice for Windows user <b>" + System.Net.WebUtility.HtmlEncode(Environment.UserName) + "</b>. Read before Load / Build / Run.");
+        _legalBrowser.Navigating += (_, e) =>
+        {
+            string url = e.Url?.AbsoluteUri ?? "";
+            if (string.IsNullOrEmpty(url) || url.StartsWith("about:", StringComparison.OrdinalIgnoreCase))
+                return;
+            e.Cancel = true;
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); } catch { }
+        };
         StyleTextBox(_roadmap);
         StyleTextBox(_requirements);
         _requirements.Text = BuildRequirementsText();
@@ -322,7 +332,7 @@ public sealed partial class MainForm : Form
         AddTab("Report", _report);
         AddTab("Roadmap", _roadmap);
         AddTab("Requirements", _requirements);
-        AddTab("Legal", _legal);
+        AddTab("Legal", _legalBrowser);
         BuildControllerTab();
 
         _status.Text = "Ready";

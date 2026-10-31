@@ -596,7 +596,7 @@ static int wild_log2 = 0;
                         (ret == last_null_lr ||
                          (ret >= (last_null_lr & ~0xFFull) && ret < (last_null_lr & ~0xFFull) + 0x100));
                     if (same_site) {
-                        if (++stub_same_lr > 6) {
+                        if (++stub_same_lr > 3) {
                             // Escalate earlier: GOW spins import->0x336660 for dozens of calls
                             ++soft_breaks;
                             stub_same_lr = 0;
@@ -658,7 +658,7 @@ static int wild_log2 = 0;
                                 last_null_lr = 0;
                             }
                             // Region exhausted: drop sticky, region-ban the 0x1000 window
-                            if (soft_breaks >= 12 && (soft_breaks % 12) == 0) {
+                            if (soft_breaks >= 6 && (soft_breaks % 6) == 0) {
                                 add_rban(ret);
                                 ps3rt_log("[ps3] null-loop region exhausted (soft_breaks=%d) -- dropping sticky\n", soft_breaks);
                                 last_null_lr = 0;
@@ -666,7 +666,7 @@ static int wild_log2 = 0;
                                 if (far && far != ret && !is_banned(far)) ret = far;
                             }
                             // Hard escape: 0x105e8-class null-loop was observed past 1000+ soft_breaks
-                            if (soft_breaks >= 24) {
+                            if (soft_breaks >= 8) {
                                 add_rban(ret);
                                 add_rban(0x105e8ull);
                                 add_ban(0x105e8ull);

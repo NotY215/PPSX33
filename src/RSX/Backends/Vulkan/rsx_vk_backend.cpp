@@ -782,7 +782,8 @@ int rsx_vk_present_clear(float r, float g, float b, float a) {
     std::lock_guard<std::mutex> lk(g_vk_mu, std::adopt_lock);
     if (!g_vk.ready) return 0;
 
-    g_vk.WaitForFences(g_vk.device, 1, &g_vk.in_flight, VK_TRUE, 50000000ull); /* 50ms */
+    VkResult wf = g_vk.WaitForFences(g_vk.device, 1, &g_vk.in_flight, VK_TRUE, 16000000ull);
+    if (wf != VK_SUCCESS) return 0;
     g_vk.ResetFences(g_vk.device, 1, &g_vk.in_flight);
 
     uint32_t imageIndex = 0;
