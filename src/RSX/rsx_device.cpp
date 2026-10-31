@@ -6,6 +6,8 @@
 #include "rsx_draw_batch.h"
 #include "rsx_surface_fmt.h"
 #include "rsx_render_frame.h"
+#include "rsx_light_present.h"
+#include "host_stats.h"
 #include "ps3rt_be.h"
 
 static void rsx_force_720p(uint32_t* w, uint32_t* h) {
@@ -297,10 +299,14 @@ static DWORD WINAPI rsx_pump_thread_main(void*) {
                         rsx_vk_present_guest_rgba(mem + req.color_offset, w, h, pitch);
                     else
                         rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
-                } else if (((++tick) & 3) == 0) {
-                    // clear at ~15Hz max — avoids VK cmd buffer races with flip path
-                    rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
+                } else if (rsx_light_present_allow()) {
+                    // ~8 Hz clear — light load for weak GPUs (GT 740 class)
+                    if (rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f)) {
+                        rsx_light_present_note();
+                        host_stats_note_present();
+                    }
                 }
+                (void)tick;
             } else if (g_hwnd && ((tick & 3) == 0))
                 rsx_host_present_soft();
         }
@@ -705,8 +711,10 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
         if (pitch < gw * 4u) pitch = gw * 4u;
         size_t need = (size_t)off + (size_t)pitch * gh;
         if (mem && need <= msz) {
-            if (rsx_render_frame_on_flip(off, pitch))
+            if (rsx_render_frame_on_flip(off, pitch)) {
                 presented = 1;
+                host_stats_note_present();
+            }
             else
                 presented = rsx_vk_present_guest_rgba(mem + off, 1280, 720, pitch);
             if (presented) rsx_vk_poll_window();
@@ -729,9 +737,12 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
 PS3RT_API void ps3rt_rsx_tick(void) {
     if (g_hwnd) {
         if (g_gfx_api == 0 && rsx_vk_ready()) {
-            static uint64_t s_tick = 0;
-            if ((++s_tick & 0x3F) == 0)
-                rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
+            if (rsx_light_present_allow()) {
+                if (rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f)) {
+                    rsx_light_present_note();
+                    host_stats_note_present();
+                }
+            }
             rsx_vk_poll_window();
         } else {
             rsx_host_present_soft();

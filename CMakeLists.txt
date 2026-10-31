@@ -67,6 +67,8 @@ if(WIN32)
     src/RSX/draw/rsx_draw_batch.c
     src/RSX/draw/rsx_surface_fmt.c
     src/RSX/render/rsx_render_frame.c
+    src/RSX/render/rsx_light_present.c
+    src/core/stats/host_stats.c
     src/processor/PPU/translate/ppu_import_bridge.c
     src/processor/SPU/spu_interpreter.cpp
     src/games-stuff/Audio/audio_device.cpp
@@ -83,6 +85,7 @@ if(WIN32)
     ${CMAKE_SOURCE_DIR}/src/RSX/present
     ${CMAKE_SOURCE_DIR}/src/RSX/draw
     ${CMAKE_SOURCE_DIR}/src/RSX/render
+    ${CMAKE_SOURCE_DIR}/src/core/stats
     ${CMAKE_SOURCE_DIR}/src/RSX/Backends/Vulkan
     ${CMAKE_SOURCE_DIR}/src/games-stuff/Audio
   )
@@ -95,12 +98,14 @@ if(WIN32)
     src/RSX/draw/rsx_draw_batch.c
     src/RSX/draw/rsx_surface_fmt.c
     src/RSX/render/rsx_render_frame.c
+    src/RSX/render/rsx_light_present.c
+    src/core/stats/host_stats.c
     PROPERTIES LANGUAGE C)
   target_compile_definitions(ps3rt PRIVATE PS3RT_BUILD_DLL=1)
   if(MSVC)
     target_compile_options(ps3rt PRIVATE /bigobj)
   endif()
-  target_link_libraries(ps3rt PRIVATE user32 gdi32 ole32 uuid windowscodecs winmm xaudio2)
+  target_link_libraries(ps3rt PRIVATE user32 gdi32 ole32 uuid windowscodecs winmm xaudio2 psapi)
   set_target_properties(ps3rt PROPERTIES PREFIX "" OUTPUT_NAME "ps3rt")
   # Single layout: ps3rt.dll / ps3rt.lib stay in dist/ next to PS3Recomp.exe
   # (do not also copy into dist/runtime/ — headers only live there)

@@ -1,6 +1,7 @@
 // WORK: Runtime log sink.
 
 #define PS3RT_BUILD_DLL 1
+#include "host_stats.h"
 #include "ppu_runtime.h"
 #include <cstdio>
 #include <cstring>
@@ -15,10 +16,13 @@ static FILE* g_logf = nullptr;
 
 extern "C" void ps3rt_log_close(void) {
     if (g_logf) {
+        host_stats_write_log_section();
         std::fprintf(g_logf, "\n--- log end ---\n");
         std::fflush(g_logf);
         std::fclose(g_logf);
         g_logf = nullptr;
+    } else {
+        host_stats_write_log_section();
     }
 }
 
@@ -53,6 +57,7 @@ extern "C" void ps3rt_log_open(void) {
     char full[600];
     std::snprintf(full, sizeof(full), "%s%s", dir, name);
     g_logf = std::fopen(full, "w");
+    host_stats_init();
     if (g_logf) {
         std::fprintf(g_logf, "PPSX33 run log\nfile=%s\n", full);
         std::fflush(g_logf);

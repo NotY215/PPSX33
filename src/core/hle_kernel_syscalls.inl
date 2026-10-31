@@ -1249,6 +1249,23 @@ PS3RT_API void ps3rt_progress_hw(void) {
     extern void ps3rt_rsx_tick(void);
     ps3rt_spu_tick_all();
     ps3rt_rsx_tick(); // keep Vulkan HWND responsive during sticky HLE/boot
+    {
+        extern void host_stats_sample(void);
+        static int s_stat = 0;
+        if ((++s_stat & 0x3F) == 0) host_stats_sample();
+    }
+    // Rendering start assist: if host window is up but title never flipped, nudge flip
+    {
+        extern int rsx_vk_ready(void);
+        extern void ps3rt_rsx_flip(uint32_t id);
+        extern uint64_t ps3rt_rsx_flip_count(void);
+        static int s_assist = 0;
+        if (rsx_vk_ready() && ps3rt_rsx_flip_count() == 0) {
+            if ((++s_assist % 32) == 0) {
+                ps3rt_rsx_flip(0);
+            }
+        }
+    }
 
     if (ps3rt_should_exit()) { ps3rt_force_exit(); return; }
     static int s_ppu_once = 0;
