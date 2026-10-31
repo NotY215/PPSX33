@@ -1,3 +1,4 @@
+#include "ps3rt_be.h"
 // WORK: FIFO PUT/GET probe helpers (decode path still in rsx_device.cpp).
 #include "rsx_fifo.h"
 

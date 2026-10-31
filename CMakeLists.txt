@@ -70,12 +70,24 @@ if(WIN32)
   )
   target_include_directories(ps3rt PRIVATE
     ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/core/import
+    ${CMAKE_SOURCE_DIR}/src/native/x64
     ${CMAKE_SOURCE_DIR}/src/processor/PPU
+    ${CMAKE_SOURCE_DIR}/src/processor/PPU/translate
     ${CMAKE_SOURCE_DIR}/src/processor/SPU
     ${CMAKE_SOURCE_DIR}/src/RSX
+    ${CMAKE_SOURCE_DIR}/src/RSX/fifo
+    ${CMAKE_SOURCE_DIR}/src/RSX/present
     ${CMAKE_SOURCE_DIR}/src/RSX/Backends/Vulkan
     ${CMAKE_SOURCE_DIR}/src/games-stuff/Audio
   )
+  set_source_files_properties(
+    src/native/x64/ps3rt_be.c
+    src/core/import/import_stub_map.c
+    src/RSX/fifo/rsx_method_table.c
+    src/RSX/present/rsx_present_queue.c
+    src/processor/PPU/translate/ppu_import_bridge.c
+    PROPERTIES LANGUAGE C)
   target_compile_definitions(ps3rt PRIVATE PS3RT_BUILD_DLL=1)
   if(MSVC)
     target_compile_options(ps3rt PRIVATE /bigobj)
