@@ -291,7 +291,6 @@ public partial class MainForm
     void HideControllerAfterBuild()
     {
         _controllerMapped = true;
-        // Read+write so CS0414 is satisfied; once hidden, never re-add this session
         bool already = _controllerHiddenAfterBuild;
         _controllerHiddenAfterBuild = true;
         try
@@ -302,8 +301,7 @@ public partial class MainForm
                     _tabs.SelectedIndex = 0;
                 _tabs.TabPages.Remove(_controllerTab);
             }
-            // Guard: do not TabPages.Add(_controllerTab) anywhere after already==true
-            if (already) { /* tab already locked out */ }
+            if (already) { }
         }
         catch { }
     }
@@ -311,12 +309,26 @@ public partial class MainForm
     void EnsureControllerHidden()
     {
         HideControllerAfterBuild();
-        // Hard guarantee: controller page must not be present after build
         if (_controllerHiddenAfterBuild && _controllerTab != null
             && _tabs.TabPages.Contains(_controllerTab))
         {
             try { _tabs.TabPages.Remove(_controllerTab); } catch { }
         }
+    }
+
+    void ShowControllerAfterCancel()
+    {
+        // Build cancelled — restore Key Mapping / Controller tab
+        _controllerHiddenAfterBuild = false;
+        try
+        {
+            if (_controllerTab != null && !_tabs.TabPages.Contains(_controllerTab))
+            {
+                _tabs.TabPages.Add(_controllerTab);
+                Append("Controller tab restored after cancelled build.");
+            }
+        }
+        catch { }
     }
 
     void DisposeNativeController() { }

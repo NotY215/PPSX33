@@ -225,16 +225,17 @@ public sealed partial class MainForm
         if (ok) {
             _canCopy = true; _canRun = false;
             SetStatus("Building successful", false, 100, "");
-            Append("Building successful \u2014 Copy to Game Folder unlocked. Run unlocks after copy.");
-        } else if (_buildCancelRequested) {
+            Append("Building successful — Copy to Game Folder unlocked. Run unlocks after copy.");
             EnsureControllerHidden();
-        SetStatus("Build cancelled");
+        } else if (_buildCancelRequested) {
+            SetStatus("Build cancelled");
             Append("Build cancelled.");
+            ShowControllerAfterCancel();
         } else {
             SetStatus("Building failed");
+            ShowControllerAfterCancel();
         }
         _building = false; _busy = false; UpdateButtons();
-        EnsureControllerHidden();
         NotifyBuildComplete(ok);
         if (ok && _projectDir != null) {
             try {

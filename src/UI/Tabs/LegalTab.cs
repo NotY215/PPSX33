@@ -3,81 +3,58 @@ using System.Windows.Forms;
 
 namespace PS3Recomp.Gui;
 
-/// <summary>Legal tab body — RichTextBox (reliable; avoids IE WebBrowser blank DocumentText).</summary>
+/// <summary>Legal tab — styled HTML via WebBrowser + MarkdownHtml (original design).</summary>
 public sealed class LegalTab : UserControl
 {
-    private readonly RichTextBox _box = new();
+    private readonly WebBrowser _browser = new();
+    private bool _loaded;
 
     public LegalTab()
     {
         Dock = DockStyle.Fill;
         BackColor = Color.FromArgb(13, 17, 23);
-        _box.Dock = DockStyle.Fill;
-        _box.ReadOnly = true;
-        _box.BorderStyle = BorderStyle.None;
-        _box.BackColor = Color.FromArgb(13, 17, 23);
-        _box.ForeColor = Color.FromArgb(230, 237, 243);
-        _box.Font = new Font("Segoe UI", 10f);
-        _box.DetectUrls = true;
-        _box.ScrollBars = RichTextBoxScrollBars.Vertical;
-        _box.Text = FormatLegal(EmbeddedLegal.Markdown);
-        _box.LinkClicked += (_, e) =>
+        _browser.Dock = DockStyle.Fill;
+        _browser.ScriptErrorsSuppressed = true;
+        _browser.IsWebBrowserContextMenuEnabled = false;
+        _browser.AllowWebBrowserDrop = false;
+        _browser.WebBrowserShortcutsEnabled = false;
+        _browser.Navigating += (_, e) =>
         {
+            string url = e.Url?.AbsoluteUri ?? "";
+            if (string.IsNullOrEmpty(url) || url.StartsWith("about:", StringComparison.OrdinalIgnoreCase))
+                return;
+            e.Cancel = true;
             try
             {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.LinkText)
-                {
-                    UseShellExecute = true
-                });
+                string target = e.Url!.ToString();
+                if (!string.IsNullOrWhiteSpace(target))
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(target) { UseShellExecute = true });
             }
             catch { }
         };
-        Controls.Add(_box);
+        Controls.Add(_browser);
+        HandleCreated += (_, _) => LoadHtml();
+        VisibleChanged += (_, _) => { if (Visible) LoadHtml(); };
     }
 
-    static string FormatLegal(string md)
+    void LoadHtml()
     {
-        if (string.IsNullOrEmpty(md)) return "";
-        var lines = md.Replace("\r\n", "\n").Split('\n');
-        var sb = new System.Text.StringBuilder();
-        foreach (var raw in lines)
+        if (_loaded || !IsHandleCreated) return;
+        try
         {
-            string t = raw.TrimEnd();
-            if (t.StartsWith("# "))
-            {
-                sb.AppendLine();
-                sb.AppendLine(t[2..].Trim());
-                sb.AppendLine(new string('═', Math.Min(48, t.Length)));
-                continue;
-            }
-            if (t.StartsWith("## "))
-            {
-                sb.AppendLine();
-                sb.AppendLine(t[3..].Trim());
-                sb.AppendLine(new string('─', Math.Min(40, t.Length)));
-                continue;
-            }
-            if (t.StartsWith("### "))
-            {
-                sb.AppendLine();
-                sb.AppendLine(t[4..].Trim());
-                continue;
-            }
-            if (t.StartsWith("- ") || t.StartsWith("* "))
-            {
-                sb.AppendLine("  • " + t[2..].Trim());
-                continue;
-            }
-            if (t.StartsWith("---"))
-            {
-                sb.AppendLine();
-                continue;
-            }
-            // strip simple markdown emphasis for plain view
-            string p = t.Replace("**", "").Replace("`", "");
-            if (p.Length == 0) sb.AppendLine();
-            else sb.AppendLine(p);
+            string html = MarkdownHtml.ToHtml(
+                EmbeddedLegal.Markdown,
+                "Legal notice for Windows user <b>" +
+                System.Net.WebUtility.HtmlEncode(Environment.UserName) +
+                "</b>. Read before Load / Build / Run.");
+            _browser.DocumentText = html;
+            _loaded = true;
         }
-        return sb.ToString().TrimStart();
+        catch
+        {
+            _browser.DocumentText = "<html><body style='background:#0d1117;color:#c9d1d9;font-family:Segoe UI'>"
+                + "<pre>" + System.Net.WebUtility.HtmlEncode(EmbeddedLegal.Markdown) + "</pre></body></html>";
+            _loaded = true;
+        }
     }
 }

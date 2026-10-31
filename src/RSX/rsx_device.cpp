@@ -4,6 +4,12 @@
 #include "rsx_method_table.h"
 #include "rsx_present_queue.h"
 #include "ps3rt_be.h"
+
+static void rsx_force_720p(uint32_t* w, uint32_t* h) {
+    if (w) *w = 1280;
+    if (h) *h = 720;
+}
+
 #include "rsx_framebuffer.h"
 #include "rsx_memory.h"
 #include "rsx_state.h"
@@ -263,23 +269,9 @@ static void rsx_host_present_soft();
 static HANDLE g_pump_thread = nullptr;
 static volatile long g_pump_run = 0;
 static DWORD WINAPI rsx_pump_thread_main(void*) {
+    static int tick = 0;
     while (InterlockedCompareExchange(&g_pump_run, 1, 1) == 1) {
         if (g_hwnd) {
-            if (g_gfx_api == 0 && rsx_vk_ready()) {
-                rsx_present_req req{};
-                if (rsx_present_queue_pop(&req) && req.flags == 2 && req.color_offset) {
-                    uint8_t* mem = ps3rt_guest_mem_ptr();
-                    size_t msz = ps3rt_guest_mem_size();
-                    size_t need = (size_t)req.color_offset + (size_t)req.pitch * req.height;
-                    if (mem && need <= msz)
-                        rsx_vk_present_guest_rgba(mem + req.color_offset, req.width, req.height, req.pitch);
-                    else
-                        rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
-                } else {
-                    rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
-                }
-            } else if (g_hwnd)
-                rsx_host_present_soft();
             MSG msg;
             while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
                 if (msg.message == WM_QUIT) {
@@ -289,6 +281,25 @@ static DWORD WINAPI rsx_pump_thread_main(void*) {
                 TranslateMessage(&msg);
                 DispatchMessageA(&msg);
             }
+            if (g_gfx_api == 0 && rsx_vk_ready()) {
+                rsx_present_req req{};
+                if (rsx_present_queue_pop(&req) && req.flags == 2 && req.color_offset) {
+                    uint32_t w = 1280, h = 720;
+                    uint32_t pitch = req.pitch ? req.pitch : (w * 4);
+                    if (pitch < w * 4) pitch = w * 4;
+                    uint8_t* mem = ps3rt_guest_mem_ptr();
+                    size_t msz = ps3rt_guest_mem_size();
+                    size_t need = (size_t)req.color_offset + (size_t)pitch * (size_t)h;
+                    if (mem && req.color_offset < msz && need <= msz && need > 0)
+                        rsx_vk_present_guest_rgba(mem + req.color_offset, w, h, pitch);
+                    else
+                        rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
+                } else if (((++tick) & 3) == 0) {
+                    // clear at ~15Hz max — avoids VK cmd buffer races with flip path
+                    rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
+                }
+            } else if (g_hwnd && ((tick & 3) == 0))
+                rsx_host_present_soft();
         }
         Sleep(16);
     }
@@ -308,8 +319,9 @@ static void rsx_start_pump_thread() {}
 static void rsx_host_init(uint32_t w, uint32_t h) {
     if (g_hwnd) return;
     rsx_probe_api_preference();
-    g_rsx.width = w ? w : 1280;
-    g_rsx.height = h ? h : 720;
+    g_rsx.width = 1280;
+    g_rsx.height = 720;
+    (void)w; (void)h;
     WNDCLASSA wc{};
     wc.lpfnWndProc = RsxWndProc;
     wc.hInstance = GetModuleHandleA(nullptr);
@@ -431,8 +443,8 @@ static void rsx_draw_host(uint8_t* mem) {
         size_t msz = ps3rt_guest_mem_size();
         auto fb = ppsx33::rsx::rsx_framebuffer_color();
         uint32_t off = fb.offset ? fb.offset : g_rsx.color_offset;
-        uint32_t gw = fb.width ? fb.width : (g_rsx.width ? g_rsx.width : 1280);
-        uint32_t gh = fb.height ? fb.height : (g_rsx.height ? g_rsx.height : 720);
+        uint32_t gw = 1280;
+        uint32_t gh = 720;
         uint32_t pitch = fb.pitch ? fb.pitch : gw * 4u;
         if (gmem && (size_t)off + (size_t)pitch * gh <= msz)
             presented = rsx_vk_present_guest_rgba(gmem + off, gw, gh, pitch);
@@ -672,13 +684,12 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
         uint8_t* mem = ps3rt_guest_mem_ptr();
         size_t msz = ps3rt_guest_mem_size();
         uint32_t off = g_rsx.color_offset;
-        uint32_t gw = g_rsx.width ? g_rsx.width : 1280;
-        uint32_t gh = g_rsx.height ? g_rsx.height : 720;
+        uint32_t gw = 1280;
+        uint32_t gh = 720;
         auto fb = ppsx33::rsx::rsx_framebuffer_color();
-        if (fb.width) gw = fb.width;
-        if (fb.height) gh = fb.height;
         if (fb.offset) off = fb.offset;
         uint32_t pitch = fb.pitch ? fb.pitch : (gw * 4u);
+        if (pitch < gw * 4u) pitch = gw * 4u;
         size_t need = (size_t)off + (size_t)pitch * gh;
         if (mem && need <= msz) {
             { rsx_present_req rq{}; rq.color_offset = off; rq.width = gw; rq.height = gh;

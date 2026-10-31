@@ -857,15 +857,20 @@ static uint32_t vk_find_mem_type(uint32_t type_bits, uint32_t props) {
 }
 
 int rsx_vk_present_guest_rgba(const void* pixels, uint32_t w, uint32_t h, uint32_t pitch_bytes) {
-    std::lock_guard<std::mutex> lk(g_vk_mu);
+    if (!g_vk_mu.try_lock()) return 0;
+    std::lock_guard<std::mutex> lk(g_vk_mu, std::adopt_lock);
     if (!g_vk.ready || !pixels || !w || !h) return 0;
-    if (!pitch_bytes) pitch_bytes = w * 4u;
+    // Host present always 720p
+    w = 1280; h = 720;
+    if (!pitch_bytes || pitch_bytes < w * 4u) pitch_bytes = w * 4u;
+    // Cap copy size to 720p RGBA
+    if (pitch_bytes > w * 4u) pitch_bytes = w * 4u;
 
-    g_vk.WaitForFences(g_vk.device, 1, &g_vk.in_flight, VK_TRUE, 100000000ull); /* 100ms */
+    VkResult wf = g_vk.WaitForFences(g_vk.device, 1, &g_vk.in_flight, VK_TRUE, 16000000ull);
     g_vk.ResetFences(g_vk.device, 1, &g_vk.in_flight);
 
     uint32_t imageIndex = 0;
-    VkResult ar = g_vk.AcquireNextImageKHR(g_vk.device, g_vk.swapchain, UINT64_MAX,
+    VkResult ar = g_vk.AcquireNextImageKHR(g_vk.device, g_vk.swapchain, 50000000ull,
         g_vk.image_available, nullptr, &imageIndex);
     if (ar == VK_ERROR_OUT_OF_DATE_KHR || ar == VK_SUBOPTIMAL_KHR) {
         destroy_swapchain_objects();
