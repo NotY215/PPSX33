@@ -198,24 +198,45 @@ static HICON rsx_load_png_as_hicon(const char* path, int cx, int cy) {
 
 static void apply_window_icons(HWND hwnd) {
     if (!hwnd) return;
-    char root[512];
-    if (!rsx_game_root(root, sizeof(root))) return;
+    char roots[3][512];
+    int nroots = 0;
+    char path[512];
+    DWORD n = GetModuleFileNameA(nullptr, path, sizeof(path));
+    if (n && n < sizeof(path)) {
+        char* slash = strrchr(path, '\\');
+        if (!slash) slash = strrchr(path, '/');
+        if (slash) {
+            *slash = 0; // USRDIR
+            if (nroots < 3) { strncpy(roots[nroots], path, 511); roots[nroots][511]=0; nroots++; }
+            slash = strrchr(path, '\\');
+            if (!slash) slash = strrchr(path, '/');
+            if (slash) {
+                *slash = 0; // PS3_GAME
+                if (nroots < 3) { strncpy(roots[nroots], path, 511); roots[nroots][511]=0; nroots++; }
+            }
+        }
+    }
+    HICON small_i = nullptr, big_i = nullptr;
     char path_icon0[560], path_pic1[560];
-    std::snprintf(path_icon0, sizeof(path_icon0), "%s\\ICON0.PNG", root);
-    std::snprintf(path_pic1, sizeof(path_pic1), "%s\\PIC1.PNG", root);
-    // Also try USRDIR parent already = PS3_GAME; fallback same folder as EXE
-    HICON small_i = rsx_load_png_as_hicon(path_icon0, 32, 32);
-    HICON big_i = rsx_load_png_as_hicon(path_pic1, 48, 48);
-    if (!big_i) big_i = rsx_load_png_as_hicon(path_icon0, 48, 48);
+    for (int i = 0; i < nroots && (!small_i || !big_i); ++i) {
+        std::snprintf(path_icon0, sizeof(path_icon0), "%s\\ICON0.PNG", roots[i]);
+        std::snprintf(path_pic1, sizeof(path_pic1), "%s\\PIC1.PNG", roots[i]);
+        if (!small_i) small_i = rsx_load_png_as_hicon(path_icon0, 32, 32);
+        if (!big_i) big_i = rsx_load_png_as_hicon(path_pic1, 48, 48);
+        if (!big_i) big_i = rsx_load_png_as_hicon(path_icon0, 48, 48);
+        if (small_i || big_i) {
+            ps3rt_log("[rsx] icons root=%s ICON0=%s PIC1=%s\n", roots[i],
+                small_i ? "ok" : "miss", big_i ? "ok" : "miss");
+        }
+    }
     if (!small_i) small_i = big_i;
     if (big_i) {
         SendMessageA(hwnd, WM_SETICON, ICON_BIG, (LPARAM)big_i);
-        ps3rt_log("[rsx] window icon from %s\n", path_pic1[0] ? path_pic1 : path_icon0);
+        SetClassLongPtrA(hwnd, GCLP_HICON, (LONG_PTR)big_i);
     }
     if (small_i) {
         SendMessageA(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)small_i);
-        if (small_i != big_i)
-            ps3rt_log("[rsx] taskbar/small icon from %s\n", path_icon0);
+        SetClassLongPtrA(hwnd, GCLP_HICONSM, (LONG_PTR)small_i);
     }
 }
 #endif
@@ -241,11 +262,10 @@ static volatile long g_pump_run = 0;
 static DWORD WINAPI rsx_pump_thread_main(void*) {
     while (InterlockedCompareExchange(&g_pump_run, 1, 1) == 1) {
         if (g_hwnd) {
-            if (g_gfx_api == 0 && rsx_vk_ready()) {
-                static int n = 0;
-                if ((++n & 7) == 0)
-                    rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
-            }
+            if (g_gfx_api == 0 && rsx_vk_ready())
+                rsx_vk_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
+            else if (g_hwnd)
+                rsx_host_present_soft();
             MSG msg;
             while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
                 if (msg.message == WM_QUIT) {

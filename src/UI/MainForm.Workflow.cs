@@ -8,7 +8,7 @@ public sealed partial class MainForm
     bool ShowLegalNotice(string action)
     {
         string body =
-            "PPSX33 — LEGAL NOTICE (required before " + action + ")\r\n\r\n" +
+            "PPSX33 — Legal acknowledgment (required before " + action + ")\r\n\r\n" +
             "• Use only with software and game data you lawfully own or are licensed to use.\r\n" +
             "• PPSX33 does NOT contain, use, or distribute proprietary decryption keys.\r\n" +
             "• PPSX33 does NOT bypass DRM or encryption frameworks by itself.\r\n" +
@@ -17,7 +17,7 @@ public sealed partial class MainForm
             "• Do NOT distribute generated binaries, dumps, or game data.\r\n" +
             "• Output EXE is named after your project/game — research tool, not an official port.\r\n" +
             "• You are solely responsible for complying with applicable law.\r\n" +
-            "• Use at your own risk. See LEGAL.md.\r\n\r\n" +
+            "• Use at your own risk. See the Legal tab (embedded notice).\r\n\r\n" +
             "Click Yes only if you understand and accept these terms.";
 
         var r = MessageBox.Show(this, body, "PPSX33 — Legal acknowledgment",

@@ -596,7 +596,7 @@ static int wild_log2 = 0;
                         (ret == last_null_lr ||
                          (ret >= (last_null_lr & ~0xFFull) && ret < (last_null_lr & ~0xFFull) + 0x100));
                     if (same_site) {
-                        if (++stub_same_lr > 3) {
+                        if (++stub_same_lr > 2) {
                             // Escalate earlier: GOW spins import->0x336660 for dozens of calls
                             ++soft_breaks;
                             stub_same_lr = 0;
@@ -666,7 +666,7 @@ static int wild_log2 = 0;
                                 if (far && far != ret && !is_banned(far)) ret = far;
                             }
                             // Hard escape: 0x105e8-class null-loop was observed past 1000+ soft_breaks
-                            if (soft_breaks >= 8) {
+                            if (soft_breaks >= 5) {
                                 add_rban(ret);
                                 add_rban(0x105e8ull);
                                 add_ban(0x105e8ull);

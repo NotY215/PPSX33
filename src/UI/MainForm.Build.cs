@@ -128,11 +128,11 @@ public sealed partial class MainForm
             {
                 MessageBox.Show(this,
                     "Build completed successfully.\r\n\r\n" +
-                    "Copy to Game Folder is now unlocked.\r\n" +
-                    "After a successful copy, Run Game EXE unlocks.\r\n" +
+                    "Next: Copy to Game Folder, then Run Game EXE.\r\n" +
+                    "Graphics default: Vulkan 1.2 (OpenGL secondary).\r\n" +
                     "Copy places the game EXE and required files next to EBOOT.BIN\r\n" +
                     "(typically ...\\PS3_GAME\\USRDIR).",
-                    "PPSX33 - Build complete",
+                    "PPSX33 — Build complete",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
             }
@@ -227,12 +227,14 @@ public sealed partial class MainForm
             SetStatus("Building successful", false, 100, "");
             Append("Building successful \u2014 Copy to Game Folder unlocked. Run unlocks after copy.");
         } else if (_buildCancelRequested) {
-            SetStatus("Build cancelled");
+            EnsureControllerHidden();
+        SetStatus("Build cancelled");
             Append("Build cancelled.");
         } else {
             SetStatus("Building failed");
         }
         _building = false; _busy = false; UpdateButtons();
+        EnsureControllerHidden();
         NotifyBuildComplete(ok);
         if (ok && _projectDir != null) {
             try {

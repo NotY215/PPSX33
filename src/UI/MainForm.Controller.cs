@@ -290,9 +290,8 @@ public partial class MainForm
 
     void HideControllerAfterBuild()
     {
-        if (_controllerHiddenAfterBuild) return;
-        _controllerHiddenAfterBuild = true;
         _controllerMapped = true;
+        _controllerHiddenAfterBuild = true;
         try
         {
             if (_controllerTab != null && _tabs.TabPages.Contains(_controllerTab))
@@ -300,9 +299,13 @@ public partial class MainForm
                 if (_tabs.SelectedTab == _controllerTab) _tabs.SelectedIndex = 0;
                 _tabs.TabPages.Remove(_controllerTab);
             }
-            Append("Controller tab closed — mapping locked for this build.");
         }
         catch { }
+    }
+
+    void EnsureControllerHidden()
+    {
+        HideControllerAfterBuild();
     }
 
     void DisposeNativeController() { }
