@@ -1,12 +1,9 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-01_10-46-56.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-01_10-46-56.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-01_21-18-34.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-01_21-18-34.txt
 [stage] BOOT start
-[ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
-[ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
-[ps3rt] PS3IMG1 loaded from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\guest_image.bin (2 segments)
-[stage] MEM map end
+[ps3rt] warning: no guest_image.bin mapped
 [save] root=C:\Users\shrey\OneDrive\Documents\GOW3\PS3_SAVEDATA (PS3-native only; no savestates)
 [psarc] XX-J zlib loaded
 [fs] game_root=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR
@@ -52,38 +49,106 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-01_10-46-56.txt
 [hle] cellSysutil/sysmodule = partial (common NIDs)
 [hle] cellSpurs = partial (job assist)
 [hle] RSX/FIFO = partial (assist draws proven; title stream pending)
-[prx] load "cellSysmodule" id=1 base=0x30100000
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x103ac
-[prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x103ac r11=0x53f96c
-[ps3] import stub pc=0x39800000 -> ret=0x103ac (#1)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x33aec8
-[prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x33aec8 r11=0x53f96c
-[ps3] import stub pc=0x39800000 -> ret=0x33aec8 (#2)
-[lv2] sc 352 r3=f0ffe04 r4=3cc7f8 r5=4 r6=0
-[lv2] alloc VA=0x8000000 size=0x3cc7f8
-[lv2] XV-L mem sc=352 size=0x3cc7f8 -> ea=0x8000000
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x336750
-[prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x336750 r11=0x53f96c
-[ps3] import-island escape 0x336750 -> 0x33b1a0
-[ps3] import stub pc=0x39800000 -> ret=0x33b1a0 (#3)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x336660
-[prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x336660 r11=0x53f96c
-[ps3] import stub pc=0x39800000 -> ret=0x33b1a0 (#4)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x336660
-[prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x336660 r11=0x53f96c
-[ps3] import stub pc=0x39800000 -> ret=0x33b1a0 (#5)
-[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x336660
-[prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x336660 r11=0x53f96c
+[ps3] XXV-F recover wild-pc 0x0 -> 0x103ac
+[ps3] XXV-L wild-pc 0x0 -> 0x103ac
+[ps3] XXV-F recover wild-pc 0x0 -> 0x33aec8
+[ps3] XXV-L wild-pc 0x0 -> 0x33aec8
+[lv2] sc 352 r3=f0ffe04 r4=0 r5=4 r6=0
+[lv2] mem REJECT sc=352 r3=0xf0ffe04 r4=0x0 (not a size)
+[ps3] XXV-F recover wild-pc 0x0 -> 0x33b1a0
+[ps3] XXV-L wild-pc 0x0 -> 0x33b1a0
+[ps3] XXV-F recover wild-pc 0x0 -> 0x33b1a0
+[ps3] XXV-L wild-pc 0x0 -> 0x33b1a0
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
+[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
+[ps3] XXV-F callstack[0] 0x331ba8
+[ps3] XXV-F callstack[1] 0x33b1a0
+[ps3] XXV-F callstack[2] 0x10444
+[ps3] XXV-F callstack[3] 0x10250
+[ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x33b1a0 lr=0x336660 hits=3 strict=0
+[ps3] Phase XI region-ban 0x199c00 (nrban=1)
+[ps3] Phase XI region-ban 0x337000 (nrban=2)
+[ps3] P0 sticky soft-continue -> 0x18000
+[ps3] XXV-F recover wild-pc 0x0 -> 0x18000
+[ps3] XXV-L wild-pc 0x0 -> 0x18000
+[ps3] XXV-F recover wild-pc 0x0 -> 0x33b1a0
+[ps3] XXV-L wild-pc 0x0 -> 0x33b1a0
+[ps3] XXV-F recover wild-pc 0x0 -> 0x33b1a0
+[ps3] XXV-L wild-pc 0x0 -> 0x33b1a0
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
+[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
+[ps3] XXV-F callstack[0] 0x331ba8
+[ps3] XXV-F callstack[1] 0x33b1a0
+[ps3] XXV-F callstack[2] 0x10444
+[ps3] XXV-F callstack[3] 0x10250
+[ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x33b1a0 lr=0x336660 hits=3 strict=0
+[ps3] P0 sticky soft-continue -> 0x18000
+[ps3] XXV-F recover wild-pc 0x0 -> 0x18000
+[ps3] XXV-L wild-pc 0x0 -> 0x18000
+[ps3] XXV-F recover wild-pc 0x0 -> 0x33b1a0
+[ps3] XXV-L wild-pc 0x0 -> 0x33b1a0
+[ps3] XXV-F recover wild-pc 0x0 -> 0x33b1a0
+[ps3] XXV-L wild-pc 0x0 -> 0x33b1a0
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
+[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
+[ps3] XXV-F callstack[0] 0x331ba8
+[ps3] XXV-F callstack[1] 0x33b1a0
+[ps3] XXV-F callstack[2] 0x10444
+[ps3] XXV-F callstack[3] 0x10250
+[ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x33b1a0 lr=0x336660 hits=3 strict=0
+[ps3] P0 sticky soft-continue -> 0x18000
+[ps3] XXV-F recover wild-pc 0x0 -> 0x18000
+[ps3] XXV-L wild-pc 0x0 -> 0x18000
+[ps3] XXV-F recover wild-pc 0x0 -> 0x33b1a0
+[ps3] XXV-L wild-pc 0x0 -> 0x33b1a0
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
+[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
+[ps3] XXV-F callstack[0] 0x331ba8
+[ps3] XXV-F callstack[1] 0x33b1a0
+[ps3] XXV-F callstack[2] 0x10444
+[ps3] XXV-F callstack[3] 0x10250
+[ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x33b1a0 lr=0x336660 hits=3 strict=0
+[ps3] P0 sticky soft-continue -> 0x18000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
+[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
+[ps3] XXV-F callstack[0] 0x331ba8
+[ps3] XXV-F callstack[1] 0x33b1a0
+[ps3] XXV-F callstack[2] 0x10444
+[ps3] XXV-F callstack[3] 0x10250
+[ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x33b1a0 lr=0x336660 hits=3 strict=0
+[ps3] P0 sticky soft-continue -> 0x18000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
+[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
+[ps3] XXV-F callstack[0] 0x331ba8
+[ps3] XXV-F callstack[1] 0x33b1a0
+[ps3] XXV-F callstack[2] 0x10444
+[ps3] XXV-F callstack[3] 0x10250
+[ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x33b1a0 lr=0x336660 hits=3 strict=0
+[ps3] P0 sticky soft-continue -> 0x18000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
+[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
+[ps3] XXV-F callstack[0] 0x331ba8
+[ps3] XXV-F callstack[1] 0x33b1a0
+[ps3] XXV-F callstack[2] 0x10444
+[ps3] XXV-F callstack[3] 0x10250
+[ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x33b1a0 lr=0x336660 hits=3 strict=0
+[ps3] P0 sticky soft-continue -> 0x18000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
+[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
+[ps3] XXV-F callstack[0] 0x331ba8
+[ps3] XXV-F callstack[1] 0x33b1a0
+[ps3] XXV-F callstack[2] 0x10444
+[ps3] XXV-F callstack[3] 0x10250
 [stage] PPU progress start
 [stage] SPU progress end
 [pad] XInput loaded from xinput1_4.dll
 [audio] XXVI XAudio2 48kHz stereo source ready
 [audio] XXVI XAudio2 prove-tone 440Hz 100ms queued
-[lv2] alloc VA=0x83cd000 size=0x1000
-[gcm] control @ 0x83cd000
-[lv2] alloc VA=0x83ce000 size=0x10000
-[gcm] labels  @ 0x83ce000
-[lv2] alloc VA=0x83e0000 size=0x100000
+[lv2] alloc VA=0x8000000 size=0x1000
+[gcm] control @ 0x8000000
+[lv2] alloc VA=0x8001000 size=0x10000
+[gcm] labels  @ 0x8001000
+[lv2] alloc VA=0x8020000 size=0x100000
 [rsx] XXII-L API preference: Vulkan 1.2 (OpenGL secondary; DX11 removed)
 [rsx] XX-O window title="PPSX33 presents GOW3"
-[rsx] HWND pump thread started
+[rsx] Vulkan init begin hwnd=00000000002A0B0A 720x576
