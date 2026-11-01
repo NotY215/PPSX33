@@ -2,6 +2,8 @@
 #include "NativeBridge.h"
 #include "Settings.h"
 #include "RenderWorkbench.h"
+#include "EmbeddedLegal.h"
+#include "UiLogoAnim.h"
 #include <QApplication>
 #include <QCoreApplication>
 #include <QFileDialog>
@@ -233,9 +235,7 @@ void MainWindow::buildUi() {
     connect(m_api, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onGfxChanged);
     connect(m_threads, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onThreadsChanged);
 
-    m_logoTimer = new QTimer(this);
-    m_logoTimer->setInterval(16);
-    connect(m_logoTimer, &QTimer::timeout, this, &MainWindow::onLogoTick);
+    m_logoAnim = new UiLogoAnim(m_logo, this);
 }
 
 void MainWindow::buildControllerPage() {
@@ -266,23 +266,7 @@ void MainWindow::buildControllerPage() {
 }
 
 void MainWindow::loadLegalHtml() {
-    m_legal->setHtml(QStringLiteral(
-        "<div style='font-family:Segoe UI,sans-serif;color:#c5d4e8;line-height:1.55;padding:14px'>"
-        "<h2 style='color:#00e5ff;margin:0 0 8px 0'>PPSX33 — Legal Notice &amp; Project Position</h2>"
-        "<p style='color:#94a3b8'><b>Last updated:</b> 2026-10-28</p>"
-        "<p>This document describes what PPSX33 is, what it is not, and the conditions under which you may use "
-        "this repository and software. <b>Read it before using Load ELF, Build, or Run.</b></p>"
-        "<h3 style='color:#7dd3fc'>Summary</h3>"
-        "<ul>"
-        "<li>Independent research recompiler / HLE toolkit — <b>not affiliated with Sony</b>.</li>"
-        "<li>No bundled keys; optional external decrypt is user-supplied.</li>"
-        "<li>Decrypted ELF only for the load path in current builds.</li>"
-        "<li>Use only lawfully obtained materials; no redistribution of game data.</li>"
-        "<li>Host branding is <b>PPSX33</b>.</li>"
-        "</ul>"
-        "<p style='color:#8ba3c7'>Canonical notes live under docs/legal/. Keep LICENSE / CODE_OF_CONDUCT / "
-        "CONTRIBUTING / SECURITY at the repository root.</p>"
-        "</div>"));
+    m_legal->setHtml(ppsx33_legal_html());
 }
 
 void MainWindow::loadRequirementsHtml() {
@@ -356,7 +340,7 @@ void MainWindow::applyTheme() {
 void MainWindow::showEvent(QShowEvent* e) {
     QMainWindow::showEvent(e);
     static bool once = false;
-    if (!once) { once = true; playIntro(); m_logoTimer->start(); }
+    if (!once) { once = true; playIntro(); if (m_logoAnim) m_logoAnim->start(); }
 }
 
 void MainWindow::closeEvent(QCloseEvent* e) {
@@ -388,18 +372,7 @@ void MainWindow::playIntro() {
     }
 }
 
-void MainWindow::onLogoTick() {
-    if (!m_logo) return;
-    m_logoPhase += 0.045;
-    const qreal s = 1.0 + 0.035 * qSin(m_logoPhase);
-    QPixmap base(QCoreApplication::applicationDirPath() + QStringLiteral("/ppsx33-logo.png"));
-    if (base.isNull())
-        base = QPixmap(QStringLiteral(":/assets/ppsx33-logo.png"));
-    if (base.isNull())
-        return;
-    const int side = int(100 * s);
-    m_logo->setPixmap(base.scaled(side, side, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-}
+
 
 void MainWindow::setTargetLabel(const QString& t) { m_target->setText(t); }
 void MainWindow::appendLog(const QString& s) { m_console->append(s); m_status->setText(s.left(120)); }

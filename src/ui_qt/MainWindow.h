@@ -10,6 +10,7 @@ class QProgressBar;
 class QLineEdit;
 class QLineEdit;
 class QTimer;
+class UiLogoAnim;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -27,8 +28,7 @@ private slots:
     void onSaveKeys();
     void onGfxChanged(int);
     void onThreadsChanged(int);
-    void onLogoTick();
-    void onConsoleSubmit();
+        void onConsoleSubmit();
 private:
     void buildUi();
     void applyTheme();
@@ -56,6 +56,5 @@ private:
     QPushButton *m_btnLoad = nullptr, *m_btnLift = nullptr, *m_btnBuild = nullptr;
     QPushButton *m_btnRun = nullptr, *m_btnCopy = nullptr, *m_btnSaveKeys = nullptr;
     QMap<QString, QLineEdit*> m_keyEdits;
-    QTimer* m_logoTimer = nullptr;
-    qreal m_logoPhase = 0;
+    UiLogoAnim* m_logoAnim = nullptr;
 };

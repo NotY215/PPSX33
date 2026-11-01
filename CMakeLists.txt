@@ -140,6 +140,8 @@ if(WIN32)
     src/RSX/rsx_shader_compiler.cpp
     src/RSX/rsx_shader_decoder.cpp
     src/RSX/fifo/rsx_method_table.c
+    src/RSX/fifo/rsx_fifo_drain.c
+    src/RSX/methods/rsx_nv4097_surface.c
     src/native/x64/ps3rt_be.c
     src/RSX/rsx_exports.c
   )
@@ -168,6 +170,7 @@ if(WIN32)
     src/core/import/import_stub_map.c
     src/core/stats/host_stats.c
     src/core/hle/sysmodule_progress.c
+    src/core/hle/gcm/gcm_control_bridge.c
     src/processor/PPU/translate/ppu_import_bridge.c
     src/processor/SPU/spu_interpreter.cpp
     src/games-stuff/Audio/audio_device.cpp
@@ -195,6 +198,7 @@ if(WIN32)
     src/processor/PPU/translate/ppu_import_bridge.c
     src/core/stats/host_stats.c
     src/core/hle/sysmodule_progress.c
+    src/core/hle/gcm/gcm_control_bridge.c
     PROPERTIES LANGUAGE C)
   target_compile_definitions(ps3rt PRIVATE PS3RT_BUILD_DLL=1)
   if(MSVC)
@@ -301,6 +305,12 @@ add_executable(PPSX33
   src/ui_qt/TermsDialog.cpp
   src/ui_qt/TermsDialog.h
   src/ui_qt/AppVersion.h
+  src/ui_qt/UiLogoAnim.h
+  src/ui_qt/UiLogoAnim.cpp
+  src/ui_qt/EmbeddedTerms.h
+  src/ui_qt/EmbeddedTerms.cpp
+  src/ui_qt/EmbeddedLegal.h
+  src/ui_qt/EmbeddedLegal.cpp
   src/ui_qt/resources.qrc
   ${PPSX33_RC_SRC}
 )

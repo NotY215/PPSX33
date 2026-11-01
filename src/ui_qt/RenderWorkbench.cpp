@@ -33,7 +33,7 @@ RenderWorkbench::RenderWorkbench(QWidget* parent) : QDialog(parent) {
     auto* welcome = new QLabel(QStringLiteral("Welcome to Private mode"), this);
     welcome->setObjectName(QStringLiteral("welcome"));
     root->addWidget(welcome);
-    auto* sub = new QLabel(QStringLiteral("Regenerate host modules. Prebuilt: api / resolution. Title-specific: rsx / render / ps3rt after ELF analysis."), this);
+    auto* sub = new QLabel(QStringLiteral("Regenerate host modules from analyzed ELF (rsx / render / resolution / api / ps3rt)."), this);
     sub->setWordWrap(true);
     sub->setStyleSheet(QStringLiteral("color:#94a3b8; font-size:12px;"));
     root->addWidget(sub);
@@ -43,8 +43,8 @@ RenderWorkbench::RenderWorkbench(QWidget* parent) : QDialog(parent) {
     root->addWidget(m_target);
 
     auto* mods = new QHBoxLayout;
-    m_cbApi = new QCheckBox(QStringLiteral("api (prebuilt)"), this);
-    m_cbRes = new QCheckBox(QStringLiteral("resolution (prebuilt)"), this);
+    m_cbApi = new QCheckBox(QStringLiteral("api"), this);
+    m_cbRes = new QCheckBox(QStringLiteral("resolution"), this);
     m_cbRsx = new QCheckBox(QStringLiteral("rsx (ELF)"), this);
     m_cbRender = new QCheckBox(QStringLiteral("render (ELF)"), this);
     m_cbRt = new QCheckBox(QStringLiteral("ps3rt (ELF)"), this);
@@ -68,7 +68,7 @@ RenderWorkbench::RenderWorkbench(QWidget* parent) : QDialog(parent) {
     m_console->setReadOnly(true);
     root->addWidget(m_console, 1);
     log(QStringLiteral("Private mode · %1").arg(QStringLiteral(PPSX33_VERSION_STRING)));
-    log(QStringLiteral("Prebuilt modules can rebuild without ELF. ELF modules need Load → Decompile → Analyze → Generate."));
+    log(QStringLiteral("All module rebuilds require Load ELF → Decompile → Analyze → Generate for title-linked paths."));
 
     connect(load, &QPushButton::clicked, this, &RenderWorkbench::onLoadElf);
     connect(decomp, &QPushButton::clicked, this, &RenderWorkbench::onDecompile);
@@ -150,7 +150,7 @@ void RenderWorkbench::onAnalyze() {
 }
 
 void RenderWorkbench::onGenerate() {
-    if ((m_cbRsx->isChecked() || m_cbRender->isChecked() || m_cbRt->isChecked()) && !m_analyzed) {
+    if (!m_analyzed) {
         QMessageBox::warning(this, QStringLiteral("PPSX33"),
             QStringLiteral("ELF-linked modules require Load ELF → Decompile → Analyze first."));
         return;
