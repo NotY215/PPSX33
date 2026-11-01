@@ -616,11 +616,11 @@ static void gcm_inject_clear_draw() {
 
 static void rsx_hle_fifo_service(void) {
     if (!g_gcm_control || !g_mem) return;
-    extern void ps3rt_rsx_flush(uint8_t* mem);
-    extern void ps3rt_rsx_set_put(uint32_t put);
-    extern uint32_t ps3rt_rsx_get_get(void);
-    extern void ps3rt_rsx_flip(uint32_t id);
-    extern int rsx_vk_ready(void);
+    extern "C" void ps3rt_rsx_flush(uint8_t* mem);
+    extern "C" void ps3rt_rsx_set_put(uint32_t put);
+    extern "C" uint32_t ps3rt_rsx_get_get(void);
+    extern "C" void ps3rt_rsx_flip(uint32_t id);
+    extern "C" int rsx_vk_ready(void);
 
     uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000u;
     uint32_t put = gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz;
@@ -998,7 +998,7 @@ static int sysutil_hle(PPUContext* c, uint32_t nid) {
     case 0x0053F96C: {
         static int s_sm = 0;
         if (s_sm < 6) {
-            extern void hle_sysmodule_note_call(uint32_t);
+            extern "C" void hle_sysmodule_note_call(uint32_t);
             hle_sysmodule_note_call(0x0053F96Cu);
             ps3rt_log("[hle] cellSysmodule stub 0x0053F96C -> CELL_OK (boot progress)\n");
             ++s_sm;
@@ -1321,9 +1321,9 @@ PS3RT_API void ps3rt_progress_hw(void) {
     }
     // Rendering start assist: if host window is up but title never flipped, nudge flip
     {
-        extern int rsx_vk_ready(void);
-        extern void ps3rt_rsx_flip(uint32_t id);
-        extern uint64_t ps3rt_rsx_flip_count(void);
+        extern "C" int rsx_vk_ready(void);
+        extern "C" void ps3rt_rsx_flip(uint32_t id);
+        extern "C" uint64_t ps3rt_rsx_flip_count(void);
         static int s_assist = 0;
         if (rsx_vk_ready() && ps3rt_rsx_flip_count() == 0) {
             if ((++s_assist % 8) == 0) {
