@@ -20,6 +20,8 @@
 #include <QDateTime>
 #include <QFrame>
 #include <QScrollArea>
+#include <QList>
+#include <QEasingCurve>
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     setWindowTitle(QStringLiteral("PPSX33"));
@@ -115,31 +117,59 @@ void MainWindow::buildUi() {
 
 void MainWindow::applyTheme() {
     setStyleSheet(QStringLiteral(
-        "QMainWindow, QWidget { background-color: #0b1220; color: #e2e8f0; font-family: 'Segoe UI'; }"
-        "QLabel#brand { font-size: 22px; font-weight: 700; color: #38bdf8; letter-spacing: 1px; }"
-        "QLabel#status { color: #94a3b8; }"
-        "QPushButton { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 14px; }"
-        "QPushButton:hover { background: #334155; border-color: #38bdf8; }"
-        "QPushButton:disabled { color: #64748b; background: #111827; border-color: #1f2937; }"
-        "QPushButton:pressed { background: #0ea5e9; color: #0b1220; }"
-        "QTabWidget::pane { border: 1px solid #1e293b; border-radius: 10px; background: #0f172a; }"
-        "QTabBar::tab { background: #111827; color: #94a3b8; padding: 10px 16px; margin-right: 4px; border-top-left-radius: 8px; border-top-right-radius: 8px; }"
-        "QTabBar::tab:selected { background: #1e293b; color: #e2e8f0; }"
-        "QTextEdit#report, QTextEdit#legal { background: #0f172a; border: none; font-family: Consolas, 'Cascadia Mono', monospace; font-size: 12px; }"
-        "QProgressBar { background: #1e293b; border: none; border-radius: 3px; }"
-        "QProgressBar::chunk { background: #38bdf8; border-radius: 3px; }"
+        "QMainWindow, QWidget { background-color: #070b14; color: #e8eef7; font-family: 'Segoe UI', sans-serif; }"
+        "QLabel#brand { font-size: 24px; font-weight: 800; color: #56c8ff; letter-spacing: 2px; }"
+        "QLabel#status { color: #8ba3c7; font-size: 12px; }"
+        "QPushButton {"
+        "  background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #1a2740, stop:1 #121a2b);"
+        "  border: 1px solid #2a3d5c; border-radius: 10px; padding: 9px 16px; color: #dbe7f8;"
+        "}"
+        "QPushButton:hover {"
+        "  background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #243552, stop:1 #1a2740);"
+        "  border-color: #56c8ff; color: #ffffff;"
+        "}"
+        "QPushButton:disabled { color: #5a6b84; background: #0d1320; border-color: #1a2233; }"
+        "QPushButton:pressed { background: #56c8ff; color: #071018; border-color: #56c8ff; }"
+        "QTabWidget::pane { border: 1px solid #1c2a40; border-radius: 12px; background: #0c1422; top: -1px; }"
+        "QTabBar::tab { background: #0a101c; color: #7f95b5; padding: 11px 18px; margin-right: 3px;"
+        "  border-top-left-radius: 10px; border-top-right-radius: 10px; border: 1px solid transparent; }"
+        "QTabBar::tab:selected { background: #121c2e; color: #e8eef7; border-color: #1c2a40; border-bottom-color: #121c2e; }"
+        "QTabBar::tab:hover { color: #56c8ff; }"
+        "QTextEdit#report, QTextEdit#legal { background: #0a121f; border: none; padding: 10px;"
+        "  font-family: Consolas, 'Cascadia Mono', monospace; font-size: 12px; color: #c5d4e8; selection-background-color: #1e3a5f; }"
+        "QProgressBar { background: #121a2b; border: none; border-radius: 4px; max-height: 5px; }"
+        "QProgressBar::chunk { background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 #2b8cff, stop:1 #56c8ff); border-radius: 4px; }"
     ));
 }
 
 void MainWindow::showEvent(QShowEvent* e) {
     QMainWindow::showEvent(e);
     static bool once = false;
-    if (!once) { once = true; playIntro(); }
+    if (!once) { once = true; playIntro();
+        slideButtons(); }
+}
+
+void MainWindow::slideButtons() {
+    QList<QPushButton*> btns = { m_btnLoad, m_btnLift, m_btnBuild, m_btnCopy, m_btnRun, m_btnCancel };
+    int i = 0;
+    for (QPushButton* b : btns) {
+        if (!b) continue;
+        auto* fx = new QGraphicsOpacityEffect(b);
+        b->setGraphicsEffect(fx);
+        fx->setOpacity(0.0);
+        auto* a = new QPropertyAnimation(fx, "opacity", this);
+        a->setEasingCurve(QEasingCurve::OutCubic);
+        a->setStartValue(0.0);
+        a->setEndValue(1.0);
+        a->setDuration(420 + i * 75);
+        a->start(QAbstractAnimation::DeleteWhenStopped);
+        ++i;
+    }
 }
 
 void MainWindow::playIntro() {
     auto* anim = new QPropertyAnimation(m_fade, "opacity", this);
-    anim->setDuration(700);
+    anim->setDuration(900);
     anim->setStartValue(0.0);
     anim->setEndValue(1.0);
     anim->setEasingCurve(QEasingCurve::OutCubic);

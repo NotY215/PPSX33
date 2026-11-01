@@ -268,28 +268,9 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/redist")
     VERBATIM)
 endif()
 
-find_program(DOTNET_EXE dotnet)
-if(DOTNET_EXE)
-  add_custom_target(PS3Recomp ALL
-    COMMAND ${DOTNET_EXE} publish
-      ${CMAKE_SOURCE_DIR}/src/UI/PS3Recomp.Gui.csproj
-      -c Release -o ${CMAKE_BINARY_DIR}/dist
-      --self-contained false
-      /p:AppendTargetFrameworkToOutputPath=false
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    DEPENDS ps3core copy_runtime
-    COMMENT "Building GUI → dist/PPSX33.exe"
-    VERBATIM)
-  add_dependencies(PS3Recomp ps3core copy_runtime)
-  if(TARGET ps3rt)
-    add_dependencies(PS3Recomp ps3rt)
-    add_dependencies(copy_runtime ps3rt)
-  endif()
-else()
-  message(WARNING "dotnet not found — GUI skipped")
-endif()
+# C# / dotnet GUI removed — host UI is Qt6 target PPSX33
 
-message(STATUS "Layout: src/core, src/processor, src/RSX, src/games-stuff, src/UI")
+message(STATUS "Layout: src/core, src/processor, src/RSX, src/games-stuff, src/ui_qt")
 message(STATUS "Output: ${CMAKE_BINARY_DIR}/dist")
 message(STATUS "Layout: dist/ps3rt.dll + dist/vulkan-1.dll next to EXE; dist/runtime/ = headers only")
 

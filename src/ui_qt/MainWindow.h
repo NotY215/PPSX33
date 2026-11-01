@@ -32,6 +32,7 @@ private:
     void refreshButtons();
     void appendLog(const QString& s);
     void playIntro();
+    void slideButtons();
 
     QString m_projectDir;
     QString m_gameRoot;
