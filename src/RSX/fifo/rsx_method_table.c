@@ -1,6 +1,6 @@
 #include "rsx_method_table.h"
 
-rsx_method_kind rsx_classify_method(uint32_t method) {
+PPSX33_RSX_API rsx_method_kind rsx_classify_method(uint32_t method) {
     /* method is byte offset style as seen in our FIFO path */
     switch (method) {
     /* NV4097 SET_SURFACE_COLOR_AOFFSET / BOFFSET and common GCM offsets */
@@ -27,7 +27,7 @@ rsx_method_kind rsx_classify_method(uint32_t method) {
     }
 }
 
-const char* rsx_method_name(rsx_method_kind k) {
+PPSX33_RSX_API const char* rsx_method_name(rsx_method_kind k) {
     switch (k) {
     case RSX_M_NOP: return "nop";
     case RSX_M_SURFACE_COLOR_OFFSET: return "surface_color_offset";
@@ -41,7 +41,7 @@ const char* rsx_method_name(rsx_method_kind k) {
     }
 }
 
-void rsx_fifo_decode_header(uint32_t hdr, uint32_t* out_method, uint32_t* out_count) {
+PPSX33_RSX_API void rsx_fifo_decode_header(uint32_t hdr, uint32_t* out_method, uint32_t* out_count) {
     uint32_t method = (hdr & 0x1FFF) << 2;
     uint32_t count = (hdr >> 18) & 0x7FF;
     if (!count) count = 1;
