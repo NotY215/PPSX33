@@ -77,14 +77,6 @@ case 41: case 43: case 44: case 45: case 46: case 47: {
 case 48: case 49: case 50: case 51: case 52: case 53: {
     // 48: sys_ppu_thread_join — return success so boot does not wait forever
     c->gpr[3] = 0;
-    extern 
-
-// RPCS3-inspired: independent FIFO drain — PUT is producer, GET is consumer.
-// Always drain when PUT!=GET; boot-assist inject when idle so host present sees work.
-
-
-void ps3rt_progress_hw(void);
-    ps3rt_progress_hw();
     break;
 }
 case 90: case 91: case 92: case 93: case 94: case 95: case 96:

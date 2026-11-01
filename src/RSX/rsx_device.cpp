@@ -361,11 +361,14 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
     ShowWindow(g_hwnd, SW_SHOW);
     UpdateWindow(g_hwnd);
     ps3rt_log("[rsx] XX-O window title=\"%s\"\n", title);
-    rsx_start_pump_thread();
+    /* Init Vulkan BEFORE HWND pump — pump must not present until ready (race fixed). */
     if (g_gfx_api == 0) {
+        ps3rt_log("[rsx] Vulkan init begin hwnd=%p %ux%u\n",
+            (void*)g_hwnd, (unsigned)g_rsx.width, (unsigned)g_rsx.height);
         if (rsx_vk_init((void*)g_hwnd, g_rsx.width, g_rsx.height)) {
             ps3rt_log("[rsx] host present ready %ux%u (Vulkan 1.2)\n",
                 (unsigned)g_rsx.width, (unsigned)g_rsx.height);
+            rsx_vk_present_clear(0.05f, 0.12f, 0.22f, 1.0f);
             rsx_vk_poll_window();
         } else {
             ps3rt_log("[rsx] Vulkan init failed - soft GDI present fallback\n");
@@ -376,6 +379,7 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
             (unsigned)g_rsx.width, (unsigned)g_rsx.height);
         rsx_host_present_soft();
     }
+    rsx_start_pump_thread();
 #if defined(_WIN32)
     apply_window_icons(g_hwnd);
 #endif
