@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "NativeBridge.h"
 #include "Settings.h"
+#include "RenderWorkbench.h"
 #include <QApplication>
 #include <QCoreApplication>
 #include <QFileDialog>
@@ -44,7 +45,7 @@ static QPushButton* makeSideBtn(const QString& text, QWidget* parent) {
 }
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
-    setWindowTitle(QStringLiteral("PPSX33 · PlayStation 3 Recompiler"));
+    setWindowTitle(QStringLiteral("PPSX33 · PlayStation 3 Recompiler · %1").arg(QStringLiteral("1.0.4-alpha")));
     resize(1280, 820);
     setMinimumSize(1024, 700);
     QString png = QCoreApplication::applicationDirPath() + QStringLiteral("/ppsx33-logo.png");
@@ -166,9 +167,23 @@ void MainWindow::buildUi() {
     rightLay->addWidget(m_progress);
 
     m_tabs = new QTabWidget(right);
-    m_console = new QTextEdit(right);
+    auto* consolePage = new QWidget(right);
+    auto* cLay = new QVBoxLayout(consolePage);
+    cLay->setContentsMargins(0, 0, 0, 0);
+    m_console = new QTextEdit(consolePage);
     m_console->setReadOnly(true);
-    m_tabs->addTab(m_console, QStringLiteral("Console"));
+    cLay->addWidget(m_console, 1);
+    auto* cmdRow = new QHBoxLayout;
+    auto* prompt = new QLabel(QStringLiteral("$"), consolePage);
+    prompt->setStyleSheet(QStringLiteral("color:#00e5ff;font-weight:700;font-family:Consolas;"));
+    m_consoleIn = new QLineEdit(consolePage);
+    m_consoleIn->setPlaceholderText(QStringLiteral("help | status | clear | stop | -render"));
+    m_consoleIn->setStyleSheet(QStringLiteral("background:#0d131f;border:1px solid #1a2a40;border-radius:6px;padding:6px;color:#e2e8f0;font-family:Consolas;"));
+    cmdRow->addWidget(prompt);
+    cmdRow->addWidget(m_consoleIn, 1);
+    cLay->addLayout(cmdRow);
+    m_tabs->addTab(consolePage, QStringLiteral("Console"));
+    connect(m_consoleIn, &QLineEdit::returnPressed, this, &MainWindow::onConsoleSubmit);
 
     m_report = new QTextEdit(right);
     m_report->setReadOnly(true);
@@ -178,7 +193,7 @@ void MainWindow::buildUi() {
     m_roadmap->setReadOnly(true);
     m_roadmap->setHtml(QStringLiteral(
         "<div style='font-family:Segoe UI;color:#c5d4e8;padding:10px'>"
-        "<h2 style='color:#56c8ff'>Roadmap</h2>"
+        "<h2 style='color:#00e5ff'>Roadmap</h2>"
         "<ul>"
         "<li>Qt 6 host UI + AppData settings</li>"
         "<li>Modular runtime DLLs (ps3rt / api / rsx / render / resolution)</li>"
@@ -250,54 +265,29 @@ void MainWindow::buildControllerPage() {
 }
 
 void MainWindow::loadLegalHtml() {
-    QString md;
-    const QStringList paths = {
-        QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("../docs/legal/LEGAL.md")),
-        QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("../../docs/legal/LEGAL.md")),
-        QStringLiteral("docs/legal/LEGAL.md"),
-    };
-    for (const auto& p : paths) {
-        QFile f(p);
-        if (f.open(QIODevice::ReadOnly)) { md = QString::fromUtf8(f.readAll()); break; }
-    }
-    if (md.isEmpty()) {
-        m_legal->setHtml(QStringLiteral(
-            "<div style='font-family:Segoe UI;color:#c5d4e8;padding:12px;line-height:1.5'>"
-            "<h2 style='color:#56c8ff'>PPSX33 — Legal Notice</h2>"
-            "<p><b>Last updated:</b> 2026-10-28</p>"
-            "<p>Independent research recompiler / HLE toolkit — <b>not affiliated with Sony</b>.</p>"
-            "<ul>"
-            "<li>No bundled keys; optional external decrypt is user-supplied.</li>"
-            "<li>Decrypted ELF only for the load path in current builds.</li>"
-            "<li>Use only lawfully obtained materials; no redistribution of game data.</li>"
-            "<li>Host branding is <b>PPSX33</b>.</li>"
-            "</ul>"
-            "<p style='color:#8ba3c7'>See LICENSE, CODE_OF_CONDUCT, SECURITY at the repository root.</p>"
-            "</div>"));
-        return;
-    }
-    md.replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
-    QString html = QStringLiteral("<div style='font-family:Segoe UI;color:#c5d4e8;padding:12px;line-height:1.55'>");
-    for (QString line : md.split('\n')) {
-        if (line.startsWith(QStringLiteral("# ")))
-            html += QStringLiteral("<h2 style='color:#56c8ff'>%1</h2>").arg(line.mid(2).toHtmlEscaped());
-        else if (line.startsWith(QStringLiteral("## ")))
-            html += QStringLiteral("<h3 style='color:#7dd3fc'>%1</h3>").arg(line.mid(3).toHtmlEscaped());
-        else if (line.startsWith(QStringLiteral("- ")))
-            html += QStringLiteral("<div style='margin-left:12px'>• %1</div>").arg(line.mid(2).toHtmlEscaped());
-        else if (line.trimmed().isEmpty())
-            html += QStringLiteral("<br/>");
-        else
-            html += QStringLiteral("<p>%1</p>").arg(line.toHtmlEscaped());
-    }
-    html += QStringLiteral("</div>");
-    m_legal->setHtml(html);
+    m_legal->setHtml(QStringLiteral(
+        "<div style='font-family:Segoe UI,sans-serif;color:#c5d4e8;line-height:1.55;padding:14px'>"
+        "<h2 style='color:#00e5ff;margin:0 0 8px 0'>PPSX33 — Legal Notice &amp; Project Position</h2>"
+        "<p style='color:#94a3b8'><b>Last updated:</b> 2026-10-28</p>"
+        "<p>This document describes what PPSX33 is, what it is not, and the conditions under which you may use "
+        "this repository and software. <b>Read it before using Load ELF, Build, or Run.</b></p>"
+        "<h3 style='color:#7dd3fc'>Summary</h3>"
+        "<ul>"
+        "<li>Independent research recompiler / HLE toolkit — <b>not affiliated with Sony</b>.</li>"
+        "<li>No bundled keys; optional external decrypt is user-supplied.</li>"
+        "<li>Decrypted ELF only for the load path in current builds.</li>"
+        "<li>Use only lawfully obtained materials; no redistribution of game data.</li>"
+        "<li>Host branding is <b>PPSX33</b>.</li>"
+        "</ul>"
+        "<p style='color:#8ba3c7'>Canonical notes live under docs/legal/. Keep LICENSE / CODE_OF_CONDUCT / "
+        "CONTRIBUTING / SECURITY at the repository root.</p>"
+        "</div>"));
 }
 
 void MainWindow::loadRequirementsHtml() {
     m_requirements->setHtml(QStringLiteral(
         "<div style='font-family:Segoe UI;color:#c5d4e8;padding:12px;line-height:1.55'>"
-        "<h2 style='color:#56c8ff'>Game runtime requirements</h2>"
+        "<h2 style='color:#00e5ff'>Game runtime requirements</h2>"
         "<p>Applies to <b>running</b> a generated title EXE — not to building the recompiler UI.</p>"
         "<ul>"
         "<li><b>OS:</b> Windows x64</li>"
@@ -333,31 +323,31 @@ void MainWindow::applySettingsToUi() {
 
 void MainWindow::applyTheme() {
     setStyleSheet(QStringLiteral(
-        "QMainWindow { background:#060a12; }"
+        "QMainWindow { background:#080b11; }"
         "QFrame#sidebar { background:#0a101c; border-right:1px solid #152033; }"
         "QFrame#logoBox { background:#0d1524; border:1px solid #1a2a44; border-radius:14px; padding:10px; }"
-        "QLabel#sideTitle { color:#56c8ff; font-size:18px; font-weight:800; letter-spacing:1px; }"
+        "QLabel#sideTitle { color:#00e5ff; font-size:18px; font-weight:800; letter-spacing:1px; }"
         "QLabel#sideSub { color:#6b83a6; font-size:10px; letter-spacing:1px; }"
         "QLabel#section { color:#5b7396; font-size:10px; font-weight:700; letter-spacing:1px; margin-top:6px; }"
         "QLabel#fieldLabel { color:#7f95b5; font-size:10px; font-weight:600; }"
         "QLabel#engineReady { background:#0c1f18; color:#3ddc97; border:1px solid #1a3d30; border-radius:8px; padding:10px; font-weight:700; letter-spacing:1px; }"
         "QLabel#foot { color:#4d617d; font-size:10px; }"
-        "QLabel#targetBar { background:#0a1220; color:#56c8ff; border:1px solid #1a2f4d; border-radius:8px; padding:10px; font-weight:700; letter-spacing:1px; }"
+        "QLabel#targetBar { background:#0a1220; color:#00e5ff; border:1px solid #1a2f4d; border-radius:8px; padding:10px; font-weight:700; letter-spacing:1px; }"
         "QLabel#statusLine { color:#7f95b5; font-size:11px; }"
         "QPushButton { background:#0f1828; color:#d5e3f7; border:1px solid #243652; border-radius:10px; text-align:left; padding-left:14px; }"
-        "QPushButton:hover { border-color:#56c8ff; background:#152238; }"
+        "QPushButton:hover { border-color:#00e5ff; background:#152238; }"
         "QPushButton:disabled { color:#4a5d78; background:#0a1018; border-color:#152033; }"
-        "QPushButton:pressed { background:#56c8ff; color:#061018; }"
+        "QPushButton:pressed { background:#00e5ff; color:#061018; }"
         "QComboBox { background:#0f1828; color:#d5e3f7; border:1px solid #243652; border-radius:8px; padding:6px 10px; }"
         "QComboBox QAbstractItemView { background:#0f1828; color:#d5e3f7; selection-background-color:#1e3a5f; }"
         "QTabWidget::pane { border:1px solid #1a2a40; border-radius:10px; background:#080e18; }"
         "QTabBar::tab { background:#0a101c; color:#7f95b5; padding:10px 16px; margin-right:2px; border-top-left-radius:8px; border-top-right-radius:8px; }"
         "QTabBar::tab:selected { background:#121c2e; color:#e8eef7; }"
-        "QTabBar::tab:hover { color:#56c8ff; }"
+        "QTabBar::tab:hover { color:#00e5ff; }"
         "QTextEdit { background:#080e18; color:#c5d4e8; border:none; font-family:Consolas,'Cascadia Mono',monospace; font-size:12px; padding:8px; }"
         "QLineEdit { background:#0f1828; color:#e8eef7; border:1px solid #243652; border-radius:6px; padding:6px; }"
         "QProgressBar { background:#121a2b; border:none; }"
-        "QProgressBar::chunk { background:#56c8ff; }"
+        "QProgressBar::chunk { background:#00e5ff; }"
         "QScrollArea { background:transparent; border:none; }"
     ));
 }
@@ -443,8 +433,12 @@ void MainWindow::onLoadElf() {
     QString start = Settings::instance().lastElfPath();
     QString path = QFileDialog::getOpenFileName(this, QStringLiteral("Load decrypted ELF"),
         start.isEmpty() ? QString() : QFileInfo(start).absolutePath(),
-        QStringLiteral("ELF (*.elf *.bin);;All (*.*)"));
+        QStringLiteral("ELF (*.elf)"));
     if (path.isEmpty()) return;
+    if (!path.endsWith(QStringLiteral(".elf"), Qt::CaseInsensitive)) {
+        QMessageBox::warning(this, QStringLiteral("PPSX33"), QStringLiteral("Only .elf files are supported."));
+        return;
+    }
     setBusy(true);
     Settings::instance().setLastElfPath(path);
     Settings::instance().save();
@@ -472,7 +466,8 @@ void MainWindow::onDecompile() {
     bool ok = NativeBridge::instance().liftProject(m_projectDir, &log);
     if (!log.isEmpty()) { m_report->setPlainText(log); appendLog(log.left(400)); }
     m_canBuild = ok;
-    appendLog(ok ? QStringLiteral("[ui] decompile ok") : QStringLiteral("[ui] decompile failed"));
+    if (ok) appendLog(QStringLiteral("[ui] decompile ok"));
+    else { appendLog(QStringLiteral("[ui] decompile failed")); QMessageBox::warning(this, QStringLiteral("PPSX33"), QStringLiteral("Decompile failed. See Report / Console.")); }
     setBusy(false);
 }
 
@@ -485,7 +480,8 @@ void MainWindow::onBuild() {
     bool ok = NativeBridge::instance().buildProject(m_projectDir, dist, dist, &log);
     if (!log.isEmpty()) m_report->append(log);
     m_canCopy = ok;
-    appendLog(ok ? QStringLiteral("[ui] build ok") : QStringLiteral("[ui] build failed"));
+    if (ok) appendLog(QStringLiteral("[ui] build ok"));
+    else { appendLog(QStringLiteral("[ui] build failed")); QMessageBox::warning(this, QStringLiteral("PPSX33"), QStringLiteral("Build failed. See Report / Console.")); }
     setBusy(false);
 }
 
@@ -517,4 +513,34 @@ void MainWindow::onRun() {
     if (m_exePath.isEmpty()) return;
     QProcess::startDetached(m_exePath, {}, m_gameRoot);
     appendLog(QStringLiteral("[ui] launched %1").arg(m_exePath));
+}
+
+void MainWindow::onConsoleSubmit() {
+    if (!m_consoleIn) return;
+    const QString cmd = m_consoleIn->text().trimmed();
+    m_consoleIn->clear();
+    if (cmd.isEmpty()) return;
+    appendLog(QStringLiteral("$ %1").arg(cmd));
+    const QString c = cmd.toLower();
+    if (c == QStringLiteral("help")) {
+        appendLog(QStringLiteral("Commands: help, status, clear, stop, -render"));
+    } else if (c == QStringLiteral("clear")) {
+        m_console->clear();
+    } else if (c == QStringLiteral("status")) {
+        appendLog(QStringLiteral("API=%1 threads=%2 project=%3")
+            .arg(m_api ? m_api->currentText() : QString())
+            .arg(m_threads ? m_threads->currentText() : QString())
+            .arg(m_projectDir.isEmpty() ? QStringLiteral("(none)") : m_projectDir));
+    } else if (c == QStringLiteral("stop")) {
+        NativeBridge::instance().cancelBuild();
+        setBusy(false);
+        appendLog(QStringLiteral("Stop: cancel build / clear busy"));
+    } else if (c == QStringLiteral("-render") || c == QStringLiteral("render")) {
+        auto* w = new RenderWorkbench(this);
+        w->setAttribute(Qt::WA_DeleteOnClose);
+        w->show();
+        appendLog(QStringLiteral("Opened Private mode (-render)"));
+    } else {
+        appendLog(QStringLiteral("Unknown command. Type help."));
+    }
 }

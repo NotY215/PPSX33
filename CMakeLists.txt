@@ -279,6 +279,15 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+set(PPSX33_ICON_ICO "${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.ico")
+set(PPSX33_ICON_PNG "${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.png")
+set(PPSX33_RC "${CMAKE_BINARY_DIR}/ppsx33_app_icon.rc")
+if(WIN32 AND EXISTS "${PPSX33_ICON_ICO}")
+  file(WRITE "${PPSX33_RC}" "IDI_ICON1 ICON \"${PPSX33_ICON_ICO}\"\n")
+  set(PPSX33_RC_SRC "${PPSX33_RC}")
+else()
+  set(PPSX33_RC_SRC "")
+endif()
 add_executable(PPSX33
   src/ui_qt/main.cpp
   src/ui_qt/MainWindow.cpp
@@ -289,7 +298,11 @@ add_executable(PPSX33
   src/ui_qt/NativeBridge.h
   src/ui_qt/Settings.cpp
   src/ui_qt/Settings.h
+  src/ui_qt/TermsDialog.cpp
+  src/ui_qt/TermsDialog.h
+  src/ui_qt/AppVersion.h
   src/ui_qt/resources.qrc
+  ${PPSX33_RC_SRC}
 )
 target_link_libraries(PPSX33 PRIVATE Qt6::Widgets)
 target_include_directories(PPSX33 PRIVATE ${CMAKE_SOURCE_DIR}/src/ui_qt ${CMAKE_SOURCE_DIR}/src/core)

@@ -8,6 +8,7 @@ class QTabWidget;
 class QComboBox;
 class QProgressBar;
 class QLineEdit;
+class QLineEdit;
 class QTimer;
 
 class MainWindow : public QMainWindow {
@@ -27,6 +28,7 @@ private slots:
     void onGfxChanged(int);
     void onThreadsChanged(int);
     void onLogoTick();
+    void onConsoleSubmit();
 private:
     void buildUi();
     void applyTheme();
@@ -44,6 +46,7 @@ private:
     bool m_canLift = false, m_canBuild = false, m_canCopy = false, m_canRun = false, m_busy = false;
 
     QLabel *m_logo = nullptr, *m_status = nullptr, *m_target = nullptr, *m_engine = nullptr;
+    QLineEdit *m_consoleIn = nullptr;
     QTextEdit *m_console = nullptr, *m_report = nullptr, *m_roadmap = nullptr;
     QTextEdit *m_requirements = nullptr, *m_legal = nullptr;
     QWidget* m_controllerPage = nullptr;

@@ -1,0 +1,5 @@
+#pragma once
+#define PPSX33_VERSION_STRING "1.0.4-alpha"
+#define PPSX33_VERSION_MAJOR 1
+#define PPSX33_VERSION_MINOR 0
+#define PPSX33_VERSION_PATCH 4
