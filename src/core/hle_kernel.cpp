@@ -526,6 +526,7 @@ static void pad_poll_host() {
 
 
 /* C APIs used by hle_kernel_syscalls.inl — must be global scope (MSVC C2598). */
+#include "spurs_stub.h"
 extern "C" {
 void     host_stats_sample(void);
 void     ps3rt_spu_tick_all(void);
@@ -534,7 +535,9 @@ uint64_t ps3rt_rsx_flip_count(void);
 void     ps3rt_rsx_flush(uint8_t* mem);
 void     ps3rt_rsx_set_put(uint32_t put);
 uint32_t ps3rt_rsx_get_get(void);
+uint32_t ps3rt_rsx_get_put(void);
 void     ps3rt_rsx_flip(uint32_t id);
+void     ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size);
 }
 
 #include "hle_kernel_syscalls.inl"
