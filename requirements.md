@@ -40,10 +40,8 @@ They do **not** describe the Visual Studio / .NET toolchain used only to **build
 | Storage | SSD for game data and logs |
 
 ## What this document is not
-
-- Not a list of MSVC / CMake / .NET SDK versions for *recompiling* PPSX33 itself.
 - Not a guarantee that any title will boot or draw correctly.
-- Not support for encrypted SELF/EBOOT load without a user-supplied decrypted ELF.
+
 
 ## Related
 
