@@ -168,7 +168,6 @@ if(WIN32)
     src/core/import/import_stub_map.c
     src/core/stats/host_stats.c
     src/core/hle/sysmodule_progress.c
-    src/core/hle/spurs_stub.c
     src/processor/PPU/translate/ppu_import_bridge.c
     src/processor/SPU/spu_interpreter.cpp
     src/games-stuff/Audio/audio_device.cpp
@@ -196,7 +195,6 @@ if(WIN32)
     src/processor/PPU/translate/ppu_import_bridge.c
     src/core/stats/host_stats.c
     src/core/hle/sysmodule_progress.c
-    src/core/hle/spurs_stub.c
     PROPERTIES LANGUAGE C)
   target_compile_definitions(ps3rt PRIVATE PS3RT_BUILD_DLL=1)
   if(MSVC)

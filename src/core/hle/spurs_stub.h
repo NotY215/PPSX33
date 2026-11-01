@@ -3,8 +3,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* Minimal SPURS job submit — records entry for SPU path diagnostics. */
-int ps3rt_spurs_submit_job(uint32_t entry, uint32_t arg0, uint32_t arg1);
+/* Defined in spu_interpreter.cpp */
+int ps3rt_spurs_submit_job(uint32_t entry, uint32_t prio, uint32_t workload_id);
 #ifdef __cplusplus
 }
 #endif
