@@ -1,13 +1,13 @@
 #pragma once
 #include <QMainWindow>
 #include <QMap>
+#include <QString>
 class QLabel;
 class QPushButton;
 class QTextEdit;
 class QTabWidget;
 class QComboBox;
 class QProgressBar;
-class QLineEdit;
 class QLineEdit;
 class QTimer;
 class UiLogoAnim;
@@ -28,7 +28,7 @@ private slots:
     void onSaveKeys();
     void onGfxChanged(int);
     void onThreadsChanged(int);
-        void onConsoleSubmit();
+    void onConsoleSubmit();
     void pollLiveBuild();
 private:
     void buildUi();
@@ -58,4 +58,9 @@ private:
     QPushButton *m_btnRun = nullptr, *m_btnCopy = nullptr, *m_btnSaveKeys = nullptr;
     QMap<QString, QLineEdit*> m_keyEdits;
     UiLogoAnim* m_logoAnim = nullptr;
+
+    QTimer* m_liveTimer = nullptr;
+    QString m_liveLogPath;
+    int m_buildTotal = 0;
+    qint64 m_liveStartMs = 0;
 };

@@ -48,3 +48,9 @@ PPSX33_RSX_API void rsx_fifo_decode_header(uint32_t hdr, uint32_t* out_method, u
     if (out_method) *out_method = method;
     if (out_count) *out_count = count;
 }
+
+/* Host surface method bridge (dump-paste protocol: mechanism only). */
+extern void rsx_nv4097_apply_surface(void* s, unsigned method, unsigned data);
+void rsx_method_apply_surface_bridge(void* state, unsigned method, unsigned data) {
+    if (state) rsx_nv4097_apply_surface(state, method, data);
+}

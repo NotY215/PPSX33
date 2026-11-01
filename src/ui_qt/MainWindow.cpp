@@ -534,7 +534,7 @@ void MainWindow::pollLiveBuild() {
     if (!f.open(QIODevice::ReadOnly)) return;
     const QString text = QString::fromUtf8(f.readAll());
     if (m_buildTotal <= 0) {
-        QRegularExpression re(QStringLiteral("BUILD_TOTAL=(\\d+)"));
+        QRegularExpression re(QStringLiteral("BUILD_TOTAL=([0-9]+)"));
         auto m = re.match(text);
         if (m.hasMatch()) m_buildTotal = m.captured(1).toInt();
     }
