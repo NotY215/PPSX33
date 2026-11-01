@@ -613,36 +613,36 @@ static void rsx_hle_fifo_service(void) {
     uint32_t get = gcm_rd_ctrl_u32(g_gcm_control + 4) % fsz;
 
     static int s_seed = 0;
-    static int s_empty = 0;
+    static int s_idle = 0;
     static int s_log = 0;
 
+    /* Producer = PUT, consumer = GET. Drain whenever PUT advances. */
     if (put != get) {
-        s_empty = 0;
+        s_idle = 0;
         ps3rt_rsx_set_put(put);
         ps3rt_rsx_flush(g_mem);
-        const uint32_t ng = ps3rt_rsx_get_get();
+        const uint32_t ng = ps3rt_rsx_get_get() % fsz;
         wr_be32_guest(g_gcm_control + 4, ng);
-        if (s_log < 16) {
+        if (s_log < 20) {
             ps3rt_log("[rsx] FIFO drain put=0x%x get=0x%x -> 0x%x\n", put, get, ng);
             ++s_log;
         }
-        if (((s_log) & 3) == 0 && rsx_vk_ready())
+        if (rsx_vk_ready() && ((s_log & 3) == 0))
             ps3rt_rsx_flip(0);
         return;
     }
 
-    if (++s_empty < 2 || !rsx_vk_ready() || s_seed >= 96)
+    /* Idle FIFO: limited boot seed so host present path stays alive. */
+    if (++s_idle < 3 || !rsx_vk_ready() || s_seed >= 128)
         return;
-
     gcm_inject_clear_draw();
     put = gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz;
     ps3rt_rsx_set_put(put);
     ps3rt_rsx_flush(g_mem);
-    const uint32_t ng = ps3rt_rsx_get_get();
-    wr_be32_guest(g_gcm_control + 4, ng);
+    wr_be32_guest(g_gcm_control + 4, ps3rt_rsx_get_get() % fsz);
     ++s_seed;
-    s_empty = 0;
-    if (s_seed <= 8 || (s_seed & 15) == 0)
+    s_idle = 0;
+    if (s_seed <= 6 || (s_seed & 15) == 0)
         ps3rt_log("[rsx] FIFO seed #%d put=0x%x\n", s_seed, put);
     if ((s_seed & 1) == 0) {
         ps3rt_rsx_flip(0);
@@ -650,6 +650,7 @@ static void rsx_hle_fifo_service(void) {
             wr_be32_guest(g_gcm_labels, (uint32_t)s_seed);
     }
 }
+
 
 
 
