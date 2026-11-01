@@ -67,7 +67,7 @@ set(PPSX33_COMMON_INCLUDES
 )
 
 if(WIN32)
-  add_library(ppsx33_resolution EXCLUDE_FROM_ALL SHARED src/RSX/resolution/rsx_resolution.c)
+  add_library(ppsx33_resolution SHARED src/RSX/resolution/rsx_resolution.c)
   target_include_directories(ppsx33_resolution PUBLIC ${CMAKE_SOURCE_DIR}/src/RSX/resolution)
   target_compile_definitions(ppsx33_resolution PRIVATE PPSX33_RES_BUILD=1)
   set_target_properties(ppsx33_resolution PROPERTIES
@@ -82,7 +82,7 @@ if(WIN32)
     WINDOWS_EXPORT_ALL_SYMBOLS ON)
   set_source_files_properties(src/RSX/resolution/rsx_resolution.c PROPERTIES LANGUAGE C)
 
-  add_library(ppsx33_api EXCLUDE_FROM_ALL SHARED
+  add_library(ppsx33_api SHARED
     src/RSX/Backends/Vulkan/rsx_vk_backend.cpp
     src/RSX/Backends/Vulkan/rsx_vk_memory.cpp
     src/RSX/Backends/Vulkan/rsx_vk_command.cpp
@@ -102,7 +102,7 @@ if(WIN32)
     ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
     WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-  add_library(ppsx33_render EXCLUDE_FROM_ALL SHARED
+  add_library(ppsx33_render SHARED
     src/RSX/present/rsx_present_queue.c
     src/RSX/draw/rsx_draw_batch.c
     src/RSX/draw/rsx_surface_fmt.c
@@ -131,7 +131,7 @@ if(WIN32)
     WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
   # rsx.dll: FIFO/state helpers (device stays in ps3rt to use HLE log/mem)
-  add_library(ppsx33_rsx EXCLUDE_FROM_ALL SHARED
+  add_library(ppsx33_rsx SHARED
     src/RSX/rsx_fifo.cpp
     src/RSX/rsx_framebuffer.cpp
     src/RSX/rsx_memory.cpp
@@ -147,7 +147,7 @@ if(WIN32)
   )
   target_include_directories(ppsx33_rsx PRIVATE ${PPSX33_COMMON_INCLUDES})
   target_compile_definitions(ppsx33_rsx PRIVATE PPSX33_RSX_BUILD=1)
-  set_source_files_properties(src/RSX/fifo/rsx_method_table.c src/native/x64/ps3rt_be.c src/RSX/rsx_exports.c PROPERTIES LANGUAGE C)
+  set_source_files_properties(src/RSX/fifo/rsx_method_table.c src/RSX/fifo/rsx_fifo_drain.c src/RSX/methods/rsx_nv4097_surface.c src/native/x64/ps3rt_be.c src/RSX/rsx_exports.c PROPERTIES LANGUAGE C)
   target_link_libraries(ppsx33_rsx PRIVATE ppsx33_render ppsx33_resolution)
   set_target_properties(ppsx33_rsx PROPERTIES
     PREFIX ""
@@ -163,7 +163,7 @@ endif()
 
 # ---- ps3rt (HLE + RSX device + SPU + audio); links modular DLLs ----
 if(WIN32)
-  add_library(ps3rt EXCLUDE_FROM_ALL SHARED
+  add_library(ps3rt SHARED
     src/core/hle_kernel.cpp
     src/core/assets.cpp
     src/RSX/rsx_device.cpp
@@ -211,7 +211,11 @@ if(WIN32)
   set_target_properties(ps3rt PROPERTIES PREFIX "" OUTPUT_NAME "ps3rt"
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist)
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
+    WINDOWS_EXPORT_ALL_SYMBOLS ON)
   add_dependencies(ps3rt ppsx33_api ppsx33_render ppsx33_rsx ppsx33_resolution)
   add_custom_command(TARGET ps3rt POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/dist
@@ -329,7 +333,7 @@ set_target_properties(PPSX33 PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
   WIN32_EXECUTABLE TRUE
 )
-add_dependencies(PPSX33 ps3core)
+add_dependencies(PPSX33 ps3core ps3rt)
 if(WIN32)
   add_custom_command(TARGET PPSX33 POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ps3core> $<TARGET_FILE_DIR:PPSX33>
