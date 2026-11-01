@@ -5,12 +5,12 @@ on:
 permissions:
   contents: read
 jobs:
-  restore:
+  tree-guard:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-      - name: Restore (Windows targeting enabled)
-        run: dotnet restore PS3Recomp.sln
+      - name: Guard removed C# solution
+        run: |
+          if [ -f PS3Recomp.sln ]; then echo "PS3Recomp.sln must not exist"; exit 1; fi
+          if [ -d src/UI ]; then echo "src/UI C# tree must not exist"; exit 1; fi
+          echo "OK: no PS3Recomp.sln / src/UI"

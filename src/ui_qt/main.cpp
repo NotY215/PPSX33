@@ -6,6 +6,12 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <cstdio>
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#endif
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
@@ -15,7 +21,14 @@ int main(int argc, char* argv[]) {
 
     const QStringList args = app.arguments();
     if (args.contains(QStringLiteral("-version")) || args.contains(QStringLiteral("--version"))) {
+        #ifdef _WIN32
+        if (AttachConsole(ATTACH_PARENT_PROCESS) || AllocConsole()) {
+            FILE* f = nullptr;
+            freopen_s(&f, "CONOUT$", "w", stdout);
+        }
+#endif
         std::printf("PPSX33 %s\n", PPSX33_VERSION_STRING);
+        std::fflush(stdout);
         return 0;
     }
 

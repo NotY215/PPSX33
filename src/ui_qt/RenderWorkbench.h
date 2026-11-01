@@ -21,6 +21,5 @@ private:
     bool m_lifted = false, m_analyzed = false;
     QTextEdit* m_console = nullptr;
     QLabel* m_target = nullptr;
-    QCheckBox *m_cbApi = nullptr, *m_cbRsx = nullptr, *m_cbRender = nullptr;
-    QCheckBox *m_cbRes = nullptr, *m_cbRt = nullptr;
+    QCheckBox *m_cbRsx = nullptr, *m_cbRender = nullptr, *m_cbRt = nullptr;
 };

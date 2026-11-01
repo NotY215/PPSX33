@@ -67,7 +67,7 @@ set(PPSX33_COMMON_INCLUDES
 )
 
 if(WIN32)
-  add_library(ppsx33_resolution SHARED src/RSX/resolution/rsx_resolution.c)
+  add_library(ppsx33_resolution EXCLUDE_FROM_ALL SHARED src/RSX/resolution/rsx_resolution.c)
   target_include_directories(ppsx33_resolution PUBLIC ${CMAKE_SOURCE_DIR}/src/RSX/resolution)
   target_compile_definitions(ppsx33_resolution PRIVATE PPSX33_RES_BUILD=1)
   set_target_properties(ppsx33_resolution PROPERTIES
@@ -82,7 +82,7 @@ if(WIN32)
     WINDOWS_EXPORT_ALL_SYMBOLS ON)
   set_source_files_properties(src/RSX/resolution/rsx_resolution.c PROPERTIES LANGUAGE C)
 
-  add_library(ppsx33_api SHARED
+  add_library(ppsx33_api EXCLUDE_FROM_ALL SHARED
     src/RSX/Backends/Vulkan/rsx_vk_backend.cpp
     src/RSX/Backends/Vulkan/rsx_vk_memory.cpp
     src/RSX/Backends/Vulkan/rsx_vk_command.cpp
@@ -102,7 +102,7 @@ if(WIN32)
     ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
     WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-  add_library(ppsx33_render SHARED
+  add_library(ppsx33_render EXCLUDE_FROM_ALL SHARED
     src/RSX/present/rsx_present_queue.c
     src/RSX/draw/rsx_draw_batch.c
     src/RSX/draw/rsx_surface_fmt.c
@@ -131,7 +131,7 @@ if(WIN32)
     WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
   # rsx.dll: FIFO/state helpers (device stays in ps3rt to use HLE log/mem)
-  add_library(ppsx33_rsx SHARED
+  add_library(ppsx33_rsx EXCLUDE_FROM_ALL SHARED
     src/RSX/rsx_fifo.cpp
     src/RSX/rsx_framebuffer.cpp
     src/RSX/rsx_memory.cpp
@@ -163,7 +163,7 @@ endif()
 
 # ---- ps3rt (HLE + RSX device + SPU + audio); links modular DLLs ----
 if(WIN32)
-  add_library(ps3rt SHARED
+  add_library(ps3rt EXCLUDE_FROM_ALL SHARED
     src/core/hle_kernel.cpp
     src/core/assets.cpp
     src/RSX/rsx_device.cpp
@@ -271,6 +271,13 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/redist")
     COMMENT "Copy redist/"
     VERBATIM)
 endif()
+
+# Runtime modular DLLs are NOT part of default host build (PPSX33.exe + ps3core only).
+# Build explicitly: cmake --build build --target ppsx33_runtime_modules
+# or use PPSX33.exe -render after ELF analysis.
+add_custom_target(ppsx33_runtime_modules
+  DEPENDS ps3rt ppsx33_api ppsx33_rsx ppsx33_render ppsx33_resolution
+  COMMENT "Build modular runtime DLLs (ps3rt/api/rsx/render/resolution)")
 
 # C# / dotnet GUI removed — host UI is Qt6 target PPSX33
 

@@ -212,3 +212,18 @@ Native lift/build APIs come from `ps3core.dll` (`ps3core.h`), loaded at runtime 
 Load ELF → Decompile → Build → Copy to Game Folder → Run EXE.  
 Controller tab is available around the build/copy stage. Report and Legal tabs show log and notice text.
 
+
+
+## Host vs runtime DLLs
+
+Default CMake build produces **PPSX33.exe** + **ps3core.dll** only.
+
+Modular runtime DLLs (`ps3rt`, `api`, `rsx`, `render`, `resolution`) use **EXCLUDE_FROM_ALL**. Build with:
+
+```bat
+cmake --build build --config Release --target ppsx33_runtime_modules
+```
+
+Or **PPSX33.exe -render** (Load ELF → Decompile → Analyze → Generate).
+
+Game builds stage headers from `dist/runtime/` into `output/src/` so `#include "ppu_runtime.h"` works.

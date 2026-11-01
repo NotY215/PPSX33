@@ -43,14 +43,13 @@ RenderWorkbench::RenderWorkbench(QWidget* parent) : QDialog(parent) {
     root->addWidget(m_target);
 
     auto* mods = new QHBoxLayout;
-    m_cbApi = new QCheckBox(QStringLiteral("api"), this);
-    m_cbRes = new QCheckBox(QStringLiteral("resolution"), this);
-    m_cbRsx = new QCheckBox(QStringLiteral("rsx (ELF)"), this);
-    m_cbRender = new QCheckBox(QStringLiteral("render (ELF)"), this);
-    m_cbRt = new QCheckBox(QStringLiteral("ps3rt (ELF)"), this);
-    m_cbApi->setChecked(true);
-    m_cbRes->setChecked(true);
-    for (auto* c : {m_cbApi, m_cbRes, m_cbRsx, m_cbRender, m_cbRt}) mods->addWidget(c);
+    m_cbRsx = new QCheckBox(QStringLiteral("rsx"), this);
+    m_cbRender = new QCheckBox(QStringLiteral("render"), this);
+    m_cbRt = new QCheckBox(QStringLiteral("ps3rt"), this);
+    m_cbRsx->setChecked(true);
+    m_cbRender->setChecked(true);
+    m_cbRt->setChecked(true);
+    for (auto* c : {m_cbRsx, m_cbRender, m_cbRt}) mods->addWidget(c);
     root->addLayout(mods);
 
     auto* row = new QHBoxLayout;
@@ -156,8 +155,6 @@ void RenderWorkbench::onGenerate() {
         return;
     }
     QStringList mods;
-    if (m_cbApi->isChecked()) mods << QStringLiteral("api");
-    if (m_cbRes->isChecked()) mods << QStringLiteral("resolution");
     if (m_cbRsx->isChecked()) mods << QStringLiteral("rsx");
     if (m_cbRender->isChecked()) mods << QStringLiteral("render");
     if (m_cbRt->isChecked()) mods << QStringLiteral("ps3rt");

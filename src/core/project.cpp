@@ -372,36 +372,66 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     live_open(out);
     g_build_out_dir = out.string();
 
-    // Prefer prebuilt ps3rt.dll/lib from dist/runtime (headers only + binary).
-    // Fall back to compiling .cpp sources if no DLL is present.
+    // Stage headers into output/src (flat) so game_main can #include "ppu_runtime.h".
+    // Prefer dist/runtime/ headers; fall back to runtime_dir.
+    // Prebuilt ps3rt.dll is used only when DLL+LIB+headers are all available.
     bool prebuilt_rt = false;
+    fs::path hdr_root = fs::path(runtime_dir) / "runtime";
+    if (!fs::exists(hdr_root)) hdr_root = fs::path(runtime_dir);
+    auto stage_hdr = [&](const char* name) {
+        fs::path from = hdr_root / name;
+        if (!fs::exists(from)) from = fs::path(runtime_dir) / name;
+        if (!fs::exists(from)) return false;
+        fs::copy_file(from, src / name, fs::copy_options::overwrite_existing, ec);
+        return true;
+    };
+    const char* need_hdrs[] = {
+        "ppu_runtime.h", "ppu_runtime_core.h", "ppu_runtime_core_a.h", "ppu_runtime_core_b.h",
+        "ppu_runtime_run.h", "hle_registry.h", "hle_stage.h", "hle_status.h",
+        "hle_kernel_internal.h", "nid_table.h", nullptr
+    };
+    bool headers_ok = true;
+    for (int i = 0; need_hdrs[i]; ++i) {
+        if (!stage_hdr(need_hdrs[i]) && std::string(need_hdrs[i]) == "ppu_runtime.h")
+            headers_ok = false;
+    }
+    // Optional inl/support files
+    for (const char* opt : {"hle_kernel_syscalls.inl", "lv2_syscalls.inl"})
+        stage_hdr(opt);
+
     {
-        // Prefer DLL/LIB next to the host EXE (dist/), then dist/runtime/ legacy
-        fs::path pre_dll = fs::path(runtime_dir) / ".." / "ps3rt.dll";
-        fs::path pre_lib = fs::path(runtime_dir) / ".." / "ps3rt.lib";
-        if (!fs::exists(pre_dll)) pre_dll = fs::path(runtime_dir) / "ps3rt.dll";
-        if (!fs::exists(pre_lib)) pre_lib = fs::path(runtime_dir) / "ps3rt.lib";
-        if (fs::exists(pre_dll) && fs::exists(pre_lib)) {
+        fs::path pre_dll = fs::path(runtime_dir) / "ps3rt.dll";
+        fs::path pre_lib = fs::path(runtime_dir) / "ps3rt.lib";
+        if (!fs::exists(pre_dll)) pre_dll = fs::path(runtime_dir) / ".." / "ps3rt.dll";
+        if (!fs::exists(pre_lib)) pre_lib = fs::path(runtime_dir) / ".." / "ps3rt.lib";
+        // Also accept next to host dist when runtime_dir is projects path mistake
+        if (fs::exists(pre_dll) && fs::exists(pre_lib) && headers_ok) {
             prebuilt_rt = true;
             fs::copy_file(pre_dll, out / "ps3rt.dll", fs::copy_options::overwrite_existing, ec);
             fs::copy_file(pre_lib, out / "ps3rt.lib", fs::copy_options::overwrite_existing, ec);
-            live_log("Using prebuilt ps3rt.dll (no runtime .cpp compile)\n");
+            live_log("Using prebuilt ps3rt.dll (headers staged under output/src)\n");
             log += "Using prebuilt ps3rt.dll\n";
+        } else if (fs::exists(pre_dll) && !headers_ok) {
+            live_log("prebuilt ps3rt.dll found but ppu_runtime.h missing — will need full RT sources\n");
+            log += "WARN: ppu_runtime.h missing for prebuilt path\n";
         }
     }
     if (fs::exists(runtime_dir)) {
         for (auto& e : fs::recursive_directory_iterator(runtime_dir, ec)) {
             if (!e.is_regular_file()) continue;
             std::string n = e.path().filename().string();
-            // Never ship implementation .cpp into per-game src when prebuilt is available
-            if (prebuilt_rt) {
-                if (n.size() > 4 && n.substr(n.size()-4) == ".cpp") continue;
-                if (n == "ps3rt.dll" || n == "ps3rt.lib" || n == "ps3rt.exp" || n == "ps3rt.pdb") continue;
+            if (n.size() > 4 && (n.substr(n.size()-4) == ".dll" || n.substr(n.size()-4) == ".lib" ||
+                n.substr(n.size()-4) == ".exp" || n.substr(n.size()-4) == ".pdb")) continue;
+            if (prebuilt_rt && n.size() > 4 && n.substr(n.size()-4) == ".cpp") continue;
+            // Flatten headers into src/ (not src/runtime/) for #include "ppu_runtime.h"
+            fs::path dst = src / n;
+            if (n.size() > 2 && (n.substr(n.size()-2) == ".h" || n.substr(n.size()-4) == ".inl")) {
+                fs::copy_file(e.path(), dst, fs::copy_options::overwrite_existing, ec);
+                continue;
             }
-            fs::path rel = fs::relative(e.path(), runtime_dir, ec);
-            fs::path dst = src / rel;
-            fs::create_directories(dst.parent_path(), ec);
-            fs::copy_file(e.path(), dst, fs::copy_options::overwrite_existing, ec);
+            if (!prebuilt_rt && n.size() > 4 && n.substr(n.size()-4) == ".cpp") {
+                fs::copy_file(e.path(), dst, fs::copy_options::overwrite_existing, ec);
+            }
         }
     }
     if (fs::exists(code)) {
