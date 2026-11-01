@@ -140,12 +140,14 @@ if(WIN32)
     src/RSX/rsx_shader_compiler.cpp
     src/RSX/rsx_shader_decoder.cpp
     src/RSX/fifo/rsx_method_table.c
+    src/RSX/fifo/rsx_fifo_drain.c
+    src/RSX/methods/rsx_nv4097_surface.c
     src/native/x64/ps3rt_be.c
     src/RSX/rsx_exports.c
   )
   target_include_directories(ppsx33_rsx PRIVATE ${PPSX33_COMMON_INCLUDES})
   target_compile_definitions(ppsx33_rsx PRIVATE PPSX33_RSX_BUILD=1)
-  set_source_files_properties(src/RSX/fifo/rsx_method_table.c src/native/x64/ps3rt_be.c src/RSX/rsx_exports.c PROPERTIES LANGUAGE C)
+  set_source_files_properties(src/RSX/fifo/rsx_method_table.c src/RSX/fifo/rsx_fifo_drain.c src/RSX/methods/rsx_nv4097_surface.c src/native/x64/ps3rt_be.c src/RSX/rsx_exports.c PROPERTIES LANGUAGE C)
   target_link_libraries(ppsx33_rsx PRIVATE ppsx33_render ppsx33_resolution)
   set_target_properties(ppsx33_rsx PROPERTIES
     PREFIX ""
@@ -168,6 +170,7 @@ if(WIN32)
     src/core/import/import_stub_map.c
     src/core/stats/host_stats.c
     src/core/hle/sysmodule_progress.c
+    src/core/hle/gcm/gcm_control_bridge.c
     src/processor/PPU/translate/ppu_import_bridge.c
     src/processor/SPU/spu_interpreter.cpp
     src/games-stuff/Audio/audio_device.cpp
@@ -195,6 +198,7 @@ if(WIN32)
     src/processor/PPU/translate/ppu_import_bridge.c
     src/core/stats/host_stats.c
     src/core/hle/sysmodule_progress.c
+    src/core/hle/gcm/gcm_control_bridge.c
     PROPERTIES LANGUAGE C)
   target_compile_definitions(ps3rt PRIVATE PS3RT_BUILD_DLL=1)
   if(MSVC)
@@ -207,7 +211,11 @@ if(WIN32)
   set_target_properties(ps3rt PROPERTIES PREFIX "" OUTPUT_NAME "ps3rt"
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist)
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
+    WINDOWS_EXPORT_ALL_SYMBOLS ON)
   add_dependencies(ps3rt ppsx33_api ppsx33_render ppsx33_rsx ppsx33_resolution)
   add_custom_command(TARGET ps3rt POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/dist
@@ -268,6 +276,11 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/redist")
     VERBATIM)
 endif()
 
+# Default host build MUST produce runtime DLLs (game prebuilt path).
+add_custom_target(ppsx33_runtime_modules ALL
+  DEPENDS ps3rt ppsx33_api ppsx33_rsx ppsx33_render ppsx33_resolution
+  COMMENT "Runtime DLLs: ps3rt api rsx render resolution")
+
 # C# / dotnet GUI removed — host UI is Qt6 target PPSX33
 
 message(STATUS "Layout: src/core, src/processor, src/RSX, src/games-stuff, src/ui_qt")
@@ -279,6 +292,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+# Vulkan used via dynamic load in api.dll — headers not required at configure time.
+set(CMAKE_DISABLE_FIND_PACKAGE_WrapVulkanHeaders ON)
 set(PPSX33_ICON_ICO "${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.ico")
 set(PPSX33_ICON_PNG "${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.png")
 set(PPSX33_RC "${CMAKE_BINARY_DIR}/ppsx33_app_icon.rc")
@@ -301,6 +316,14 @@ add_executable(PPSX33
   src/ui_qt/TermsDialog.cpp
   src/ui_qt/TermsDialog.h
   src/ui_qt/AppVersion.h
+  src/ui_qt/UiLogoAnim.h
+  src/ui_qt/UiLogoAnim.cpp
+  src/ui_qt/JobWorker.cpp
+  src/ui_qt/JobWorker.h
+  src/ui_qt/EmbeddedTerms.h
+  src/ui_qt/EmbeddedTerms.cpp
+  src/ui_qt/EmbeddedLegal.h
+  src/ui_qt/EmbeddedLegal.cpp
   src/ui_qt/resources.qrc
   ${PPSX33_RC_SRC}
 )
@@ -312,13 +335,19 @@ set_target_properties(PPSX33 PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
   WIN32_EXECUTABLE TRUE
 )
-add_dependencies(PPSX33 ps3core)
+if(TARGET ps3rt)
+  add_dependencies(PPSX33 ps3core ps3rt ppsx33_api ppsx33_rsx ppsx33_render ppsx33_resolution ppsx33_runtime_modules)
+else()
+endif()
 if(WIN32)
   add_custom_command(TARGET PPSX33 POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ps3core> $<TARGET_FILE_DIR:PPSX33>
-    COMMENT "dist/: PPSX33.exe + ps3core.dll")
-  add_custom_command(TARGET PPSX33 POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ps3rt> $<TARGET_FILE_DIR:PPSX33>/ps3rt.dll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ppsx33_api> $<TARGET_FILE_DIR:PPSX33>/api.dll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ppsx33_rsx> $<TARGET_FILE_DIR:PPSX33>/rsx.dll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ppsx33_render> $<TARGET_FILE_DIR:PPSX33>/render.dll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ppsx33_resolution> $<TARGET_FILE_DIR:PPSX33>/resolution.dll
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
       ${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.png $<TARGET_FILE_DIR:PPSX33>/ppsx33-logo.png
-    COMMENT "dist/: ppsx33-logo.png next to PPSX33.exe")
+    COMMENT "dist/: EXE + ps3core + ps3rt + modular DLLs + logo")
 endif()

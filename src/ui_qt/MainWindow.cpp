@@ -4,6 +4,8 @@
 #include "RenderWorkbench.h"
 #include "EmbeddedLegal.h"
 #include "UiLogoAnim.h"
+#include "JobWorker.h"
+#include <QThread>
 #include <QApplication>
 #include <QCoreApplication>
 #include <QFileDialog>
@@ -429,45 +431,41 @@ void MainWindow::onLoadElf() {
 }
 
 void MainWindow::onDecompile() {
-    if (m_projectDir.isEmpty()) return;
+    if (m_projectDir.isEmpty() || m_busy) return;
     setBusy(true);
     m_progress->setRange(0, 0);
     m_progress->setVisible(true);
     m_status->setText(QStringLiteral("Decompile live… (lift + analysis)"));
-    QString log;
-    bool ok = NativeBridge::instance().liftProject(m_projectDir, &log);
-    if (!log.isEmpty()) { m_report->setPlainText(log); appendLog(log.left(400)); }
-    m_canBuild = ok;
-    if (ok) appendLog(QStringLiteral("[ui] decompile ok"));
-    else { appendLog(QStringLiteral("[ui] decompile failed")); QMessageBox::warning(this, QStringLiteral("PPSX33"), QStringLiteral("Decompile failed. See Report / Console.")); }
-    setBusy(false);
-}
-
-void MainWindow::onBuild() {
-    if (m_projectDir.isEmpty()) return;
-    setBusy(true);
-    m_progress->setVisible(true);
-    m_progress->setRange(0, 100);
-    m_progress->setValue(0);
-    m_liveLogPath = m_projectDir + QStringLiteral("/output/build_live.log");
-    m_buildTotal = 0;
+    m_jobKind = QStringLiteral("lift");
     m_liveStartMs = QDateTime::currentMSecsSinceEpoch();
     if (!m_liveTimer) {
         m_liveTimer = new QTimer(this);
         connect(m_liveTimer, &QTimer::timeout, this, &MainWindow::pollLiveBuild);
     }
-    m_liveTimer->start(250);
-    NativeBridge::instance().beginBuild();
-    QString dist = QCoreApplication::applicationDirPath();
-    QString log;
-    bool ok = NativeBridge::instance().buildProject(m_projectDir, dist, dist, &log);
-    if (m_liveTimer) m_liveTimer->stop();
-    if (!log.isEmpty()) m_report->append(log);
-    m_canCopy = ok;
-    if (ok) appendLog(QStringLiteral("[ui] build ok"));
-    else { appendLog(QStringLiteral("[ui] build failed")); QMessageBox::warning(this, QStringLiteral("PPSX33"), QStringLiteral("Build failed. See Report / Console.")); }
-    setBusy(false);
+    m_liveTimer->start(300);
+    startJob(QStringLiteral("lift"));
 }
+
+
+void MainWindow::onBuild() {
+    if (m_projectDir.isEmpty() || m_busy) return;
+    setBusy(true);
+    m_progress->setVisible(true);
+    m_progress->setRange(0, 100);
+    m_progress->setValue(0);
+    m_liveLogPath = m_projectDir + QStringLiteral("/output/build_live.log");
+    QFile::remove(m_liveLogPath);
+    m_buildTotal = 0;
+    m_liveStartMs = QDateTime::currentMSecsSinceEpoch();
+    m_jobKind = QStringLiteral("build");
+    if (!m_liveTimer) {
+        m_liveTimer = new QTimer(this);
+        connect(m_liveTimer, &QTimer::timeout, this, &MainWindow::pollLiveBuild);
+    }
+    m_liveTimer->start(200);
+    startJob(QStringLiteral("build"));
+}
+
 
 void MainWindow::onCopy() {
     QString start = Settings::instance().lastGameFolderPath();
@@ -530,9 +528,28 @@ void MainWindow::onConsoleSubmit() {
 }
 
 void MainWindow::pollLiveBuild() {
+    const qint64 elapsed = QDateTime::currentMSecsSinceEpoch() - m_liveStartMs;
+    if (m_jobKind == QStringLiteral("lift")) {
+        m_progress->setRange(0, 0);
+        m_status->setText(QStringLiteral("Decompile live… %1s").arg(elapsed / 1000));
+        return;
+    }
     QFile f(m_liveLogPath);
-    if (!f.open(QIODevice::ReadOnly)) return;
+    if (!f.open(QIODevice::ReadOnly)) {
+        m_status->setText(QStringLiteral("Build starting… %1s").arg(elapsed / 1000));
+        return;
+    }
     const QString text = QString::fromUtf8(f.readAll());
+    // Live console tail
+    const QStringList lines = text.split(QChar('\n'), Qt::SkipEmptyParts);
+    if (!lines.isEmpty()) {
+        static QString s_last;
+        const QString last = lines.last().trimmed();
+        if (last != s_last) {
+            s_last = last;
+            m_console->append(last);
+        }
+    }
     if (m_buildTotal <= 0) {
         QRegularExpression re(QStringLiteral("BUILD_TOTAL=([0-9]+)"));
         auto m = re.match(text);
@@ -543,7 +560,6 @@ void MainWindow::pollLiveBuild() {
         int pct = qMin(99, (done * 100) / qMax(1, m_buildTotal));
         m_progress->setRange(0, 100);
         m_progress->setValue(pct);
-        const qint64 elapsed = QDateTime::currentMSecsSinceEpoch() - m_liveStartMs;
         QString eta = QStringLiteral("…");
         if (pct > 2 && elapsed > 500) {
             const qint64 totalMs = elapsed * 100 / pct;
@@ -551,5 +567,60 @@ void MainWindow::pollLiveBuild() {
             eta = QStringLiteral("%1s left").arg(left / 1000);
         }
         m_status->setText(QStringLiteral("Build %1% (%2/%3) ETA %4").arg(pct).arg(done).arg(m_buildTotal).arg(eta));
+    } else {
+        m_progress->setRange(0, 0);
+        m_status->setText(QStringLiteral("Build live… %1s").arg(elapsed / 1000));
+    }
+}
+
+
+void MainWindow::startJob(const QString& kind) {
+    if (m_jobThread) {
+        m_jobThread->quit();
+        m_jobThread->wait(1000);
+        m_jobThread->deleteLater();
+        m_jobThread = nullptr;
+        m_job = nullptr;
+    }
+    m_jobThread = new QThread(this);
+    m_job = new JobWorker();
+    m_job->moveToThread(m_jobThread);
+    connect(m_jobThread, &QThread::finished, m_job, &QObject::deleteLater);
+    connect(m_job, &JobWorker::finished, this, &MainWindow::onJobFinished);
+    const QString pd = m_projectDir;
+    const QString dist = QCoreApplication::applicationDirPath();
+    if (kind == QStringLiteral("lift")) {
+        connect(m_jobThread, &QThread::started, m_job, [this, pd]() { m_job->lift(pd); });
+    } else {
+        connect(m_jobThread, &QThread::started, m_job, [this, pd, dist]() { m_job->build(pd, dist); });
+    }
+    m_jobThread->start();
+}
+
+void MainWindow::onJobFinished(bool ok, QString log, QString kind) {
+    if (m_liveTimer) m_liveTimer->stop();
+    if (!log.isEmpty()) {
+        m_report->setPlainText(log);
+        appendLog(log.left(500));
+    }
+    if (kind == QStringLiteral("lift")) {
+        m_canBuild = ok;
+        appendLog(ok ? QStringLiteral("[ui] decompile ok") : QStringLiteral("[ui] decompile failed"));
+        if (!ok) QMessageBox::warning(this, QStringLiteral("PPSX33"), QStringLiteral("Decompile failed. See Report."));
+    } else {
+        m_canCopy = ok;
+        if (ok) {
+            m_progress->setValue(100);
+            appendLog(QStringLiteral("[ui] build ok"));
+        } else {
+            appendLog(QStringLiteral("[ui] build failed"));
+            QMessageBox::warning(this, QStringLiteral("PPSX33"), QStringLiteral("Build failed. See Report / Console."));
+        }
+    }
+    setBusy(false);
+    refreshButtons();
+    if (m_jobThread) {
+        m_jobThread->quit();
+        m_jobThread->wait(500);
     }
 }

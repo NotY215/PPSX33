@@ -318,6 +318,8 @@ add_executable(PPSX33
   src/ui_qt/AppVersion.h
   src/ui_qt/UiLogoAnim.h
   src/ui_qt/UiLogoAnim.cpp
+  src/ui_qt/JobWorker.cpp
+  src/ui_qt/JobWorker.h
   src/ui_qt/EmbeddedTerms.h
   src/ui_qt/EmbeddedTerms.cpp
   src/ui_qt/EmbeddedLegal.h

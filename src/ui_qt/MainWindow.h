@@ -11,6 +11,8 @@ class QProgressBar;
 class QLineEdit;
 class QTimer;
 class UiLogoAnim;
+class QThread;
+class JobWorker;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -30,6 +32,8 @@ private slots:
     void onThreadsChanged(int);
     void onConsoleSubmit();
     void pollLiveBuild();
+    void onJobFinished(bool ok, QString log, QString kind);
+    void startJob(const QString& kind);
 private:
     void buildUi();
     void applyTheme();
@@ -63,4 +67,7 @@ private:
     QString m_liveLogPath;
     int m_buildTotal = 0;
     qint64 m_liveStartMs = 0;
+    QThread* m_jobThread = nullptr;
+    JobWorker* m_job = nullptr;
+    QString m_jobKind;
 };
