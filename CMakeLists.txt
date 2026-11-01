@@ -61,6 +61,7 @@ set(PPSX33_COMMON_INCLUDES
   ${CMAKE_SOURCE_DIR}/src/RSX/render
   ${CMAKE_SOURCE_DIR}/src/RSX/resolution
   ${CMAKE_SOURCE_DIR}/src/core/stats
+    ${CMAKE_SOURCE_DIR}/src/core/hle
   ${CMAKE_SOURCE_DIR}/src/RSX/Backends/Vulkan
   ${CMAKE_SOURCE_DIR}/src/games-stuff/Audio
 )
@@ -166,6 +167,7 @@ if(WIN32)
     src/RSX/rsx_device.cpp
     src/core/import/import_stub_map.c
     src/core/stats/host_stats.c
+    src/core/hle/sysmodule_progress.c
     src/processor/PPU/translate/ppu_import_bridge.c
     src/processor/SPU/spu_interpreter.cpp
     src/games-stuff/Audio/audio_device.cpp
@@ -192,6 +194,7 @@ if(WIN32)
     src/core/import/import_stub_map.c
     src/processor/PPU/translate/ppu_import_bridge.c
     src/core/stats/host_stats.c
+    src/core/hle/sysmodule_progress.c
     PROPERTIES LANGUAGE C)
   target_compile_definitions(ps3rt PRIVATE PS3RT_BUILD_DLL=1)
   if(MSVC)

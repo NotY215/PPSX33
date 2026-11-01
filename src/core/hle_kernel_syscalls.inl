@@ -585,8 +585,8 @@ static void gcm_inject_clear_draw() {
         wr_f_be(vb_off + 24,  0.00f); wr_f_be(vb_off + 28,  0.95f); wr_f_be(vb_off + 32, 0.1f);
     }
     gcm_fifo_emit(0x0200, color_off);           // COLOR_OFFSET
-    gcm_fifo_emit(0x0204, 1280u * 4u);          // COLOR_PITCH
-    gcm_fifo_emit(0x020C, (1280u << 16) | 720u);
+    gcm_fifo_emit(0x0204, 720u * 4u);           // COLOR_PITCH 576p
+    gcm_fifo_emit(0x020C, (720u << 16) | 576u);
     gcm_fifo_emit(0x1D8C, col);                 // CLEAR_COLOR
     gcm_fifo_emit(0x1D90, 0xF1);
     gcm_fifo_emit(0x1D94, 0);
@@ -621,39 +621,45 @@ static void rsx_hle_fifo_service(void) {
     extern uint32_t ps3rt_rsx_get_get(void);
     extern void ps3rt_rsx_flip(uint32_t id);
     extern int rsx_vk_ready(void);
-    extern uint64_t ps3rt_rsx_flip_count(void);
 
-    uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000;
+    uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000u;
     uint32_t put = gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz;
     uint32_t get = gcm_rd_ctrl_u32(g_gcm_control + 4) % fsz;
 
     static int s_svc_log = 0;
+    static int s_seed = 0;
+    static int s_empty_ticks = 0;
+
     if (put != get) {
+        s_empty_ticks = 0;
         ps3rt_rsx_set_put(put);
-        if (g_mem) ps3rt_rsx_flush(g_mem);
-        // Advance GET toward PUT (consumer catch-up), RPCS3-style
+        ps3rt_rsx_flush(g_mem);
         uint32_t ng = ps3rt_rsx_get_get();
         wr_be32_guest(g_gcm_control + 4, ng);
-        if (s_svc_log < 24) {
+        if (s_svc_log < 48) {
             ps3rt_log("[rsx] FIFO drain put=0x%x get=0x%x -> get'=0x%x\n", put, get, ng);
             ++s_svc_log;
         }
-    } else {
-        // Idle: seed a short clear/draw packet so Vulkan path is exercised
-        static int s_seed = 0;
-        if (s_seed < 64 && rsx_vk_ready()) {
-            gcm_inject_clear_draw();
-            put = gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz;
-            ps3rt_rsx_set_put(put);
-            if (g_mem) ps3rt_rsx_flush(g_mem);
-            uint32_t ng = ps3rt_rsx_get_get();
-            wr_be32_guest(g_gcm_control + 4, ng);
-            ++s_seed;
-            if (s_seed <= 8 || (s_seed & 7) == 0)
-                ps3rt_log("[rsx] FIFO seed #%d put=0x%x get'=0x%x\n", s_seed, put, ng);
-            if ((s_seed & 3) == 0)
-                ps3rt_rsx_flip(0);
-        }
+        if ((s_svc_log & 3) == 0 && rsx_vk_ready())
+            ps3rt_rsx_flip(0);
+        return;
+    }
+
+    ++s_empty_ticks;
+    // Idle FIFO: seed host-visible command stream only after control exists and a few empty ticks
+    if (s_seed < 128 && rsx_vk_ready() && s_empty_ticks >= 2) {
+        gcm_inject_clear_draw();
+        put = gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz;
+        ps3rt_rsx_set_put(put);
+        ps3rt_rsx_flush(g_mem);
+        uint32_t ng = ps3rt_rsx_get_get();
+        wr_be32_guest(g_gcm_control + 4, ng);
+        ++s_seed;
+        s_empty_ticks = 0;
+        if (s_seed <= 12 || (s_seed & 7) == 0)
+            ps3rt_log("[rsx] FIFO seed #%d put=0x%x get'=0x%x\n", s_seed, put, ng);
+        if ((s_seed & 1) == 0)
+            ps3rt_rsx_flip(0);
     }
 }
 
@@ -989,8 +995,16 @@ static int sysutil_hle(PPUContext* c, uint32_t nid) {
     case 0x32267A31: // IsLoaded
     case 0x74A54CDF: // GetLibraryInfo
     case 0x96C07ADF: // SetMemcontainer
-    case 0x0053F96C:
+    case 0x0053F96C: {
+        static int s_sm = 0;
+        if (s_sm < 6) {
+            extern void hle_sysmodule_note_call(uint32_t);
+            hle_sysmodule_note_call(0x0053F96Cu);
+            ps3rt_log("[hle] cellSysmodule stub 0x0053F96C -> CELL_OK (boot progress)\n");
+            ++s_sm;
+        }
         return ok();
+    }
     default:
         // Known GOW stub NIDs from logs
         if (nid == 0x0065F088 || nid == 0x0065F9C8 || nid == 0x0065FCC8 || nid == 0x00525680)

@@ -221,3 +221,33 @@ This document maps the current PPSX33 source layout and the files that participa
 - 🪟 **Frontend:** `src/UI/` contains the WinForms app and its supporting UI components; native panels remain under `src/UI/panels/`.
 - 🧰 **Native runtime:** `src/native/x64/` contains host-specific endian helpers, while `src/processor/PPU/translate/` bridges translated code to import resolution.
 - 📚 **Omitted from this tree:** `docs/`, `tests/`, `releases/`, standalone `.md` files, issue templates, and other repository-management content. They remain in the repository and are not part of this focused source/build listing.
+
+
+## Modular game runtime DLLs (dist/ and game USRDIR)
+
+Built by CMake into `build/dist/` and copied next to the game EXE:
+
+| DLL | Role |
+|-----|------|
+| `ps3rt.dll` | HLE kernel, RSX device orchestration, SPU, audio |
+| `api.dll` | Vulkan 1.2 host present (instance, device, swapchain) |
+| `rsx.dll` | FIFO helpers, surfaces, textures, method classify |
+| `render.dll` | Draw batch, present queue, light present throttle |
+| `resolution.dll` | Host output size helpers (720×576) |
+| `vulkan-1.dll` | Vulkan loader |
+
+Workbench: `PPSX33.exe -render` rebuilds selected module targets without re-lifting the game EXE.
+
+### RSX host path (src/RSX)
+
+```
+src/RSX/
+  rsx_device.cpp          # window, flip, FIFO process entry
+  Backends/Vulkan/        # api.dll sources
+  fifo/                   # method table
+  draw/ render/ present/  # render.dll sources
+  resolution/             # resolution.dll
+```
+
+HLE FIFO service (PUT/GET drain + idle seed) lives in `src/core/hle_kernel_syscalls.inl` and runs from `ps3rt_progress_hw`.
+

@@ -18,6 +18,7 @@
   <a href="docs/DIAGRAMS.md">📊 Diagrams</a> ·
   <a href="ENGINEERING.md">📐 Engineering</a> ·
   <a href="docs/DEVELOPER_GUIDE.md">🛠️ Developer guide</a> ·
+  <a href="AIFIAR.md">🧭 AIFIAR (AI workflow)</a> ·
   <a href="USER_MANUAL.md">📘 User manual</a> ·
   <a href="docs/games/README.md">🎮 Game notes</a>
 </p>
@@ -168,10 +169,10 @@ PPSX33/
 
 Runtime **sources** live under `src/` (no top-level `runtime/` tree).
 Built artefacts in `build/dist/`:
-- **`ps3rt.dll` / `ps3rt.lib` / `vulkan-1.dll` / `PS3Recomp.exe`** — next to each other at `dist/` root (single location)
+- **`PPSX33.exe`**, **`ps3rt.dll`**, **`api.dll`**, **`rsx.dll`**, **`render.dll`**, **`resolution.dll`**, **`vulkan-1.dll`** — under `build/dist/` (copy into the game USRDIR next to EBOOT)
 - **`dist/runtime/`** — headers only for game link (no DLL/LIB duplicate)
 
-Generated projects may contain a game executable, `ps3rt.dll`, guest image data, generated source files, controller mapping and build logs. Exact output depends on the project and build path.
+Generated projects may contain a game executable, runtime DLLs (`ps3rt`, `api`, `rsx`, `render`, `resolution`), `vulkan-1.dll`, guest image data, controller mapping and logs. Exact output depends on the project and build path.
 
 ## 🖥️ Game runtime requirements
 
