@@ -372,68 +372,102 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     live_open(out);
     g_build_out_dir = out.string();
 
-    // Stage headers into output/src (flat) so game_main can #include "ppu_runtime.h".
-    // Prefer dist/runtime/ headers; fall back to runtime_dir.
-    // Prebuilt ps3rt.dll is used only when DLL+LIB+headers are all available.
+    // Stage headers flat into output/src for #include "ppu_runtime.h".
+    // Resolve prebuilt ps3rt.dll from dist/ (host EXE folder) even when
+    // runtime_dir is mis-pointed; never emit bare "or" into .bat files.
     bool prebuilt_rt = false;
-    fs::path hdr_root = fs::path(runtime_dir) / "runtime";
+    fs::path dist_guess = fs::path(runtime_dir);
+    // project_dir = .../dist/projects/<game> → dist is parent of projects
+    {
+        fs::path p1 = fs::path(project_dir).parent_path(); // projects
+        fs::path p2 = p1.parent_path(); // dist
+        if (fs::exists(p2 / "ps3core.dll") || fs::exists(p2 / "PPSX33.exe") || fs::exists(p2 / "runtime"))
+            dist_guess = p2;
+    }
+    if (fs::exists(fs::path(runtime_dir) / "PPSX33.exe") || fs::exists(fs::path(runtime_dir) / "ps3core.dll"))
+        dist_guess = fs::path(runtime_dir);
+
+    fs::path hdr_root = dist_guess / "runtime";
+    if (!fs::exists(hdr_root)) hdr_root = fs::path(runtime_dir) / "runtime";
+    if (!fs::exists(hdr_root)) hdr_root = dist_guess;
     if (!fs::exists(hdr_root)) hdr_root = fs::path(runtime_dir);
-    auto stage_hdr = [&](const char* name) {
-        fs::path from = hdr_root / name;
-        if (!fs::exists(from)) from = fs::path(runtime_dir) / name;
-        if (!fs::exists(from)) return false;
-        fs::copy_file(from, src / name, fs::copy_options::overwrite_existing, ec);
-        return true;
+
+    auto stage_hdr = [&](const char* name) -> bool {
+        fs::path cands[] = {
+            hdr_root / name,
+            dist_guess / "runtime" / name,
+            fs::path(runtime_dir) / name,
+            dist_guess / name
+        };
+        for (auto& from : cands) {
+            if (fs::exists(from)) {
+                fs::copy_file(from, src / name, fs::copy_options::overwrite_existing, ec);
+                return true;
+            }
+        }
+        return false;
     };
     const char* need_hdrs[] = {
         "ppu_runtime.h", "ppu_runtime_core.h", "ppu_runtime_core_a.h", "ppu_runtime_core_b.h",
         "ppu_runtime_run.h", "hle_registry.h", "hle_stage.h", "hle_status.h",
         "hle_kernel_internal.h", "nid_table.h", nullptr
     };
-    bool headers_ok = true;
-    for (int i = 0; need_hdrs[i]; ++i) {
-        if (!stage_hdr(need_hdrs[i]) && std::string(need_hdrs[i]) == "ppu_runtime.h")
-            headers_ok = false;
-    }
-    // Optional inl/support files
+    bool headers_ok = stage_hdr("ppu_runtime.h");
+    for (int i = 0; need_hdrs[i]; ++i)
+        stage_hdr(need_hdrs[i]);
     for (const char* opt : {"hle_kernel_syscalls.inl", "lv2_syscalls.inl"})
         stage_hdr(opt);
 
+    fs::path pre_dll, pre_lib;
     {
-        fs::path pre_dll = fs::path(runtime_dir) / "ps3rt.dll";
-        fs::path pre_lib = fs::path(runtime_dir) / "ps3rt.lib";
-        if (!fs::exists(pre_dll)) pre_dll = fs::path(runtime_dir) / ".." / "ps3rt.dll";
-        if (!fs::exists(pre_lib)) pre_lib = fs::path(runtime_dir) / ".." / "ps3rt.lib";
-        // Also accept next to host dist when runtime_dir is projects path mistake
-        if (fs::exists(pre_dll) && fs::exists(pre_lib) && headers_ok) {
-            prebuilt_rt = true;
-            fs::copy_file(pre_dll, out / "ps3rt.dll", fs::copy_options::overwrite_existing, ec);
-            fs::copy_file(pre_lib, out / "ps3rt.lib", fs::copy_options::overwrite_existing, ec);
-            live_log("Using prebuilt ps3rt.dll (headers staged under output/src)\n");
-            log += "Using prebuilt ps3rt.dll\n";
-        } else if (fs::exists(pre_dll) && !headers_ok) {
-            live_log("prebuilt ps3rt.dll found but ppu_runtime.h missing — will need full RT sources\n");
-            log += "WARN: ppu_runtime.h missing for prebuilt path\n";
-        }
+        fs::path cands_dll[] = {
+            dist_guess / "ps3rt.dll",
+            fs::path(runtime_dir) / "ps3rt.dll",
+            dist_guess / "runtime" / "ps3rt.dll",
+            fs::path(project_dir).parent_path().parent_path() / "ps3rt.dll"
+        };
+        fs::path cands_lib[] = {
+            dist_guess / "ps3rt.lib",
+            fs::path(runtime_dir) / "ps3rt.lib",
+            dist_guess / "runtime" / "ps3rt.lib",
+            fs::path(project_dir).parent_path().parent_path() / "ps3rt.lib"
+        };
+        for (auto& c : cands_dll) if (fs::exists(c)) { pre_dll = c; break; }
+        for (auto& c : cands_lib) if (fs::exists(c)) { pre_lib = c; break; }
     }
-    if (fs::exists(runtime_dir)) {
-        for (auto& e : fs::recursive_directory_iterator(runtime_dir, ec)) {
+
+    if (!pre_dll.empty() && !pre_lib.empty() && headers_ok) {
+        prebuilt_rt = true;
+        fs::copy_file(pre_dll, out / "ps3rt.dll", fs::copy_options::overwrite_existing, ec);
+        fs::copy_file(pre_lib, out / "ps3rt.lib", fs::copy_options::overwrite_existing, ec);
+        // Optional modular DLLs next to game EXE
+        for (const char* mod : {"api.dll", "rsx.dll", "render.dll", "resolution.dll", "vulkan-1.dll"}) {
+            fs::path m = dist_guess / mod;
+            if (fs::exists(m))
+                fs::copy_file(m, out / mod, fs::copy_options::overwrite_existing, ec);
+        }
+        live_log(std::string("Using prebuilt ") + pre_dll.string() + "\n");
+        log += "Using prebuilt ps3rt.dll\n";
+    } else {
+        live_log("No usable prebuilt ps3rt (need ps3rt.dll + ps3rt.lib + ppu_runtime.h).\n");
+        log += "WARN: prebuilt_rt unavailable\n";
+        if (pre_dll.empty()) log += "  missing ps3rt.dll under dist/\n";
+        if (pre_lib.empty()) log += "  missing ps3rt.lib under dist/\n";
+        if (!headers_ok) log += "  missing ppu_runtime.h under dist/runtime/\n";
+    }
+
+    // Copy remaining header/inl support from hdr_root (flat into src/)
+    if (fs::exists(hdr_root)) {
+        for (auto& e : fs::directory_iterator(hdr_root, ec)) {
             if (!e.is_regular_file()) continue;
             std::string n = e.path().filename().string();
-            if (n.size() > 4 && (n.substr(n.size()-4) == ".dll" || n.substr(n.size()-4) == ".lib" ||
-                n.substr(n.size()-4) == ".exp" || n.substr(n.size()-4) == ".pdb")) continue;
-            if (prebuilt_rt && n.size() > 4 && n.substr(n.size()-4) == ".cpp") continue;
-            // Flatten headers into src/ (not src/runtime/) for #include "ppu_runtime.h"
-            fs::path dst = src / n;
-            if (n.size() > 2 && (n.substr(n.size()-2) == ".h" || n.substr(n.size()-4) == ".inl")) {
-                fs::copy_file(e.path(), dst, fs::copy_options::overwrite_existing, ec);
-                continue;
-            }
-            if (!prebuilt_rt && n.size() > 4 && n.substr(n.size()-4) == ".cpp") {
-                fs::copy_file(e.path(), dst, fs::copy_options::overwrite_existing, ec);
+            if (n.size() > 2 && (n.substr(n.size()-2) == ".h" ||
+                (n.size() > 4 && n.substr(n.size()-4) == ".inl"))) {
+                fs::copy_file(e.path(), src / n, fs::copy_options::overwrite_existing, ec);
             }
         }
     }
+
     if (fs::exists(code)) {
         for (auto& e : fs::directory_iterator(code, ec)) {
             if (!e.is_regular_file()) continue;
@@ -571,8 +605,9 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             if (!prebuilt_rt) {
                 f << "if not exist src\\ps3rt.cpp (\n";
                 f << "  echo MISSING src\\ps3rt.cpp\n";
-                f << "  echo Rebuild host so dist/src/ps3rt.dll and ps3rt.lib exist,\n";
-                f << "  or place runtime sources under dist/runtime.\n";
+                f << "  echo Build runtime modules first:\n";
+                f << "  echo   cmake --build build --target ppsx33_runtime_modules\n";
+                f << "  echo Need dist\\ps3rt.dll dist\\ps3rt.lib dist\\runtime\\ppu_runtime.h\n";
                 f << "  exit /b 1\n";
                 f << ")\n";
             }
