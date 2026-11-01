@@ -77,7 +77,13 @@ case 41: case 43: case 44: case 45: case 46: case 47: {
 case 48: case 49: case 50: case 51: case 52: case 53: {
     // 48: sys_ppu_thread_join — return success so boot does not wait forever
     c->gpr[3] = 0;
-    extern void ps3rt_progress_hw(void);
+    extern 
+
+// RPCS3-inspired: independent FIFO drain — PUT is producer, GET is consumer.
+// Always drain when PUT!=GET; boot-assist inject when idle so host present sees work.
+
+
+void ps3rt_progress_hw(void);
     ps3rt_progress_hw();
     break;
 }
@@ -607,6 +613,50 @@ static void gcm_inject_clear_draw() {
         ++s_log;
     }
 }
+
+static void rsx_hle_fifo_service(void) {
+    if (!g_gcm_control || !g_mem) return;
+    extern void ps3rt_rsx_flush(uint8_t* mem);
+    extern void ps3rt_rsx_set_put(uint32_t put);
+    extern uint32_t ps3rt_rsx_get_get(void);
+    extern void ps3rt_rsx_flip(uint32_t id);
+    extern int rsx_vk_ready(void);
+    extern uint64_t ps3rt_rsx_flip_count(void);
+
+    uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000;
+    uint32_t put = gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz;
+    uint32_t get = gcm_rd_ctrl_u32(g_gcm_control + 4) % fsz;
+
+    static int s_svc_log = 0;
+    if (put != get) {
+        ps3rt_rsx_set_put(put);
+        if (g_mem) ps3rt_rsx_flush(g_mem);
+        // Advance GET toward PUT (consumer catch-up), RPCS3-style
+        uint32_t ng = ps3rt_rsx_get_get();
+        wr_be32_guest(g_gcm_control + 4, ng);
+        if (s_svc_log < 24) {
+            ps3rt_log("[rsx] FIFO drain put=0x%x get=0x%x -> get'=0x%x\n", put, get, ng);
+            ++s_svc_log;
+        }
+    } else {
+        // Idle: seed a short clear/draw packet so Vulkan path is exercised
+        static int s_seed = 0;
+        if (s_seed < 64 && rsx_vk_ready()) {
+            gcm_inject_clear_draw();
+            put = gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz;
+            ps3rt_rsx_set_put(put);
+            if (g_mem) ps3rt_rsx_flush(g_mem);
+            uint32_t ng = ps3rt_rsx_get_get();
+            wr_be32_guest(g_gcm_control + 4, ng);
+            ++s_seed;
+            if (s_seed <= 8 || (s_seed & 7) == 0)
+                ps3rt_log("[rsx] FIFO seed #%d put=0x%x get'=0x%x\n", s_seed, put, ng);
+            if ((s_seed & 3) == 0)
+                ps3rt_rsx_flip(0);
+        }
+    }
+}
+
 
 
 // XX-I: fuller cellGcmSys HLE — display buffers, flip lifecycle, map/offset, tiles/zcull stubs
@@ -1249,6 +1299,7 @@ PS3RT_API void ps3rt_progress_hw(void) {
     extern void ps3rt_rsx_tick(void);
     ps3rt_spu_tick_all();
     ps3rt_rsx_tick(); // keep Vulkan HWND responsive during sticky HLE/boot
+    rsx_hle_fifo_service();
     {
         extern void host_stats_sample(void);
         static int s_stat = 0;
