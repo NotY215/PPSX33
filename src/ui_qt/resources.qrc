@@ -1,6 +1,6 @@
 <!DOCTYPE RCC>
 <RCC version="1.0">
   <qresource prefix="/">
-    <file>assets/ppsx33-logo.png</file>
+    <file alias="assets/ppsx33-logo.png">../../assets/ppsx33-logo.png</file>
   </qresource>
 </RCC>

@@ -287,6 +287,8 @@ add_executable(PPSX33
   src/ui_qt/RenderWorkbench.h
   src/ui_qt/NativeBridge.cpp
   src/ui_qt/NativeBridge.h
+  src/ui_qt/Settings.cpp
+  src/ui_qt/Settings.h
   src/ui_qt/resources.qrc
 )
 target_link_libraries(PPSX33 PRIVATE Qt6::Widgets)

@@ -608,52 +608,49 @@ static void gcm_inject_clear_draw() {
 
 static void rsx_hle_fifo_service(void) {
     if (!g_gcm_control || !g_mem) return;
-
-    uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000u;
+    const uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000u;
     uint32_t put = gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz;
     uint32_t get = gcm_rd_ctrl_u32(g_gcm_control + 4) % fsz;
 
-    static int s_svc_log = 0;
     static int s_seed = 0;
-    static int s_empty_ticks = 0;
+    static int s_empty = 0;
+    static int s_log = 0;
 
     if (put != get) {
-        s_empty_ticks = 0;
+        s_empty = 0;
         ps3rt_rsx_set_put(put);
         ps3rt_rsx_flush(g_mem);
-        uint32_t ng = ps3rt_rsx_get_get();
+        const uint32_t ng = ps3rt_rsx_get_get();
         wr_be32_guest(g_gcm_control + 4, ng);
-        if (s_svc_log < 48) {
-            ps3rt_log("[rsx] FIFO drain put=0x%x get=0x%x -> get'=0x%x\n", put, get, ng);
-            ++s_svc_log;
+        if (s_log < 16) {
+            ps3rt_log("[rsx] FIFO drain put=0x%x get=0x%x -> 0x%x\n", put, get, ng);
+            ++s_log;
         }
-        if ((s_svc_log & 3) == 0 && rsx_vk_ready())
+        if (((s_log) & 3) == 0 && rsx_vk_ready())
             ps3rt_rsx_flip(0);
         return;
     }
 
-    ++s_empty_ticks;
-    if (s_seed < 128 && rsx_vk_ready() && s_empty_ticks >= 2) {
-        gcm_inject_clear_draw();
-        put = gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz;
-        ps3rt_rsx_set_put(put);
-        ps3rt_rsx_flush(g_mem);
-        uint32_t ng = ps3rt_rsx_get_get();
-        wr_be32_guest(g_gcm_control + 4, ng);
-        ++s_seed;
-        s_empty_ticks = 0;
-        if (s_seed <= 12 || (s_seed & 7) == 0)
-            ps3rt_log("[rsx] FIFO seed #%d put=0x%x get'=0x%x\n", s_seed, put, ng);
-        if ((s_seed & 1) == 0) {
-            ps3rt_rsx_flip(0);
-            if (g_gcm_labels && g_mem && g_gcm_labels + 16 <= g_mem_size) {
-                /* label[0] = frame marker (BE) — titles poll this */
-                uint32_t v = (uint32_t)s_seed;
-                wr_be32_guest(g_gcm_labels + 0, v);
-            }
-        }
+    if (++s_empty < 2 || !rsx_vk_ready() || s_seed >= 96)
+        return;
+
+    gcm_inject_clear_draw();
+    put = gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz;
+    ps3rt_rsx_set_put(put);
+    ps3rt_rsx_flush(g_mem);
+    const uint32_t ng = ps3rt_rsx_get_get();
+    wr_be32_guest(g_gcm_control + 4, ng);
+    ++s_seed;
+    s_empty = 0;
+    if (s_seed <= 8 || (s_seed & 15) == 0)
+        ps3rt_log("[rsx] FIFO seed #%d put=0x%x\n", s_seed, put);
+    if ((s_seed & 1) == 0) {
+        ps3rt_rsx_flip(0);
+        if (g_gcm_labels && g_gcm_labels + 4 <= g_mem_size)
+            wr_be32_guest(g_gcm_labels, (uint32_t)s_seed);
     }
 }
+
 
 
 
