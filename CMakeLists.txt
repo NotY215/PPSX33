@@ -305,10 +305,7 @@ if(WIN32)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ps3core> $<TARGET_FILE_DIR:PPSX33>
     COMMENT "dist/: PPSX33.exe + ps3core.dll")
   add_custom_command(TARGET PPSX33 POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:PPSX33>/assets
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      ${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.png $<TARGET_FILE_DIR:PPSX33>/assets/ppsx33-logo.png
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      ${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.ico $<TARGET_FILE_DIR:PPSX33>/assets/ppsx33-logo.ico
-    COMMENT "dist assets: logo")
+      ${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.png $<TARGET_FILE_DIR:PPSX33>/ppsx33-logo.png
+    COMMENT "dist/: ppsx33-logo.png next to PPSX33.exe")
 endif()

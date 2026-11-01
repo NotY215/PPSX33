@@ -47,7 +47,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     setWindowTitle(QStringLiteral("PPSX33 · PlayStation 3 Recompiler"));
     resize(1280, 820);
     setMinimumSize(1024, 700);
-    QString png = QCoreApplication::applicationDirPath() + QStringLiteral("/assets/ppsx33-logo.png");
+    QString png = QCoreApplication::applicationDirPath() + QStringLiteral("/ppsx33-logo.png");
     QIcon icon(png);
     if (icon.isNull()) icon = QIcon(QStringLiteral(":/assets/ppsx33-logo.png"));
     if (!icon.isNull()) setWindowIcon(icon);
@@ -87,7 +87,7 @@ void MainWindow::buildUi() {
     m_logo = new QLabel(logoBox);
     m_logo->setObjectName(QStringLiteral("logo"));
     m_logo->setAlignment(Qt::AlignCenter);
-    QPixmap pm(QCoreApplication::applicationDirPath() + QStringLiteral("/assets/ppsx33-logo.png"));
+    QPixmap pm(QCoreApplication::applicationDirPath() + QStringLiteral("/ppsx33-logo.png"));
     if (pm.isNull()) pm = QPixmap(QStringLiteral(":/assets/ppsx33-logo.png"));
     if (!pm.isNull())
         m_logo->setPixmap(pm.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
@@ -398,12 +398,14 @@ void MainWindow::playIntro() {
 }
 
 void MainWindow::onLogoTick() {
-    if (!m_logo || !m_logo->pixmap() || m_logo->pixmap()->isNull()) return;
+    if (!m_logo) return;
     m_logoPhase += 0.045;
     const qreal s = 1.0 + 0.035 * qSin(m_logoPhase);
-    QPixmap base = QPixmap(QCoreApplication::applicationDirPath() + QStringLiteral("/assets/ppsx33-logo.png"));
-    if (base.isNull()) base = QPixmap(QStringLiteral(":/assets/ppsx33-logo.png"));
-    if (base.isNull()) return;
+    QPixmap base(QCoreApplication::applicationDirPath() + QStringLiteral("/ppsx33-logo.png"));
+    if (base.isNull())
+        base = QPixmap(QStringLiteral(":/assets/ppsx33-logo.png"));
+    if (base.isNull())
+        return;
     const int side = int(100 * s);
     m_logo->setPixmap(base.scaled(side, side, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 }
