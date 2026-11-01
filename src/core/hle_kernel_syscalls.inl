@@ -616,11 +616,6 @@ static void gcm_inject_clear_draw() {
 
 static void rsx_hle_fifo_service(void) {
     if (!g_gcm_control || !g_mem) return;
-    extern "C" void ps3rt_rsx_flush(uint8_t* mem);
-    extern "C" void ps3rt_rsx_set_put(uint32_t put);
-    extern "C" uint32_t ps3rt_rsx_get_get(void);
-    extern "C" void ps3rt_rsx_flip(uint32_t id);
-    extern "C" int rsx_vk_ready(void);
 
     uint32_t fsz = g_gcm_fifo_size ? g_gcm_fifo_size : 0x100000u;
     uint32_t put = gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz;
@@ -646,7 +641,6 @@ static void rsx_hle_fifo_service(void) {
     }
 
     ++s_empty_ticks;
-    // Idle FIFO: seed host-visible command stream only after control exists and a few empty ticks
     if (s_seed < 128 && rsx_vk_ready() && s_empty_ticks >= 2) {
         gcm_inject_clear_draw();
         put = gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz;
@@ -658,10 +652,17 @@ static void rsx_hle_fifo_service(void) {
         s_empty_ticks = 0;
         if (s_seed <= 12 || (s_seed & 7) == 0)
             ps3rt_log("[rsx] FIFO seed #%d put=0x%x get'=0x%x\n", s_seed, put, ng);
-        if ((s_seed & 1) == 0)
+        if ((s_seed & 1) == 0) {
             ps3rt_rsx_flip(0);
+            if (g_gcm_labels && g_mem && g_gcm_labels + 16 <= g_mem_size) {
+                /* label[0] = frame marker (BE) — titles poll this */
+                uint32_t v = (uint32_t)s_seed;
+                wr_be32_guest(g_gcm_labels + 0, v);
+            }
+        }
     }
 }
+
 
 
 
@@ -893,9 +894,6 @@ static int gcm_hle(PPUContext* c, uint32_t nid) {
 
 
 // XX-M: cellSpurs HLE
-extern "C" int ps3rt_spurs_submit_job(uint32_t entry, uint32_t prio, uint32_t workload_id);
-extern "C" int ps3rt_spurs_job_done(int job_id);
-extern "C" uint32_t ps3rt_rsx_get_put(void);
 static int spurs_dispatch(PPUContext* c, uint32_t nid) {
     if (!c) return -1;
     switch (nid) {
@@ -998,7 +996,6 @@ static int sysutil_hle(PPUContext* c, uint32_t nid) {
     case 0x0053F96C: {
         static int s_sm = 0;
         if (s_sm < 6) {
-            extern "C" void hle_sysmodule_note_call(uint32_t);
             hle_sysmodule_note_call(0x0053F96Cu);
             ps3rt_log("[hle] cellSysmodule stub 0x0053F96C -> CELL_OK (boot progress)\n");
             ++s_sm;
@@ -1309,21 +1306,15 @@ static void frame_pace_wait() {
 
 
 PS3RT_API void ps3rt_progress_hw(void) {
-    extern void ps3rt_spu_tick_all(void);
-    extern void ps3rt_rsx_tick(void);
     ps3rt_spu_tick_all();
     ps3rt_rsx_tick(); // keep Vulkan HWND responsive during sticky HLE/boot
     rsx_hle_fifo_service();
     {
-        extern void host_stats_sample(void);
         static int s_stat = 0;
         if ((++s_stat & 0x3F) == 0) host_stats_sample();
     }
     // Rendering start assist: if host window is up but title never flipped, nudge flip
     {
-        extern "C" int rsx_vk_ready(void);
-        extern "C" void ps3rt_rsx_flip(uint32_t id);
-        extern "C" uint64_t ps3rt_rsx_flip_count(void);
         static int s_assist = 0;
         if (rsx_vk_ready() && ps3rt_rsx_flip_count() == 0) {
             if ((++s_assist % 8) == 0) {

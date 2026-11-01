@@ -28,6 +28,8 @@ extern "C" const char* ps3rt_get_game_name(void);
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include "hle_status.h"
+#include "rsx_vk_backend.h"
+#include "sysmodule_progress.h"
 #endif
 
 static FILE* g_logf = nullptr;
@@ -520,6 +522,19 @@ static void pad_poll_host() {
                 g_pad_poll_count, (unsigned)btn, (int)lx, (int)ly, (int)rx, (int)ry, (unsigned)l2, (unsigned)r2);
         }
     }
+}
+
+
+/* C APIs used by hle_kernel_syscalls.inl — must be global scope (MSVC C2598). */
+extern "C" {
+void     host_stats_sample(void);
+void     ps3rt_spu_tick_all(void);
+void     ps3rt_rsx_tick(void);
+uint64_t ps3rt_rsx_flip_count(void);
+void     ps3rt_rsx_flush(uint8_t* mem);
+void     ps3rt_rsx_set_put(uint32_t put);
+uint32_t ps3rt_rsx_get_get(void);
+void     ps3rt_rsx_flip(uint32_t id);
 }
 
 #include "hle_kernel_syscalls.inl"
