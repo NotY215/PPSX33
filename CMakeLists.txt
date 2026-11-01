@@ -287,6 +287,7 @@ add_executable(PPSX33
   src/ui_qt/RenderWorkbench.h
   src/ui_qt/NativeBridge.cpp
   src/ui_qt/NativeBridge.h
+  src/ui_qt/resources.qrc
 )
 target_link_libraries(PPSX33 PRIVATE Qt6::Widgets)
 target_include_directories(PPSX33 PRIVATE ${CMAKE_SOURCE_DIR}/src/ui_qt ${CMAKE_SOURCE_DIR}/src/core)
@@ -301,4 +302,11 @@ if(WIN32)
   add_custom_command(TARGET PPSX33 POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ps3core> $<TARGET_FILE_DIR:PPSX33>
     COMMENT "dist/: PPSX33.exe + ps3core.dll")
+  add_custom_command(TARGET PPSX33 POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:PPSX33>/assets
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      ${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.png $<TARGET_FILE_DIR:PPSX33>/assets/ppsx33-logo.png
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      ${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.ico $<TARGET_FILE_DIR:PPSX33>/assets/ppsx33-logo.ico
+    COMMENT "dist assets: logo")
 endif()

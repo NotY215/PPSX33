@@ -1,107 +1,227 @@
 #include "MainWindow.h"
 #include "NativeBridge.h"
-#include "RenderWorkbench.h"
 #include <QApplication>
+#include <QCoreApplication>
+#include <QFileInfo>
+#include <QSizePolicy>
 #include <QFileDialog>
-#include <QMessageBox>
-#include <QTabWidget>
-#include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QPushButton>
 #include <QLabel>
 #include <QTextEdit>
+#include <QTabWidget>
+#include <QComboBox>
 #include <QProgressBar>
+#include <QFrame>
+#include <QShowEvent>
 #include <QPropertyAnimation>
 #include <QGraphicsOpacityEffect>
-#include <QShowEvent>
+#include <QEasingCurve>
 #include <QFile>
 #include <QDir>
 #include <QProcess>
 #include <QDateTime>
-#include <QFrame>
-#include <QScrollArea>
+#include <QPixmap>
+#include <QIcon>
+#include <QTimer>
 #include <QList>
-#include <QEasingCurve>
+
+static QPushButton* makeSideBtn(const QString& text, QWidget* parent) {
+    auto* b = new QPushButton(text, parent);
+    b->setCursor(Qt::PointingHandCursor);
+    b->setMinimumHeight(38);
+    b->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    return b;
+}
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
-    setWindowTitle(QStringLiteral("PPSX33"));
-    resize(1180, 760);
-    setMinimumSize(960, 640);
+    setWindowTitle(QStringLiteral("PPSX33 · PlayStation 3 Recompiler"));
+    resize(1280, 800);
+    setMinimumSize(1024, 680);
+    QIcon icon(QStringLiteral(":/assets/ppsx33-logo.png"));
+    if (icon.isNull())
+        icon = QIcon(QCoreApplication::applicationDirPath() + QStringLiteral("/../assets/ppsx33-logo.png"));
+    if (!icon.isNull()) setWindowIcon(icon);
     buildUi();
     applyTheme();
-    if (!NativeBridge::instance().load()) {
-        appendLog(QStringLiteral("[ui] ps3core: %1").arg(NativeBridge::instance().lastError()));
-    } else {
-        appendLog(QStringLiteral("[ui] ps3core v%1 loaded").arg(NativeBridge::instance().version()));
-    }
+    if (!NativeBridge::instance().load())
+        appendLog(QStringLiteral("ps3core load failed: %1").arg(NativeBridge::instance().lastError()));
+    else
+        appendLog(QStringLiteral("PPSX33 ready · core v%1").arg(NativeBridge::instance().version()));
+    appendLog(QStringLiteral("UI: Qt 6 Widgets · graphics default Vulkan 1.2"));
     refreshButtons();
 }
 
 void MainWindow::buildUi() {
     auto* central = new QWidget(this);
     setCentralWidget(central);
-    auto* root = new QVBoxLayout(central);
-    root->setContentsMargins(16, 16, 16, 16);
-    root->setSpacing(12);
+    auto* root = new QHBoxLayout(central);
+    root->setContentsMargins(0, 0, 0, 0);
+    root->setSpacing(0);
 
-    auto* header = new QHBoxLayout;
-    auto* brand = new QLabel(QStringLiteral("PPSX33"), this);
-    brand->setObjectName(QStringLiteral("brand"));
-    m_status = new QLabel(QStringLiteral("Ready"), this);
-    m_status->setObjectName(QStringLiteral("status"));
-    header->addWidget(brand);
-    header->addStretch();
-    header->addWidget(m_status);
-    root->addLayout(header);
+    // ---- LEFT SIDEBAR ----
+    auto* side = new QFrame(this);
+    side->setObjectName(QStringLiteral("sidebar"));
+    side->setFixedWidth(260);
+    auto* sideLay = new QVBoxLayout(side);
+    sideLay->setContentsMargins(16, 18, 16, 16);
+    sideLay->setSpacing(10);
 
-    auto* bar = new QHBoxLayout;
-    bar->setSpacing(8);
-    auto mk = [&](const QString& t) {
-        auto* b = new QPushButton(t, this);
-        b->setCursor(Qt::PointingHandCursor);
-        b->setMinimumHeight(36);
-        bar->addWidget(b);
-        return b;
-    };
-    m_btnLoad = mk(QStringLiteral("Load ELF"));
-    m_btnLift = mk(QStringLiteral("Decompile"));
-    m_btnBuild = mk(QStringLiteral("Build"));
-    m_btnCopy = mk(QStringLiteral("Copy to Game Folder"));
-    m_btnRun = mk(QStringLiteral("Run EXE"));
-    m_btnCancel = mk(QStringLiteral("Stop / Cancel"));
-    root->addLayout(bar);
+    auto* logoBox = new QFrame(side);
+    logoBox->setObjectName(QStringLiteral("logoBox"));
+    auto* logoLay = new QVBoxLayout(logoBox);
+    logoLay->setAlignment(Qt::AlignCenter);
+    m_logo = new QLabel(logoBox);
+    m_logo->setObjectName(QStringLiteral("logo"));
+    m_logo->setAlignment(Qt::AlignCenter);
+    QPixmap pm(QStringLiteral(":/assets/ppsx33-logo.png"));
+    if (pm.isNull())
+        pm = QPixmap(QCoreApplication::applicationDirPath() + QStringLiteral("/assets/ppsx33-logo.png"));
+    if (!pm.isNull())
+        m_logo->setPixmap(pm.scaled(96, 96, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    else
+        m_logo->setText(QStringLiteral("PPSX33"));
+    auto* title = new QLabel(QStringLiteral("PPSX33"), logoBox);
+    title->setObjectName(QStringLiteral("sideTitle"));
+    title->setAlignment(Qt::AlignCenter);
+    auto* sub = new QLabel(QStringLiteral("PS3 BINARY RECOMPILER"), logoBox);
+    sub->setObjectName(QStringLiteral("sideSub"));
+    sub->setAlignment(Qt::AlignCenter);
+    logoLay->addWidget(m_logo);
+    logoLay->addWidget(title);
+    logoLay->addWidget(sub);
+    sideLay->addWidget(logoBox);
 
-    m_progress = new QProgressBar(this);
+    auto* wf = new QLabel(QStringLiteral("WORKFLOW  ·  6 ACTIONS"), side);
+    wf->setObjectName(QStringLiteral("section"));
+    sideLay->addWidget(wf);
+
+    m_btnLoad = makeSideBtn(QStringLiteral("Load ELF"), side);
+    m_btnLift = makeSideBtn(QStringLiteral("Decompile"), side);
+    m_btnBuild = makeSideBtn(QStringLiteral("Build Project"), side);
+    m_btnRun = makeSideBtn(QStringLiteral("Run Executable"), side);
+    m_btnCopy = makeSideBtn(QStringLiteral("Copy to Game Folder"), side);
+    m_btnCancel = makeSideBtn(QStringLiteral("Stop Game"), side);
+    for (auto* b : {m_btnLoad, m_btnLift, m_btnBuild, m_btnRun, m_btnCopy, m_btnCancel})
+        sideLay->addWidget(b);
+
+    auto* setH = new QLabel(QStringLiteral("RECOMPILER SETTINGS"), side);
+    setH->setObjectName(QStringLiteral("section"));
+    sideLay->addSpacing(8);
+    sideLay->addWidget(setH);
+
+    auto* apiL = new QLabel(QStringLiteral("GRAPHICS API"), side);
+    apiL->setObjectName(QStringLiteral("fieldLabel"));
+    sideLay->addWidget(apiL);
+    m_api = new QComboBox(side);
+    m_api->addItem(QStringLiteral("Vulkan 1.2"), 0);
+    m_api->addItem(QStringLiteral("OpenGL 4.3 (later)"), 1);
+    m_api->setCurrentIndex(0);
+    sideLay->addWidget(m_api);
+
+    auto* thrL = new QLabel(QStringLiteral("CPU THREADS"), side);
+    thrL->setObjectName(QStringLiteral("fieldLabel"));
+    sideLay->addWidget(thrL);
+    m_threads = new QComboBox(side);
+    for (int i = 1; i <= 16; ++i) m_threads->addItem(QString::number(i));
+    m_threads->setCurrentIndex(3);
+    sideLay->addWidget(m_threads);
+
+    sideLay->addStretch();
+    m_engine = new QLabel(QStringLiteral("ENGINE  READY"), side);
+    m_engine->setObjectName(QStringLiteral("engineReady"));
+    m_engine->setAlignment(Qt::AlignCenter);
+    sideLay->addWidget(m_engine);
+    auto* foot = new QLabel(QStringLiteral("Toolchain: system VS · Qt 6 UI"), side);
+    foot->setObjectName(QStringLiteral("foot"));
+    foot->setWordWrap(true);
+    sideLay->addWidget(foot);
+
+    // ---- RIGHT CONTENT ----
+    auto* right = new QWidget(this);
+    auto* rightLay = new QVBoxLayout(right);
+    rightLay->setContentsMargins(14, 12, 14, 12);
+    rightLay->setSpacing(10);
+
+    m_target = new QLabel(QStringLiteral("TARGET  /  NO PROJECT LOADED"), right);
+    m_target->setObjectName(QStringLiteral("targetBar"));
+    m_target->setAlignment(Qt::AlignCenter);
+    rightLay->addWidget(m_target);
+
+    m_progress = new QProgressBar(right);
     m_progress->setRange(0, 0);
     m_progress->setVisible(false);
-    m_progress->setMaximumHeight(6);
     m_progress->setTextVisible(false);
-    root->addWidget(m_progress);
+    m_progress->setFixedHeight(4);
+    rightLay->addWidget(m_progress);
 
-    m_tabs = new QTabWidget(this);
-    m_report = new QTextEdit(this);
+    m_tabs = new QTabWidget(right);
+    m_console = new QTextEdit(right);
+    m_console->setReadOnly(true);
+    m_console->setObjectName(QStringLiteral("console"));
+    m_tabs->addTab(m_console, QStringLiteral("Console"));
+
+    m_report = new QTextEdit(right);
     m_report->setReadOnly(true);
-    m_report->setObjectName(QStringLiteral("report"));
     m_tabs->addTab(m_report, QStringLiteral("Report"));
 
-    m_legal = new QTextEdit(this);
-    m_legal->setReadOnly(true);
-    m_legal->setObjectName(QStringLiteral("legal"));
-    m_legal->setHtml(QStringLiteral(
-        "<h2 style='color:#7dd3fc'>PPSX33 — Legal</h2>"
-        "<p>Independent research recompiler. Not affiliated with Sony.</p>"
-        "<ul><li>No bundled keys</li><li>Decrypted ELF only</li>"
-        "<li>Use lawfully obtained materials only</li></ul>"
-        "<p>Host branding is <b>PPSX33</b>.</p>"));
-    m_tabs->addTab(m_legal, QStringLiteral("Legal"));
+    m_roadmap = new QTextEdit(right);
+    m_roadmap->setReadOnly(true);
+    m_roadmap->setPlainText(QStringLiteral(
+        "PPSX33 roadmap (host)\n"
+        "- Qt 6 UI workflow\n"
+        "- Modular runtime DLLs (ps3rt / api / rsx / render / resolution)\n"
+        "- Vulkan 1.2 present + FIFO drain\n"
+        "- HLE progress + import island recovery\n"
+        "- Title-driven GCM streams"));
+    m_tabs->addTab(m_roadmap, QStringLiteral("Roadmap"));
 
-    m_controllerPage = new QWidget(this);
+    m_requirements = new QTextEdit(right);
+    m_requirements->setReadOnly(true);
+    m_requirements->setPlainText(QStringLiteral(
+        "Game runtime requirements\n"
+        "- Windows x64\n"
+        "- Vulkan 1.2 capable GPU/driver\n"
+        "- OpenGL 4.3 reserved (not selectable yet)\n"
+        "- Host present 720x576 light path\n"
+        "\n"
+        "Developer tools (not required to run games)\n"
+        "- Visual Studio C++ toolchain\n"
+        "- CMake 3.20+\n"
+        "- Qt 6.8 Widgets (aqt install)"));
+    m_tabs->addTab(m_requirements, QStringLiteral("Requirements"));
+
+    m_controllerPage = new QWidget(right);
     auto* cl = new QVBoxLayout(m_controllerPage);
-    cl->addWidget(new QLabel(QStringLiteral("Controller mapping is written to pad_map.json next to the game EXE after build."), this));
+    cl->addWidget(new QLabel(QStringLiteral("Controller mapping is saved as pad_map.json next to the game EXE after Copy."), m_controllerPage));
     cl->addStretch();
     m_tabs->addTab(m_controllerPage, QStringLiteral("Controller"));
 
-    root->addWidget(m_tabs, 1);
+    m_legal = new QTextEdit(right);
+    m_legal->setReadOnly(true);
+    m_legal->setHtml(QStringLiteral(
+        "<div style='font-family:Segoe UI;color:#c5d4e8;padding:8px'>"
+        "<h2 style='color:#56c8ff;margin:0 0 8px 0'>PPSX33 — Legal Notice</h2>"
+        "<p><b>Last updated:</b> 2026-10-28</p>"
+        "<p>Independent research recompiler / HLE toolkit — <b>not affiliated with Sony</b>.</p>"
+        "<ul>"
+        "<li>No bundled keys; optional external decrypt is user-supplied.</li>"
+        "<li>Decrypted ELF only for the load path in current builds.</li>"
+        "<li>Use only lawfully obtained materials; no redistribution of game data.</li>"
+        "<li>Host branding is <b>PPSX33</b>.</li>"
+        "</ul>"
+        "<p style='color:#8ba3c7'>See repository LICENSE / CODE_OF_CONDUCT / SECURITY at the project root.</p>"
+        "</div>"));
+    m_tabs->addTab(m_legal, QStringLiteral("Legal"));
+
+    rightLay->addWidget(m_tabs, 1);
+    m_status = new QLabel(QStringLiteral("Ready"), right);
+    m_status->setObjectName(QStringLiteral("statusLine"));
+    rightLay->addWidget(m_status);
+
+    root->addWidget(side);
+    root->addWidget(right, 1);
 
     connect(m_btnLoad, &QPushButton::clicked, this, &MainWindow::onLoadElf);
     connect(m_btnLift, &QPushButton::clicked, this, &MainWindow::onDecompile);
@@ -109,76 +229,88 @@ void MainWindow::buildUi() {
     connect(m_btnCopy, &QPushButton::clicked, this, &MainWindow::onCopy);
     connect(m_btnRun, &QPushButton::clicked, this, &MainWindow::onRun);
     connect(m_btnCancel, &QPushButton::clicked, this, &MainWindow::onCancel);
-
-    m_fade = new QGraphicsOpacityEffect(central);
-    central->setGraphicsEffect(m_fade);
-    m_fade->setOpacity(0.0);
 }
 
 void MainWindow::applyTheme() {
     setStyleSheet(QStringLiteral(
-        "QMainWindow, QWidget { background-color: #070b14; color: #e8eef7; font-family: 'Segoe UI', sans-serif; }"
-        "QLabel#brand { font-size: 24px; font-weight: 800; color: #56c8ff; letter-spacing: 2px; }"
-        "QLabel#status { color: #8ba3c7; font-size: 12px; }"
-        "QPushButton {"
-        "  background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #1a2740, stop:1 #121a2b);"
-        "  border: 1px solid #2a3d5c; border-radius: 10px; padding: 9px 16px; color: #dbe7f8;"
-        "}"
-        "QPushButton:hover {"
-        "  background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #243552, stop:1 #1a2740);"
-        "  border-color: #56c8ff; color: #ffffff;"
-        "}"
-        "QPushButton:disabled { color: #5a6b84; background: #0d1320; border-color: #1a2233; }"
-        "QPushButton:pressed { background: #56c8ff; color: #071018; border-color: #56c8ff; }"
-        "QTabWidget::pane { border: 1px solid #1c2a40; border-radius: 12px; background: #0c1422; top: -1px; }"
-        "QTabBar::tab { background: #0a101c; color: #7f95b5; padding: 11px 18px; margin-right: 3px;"
-        "  border-top-left-radius: 10px; border-top-right-radius: 10px; border: 1px solid transparent; }"
-        "QTabBar::tab:selected { background: #121c2e; color: #e8eef7; border-color: #1c2a40; border-bottom-color: #121c2e; }"
-        "QTabBar::tab:hover { color: #56c8ff; }"
-        "QTextEdit#report, QTextEdit#legal { background: #0a121f; border: none; padding: 10px;"
-        "  font-family: Consolas, 'Cascadia Mono', monospace; font-size: 12px; color: #c5d4e8; selection-background-color: #1e3a5f; }"
-        "QProgressBar { background: #121a2b; border: none; border-radius: 4px; max-height: 5px; }"
-        "QProgressBar::chunk { background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 #2b8cff, stop:1 #56c8ff); border-radius: 4px; }"
+        "QMainWindow { background:#060a12; }"
+        "QFrame#sidebar { background:#0a101c; border-right:1px solid #152033; }"
+        "QFrame#logoBox { background:#0d1524; border:1px solid #1a2a44; border-radius:12px; padding:8px; }"
+        "QLabel#sideTitle { color:#56c8ff; font-size:18px; font-weight:800; letter-spacing:1px; }"
+        "QLabel#sideSub { color:#6b83a6; font-size:10px; letter-spacing:1px; }"
+        "QLabel#section { color:#5b7396; font-size:10px; font-weight:700; letter-spacing:1px; margin-top:6px; }"
+        "QLabel#fieldLabel { color:#7f95b5; font-size:10px; font-weight:600; }"
+        "QLabel#engineReady { background:#0c1f18; color:#3ddc97; border:1px solid #1a3d30; border-radius:8px; padding:10px; font-weight:700; letter-spacing:1px; }"
+        "QLabel#foot { color:#4d617d; font-size:10px; }"
+        "QLabel#targetBar { background:#0a1220; color:#56c8ff; border:1px solid #1a2f4d; border-radius:8px; padding:10px; font-weight:700; letter-spacing:1px; }"
+        "QLabel#statusLine { color:#7f95b5; font-size:11px; }"
+        "QPushButton { background:#0f1828; color:#d5e3f7; border:1px solid #243652; border-radius:10px; text-align:left; padding-left:14px; }"
+        "QPushButton:hover { border-color:#56c8ff; background:#152238; }"
+        "QPushButton:disabled { color:#4a5d78; background:#0a1018; border-color:#152033; }"
+        "QPushButton:pressed { background:#56c8ff; color:#061018; }"
+        "QComboBox { background:#0f1828; color:#d5e3f7; border:1px solid #243652; border-radius:8px; padding:6px 10px; }"
+        "QComboBox::drop-down { border:none; }"
+        "QComboBox QAbstractItemView { background:#0f1828; color:#d5e3f7; selection-background-color:#1e3a5f; }"
+        "QTabWidget::pane { border:1px solid #1a2a40; border-radius:10px; background:#080e18; }"
+        "QTabBar::tab { background:#0a101c; color:#7f95b5; padding:10px 16px; margin-right:2px; border-top-left-radius:8px; border-top-right-radius:8px; }"
+        "QTabBar::tab:selected { background:#121c2e; color:#e8eef7; }"
+        "QTabBar::tab:hover { color:#56c8ff; }"
+        "QTextEdit { background:#080e18; color:#c5d4e8; border:none; font-family:Consolas,'Cascadia Mono',monospace; font-size:12px; padding:8px; }"
+        "QProgressBar { background:#121a2b; border:none; border-radius:2px; }"
+        "QProgressBar::chunk { background:#56c8ff; }"
     ));
 }
 
 void MainWindow::showEvent(QShowEvent* e) {
     QMainWindow::showEvent(e);
     static bool once = false;
-    if (!once) { once = true; playIntro();
-        slideButtons(); }
+    if (!once) { once = true; playIntro(); pulseLogo(); }
 }
 
-void MainWindow::slideButtons() {
-    QList<QPushButton*> btns = { m_btnLoad, m_btnLift, m_btnBuild, m_btnCopy, m_btnRun, m_btnCancel };
+void MainWindow::playIntro() {
+    auto* fx = new QGraphicsOpacityEffect(centralWidget());
+    centralWidget()->setGraphicsEffect(fx);
+    auto* a = new QPropertyAnimation(fx, "opacity", this);
+    a->setDuration(850);
+    a->setStartValue(0.0);
+    a->setEndValue(1.0);
+    a->setEasingCurve(QEasingCurve::OutCubic);
+    a->start(QAbstractAnimation::DeleteWhenStopped);
+
+    QList<QPushButton*> btns = { m_btnLoad, m_btnLift, m_btnBuild, m_btnRun, m_btnCopy, m_btnCancel };
     int i = 0;
-    for (QPushButton* b : btns) {
-        if (!b) continue;
-        auto* fx = new QGraphicsOpacityEffect(b);
-        b->setGraphicsEffect(fx);
-        fx->setOpacity(0.0);
-        auto* a = new QPropertyAnimation(fx, "opacity", this);
-        a->setEasingCurve(QEasingCurve::OutCubic);
-        a->setStartValue(0.0);
-        a->setEndValue(1.0);
-        a->setDuration(420 + i * 75);
-        a->start(QAbstractAnimation::DeleteWhenStopped);
+    for (auto* b : btns) {
+        auto* bf = new QGraphicsOpacityEffect(b);
+        b->setGraphicsEffect(bf);
+        bf->setOpacity(0.0);
+        auto* ba = new QPropertyAnimation(bf, "opacity", this);
+        ba->setDuration(380 + i * 70);
+        ba->setStartValue(0.0);
+        ba->setEndValue(1.0);
+        ba->setEasingCurve(QEasingCurve::OutCubic);
+        ba->start(QAbstractAnimation::DeleteWhenStopped);
         ++i;
     }
 }
 
-void MainWindow::playIntro() {
-    auto* anim = new QPropertyAnimation(m_fade, "opacity", this);
-    anim->setDuration(900);
-    anim->setStartValue(0.0);
-    anim->setEndValue(1.0);
-    anim->setEasingCurve(QEasingCurve::OutCubic);
-    anim->start(QAbstractAnimation::DeleteWhenStopped);
+void MainWindow::pulseLogo() {
+    if (!m_logo) return;
+    auto* a = new QPropertyAnimation(m_logo, "geometry", this);
+    QRect r = m_logo->geometry();
+    a->setDuration(1600);
+    a->setLoopCount(-1);
+    a->setKeyValueAt(0.0, r);
+    a->setKeyValueAt(0.5, QRect(r.x(), r.y() - 3, r.width(), r.height()));
+    a->setKeyValueAt(1.0, r);
+    a->setEasingCurve(QEasingCurve::InOutSine);
+    QTimer::singleShot(200, this, [a] { a->start(); });
 }
 
+void MainWindow::setTargetLabel(const QString& t) { m_target->setText(t); }
+
 void MainWindow::appendLog(const QString& s) {
-    m_report->append(s);
-    m_status->setText(s.left(80));
+    m_console->append(s);
+    m_status->setText(s.left(100));
 }
 
 void MainWindow::setBusy(bool b) {
@@ -193,11 +325,7 @@ void MainWindow::refreshButtons() {
     m_btnBuild->setEnabled(!m_busy && m_canBuild);
     m_btnCopy->setEnabled(!m_busy && m_canCopy);
     m_btnRun->setEnabled(!m_busy && m_canRun);
-    m_btnCancel->setEnabled(m_busy);
-    if (m_tabs) {
-        int idx = m_tabs->indexOf(m_controllerPage);
-        if (idx >= 0) m_tabs->setTabVisible(idx, !m_canBuild || m_canCopy);
-    }
+    m_btnCancel->setEnabled(true);
 }
 
 void MainWindow::onLoadElf() {
@@ -207,20 +335,19 @@ void MainWindow::onLoadElf() {
     setBusy(true);
     QString root = QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("projects"));
     QDir().mkpath(root);
-    QFileInfo fi(path);
-    QString game = fi.completeBaseName();
+    QString game = QFileInfo(path).completeBaseName();
     QString pd, err;
     if (!NativeBridge::instance().createProject(root, game, path, &pd, &err)) {
-        appendLog(QStringLiteral("[ui] create project failed: %1").arg(err));
+        appendLog(QStringLiteral("[ui] create failed: %1").arg(err));
         setBusy(false);
         return;
     }
     m_projectDir = pd;
     m_canLift = true;
     m_canBuild = m_canCopy = m_canRun = false;
-    appendLog(QStringLiteral("[ui] project: %1").arg(m_projectDir));
+    setTargetLabel(QStringLiteral("TARGET  /  %1").arg(game.toUpper()));
+    appendLog(QStringLiteral("[ui] project %1").arg(m_projectDir));
     setBusy(false);
-    refreshButtons();
 }
 
 void MainWindow::onDecompile() {
@@ -228,15 +355,10 @@ void MainWindow::onDecompile() {
     setBusy(true);
     QString log;
     bool ok = NativeBridge::instance().liftProject(m_projectDir, &log);
-    appendLog(log);
-    if (ok) {
-        m_canBuild = true;
-        appendLog(QStringLiteral("[ui] decompile ok"));
-    } else {
-        appendLog(QStringLiteral("[ui] decompile failed"));
-    }
+    if (!log.isEmpty()) { m_report->setPlainText(log); appendLog(log.left(500)); }
+    m_canBuild = ok;
+    appendLog(ok ? QStringLiteral("[ui] decompile ok") : QStringLiteral("[ui] decompile failed"));
     setBusy(false);
-    refreshButtons();
 }
 
 void MainWindow::onBuild() {
@@ -246,60 +368,41 @@ void MainWindow::onBuild() {
     QString dist = QCoreApplication::applicationDirPath();
     QString log;
     bool ok = NativeBridge::instance().buildProject(m_projectDir, dist, dist, &log);
-    appendLog(log);
-    if (ok) {
-        m_canCopy = true;
-        appendLog(QStringLiteral("[ui] build ok — Copy unlocked"));
-    } else {
-        appendLog(QStringLiteral("[ui] build failed"));
-    }
+    if (!log.isEmpty()) m_report->append(log);
+    m_canCopy = ok;
+    appendLog(ok ? QStringLiteral("[ui] build ok") : QStringLiteral("[ui] build failed"));
     setBusy(false);
-    refreshButtons();
 }
 
 void MainWindow::onCopy() {
     QString dest = QFileDialog::getExistingDirectory(this, QStringLiteral("Game USRDIR"));
     if (dest.isEmpty()) return;
-    QString out = QDir(m_projectDir).filePath(QStringLiteral("output"));
-    QDir outDir(out);
-    if (!outDir.exists()) {
-        appendLog(QStringLiteral("[ui] no output/"));
-        return;
-    }
-    const QStringList dlls = {QStringLiteral("ps3rt.dll"), QStringLiteral("api.dll"),
-        QStringLiteral("rsx.dll"), QStringLiteral("render.dll"), QStringLiteral("resolution.dll"),
-        QStringLiteral("vulkan-1.dll"), QStringLiteral("ps3core.dll")};
     QString dist = QCoreApplication::applicationDirPath();
-    for (const auto& d : dlls) {
-        QString src = QDir(dist).filePath(d);
-        if (QFile::exists(src))
-            QFile::copy(src, QDir(dest).filePath(d));
+    for (const char* d : {"ps3rt.dll","api.dll","rsx.dll","render.dll","resolution.dll","vulkan-1.dll","ps3core.dll"}) {
+        QString src = QDir(dist).filePath(QString::fromUtf8(d));
+        if (QFile::exists(src)) QFile::copy(src, QDir(dest).filePath(QString::fromUtf8(d)));
     }
-    QStringList exes = outDir.entryList(QStringList() << QStringLiteral("*.exe"), QDir::Files);
-    for (const auto& e : exes) {
-        QString target = QDir(dest).filePath(e);
-        QFile::remove(target);
-        QFile::copy(outDir.filePath(e), target);
-        m_exePath = target;
+    QDir out(QDir(m_projectDir).filePath(QStringLiteral("output")));
+    for (const auto& e : out.entryList(QStringList() << QStringLiteral("*.exe"), QDir::Files)) {
+        QString t = QDir(dest).filePath(e);
+        QFile::remove(t);
+        QFile::copy(out.filePath(e), t);
+        m_exePath = t;
     }
     m_gameRoot = dest;
     m_canRun = !m_exePath.isEmpty();
-    appendLog(QStringLiteral("[ui] copied to %1").arg(dest));
+    appendLog(QStringLiteral("[ui] copied → %1").arg(dest));
     refreshButtons();
 }
 
 void MainWindow::onRun() {
     if (m_exePath.isEmpty()) return;
-    QString logName = QStringLiteral("%1-%2.txt")
-        .arg(QFileInfo(m_exePath).completeBaseName())
-        .arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd_HH-mm-ss")));
-    QString logPath = QDir(m_gameRoot).filePath(logName);
     QProcess::startDetached(m_exePath, {}, m_gameRoot);
-    appendLog(QStringLiteral("[ui] launched %1 (log %2)").arg(m_exePath, logPath));
+    appendLog(QStringLiteral("[ui] launched %1").arg(m_exePath));
 }
 
 void MainWindow::onCancel() {
     NativeBridge::instance().cancelBuild();
-    appendLog(QStringLiteral("[ui] cancel requested"));
+    appendLog(QStringLiteral("[ui] stop / cancel"));
     setBusy(false);
 }
