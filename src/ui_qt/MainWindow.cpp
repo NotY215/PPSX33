@@ -469,25 +469,52 @@ void MainWindow::onBuild() {
 
 void MainWindow::onCopy() {
     QString start = Settings::instance().lastGameFolderPath();
-    QString dest = QFileDialog::getExistingDirectory(this, QStringLiteral("Game USRDIR"), start);
-    if (dest.isEmpty()) return;
-    Settings::instance().setLastGameFolderPath(dest);
+    QString picked = QFileDialog::getExistingDirectory(this, QStringLiteral("Select game folder (contains USRDIR or EBOOT.BIN)"), start);
+    if (picked.isEmpty()) return;
+    Settings::instance().setLastGameFolderPath(picked);
     Settings::instance().save();
+
+    /* Deploy next to EBOOT.BIN inside USRDIR (not the disc root alone). */
+    auto resolveUsrdir = [](const QString& root) -> QString {
+        const QStringList candidates = {
+            root,
+            root + QStringLiteral("/USRDIR"),
+            root + QStringLiteral("/PS3_GAME/USRDIR"),
+        };
+        for (const QString& c : candidates) {
+            if (QFile::exists(c + QStringLiteral("/EBOOT.BIN")) ||
+                QFile::exists(c + QStringLiteral("/EBOOT.elf")) ||
+                QFile::exists(c + QStringLiteral("/eboot.bin")))
+                return QDir(c).absolutePath();
+        }
+        if (QDir(root + QStringLiteral("/USRDIR")).exists())
+            return QDir(root + QStringLiteral("/USRDIR")).absolutePath();
+        if (QDir(root + QStringLiteral("/PS3_GAME/USRDIR")).exists())
+            return QDir(root + QStringLiteral("/PS3_GAME/USRDIR")).absolutePath();
+        return QDir(root).absolutePath();
+    };
+    const QString dest = resolveUsrdir(picked);
+    appendLog(QStringLiteral("[ui] deploy target USRDIR=%1").arg(dest));
+
     QString dist = QCoreApplication::applicationDirPath();
     for (const char* d : {"ps3rt.dll","api.dll","rsx.dll","render.dll","resolution.dll","vulkan-1.dll","ps3core.dll"}) {
         QString src = QDir(dist).filePath(QString::fromUtf8(d));
-        if (QFile::exists(src)) QFile::copy(src, QDir(dest).filePath(QString::fromUtf8(d)));
+        if (QFile::exists(src)) {
+            QString to = QDir(dest).filePath(QString::fromUtf8(d));
+            QFile::remove(to);
+            QFile::copy(src, to);
+        }
     }
     QDir out(QDir(m_projectDir).filePath(QStringLiteral("output")));
     for (const auto& e : out.entryList(QStringList() << QStringLiteral("*.exe"), QDir::Files)) {
-        QString t = QDir(dest).filePath(e);
-        QFile::remove(t);
-        QFile::copy(out.filePath(e), t);
-        m_exePath = t;
+        QString to = QDir(dest).filePath(e);
+        QFile::remove(to);
+        QFile::copy(out.filePath(e), to);
+        m_exePath = to;
     }
     m_gameRoot = dest;
     m_canRun = !m_exePath.isEmpty();
-    appendLog(QStringLiteral("[ui] copied → %1").arg(dest));
+    appendLog(QStringLiteral("[ui] copied EXE+DLLs next to EBOOT in %1").arg(dest));
     refreshButtons();
 }
 
