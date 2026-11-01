@@ -1,29 +1,63 @@
 #include "UiLogoAnim.h"
-#include <QLabel>
+#include <QPainter>
 #include <QTimer>
 #include <QPixmap>
-#include <QCoreApplication>
 #include <QtMath>
+#include <QPaintEvent>
 
-UiLogoAnim::UiLogoAnim(QLabel* logo, QObject* parent) : QObject(parent), m_logo(logo) {
-    m_path = QCoreApplication::applicationDirPath() + QStringLiteral("/ppsx33-logo.png");
+UiLogoAnim::UiLogoAnim(QWidget* parent) : QWidget(parent) {
+    setFixedSize(120, 120);
     m_timer = new QTimer(this);
     m_timer->setInterval(16);
     connect(m_timer, &QTimer::timeout, this, &UiLogoAnim::tick);
 }
 
+void UiLogoAnim::setLogoPath(const QString& path) { m_path = path; update(); }
 void UiLogoAnim::start() { if (m_timer) m_timer->start(); }
 void UiLogoAnim::stop() { if (m_timer) m_timer->stop(); }
 
 void UiLogoAnim::tick() {
-    if (!m_logo) return;
-    m_phase += 0.04;
-    const qreal pulse = 0.5 + 0.5 * qSin(m_phase);
-    const qreal scale = 1.0 + 0.04 * pulse;
-    QPixmap base(m_path);
-    if (base.isNull()) base = QPixmap(QStringLiteral(":/assets/ppsx33-logo.png"));
-    if (base.isNull()) return;
-    const int side = int(100 * scale);
-    m_logo->setPixmap(base.scaled(side, side, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    m_logo->setStyleSheet(QStringLiteral("opacity: %1;").arg(0.85 + 0.15 * pulse));
+    m_angle += 3.5;
+    if (m_angle >= 360.0) m_angle -= 360.0;
+    m_pulse += 0.06;
+    update();
+}
+
+void UiLogoAnim::paintEvent(QPaintEvent*) {
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    const QRectF r = rect().adjusted(6, 6, -6, -6);
+    const QPointF c = r.center();
+
+    // Dashed rotating ring (C# / glass-UI style)
+    QPen ring(QColor(0, 229, 255, 160));
+    ring.setWidthF(2.4);
+    ring.setStyle(Qt::DashLine);
+    ring.setDashPattern({4, 3});
+    p.save();
+    p.translate(c);
+    p.rotate(m_angle);
+    p.translate(-c);
+    p.setPen(ring);
+    p.drawEllipse(r);
+    p.restore();
+
+    // Soft outer glow arc
+    QPen arc(QColor(59, 130, 246, 120));
+    arc.setWidthF(3.0);
+    arc.setCapStyle(Qt::RoundCap);
+    p.setPen(arc);
+    p.drawArc(r, int((-m_angle) * 16), 90 * 16);
+
+    // Logo in center with slight pulse
+    QPixmap pm(m_path);
+    if (pm.isNull())
+        pm = QPixmap(QStringLiteral(":/assets/ppsx33-logo.png"));
+    if (!pm.isNull()) {
+        const qreal s = 1.0 + 0.03 * qSin(m_pulse);
+        const int side = int(72 * s);
+        QPixmap scaled = pm.scaled(side, side, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        const QPoint tl(int(c.x() - scaled.width() / 2.0), int(c.y() - scaled.height() / 2.0));
+        p.drawPixmap(tl, scaled);
+    }
 }

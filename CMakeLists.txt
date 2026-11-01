@@ -276,12 +276,10 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/redist")
     VERBATIM)
 endif()
 
-# Runtime modular DLLs are NOT part of default host build (PPSX33.exe + ps3core only).
-# Build explicitly: cmake --build build --target ppsx33_runtime_modules
-# or use PPSX33.exe -render after ELF analysis.
-add_custom_target(ppsx33_runtime_modules
+# Default host build MUST produce runtime DLLs (game prebuilt path).
+add_custom_target(ppsx33_runtime_modules ALL
   DEPENDS ps3rt ppsx33_api ppsx33_rsx ppsx33_render ppsx33_resolution
-  COMMENT "Build modular runtime DLLs (ps3rt/api/rsx/render/resolution)")
+  COMMENT "Runtime DLLs: ps3rt api rsx render resolution")
 
 # C# / dotnet GUI removed — host UI is Qt6 target PPSX33
 
@@ -294,6 +292,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+# Vulkan used via dynamic load in api.dll — headers not required at configure time.
+set(CMAKE_DISABLE_FIND_PACKAGE_WrapVulkanHeaders ON)
 set(PPSX33_ICON_ICO "${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.ico")
 set(PPSX33_ICON_PNG "${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.png")
 set(PPSX33_RC "${CMAKE_BINARY_DIR}/ppsx33_app_icon.rc")
@@ -333,13 +333,19 @@ set_target_properties(PPSX33 PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
   WIN32_EXECUTABLE TRUE
 )
-add_dependencies(PPSX33 ps3core ps3rt)
+if(TARGET ps3rt)
+  add_dependencies(PPSX33 ps3core ps3rt ppsx33_api ppsx33_rsx ppsx33_render ppsx33_resolution ppsx33_runtime_modules)
+else()
+endif()
 if(WIN32)
   add_custom_command(TARGET PPSX33 POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ps3core> $<TARGET_FILE_DIR:PPSX33>
-    COMMENT "dist/: PPSX33.exe + ps3core.dll")
-  add_custom_command(TARGET PPSX33 POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ps3rt> $<TARGET_FILE_DIR:PPSX33>/ps3rt.dll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ppsx33_api> $<TARGET_FILE_DIR:PPSX33>/api.dll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ppsx33_rsx> $<TARGET_FILE_DIR:PPSX33>/rsx.dll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ppsx33_render> $<TARGET_FILE_DIR:PPSX33>/render.dll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ppsx33_resolution> $<TARGET_FILE_DIR:PPSX33>/resolution.dll
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
       ${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.png $<TARGET_FILE_DIR:PPSX33>/ppsx33-logo.png
-    COMMENT "dist/: ppsx33-logo.png next to PPSX33.exe")
+    COMMENT "dist/: EXE + ps3core + ps3rt + modular DLLs + logo")
 endif()

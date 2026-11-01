@@ -29,6 +29,7 @@ private slots:
     void onGfxChanged(int);
     void onThreadsChanged(int);
         void onConsoleSubmit();
+    void pollLiveBuild();
 private:
     void buildUi();
     void applyTheme();
@@ -45,7 +46,7 @@ private:
     QString m_projectDir, m_gameRoot, m_exePath;
     bool m_canLift = false, m_canBuild = false, m_canCopy = false, m_canRun = false, m_busy = false;
 
-    QLabel *m_logo = nullptr, *m_status = nullptr, *m_target = nullptr, *m_engine = nullptr;
+    QLabel *m_status = nullptr, *m_target = nullptr, *m_engine = nullptr;
     QLineEdit *m_consoleIn = nullptr;
     QTextEdit *m_console = nullptr, *m_report = nullptr, *m_roadmap = nullptr;
     QTextEdit *m_requirements = nullptr, *m_legal = nullptr;

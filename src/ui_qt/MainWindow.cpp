@@ -36,6 +36,9 @@
 #include <QLineEdit>
 #include <QScrollArea>
 #include <QThread>
+#include <QElapsedTimer>
+#include <QDateTime>
+#include <QRegularExpression>
 #include <QSysInfo>
 #include <QtMath>
 
@@ -88,22 +91,15 @@ void MainWindow::buildUi() {
     logoBox->setObjectName(QStringLiteral("logoBox"));
     auto* logoLay = new QVBoxLayout(logoBox);
     logoLay->setAlignment(Qt::AlignCenter);
-    m_logo = new QLabel(logoBox);
-    m_logo->setObjectName(QStringLiteral("logo"));
-    m_logo->setAlignment(Qt::AlignCenter);
-    QPixmap pm(QCoreApplication::applicationDirPath() + QStringLiteral("/ppsx33-logo.png"));
-    if (pm.isNull()) pm = QPixmap(QStringLiteral(":/assets/ppsx33-logo.png"));
-    if (!pm.isNull())
-        m_logo->setPixmap(pm.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    else
-        m_logo->setText(QStringLiteral("PPSX33"));
+    m_logoAnim = new UiLogoAnim(logoBox);
+    m_logoAnim->setLogoPath(QCoreApplication::applicationDirPath() + QStringLiteral("/ppsx33-logo.png"));
     auto* title = new QLabel(QStringLiteral("PPSX33"), logoBox);
     title->setObjectName(QStringLiteral("sideTitle"));
     title->setAlignment(Qt::AlignCenter);
     auto* sub = new QLabel(QStringLiteral("PS3 BINARY RECOMPILER"), logoBox);
     sub->setObjectName(QStringLiteral("sideSub"));
     sub->setAlignment(Qt::AlignCenter);
-    logoLay->addWidget(m_logo);
+    logoLay->addWidget(m_logoAnim, 0, Qt::AlignCenter);
     logoLay->addWidget(title);
     logoLay->addWidget(sub);
     sideLay->addWidget(logoBox);
@@ -235,7 +231,6 @@ void MainWindow::buildUi() {
     connect(m_api, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onGfxChanged);
     connect(m_threads, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onThreadsChanged);
 
-    m_logoAnim = new UiLogoAnim(m_logo, this);
 }
 
 void MainWindow::buildControllerPage() {
@@ -436,6 +431,9 @@ void MainWindow::onLoadElf() {
 void MainWindow::onDecompile() {
     if (m_projectDir.isEmpty()) return;
     setBusy(true);
+    m_progress->setRange(0, 0);
+    m_progress->setVisible(true);
+    m_status->setText(QStringLiteral("Decompile live… (lift + analysis)"));
     QString log;
     bool ok = NativeBridge::instance().liftProject(m_projectDir, &log);
     if (!log.isEmpty()) { m_report->setPlainText(log); appendLog(log.left(400)); }
@@ -448,10 +446,22 @@ void MainWindow::onDecompile() {
 void MainWindow::onBuild() {
     if (m_projectDir.isEmpty()) return;
     setBusy(true);
+    m_progress->setVisible(true);
+    m_progress->setRange(0, 100);
+    m_progress->setValue(0);
+    m_liveLogPath = m_projectDir + QStringLiteral("/output/build_live.log");
+    m_buildTotal = 0;
+    m_liveStartMs = QDateTime::currentMSecsSinceEpoch();
+    if (!m_liveTimer) {
+        m_liveTimer = new QTimer(this);
+        connect(m_liveTimer, &QTimer::timeout, this, &MainWindow::pollLiveBuild);
+    }
+    m_liveTimer->start(250);
     NativeBridge::instance().beginBuild();
     QString dist = QCoreApplication::applicationDirPath();
     QString log;
     bool ok = NativeBridge::instance().buildProject(m_projectDir, dist, dist, &log);
+    if (m_liveTimer) m_liveTimer->stop();
     if (!log.isEmpty()) m_report->append(log);
     m_canCopy = ok;
     if (ok) appendLog(QStringLiteral("[ui] build ok"));
@@ -516,5 +526,30 @@ void MainWindow::onConsoleSubmit() {
         appendLog(QStringLiteral("Opened Private mode (-render)"));
     } else {
         appendLog(QStringLiteral("Unknown command. Type help."));
+    }
+}
+
+void MainWindow::pollLiveBuild() {
+    QFile f(m_liveLogPath);
+    if (!f.open(QIODevice::ReadOnly)) return;
+    const QString text = QString::fromUtf8(f.readAll());
+    if (m_buildTotal <= 0) {
+        QRegularExpression re(QStringLiteral("BUILD_TOTAL=(\\d+)"));
+        auto m = re.match(text);
+        if (m.hasMatch()) m_buildTotal = m.captured(1).toInt();
+    }
+    const int done = text.count(QStringLiteral("COMPILE ")) + text.count(QStringLiteral("LINK "));
+    if (m_buildTotal > 0) {
+        int pct = qMin(99, (done * 100) / qMax(1, m_buildTotal));
+        m_progress->setRange(0, 100);
+        m_progress->setValue(pct);
+        const qint64 elapsed = QDateTime::currentMSecsSinceEpoch() - m_liveStartMs;
+        QString eta = QStringLiteral("…");
+        if (pct > 2 && elapsed > 500) {
+            const qint64 totalMs = elapsed * 100 / pct;
+            const qint64 left = qMax(0LL, totalMs - elapsed);
+            eta = QStringLiteral("%1s left").arg(left / 1000);
+        }
+        m_status->setText(QStringLiteral("Build %1% (%2/%3) ETA %4").arg(pct).arg(done).arg(m_buildTotal).arg(eta));
     }
 }
