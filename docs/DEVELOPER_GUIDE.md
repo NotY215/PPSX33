@@ -17,7 +17,6 @@ This guide describes the repository layout, development workflow, and implementa
 | SPU runtime | `src/processor/SPU/spu_interpreter.cpp` | SPU context, ISA step, mailboxes, and MFC; SPURS coverage remains partial |
 | RSX runtime | `src/RSX/rsx_device.cpp`, `src/RSX/rsx_fifo.cpp` | FIFO/method processing and Vulkan 1.2 host present (swapchain + guest RGBA); not a complete RSX implementation |
 | CLI | `src/cli/ps3_cli.cpp` | Command-line entry point for project processing |
-| GUI | `src/UI/` | C# WinForms interface and native interop |
 | Synthetic tests | `tests/make_test_elf.py` | Generate a small PPC64 ELF for pipeline regression tests |
 | PS3 sample | `tests/games/pong/pong.c` | PSL1GHT-based PS3 sample for the optional target toolchain pipeline |
 
@@ -31,11 +30,9 @@ Build from the repository root in a Visual Studio developer command prompt:
 scripts\build_all.bat
 ```
 
-The output is placed in `build\dist\` with **ps3rt.dll**, **vulkan-1.dll**, and **PS3Recomp.exe** side by side. `dist\runtime\` holds headers only (no duplicate DLL). The GUI is published when the .NET SDK is available. The current WinForms frontend includes decrypted-ELF loading, project decompilation, object-file-based build progress/ETA, run/stop, output copying, persisted graphics/thread/controller settings, and build-cancellation UI. PPSX33 does not decrypt EBOOTs or launch external emulators.
 
 ## Alpha packaging and release validation
 
-The Alpha 01 package contains the WinForms application, native core library/import artifacts, CLI, .NET runtime metadata, logos, staged build tools, and selected runtime sources. The intended directory layout is documented in the root [README](../README.md), and the public-facing notes are in [PPSX33-Alpha-01 release notes](../releases/PPSX33-Alpha-01.md).
 
 Before publishing a binary archive, validate the exact archive on a clean Windows machine. Audit each included image, icon, font, runtime library, and other third-party artifact for provenance, redistribution permission, and required notices; repository presence does not establish a license. Audit each included image, icon, font, runtime library, and other third-party artifact for provenance, redistribution permission, and required notices; do not assume repository presence establishes a license. Check that the GUI starts, `ps3_cli.exe --help` returns its usage text, and the synthetic smoke test passes. If a check has not been run, identify it as unverified. Confirm all bundled third-party binaries can legally be redistributed.
 
@@ -91,7 +88,6 @@ Build progress in the GUI is inferred by comparing object-file timestamps while 
 
 The Stop/Cancel control has context-sensitive behavior: it stops the launched game while a game process is active, and during a build it asks for confirmation before calling the native build-cancel API. The GUI's cancelled-build path removes generated `input/`, `codebase/`, and `output/` folders and clears the active project, so the user must reload the ELF. Do not describe Decompile as cancellable: the current GUI calls the native lift API synchronously and has no matching cancellation API for it. The native build cancellation flag is cooperative and should be tested against actual compiler subprocess behavior before claiming immediate termination.
 
-The settings model is in `src/gui/Settings.cs`; its file is `%APPDATA%/PPSX33/settings.json`. `src/gui/KeyMap.cs` defines defaults, `MainForm.Controller.cs` edits and writes the runtime pad map, and External decrypt/emulator launch code has been removed. Keep GUI behavior descriptions synchronized with `MainForm.cs` and related partials.
 
 ## Implementing a PPU opcode
 
@@ -108,7 +104,6 @@ Do not silently replace an unimplemented operation with a no-op and describe it 
 
 ## Changing the core API
 
-When changing `src/core/ps3core.h`, update the implementation, CLI callers, and C# P/Invoke declarations in `src/gui/Native.cs`. Keep argument types, ownership, return values, and error handling consistent across the native and managed interfaces.
 
 ## Working with game coverage records
 
@@ -168,3 +163,52 @@ When updating a checkout after Phase XX work, keep these files in sync as a set:
 | `[rsx] XX-O` | Icon / window title |
 
 See the root [ROADMAP.md](../ROADMAP.md) for goals, status, and the symptom guide.
+
+## Host UI (Qt 6)
+
+PPSX33’s desktop UI is a **C++ Qt 6 Widgets** application (`src/ui_qt/`), target **`PPSX33.exe`**.
+
+There is **no .NET / C# / WinForms** dependency for the UI.
+
+### Install Qt 6 on Windows (aqt)
+
+```bat
+pip install aqtinstall
+aqt install-qt windows desktop 6.8.0 win64_msvc2022_64 -O C:\Qt
+```
+
+Add to the **system PATH**:
+
+```text
+C:\Qt\6.8.0\msvc2022_64\bin
+```
+
+Verify:
+
+```bat
+qmake --version
+```
+
+CMake discovers Qt via `CMAKE_PREFIX_PATH` or PATH. Typical configure:
+
+```bat
+cmake -S . -B build -DCMAKE_PREFIX_PATH=C:/Qt/6.8.0/msvc2022_64
+cmake --build build --config Release
+```
+
+`find_package(Qt6 REQUIRED COMPONENTS Widgets)` is used in the root `CMakeLists.txt`.
+
+### UI entry points
+
+| Mode | Command |
+|------|---------|
+| Main workflow | `PPSX33.exe` |
+| Module workbench | `PPSX33.exe -render` |
+
+Native lift/build APIs come from `ps3core.dll` (`ps3core.h`), loaded at runtime by `NativeBridge`.
+
+### GUI workflow
+
+Load ELF → Decompile → Build → Copy to Game Folder → Run EXE.  
+Controller tab is available around the build/copy stage. Report and Legal tabs show log and notice text.
+

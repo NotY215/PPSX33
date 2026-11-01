@@ -36,6 +36,10 @@
 > [!NOTE]
 > **Input format:** PPSX33 loads **decrypted ELF** files only. It does **not** decrypt EBOOTs, bundle keys, or launch external emulators. Obtaining a decrypted ELF is the user's responsibility (for example, offline tooling some users already have — not provided by this project).
 
+## Host tools
+
+Desktop UI: **C++ / Qt 6 Widgets** (`PPSX33.exe`). Runtime: modular native DLLs under `build/dist/`.
+
 ## ✨ What PPSX33 is building
 
 PPSX33 is an open-source PlayStation 3 recompiler whose main objective is **full recompilation**: translate a game's PowerPC code and supporting execution paths into a native Windows build, with a host runtime that reproduces the PS3 system services and hardware behaviour the title depends on.
@@ -159,7 +163,7 @@ PPSX33/
 │   ├── processor/PPU|SPU  # Lift, run headers, SPU interpreter
 │   ├── RSX/               # Graphics pipeline + Vulkan 1.2 (OpenGL secondary)
 │   ├── games-stuff/       # Audio + Video subsystems
-│   ├── UI/                # WinForms GUI
+│   ├── UI/                # Qt Widgets GUI
 │   └── cli/               # CLI tooling
 ├── assets/ docs/ redist/
 ├── STRUCTURE.md
@@ -176,7 +180,7 @@ Generated projects may contain a game executable, runtime DLLs (`ps3rt`, `api`, 
 
 ## 🖥️ Game runtime requirements
 
-The following requirements apply to **running a recompiled game** (the generated game executable with `ps3rt.dll`). They are separate from the Visual Studio, .NET and CMake tools used to build PPSX33 itself.
+The following requirements apply to **running a recompiled game** (the generated game executable with `ps3rt.dll`). They are separate from the Visual Studio, Qt 6 and CMake tools used to build PPSX33 itself.
 
 ### Supported graphics APIs
 
@@ -214,14 +218,14 @@ These are renderer and presentation requirements, not compatibility guarantees. 
 
 ### Building PPSX33
 
-The requirements above are **not** the development-toolchain requirements for building the recompiler or its GUI. For the current build setup, install the Visual Studio C++ desktop development tools and Windows SDK, the .NET SDK required by the GUI project, and the CMake/Ninja tools required by the relevant targets. Check the [redistributable and toolchain notes](redist/README.txt) and the project build files for configuration-specific details.
+The requirements above are **not** the development-toolchain requirements for building the recompiler or its GUI. For the current build setup, install the Visual Studio C++ desktop development tools and Windows SDK, the Qt 6 SDK required by the GUI project, and the CMake/Ninja tools required by the relevant targets. Check the [redistributable and toolchain notes](redist/README.txt) and the project build files for configuration-specific details.
 
 See [requirements.md](requirements.md) for the maintained game-rendering requirements.
 
 ## 🚀 Build and try the tools
 
 1. Install Visual Studio with the C++ desktop development tools and a Windows SDK.
-2. Install the .NET SDK required by the GUI project.
+2. Install the Qt 6 SDK required by the GUI project.
 3. Clone this repository and open a terminal at the repository root.
 4. Run the repository build helper:
 

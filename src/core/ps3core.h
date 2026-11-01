@@ -1,4 +1,4 @@
-/* ps3core.h - C API of ps3core.dll (consumed by the C# GUI through P/Invoke). */
+/* ps3core.h - C API of ps3core.dll (consumed by the Qt6 UI via dynamic load). */
 #ifndef PS3CORE_H
 #define PS3CORE_H
 #ifdef _WIN32

@@ -208,7 +208,7 @@ This document maps the current PPSX33 source layout and the files that participa
 | `CMakePresets.json` | 🎛️ Provides repeatable CMake configure/build presets. |
 | `CMakeSettings.json` | 🪟 Supplies Visual Studio's CMake configuration. |
 | `PS3Recomp.sln` | 🧩 Opens the solution in Visual Studio. |
-| `src/UI/PS3Recomp.Gui.csproj` | 🖥️ Builds the Windows Forms GUI targeting .NET 8. |
+| `src/ui_qt/PS3Recomp.Gui.csproj` | 🖥️ Builds the Windows Forms GUI targeting .NET 8. |
 | `assets/ppsx33-logo.ico` | 🎨 Application icon referenced by the GUI project. |
 | `cmake/CopyVulkanRuntime.cmake` | 🎮 Stages the Vulkan runtime DLL when required. |
 
@@ -218,7 +218,7 @@ This document maps the current PPSX33 source layout and the files that participa
 - 🧮 **CPU:** `src/processor/PPU/` contains interpretation, disassembly, lifting, and runtime support; `src/processor/SPU/` contains SPU execution and local-store code.
 - 🎮 **Graphics:** `src/RSX/` contains the graphics abstraction, FIFO handling, memory/state, shaders, and OpenGL/Vulkan backend code.
 - 🔊 **Audio and video:** `src/games-stuff/` groups host audio drivers, decoders, mixing, video timing, demuxing, and presentation.
-- 🪟 **Frontend:** `src/UI/` contains the WinForms app and its supporting UI components; native panels remain under `src/UI/panels/`.
+- 🪟 **Frontend:** `src/ui_qt/` contains the WinForms app and its supporting UI components; native panels remain under `src/ui_qt/panels/`.
 - 🧰 **Native runtime:** `src/native/x64/` contains host-specific endian helpers, while `src/processor/PPU/translate/` bridges translated code to import resolution.
 - 📚 **Omitted from this tree:** `docs/`, `tests/`, `releases/`, standalone `.md` files, issue templates, and other repository-management content. They remain in the repository and are not part of this focused source/build listing.
 

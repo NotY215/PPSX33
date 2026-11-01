@@ -292,3 +292,32 @@ endif()
 message(STATUS "Layout: src/core, src/processor, src/RSX, src/games-stuff, src/UI")
 message(STATUS "Output: ${CMAKE_BINARY_DIR}/dist")
 message(STATUS "Layout: dist/ps3rt.dll + dist/vulkan-1.dll next to EXE; dist/runtime/ = headers only")
+
+# ---- PPSX33 Qt6 desktop UI (replaces former C# WinForms UI) ----
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+add_executable(PPSX33
+  src/ui_qt/main.cpp
+  src/ui_qt/MainWindow.cpp
+  src/ui_qt/MainWindow.h
+  src/ui_qt/RenderWorkbench.cpp
+  src/ui_qt/RenderWorkbench.h
+  src/ui_qt/NativeBridge.cpp
+  src/ui_qt/NativeBridge.h
+)
+target_link_libraries(PPSX33 PRIVATE Qt6::Widgets)
+target_include_directories(PPSX33 PRIVATE ${CMAKE_SOURCE_DIR}/src/ui_qt ${CMAKE_SOURCE_DIR}/src/core)
+set_target_properties(PPSX33 PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+  RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
+  RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/dist
+  WIN32_EXECUTABLE TRUE
+)
+add_dependencies(PPSX33 ps3core)
+if(WIN32)
+  add_custom_command(TARGET PPSX33 POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ps3core> $<TARGET_FILE_DIR:PPSX33>
+    COMMENT "dist/: PPSX33.exe + ps3core.dll")
+endif()

@@ -1,1 +1,0 @@
-// WORK: Settings panel FUTURE.
