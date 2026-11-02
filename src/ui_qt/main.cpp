@@ -1,10 +1,8 @@
 #include "MainWindow.h"
-#include "RenderWorkbench.h"
 #include "TermsDialog.h"
 #include "Settings.h"
 #include "AppVersion.h"
 #include <QApplication>
-#include <QMessageBox>
 #include <cstdio>
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -21,7 +19,7 @@ int main(int argc, char* argv[]) {
 
     const QStringList args = app.arguments();
     if (args.contains(QStringLiteral("-version")) || args.contains(QStringLiteral("--version"))) {
-        #ifdef _WIN32
+#ifdef _WIN32
         if (AttachConsole(ATTACH_PARENT_PROCESS) || AllocConsole()) {
             FILE* f = nullptr;
             freopen_s(&f, "CONOUT$", "w", stdout);
@@ -37,12 +35,6 @@ int main(int argc, char* argv[]) {
         TermsDialog td;
         if (td.exec() != QDialog::Accepted || !td.acceptedTerms())
             return 1;
-    }
-
-    if (args.contains(QStringLiteral("-render"))) {
-        RenderWorkbench w;
-        w.show();
-        return app.exec();
     }
 
     MainWindow w;

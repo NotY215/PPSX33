@@ -1,7 +1,6 @@
 #include "MainWindow.h"
 #include "NativeBridge.h"
 #include "Settings.h"
-#include "RenderWorkbench.h"
 #include "EmbeddedLegal.h"
 #include "UiLogoAnim.h"
 #include "JobWorker.h"
@@ -178,7 +177,7 @@ void MainWindow::buildUi() {
     auto* prompt = new QLabel(QStringLiteral("$"), consolePage);
     prompt->setStyleSheet(QStringLiteral("color:#00e5ff;font-weight:700;font-family:Consolas;"));
     m_consoleIn = new QLineEdit(consolePage);
-    m_consoleIn->setPlaceholderText(QStringLiteral("help | status | clear | stop | -render"));
+    m_consoleIn->setPlaceholderText(QStringLiteral("help | status | clear | stop"));
     m_consoleIn->setStyleSheet(QStringLiteral("background:#0d131f;border:1px solid #1a2a40;border-radius:6px;padding:6px;color:#e2e8f0;font-family:Consolas;"));
     cmdRow->addWidget(prompt);
     cmdRow->addWidget(m_consoleIn, 1);
@@ -197,7 +196,7 @@ void MainWindow::buildUi() {
         "<h2 style='color:#00e5ff'>Roadmap</h2>"
         "<ul>"
         "<li>Qt 6 host UI + AppData settings</li>"
-        "<li>Modular runtime DLLs (ps3rt / api / rsx / render / resolution)</li>"
+        "<li>Unified runtime: ps3rt.dll (+ vulkan-1.dll)</li>"
         "<li>Vulkan 1.2 present + FIFO drain path</li>"
         "<li>HLE progress + import recovery</li>"
         "<li>Title-driven GCM streams</li>"
@@ -497,7 +496,7 @@ void MainWindow::onCopy() {
     appendLog(QStringLiteral("[ui] deploy target USRDIR=%1").arg(dest));
 
     QString dist = QCoreApplication::applicationDirPath();
-    for (const char* d : {"ps3rt.dll","api.dll","rsx.dll","render.dll","resolution.dll","vulkan-1.dll","ps3core.dll"}) {
+    for (const char* d : {"ps3rt.dll","vulkan-1.dll","ps3core.dll"}) {
         QString src = QDir(dist).filePath(QString::fromUtf8(d));
         if (QFile::exists(src)) {
             QString to = QDir(dest).filePath(QString::fromUtf8(d));
@@ -532,7 +531,7 @@ void MainWindow::onConsoleSubmit() {
     appendLog(QStringLiteral("$ %1").arg(cmd));
     const QString c = cmd.toLower();
     if (c == QStringLiteral("help")) {
-        appendLog(QStringLiteral("Commands: help, status, clear, stop, -render"));
+        appendLog(QStringLiteral("Commands: help, status, clear, stop"));
     } else if (c == QStringLiteral("clear")) {
         m_console->clear();
     } else if (c == QStringLiteral("status")) {
@@ -544,11 +543,6 @@ void MainWindow::onConsoleSubmit() {
         NativeBridge::instance().cancelBuild();
         setBusy(false);
         appendLog(QStringLiteral("Stop: cancel build / clear busy"));
-    } else if (c == QStringLiteral("-render") || c == QStringLiteral("render")) {
-        auto* w = new RenderWorkbench(this);
-        w->setAttribute(Qt::WA_DeleteOnClose);
-        w->show();
-        appendLog(QStringLiteral("Opened Private mode (-render)"));
     } else {
         appendLog(QStringLiteral("Unknown command. Type help."));
     }

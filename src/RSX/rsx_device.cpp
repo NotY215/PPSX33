@@ -65,7 +65,8 @@ struct RsxState {
     uint32_t fifo_size = 0;
     uint32_t put = 0, get = 0;
     uint32_t color_offset = 0;
-    uint32_t color_pitch = 0;
+    uint32_t color_pitch;
+    uint32_t surface_format = 0;
     uint64_t flip_count = 0;
     uint32_t methods_seen = 0, unknown_methods = 0, draws_guest_frame = 0;
     uint32_t known_methods = 0, methods_this_frame = 0, draws_guest = 0, draws = 0;
@@ -457,6 +458,7 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
         return true;
     }
     if (kind == RSX_M_SURFACE_FORMAT) {
+        g_rsx.surface_format = arg;
         return true;
     }
     if (kind == RSX_M_SURFACE_ZETA_OFFSET) {
