@@ -1,201 +1,356 @@
-# 📦 PPSX33 Repository Structure
+# PPSX33 Repository Structure
 
-**🌐 Website:** https://ppsx33.xo.je/  
-**🗓️ Last updated:** 2026-10-31
+**Website:** https://ppsx33.xo.je/  
+**Repository:** https://github.com/NotY215/PPSX33  
+**Last updated:** 2026-11-02
 
-This document maps the current PPSX33 source layout and the files that participate in building or running the application. It keeps the emoji-based tree and inline comments so each component's responsibility is visible at a glance.
+This document describes the tracked layout of the current PPSX33 repository, based on the `main` branch. It includes the project configuration, documentation, assets, native runtime, Qt desktop UI, graphics pipeline, game-analysis records, and tests. File roles describe their apparent responsibility from their names and project integration; they do not imply that every subsystem is complete or that every game is playable.
 
-> 🧭 **Scope:** This is a build/source map, not a complete repository inventory. Documentation folders and standalone Markdown files are omitted from the tree to keep the focus on the application. Nothing has been deleted from the repository.
+## Repository map
 
 ```text
-📦 PPSX33/
-├── ⚙️ CMakeLists.txt                    # Defines native targets, GUI publish, and output staging
-├── ⚙️ CMakePresets.json                 # Configure/build presets, including x64 Release
-├── ⚙️ CMakeSettings.json                # Visual Studio CMake configuration
-├── ⚙️ Directory.Build.props             # Shared MSBuild properties
-├── 🧩 PS3Recomp.sln                     # Visual Studio solution entry point
-├── 🪟 launch.vs.json                    # Visual Studio launch configuration
-├── 🎨 assets/
-│   └── ppsx33-logo.ico                  # Application icon embedded by the GUI project
-├── 🛠️ cmake/
-│   └── CopyVulkanRuntime.cmake          # Copies the Vulkan runtime DLL into build output
-├── 📦 redist/                           # Runtime redistributables staged with the build
-└── 📂 src/                              # Main application source tree
-    ├── 📂 cli/                          # Command-line entry points and headless helpers
-    │   └── ps3_cli.cpp                  # CLI entry for command-line operations
-    ├── 📂 core/                         # PS3 system services, memory, filesystems, and HLE
-    │   ├── 📂 fs/                       # Virtual filesystem and metadata/archive parsing
-    │   │   ├── psarc_parser.cpp          # Reads supported PSARC archive data
-    │   │   ├── psarc_parser.h            # PSARC parser interface
-    │   │   ├── sfo_parser.cpp            # Reads PARAM.SFO metadata
-    │   │   ├── sfo_parser.h              # PARAM.SFO parser interface
-    │   │   ├── vfs.cpp                   # Maps guest filesystem paths to host storage
-    │   │   └── vfs.h                     # Virtual filesystem interface
-    │   ├── 📂 import/                    # Guest import/NID binding support
-    │   │   ├── import_stub_map.c         # Static import-stub mapping implementation
-    │   │   └── import_stub_map.h         # Import-stub mapping declarations
-    │   ├── 📂 loaders/                   # Executable loading
-    │   │   ├── elf_loader.cpp            # Parses supported ELF headers and segments
-    │   │   └── elf_loader.h              # ELF loader interface
-    │   ├── assets.cpp                    # Asset-related core helpers
-    │   ├── hle_hw_progress.cpp           # Optional/reference hardware-progress implementation
-    │   ├── hle_kernel.cpp                # Kernel HLE services and syscall handling
-    │   ├── hle_kernel.h                  # Public kernel HLE interface
-    │   ├── hle_kernel_internal.h         # Internal kernel declarations
-    │   ├── hle_kernel_syscalls.inl        # Kernel syscall dispatch bodies
-    │   ├── hle_log.cpp                   # Optional/reference logging implementation
-    │   ├── hle_registry.h                 # HLE registration declarations
-    │   ├── hle_stage.h                    # HLE startup-stage definitions
-    │   ├── hle_status.h                   # HLE status definitions
-    │   ├── lv2_syscalls.inl               # LV2 syscall definitions
-    │   ├── memory.cpp                     # Guest memory management
-    │   ├── memory.h                       # Guest memory interface
-    │   ├── nid_table.h                    # NID lookup data/interface
-    │   ├── project.cpp                    # Project and game-session logic
-    │   ├── project.h                      # Project/session declarations
-    │   ├── ps3_util.c                     # Shared low-level PS3 utilities
-    │   ├── ps3_util.h                     # Utility declarations
-    │   ├── ps3core.h                      # Core API and shared definitions
-    │   └── ps3core_api.cpp                # Core API implementation
-    ├── 📂 games-stuff/                   # Game-facing subsystems and media support
-    │   ├── 📂 Audio/                     # Audio HLE, mixing, drivers, and decoders
-    │   │   ├── 📂 Decoders/              # Audio format decoders
-    │   │   │   ├── decode_adpcm.cpp       # ADPCM/VAG decoding
-    │   │   │   ├── decode_adpcm.h         # ADPCM decoder interface
-    │   │   │   ├── decode_at3.cpp         # ATRAC3-family decoding
-    │   │   │   ├── decode_at3.h           # ATRAC decoder interface
-    │   │   │   ├── decode_celp.cpp        # CELP voice/audio decoding
-    │   │   │   ├── decode_celp.h          # CELP decoder interface
-    │   │   ├── 📂 Drivers/                # Host audio output backends
-    │   │   │   ├── audio_cubeb_backend.cpp # cubeb backend implementation
-    │   │   │   ├── audio_sdl2_backend.cpp  # SDL2 audio backend implementation
-    │   │   │   └── audio_xaudio2_backend.cpp # Windows XAudio2 backend
-    │   │   ├── audio_aub.cpp              # Audio buffer/memory helpers
-    │   │   ├── audio_aub.h                # Audio buffer declarations
-    │   │   ├── audio_device.cpp            # Host audio device lifecycle
-    │   │   ├── audio_device.h              # Audio device interface
-    │   │   ├── audio_dsp.cpp               # Audio DSP and effects
-    │   │   ├── audio_dsp.h                 # DSP declarations
-    │   │   ├── audio_mixer.cpp             # Mixes audio streams
-    │   │   ├── audio_mixer.h               # Mixer interface
-    │   │   ├── audio_voice.cpp              # Voice playback state and controls
-    │   │   ├── audio_voice.h                # Voice declarations
-    │   │   ├── libaudio.cpp                 # cellAudio HLE implementation
-    │   │   └── libaudio.h                   # cellAudio HLE declarations
-    │   └── 📂 Video/                      # Video playback and decoding helpers
-    │       ├── 📂 Decoders/               # Video format decoders
-    │       │   ├── decode_divx.cpp         # DivX decoding path
-    │       │   ├── decode_divx.h           # DivX decoder interface
-    │       │   ├── decode_h264.cpp         # H.264/AVC decoding path
-    │       │   ├── decode_h264.h           # H.264 decoder interface
-    │       │   ├── decode_mpeg2.cpp        # MPEG-2 decoding path
-    │       │   └── decode_mpeg2.h          # MPEG-2 decoder interface
-    │       ├── video_clock.cpp             # Video timing and frame pacing
-    │       ├── video_clock.h               # Video clock interface
-    │       ├── video_color_space.cpp       # YUV/RGB color conversion helpers
-    │       ├── video_color_space.h         # Color conversion declarations
-    │       ├── video_demuxer.cpp            # Video packet demultiplexing
-    │       ├── video_demuxer.h              # Demuxer interface
-    │       ├── video_pamf.cpp               # Sony PAMF container handling
-    │       ├── video_pamf.h                 # PAMF parser declarations
-    │       ├── video_presenter.cpp          # Presents decoded video frames
-    │       └── video_presenter.h            # Video presenter interface
-    ├── 📂 native/                         # Host-native runtime helpers
-    │   └── 📂 x64/                        # x64-specific implementations
-    │       ├── ps3rt_be.c                  # Big-endian load/store helpers
-    │       ├── ps3rt_be.h                  # Big-endian helper declarations
-    │       └── ps3rt_be_masm.asm           # Optional MASM byte-swap helper
-    ├── 📂 processor/                      # PS3 CPU execution and translation
-    │   ├── 📂 PPU/                        # PowerPC Processor Unit
-    │   │   ├── 📂 translate/              # Import bridge for translated code
-    │   │   │   ├── ppu_import_bridge.c     # Resolves translated import calls
-    │   │   │   └── ppu_import_bridge.h     # Import bridge interface
-    │   │   ├── ppu_disasm.cpp              # PPU instruction disassembler
-    │   │   ├── ppu_disasm.h                # Disassembler interface
-    │   │   ├── ppu_interpreter.cpp         # PPU instruction interpreter
-    │   │   ├── ppu_interpreter.h           # Interpreter interface
-    │   │   ├── ppu_jit.cpp                 # PPU JIT implementation
-    │   │   ├── ppu_jit.h                   # PPU JIT interface
-    │   │   ├── ppu_lifter.cpp              # Lifts PPU blocks into host-side code
-    │   │   ├── ppu_lifter.h                # PPU lifting interface
-    │   │   ├── ppu_runtime.h               # PPU runtime declarations
-    │   │   ├── ppu_runtime_core.h          # Shared runtime core
-    │   │   ├── ppu_runtime_core_a.h        # Runtime core section A
-    │   │   ├── ppu_runtime_core_b.h        # Runtime core section B
-    │   │   └── ppu_runtime_run.h           # Runtime execution helpers
-    │   └── 📂 SPU/                         # Synergistic Processing Unit
-    │       ├── spu_interpreter.cpp          # SPU instruction interpreter
-    │       ├── spu_interpreter.h            # Interpreter interface
-    │       ├── spu_jit.cpp                  # SPU JIT implementation
-    │       ├── spu_jit.h                    # SPU JIT interface
-    │       ├── spu_local_store.cpp          # SPU local-store memory model
-    │       └── spu_local_store.h            # Local-store interface
-    ├── 📂 RSX/                            # PS3 graphics processor emulation
-    │   ├── 📂 Backends/                   # Host graphics APIs
-    │   │   ├── 📂 OpenGL/                 # OpenGL graphics backend
-    │   │   │   ├── rsx_gl_backend.cpp      # OpenGL backend setup and submission
-    │   │   │   ├── rsx_gl_backend.h        # OpenGL backend interface
-    │   │   │   ├── rsx_gl_shaders.cpp      # GLSL shader compilation helpers
-    │   │   │   ├── rsx_gl_state.cpp        # OpenGL pipeline state
-    │   │   │   └── rsx_gl_vao.cpp          # Vertex array/buffer bindings
-    │   │   └── 📂 Vulkan/                 # Vulkan graphics backend
-    │   │       ├── rsx_vk_backend.cpp      # Vulkan device/backend setup
-    │   │       ├── rsx_vk_backend.h        # Vulkan backend interface
-    │   │       ├── rsx_vk_command.cpp      # Command-buffer submission helpers
-    │   │       ├── rsx_vk_memory.cpp       # GPU memory allocation helpers
-    │   │       └── rsx_vk_pipelines.cpp    # Vulkan pipeline state
-    │   ├── 📂 fifo/                       # RSX FIFO command handling
-    │   │   ├── rsx_method_table.c          # Classifies RSX methods
-    │   │   └── rsx_method_table.h          # Method-table declarations
-    │   ├── 📂 present/                    # Frame presentation queue
-    │   │   ├── rsx_present_queue.c         # Queues asynchronous/double-buffered presents
-    │   │   └── rsx_present_queue.h         # Present queue declarations
-    │   ├── rsx_backend_interface.h         # Common backend contract
-    │   ├── rsx_device.cpp                  # RSX device/register handling
-    │   ├── rsx_device.h                    # Device interface
-    │   ├── rsx_fifo.cpp                    # FIFO command processing
-    │   ├── rsx_fifo.h                      # FIFO interface
-    │   ├── rsx_fifo_guest_put_notes.h      # Notes on guest PUT/FIFO behavior
-    │   ├── rsx_framebuffer.cpp             # Framebuffer and render-target handling
-    │   ├── rsx_framebuffer.h               # Framebuffer interface
-    │   ├── rsx_memory.cpp                  # Guest RSX memory management
-    │   ├── rsx_memory.h                    # RSX memory interface
-    │   ├── rsx_shader_compiler.cpp         # Shader translation/compilation
-    │   ├── rsx_shader_compiler.h           # Shader compiler interface
-    │   ├── rsx_shader_decoder.cpp          # RSX microcode decoding
-    │   ├── rsx_shader_decoder.h            # Shader decoder interface
-    │   ├── rsx_state.cpp                   # Graphics pipeline state tracking
-    │   ├── rsx_state.h                     # State declarations
-    │   ├── rsx_texture.cpp                 # Texture format/layout handling
-    │   └── rsx_texture.h                   # Texture interface
-    └── 📂 UI/                             # Windows Forms UI and native panels
-        ├── 📂 panels/                     # Native debugger, game list, and settings panels
-        │   ├── debugger_panel.cpp          # Debugger panel implementation
-        │   ├── debugger_panel.h            # Debugger panel interface
-        │   ├── game_list_panel.cpp         # Game list panel implementation
-        │   ├── game_list_panel.h           # Game list panel interface
-        │   ├── settings_panel.cpp          # Settings panel implementation
-        │   └── settings_panel.h             # Settings panel interface
-        ├── 📂 Tabs/                       # Additional GUI tabs
-        │   └── LegalTab.cs                 # Legal notice tab
-        ├── 📂 Ui/                         # Reusable UI styling and effects
-        │   ├── LiquidBackdrop.cs           # Liquid/glass backdrop effects
-        │   └── UiKit.cs                    # Shared UI components and styling
-        ├── EmbeddedLegal.cs                # Embedded legal text handling
-        ├── EmbeddedTerms.cs                # Embedded terms text handling
-        ├── KeyMap.cs                       # Controller and keyboard mappings
-        ├── MainForm.Build.cs               # Build workflow and progress handling
-        ├── MainForm.Controller.cs          # Controller/input handling
-        ├── MainForm.Decrypt.cs             # Decryption workflow
-        ├── MainForm.Workflow.cs            # Main application workflow
-        ├── MainForm.cs                     # Main WinForms window
-        ├── MarkdownHtml.cs                 # Markdown-to-HTML rendering helpers
-        ├── Native.cs                       # Native DLL/API interop
-        ├── PS3Recomp.Gui.csproj             # .NET GUI project and publish settings
-        ├── Program.cs                      # GUI application entry point
-        ├── PromptDialog.cs                 # Prompt/dialog UI
-        ├── Ps3Visuals.cs                   # PS3-inspired visual components
-        ├── Rpcs3Launcher.cs                # RPCS3 launch integration
-        ├── Settings.cs                     # Persistent application settings
-        └── TermsForm.cs                    # Terms window
+PPSX33/
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── build_error.yml
+│   │   ├── config.yml
+│   │   ├── game_launch.yml
+│   │   ├── other.yml
+│   │   ├── performance_delay.yml
+│   │   └── spu_coverage.yml
+│   └── workflows/
+│       └── validate.yml                 # Repository validation workflow
+├── assets/
+│   ├── PPSX33 PS3 Controller Key Mapping.png
+│   ├── ppsx33-banner.png
+│   ├── ppsx33-logo.ico                  # Windows application icon/resource
+│   └── ppsx33-logo.png                  # Documentation and UI logo
+├── cmake/
+│   └── CopyVulkanRuntime.cmake          # Stages Vulkan runtime beside built outputs
+├── docs/
+│   ├── ARCHITECTURE.md                  # Runtime and system architecture
+│   ├── DEVELOPER_GUIDE.md               # Developer setup and workflow
+│   ├── DIAGRAMS.md                      # Architecture diagram sources and index
+│   ├── KEY_MAPPING.md                   # Keyboard/controller mapping reference
+│   ├── PPU_COVERAGE.md                  # PPU implementation and coverage notes
+│   ├── games/
+│   │   ├── README.md                    # Game-analysis index and conventions
+│   │   ├── DemonsSouls/
+│   │   │   ├── DEMONS_SOULS.md
+│   │   │   ├── DemonsSouls_lift_report.txt
+│   │   │   ├── README.md
+│   │   │   └── analysis_report.txt
+│   │   ├── GOW III/
+│   │   │   ├── GOW3-2026-11-02_13-33-15.txt
+│   │   │   ├── GOW3.md
+│   │   │   ├── README.md
+│   │   │   ├── analysis_report.txt
+│   │   │   └── lift_report.txt
+│   │   ├── Grand Theft Auto - San Andreas/
+│   │   │   ├── Grand Theft Auto - San Andreas.md
+│   │   │   ├── README.md
+│   │   │   ├── analysis_report.txt
+│   │   │   └── lift_report.txt
+│   │   ├── Grand Theft Auto V/
+│   │   │   ├── Grand Theft Auto V.md
+│   │   │   ├── README.md
+│   │   │   ├── analysis_report.txt
+│   │   │   └── lift_report.txt
+│   │   ├── Mineacraft/
+│   │   │   ├── MINECRAFT.md
+│   │   │   ├── README.md
+│   │   │   ├── analysis_report.txt
+│   │   │   └── lift_report.txt
+│   │   └── Uncharted2/
+│   │       ├── README.md
+│   │       ├── UNCHARTED2.md
+│   │       ├── UNCHARTED2_lift_report.txt
+│   │       └── analysis_report.txt
+│   └── legal/
+│       ├── GOVERNANCE.md                # Project governance
+│       ├── LEGAL.md                     # Legal overview
+│       ├── NOTICE                       # Notices
+│       ├── PRIVACY.md                   # Privacy information
+│       ├── Redist.md                    # Redistribution notes
+│       ├── TERMS.md                     # Terms
+│       └── THIRD_PARTY.md               # Third-party components and notices
+├── redist/
+│   └── README.txt                       # Runtime/redistribution staging notes
+├── releases/
+│   ├── PPSX33-Alpha-01.md
+│   ├── PPSX33-Alpha-1.0.4.md
+│   └── README.md                        # Release-note index
+├── src/
+│   ├── RSX/                             # RSX graphics device and command pipeline
+│   │   ├── Backends/
+│   │   │   ├── OpenGL/
+│   │   │   │   ├── rsx_gl_backend.cpp   # OpenGL backend setup/submission
+│   │   │   │   ├── rsx_gl_backend.h
+│   │   │   │   ├── rsx_gl_shaders.cpp   # GLSL shader helpers
+│   │   │   │   ├── rsx_gl_state.cpp     # OpenGL state handling
+│   │   │   │   └── rsx_gl_vao.cpp       # Vertex-array/buffer binding
+│   │   │   └── Vulkan/
+│   │   │       ├── rsx_vk_backend.cpp   # Vulkan backend and device work
+│   │   │       ├── rsx_vk_backend.h
+│   │   │       ├── rsx_vk_command.cpp   # Command-buffer submission
+│   │   │       ├── rsx_vk_memory.cpp    # Vulkan memory helpers
+│   │   │       └── rsx_vk_pipelines.cpp # Graphics pipeline setup
+│   │   ├── dispatch/
+│   │   │   ├── rsx_dispatch_sink.c      # Dispatch sink for decoded methods
+│   │   │   └── rsx_dispatch_sink.h
+│   │   ├── draw/
+│   │   │   ├── rsx_draw_batch.c         # Draw batching
+│   │   │   ├── rsx_draw_batch.h
+│   │   │   ├── rsx_surface_fmt.c        # Surface format utilities
+│   │   │   └── rsx_surface_fmt.h
+│   │   ├── fifo/
+│   │   │   ├── rsx_fifo_drain.c         # FIFO draining/command consumption
+│   │   │   ├── rsx_fifo_drain.h
+│   │   │   ├── rsx_method_table.c       # RSX method classification/dispatch table
+│   │   │   └── rsx_method_table.h
+│   │   ├── methods/
+│   │   │   └── rsx_nv4097_surface.c     # NV4097 surface-method handling
+│   │   ├── present/
+│   │   │   ├── rsx_present_policy.c     # Presentation policy
+│   │   │   ├── rsx_present_policy.h
+│   │   │   ├── rsx_present_queue.c      # Frame/present queue
+│   │   │   └── rsx_present_queue.h
+│   │   ├── render/
+│   │   │   ├── rsx_light_present.c      # Lightweight presentation path
+│   │   │   ├── rsx_light_present.h
+│   │   │   ├── rsx_render_frame.c       # Frame orchestration
+│   │   │   └── rsx_render_frame.h
+│   │   ├── resolution/
+│   │   │   ├── rsx_resolution.c         # Resolution selection/helpers
+│   │   │   └── rsx_resolution.h
+│   │   ├── rsx_backend_interface.h      # Shared backend contract
+│   │   ├── rsx_device.cpp               # RSX device/register handling
+│   │   ├── rsx_device.h
+│   │   ├── rsx_exports.c                # Runtime exports
+│   │   ├── rsx_fifo.cpp                 # FIFO integration
+│   │   ├── rsx_fifo.h
+│   │   ├── rsx_fifo_guest_put_notes.h   # Guest PUT/FIFO diagnostic notes
+│   │   ├── rsx_framebuffer.cpp          # Framebuffer/render-target management
+│   │   ├── rsx_framebuffer.h
+│   │   ├── rsx_memory.cpp               # RSX guest memory
+│   │   ├── rsx_memory.h
+│   │   ├── rsx_shader_bind.c            # Shader binding state and readiness
+│   │   ├── rsx_shader_bind.h
+│   │   ├── rsx_shader_compiler.cpp      # Host shader compilation path
+│   │   ├── rsx_shader_compiler.h
+│   │   ├── rsx_shader_decoder.cpp       # RSX shader decoding
+│   │   ├── rsx_shader_decoder.h
+│   │   ├── rsx_state.cpp                # Graphics state tracking
+│   │   ├── rsx_state.h
+│   │   ├── rsx_texture.cpp              # Texture layout/format handling
+│   │   └── rsx_texture.h
+│   ├── cli/
+│   │   └── ps3_cli.cpp                  # Command-line entry point/source
+│   ├── core/                            # Guest system, loaders, memory, and HLE
+│   │   ├── fs/
+│   │   │   ├── psarc_parser.cpp         # PSARC archive parsing
+│   │   │   ├── psarc_parser.h
+│   │   │   ├── sfo_parser.cpp           # PARAM.SFO parsing
+│   │   │   ├── sfo_parser.h
+│   │   │   ├── vfs.cpp                  # Guest-to-host virtual filesystem
+│   │   │   └── vfs.h
+│   │   ├── hle/
+│   │   │   ├── gcm/
+│   │   │   │   ├── gcm_control_bridge.c # GCM control bridge
+│   │   │   │   ├── gcm_flip_label.c    # Flip-label handling
+│   │   │   │   └── gcm_flip_label.h
+│   │   │   ├── spurs_stub.h             # SPURS stub declarations
+│   │   │   ├── sysmodule_progress.c     # Sysmodule progress/status helpers
+│   │   │   └── sysmodule_progress.h
+│   │   ├── import/
+│   │   │   ├── import_stub_map.c        # Guest import/NID stub map
+│   │   │   └── import_stub_map.h
+│   │   ├── loaders/
+│   │   │   ├── elf_loader.cpp           # ELF image loading
+│   │   │   └── elf_loader.h
+│   │   ├── stats/
+│   │   │   ├── host_stats.c             # Host/runtime statistics
+│   │   │   └── host_stats.h
+│   │   ├── assets.cpp                   # Core asset helpers
+│   │   ├── hle_hw_progress.cpp          # Hardware progress/reference helpers
+│   │   ├── hle_kernel.cpp               # Kernel HLE/syscall implementation
+│   │   ├── hle_kernel.h
+│   │   ├── hle_kernel_internal.h
+│   │   ├── hle_kernel_syscalls.inl      # Kernel syscall implementation include
+│   │   ├── hle_log.cpp                  # HLE logging helpers
+│   │   ├── hle_registry.h               # HLE registration declarations
+│   │   ├── hle_stage.h                  # HLE startup-stage definitions
+│   │   ├── hle_status.h                 # HLE status definitions
+│   │   ├── lv2_syscalls.inl             # LV2 syscall definitions
+│   │   ├── memory.cpp                   # Guest memory management
+│   │   ├── memory.h
+│   │   ├── nid_table.h                  # NID lookup definitions
+│   │   ├── project.cpp                  # Project/game-session logic
+│   │   ├── project.h
+│   │   ├── ps3_util.c                   # Shared low-level PS3 helpers
+│   │   ├── ps3_util.h
+│   │   ├── ps3core.h                    # Core API/shared types
+│   │   └── ps3core_api.cpp              # Core API implementation
+│   ├── games-stuff/                     # Game-facing media support
+│   │   ├── Audio/
+│   │   │   ├── Decoders/
+│   │   │   │   ├── decode_adpcm.cpp     # ADPCM/VAG-style audio decoder
+│   │   │   │   ├── decode_adpcm.h
+│   │   │   │   ├── decode_at3.cpp       # ATRAC-family decoder
+│   │   │   │   ├── decode_at3.h
+│   │   │   │   ├── decode_celp.cpp      # CELP decoder
+│   │   │   │   └── decode_celp.h
+│   │   │   ├── Drivers/
+│   │   │   │   ├── audio_cubeb_backend.cpp # cubeb output backend
+│   │   │   │   ├── audio_sdl2_backend.cpp  # SDL2 output backend
+│   │   │   │   └── audio_xaudio2_backend.cpp # Windows XAudio2 output backend
+│   │   │   ├── audio_aub.cpp            # Audio buffer helpers
+│   │   │   ├── audio_aub.h
+│   │   │   ├── audio_device.cpp         # Host audio device lifecycle
+│   │   │   ├── audio_device.h
+│   │   │   ├── audio_dsp.cpp            # DSP/effects helpers
+│   │   │   ├── audio_dsp.h
+│   │   │   ├── audio_mixer.cpp          # Audio stream mixing
+│   │   │   ├── audio_mixer.h
+│   │   │   ├── audio_voice.cpp          # Voice playback state
+│   │   │   ├── audio_voice.h
+│   │   │   ├── libaudio.cpp             # cellAudio-facing HLE implementation
+│   │   │   └── libaudio.h
+│   │   └── Video/
+│   │       ├── Decoders/
+│   │       │   ├── decode_divx.cpp      # DivX decoding path
+│   │       │   ├── decode_divx.h
+│   │       │   ├── decode_h264.cpp      # H.264/AVC decoding path
+│   │       │   ├── decode_h264.h
+│   │       │   ├── decode_mpeg2.cpp     # MPEG-2 decoding path
+│   │       │   └── decode_mpeg2.h
+│   │       ├── video_clock.cpp          # Video timing/frame pacing
+│   │       ├── video_clock.h
+│   │       ├── video_color_space.cpp    # Color-space conversion
+│   │       ├── video_color_space.h
+│   │       ├── video_demuxer.cpp        # Video packet demultiplexing
+│   │       ├── video_demuxer.h
+│   │       ├── video_pamf.cpp           # PAMF container handling
+│   │       ├── video_pamf.h
+│   │       ├── video_presenter.cpp      # Decoded-frame presentation
+│   │       └── video_presenter.h
+│   ├── native/
+│   │   └── x64/
+│   │       ├── ps3rt_be.c               # Big-endian load/store helpers
+│   │       ├── ps3rt_be.h
+│   │       └── ps3rt_be_masm.asm        # Optional MASM implementation
+│   ├── processor/
+│   │   ├── PPU/                         # PowerPC Processor Unit
+│   │   │   ├── translate/
+│   │   │   │   ├── ppu_import_bridge.c  # Bridge for translated import calls
+│   │   │   │   └── ppu_import_bridge.h
+│   │   │   ├── ppu_disasm.cpp           # PPU disassembler
+│   │   │   ├── ppu_disasm.h
+│   │   │   ├── ppu_interpreter.cpp      # PPU interpreter
+│   │   │   ├── ppu_interpreter.h
+│   │   │   ├── ppu_island_table.h       # Null-island checks/escape ranking
+│   │   │   ├── ppu_jit.cpp              # PPU JIT execution path
+│   │   │   ├── ppu_jit.h
+│   │   │   ├── ppu_lifter.cpp           # PPU code lifting
+│   │   │   ├── ppu_lifter.h
+│   │   │   ├── ppu_runtime.h            # Generated-code runtime interface
+│   │   │   ├── ppu_runtime_core.h       # Shared runtime core
+│   │   │   ├── ppu_runtime_core_a.h     # Runtime core section A
+│   │   │   ├── ppu_runtime_core_b.h     # Runtime core section B
+│   │   │   └── ppu_runtime_run.h        # Runtime execution helpers
+│   │   └── SPU/                         # Synergistic Processing Unit
+│   │       ├── spu_interpreter.cpp      # SPU interpreter
+│   │       ├── spu_interpreter.h
+│   │       ├── spu_jit.cpp              # SPU JIT execution path
+│   │       ├── spu_jit.h
+│   │       ├── spu_local_store.cpp      # SPU local-store model
+│   │       └── spu_local_store.h
+│   └── ui_qt/                           # Qt 6 desktop application
+│       ├── AppVersion.h                 # GUI version metadata
+│       ├── CMakeLists.txt               # Qt GUI target/build integration
+│       ├── EmbeddedLegal.cpp             # Embedded legal text
+│       ├── EmbeddedLegal.h
+│       ├── EmbeddedTerms.cpp             # Embedded terms text
+│       ├── EmbeddedTerms.h
+│       ├── JobWorker.cpp                 # Background job worker
+│       ├── JobWorker.h
+│       ├── MainWindow.cpp                # Main Qt window and UI composition
+│       ├── MainWindow.h
+│       ├── NativeBridge.cpp              # Bridge to native runtime APIs
+│       ├── NativeBridge.h
+│       ├── Settings.cpp                  # Persistent GUI settings
+│       ├── Settings.h
+│       ├── TermsDialog.cpp               # Terms dialog
+│       ├── TermsDialog.h
+│       ├── UiLogoAnim.cpp                # Logo animation
+│       ├── UiLogoAnim.h
+│       ├── main.cpp                      # Qt application entry point
+│       └── resources.qrc                 # Qt resource collection
+├── tests/
+│   ├── conformance/
+│   │   ├── README.md                    # Conformance test notes
+│   │   └── ppu_smoke_plan.md            # PPU smoke-test plan
+│   └── games/
+│       └── README.md                    # Game test/validation notes
+├── .gitattributes                       # Git text/binary handling
+├── .gitignore                           # Excluded build/local files
+├── AIFIAR.md                            # AI-assisted engineering workflow
+├── CITATION.cff                         # Citation metadata
+├── CMakeLists.txt                       # Main C/C++ and Qt build definition
+├── CMakePresets.json                    # Configure/build presets
+├── CMakeSettings.json                   # Visual Studio CMake settings
+├── CODE_OF_CONDUCT.md                   # Community conduct
+├── CONTRIBUTING.md                      # Contribution workflow
+├── ENGINEERING.md                       # Engineering rules and validation expectations
+├── LICENSE                              # Apache License 2.0
+├── README.md                            # Project overview and entry links
+├── ROADMAP.md                           # Development roadmap
+├── SECURITY.md                          # Security reporting policy
+├── STRUCTURE.md                         # This repository map
+├── USER_MANUAL.md                       # User-facing operating manual
+└── requirements.md                      # Build/runtime requirements
 ```
+
+## Major subsystems
+
+### Build and outputs
+- The root `CMakeLists.txt` defines the native C/C++ targets and the Qt 6 Widgets desktop application.
+- C and C++ language standards are configured at the root. The project uses CMake presets/settings for supported IDE workflows.
+- Build outputs are staged under the configured `dist/` directory. The Windows runtime target is consolidated as `ps3rt.dll`; the build also stages runtime headers under `dist/runtime/` and copies the Vulkan runtime when available.
+- `cmake/CopyVulkanRuntime.cmake` handles Vulkan runtime staging. Exact output contents depend on platform, configuration, and successfully built targets.
+- `src/ui_qt/CMakeLists.txt` contains Qt GUI target configuration. The former C# WinForms UI layout is no longer part of the tracked source tree.
+
+### Core and lifting
+- `src/core/` contains ELF loading, guest memory, virtual filesystem and metadata/archive parsing, project/session state, core APIs, import mapping, and kernel/HLE interfaces.
+- `src/processor/PPU/` contains PPU disassembly, interpretation, lifting, JIT-related execution, runtime interfaces, and translated import bridging.
+- `src/processor/SPU/` contains SPU interpretation/JIT paths and local-store support.
+- `src/native/x64/` contains host-specific helpers, including big-endian access routines and an optional MASM implementation.
+
+### Runtime services and media
+- `src/core/hle/` and adjacent HLE headers provide kernel-facing services, GCM bridges, syscall definitions, startup stages, and status/registration interfaces.
+- `src/games-stuff/Audio/` contains audio decoding, host drivers, device lifecycle, mixing, DSP, voice, and cellAudio-facing code.
+- `src/games-stuff/Video/` contains decoder entry points and helpers for timing, color space, demultiplexing, PAMF, and frame presentation.
+
+### RSX graphics
+- `src/RSX/` is organized into device/state and resource handling, FIFO/method processing, dispatch, draw/surface helpers, render/presentation policy, resolution, shader binding/decoding/compilation, and host backends.
+- `src/RSX/Backends/Vulkan/` contains the Vulkan backend implementation, memory, command submission, and pipeline setup.
+- `src/RSX/Backends/OpenGL/` contains OpenGL backend and shader/state/VAO helpers.
+- `rsx_shader_bind.c/.h` tracks shader binding state, offsets/sizes/constants, and host readiness as the shader path is integrated. File presence does not establish complete title rendering.
+
+### Desktop UI
+- `src/ui_qt/` is the Qt 6 desktop application, with the main window, settings, native bridge, background job worker, terms/legal dialogs, logo animation, and Qt resources.
+- `assets/ppsx33-logo.ico` is used for Windows icon/resource integration; the PNG assets are used for visual branding and documentation.
+
+### Documentation, game records, and tests
+- Root Markdown files cover project usage, contribution, engineering, AI-assisted workflow, releases, requirements, security, and repository layout.
+- `docs/` contains architecture/developer references, diagrams, input mapping, PPU coverage, legal/third-party notes, and per-game analysis records. Game reports are research and diagnostic artifacts, not compatibility guarantees.
+- `tests/conformance/` contains conformance notes and a PPU smoke-test plan. `tests/games/` contains game-validation guidance.
+- `.github/workflows/validate.yml` and issue templates support repository validation and structured issue reporting.
+
+## Important accuracy notes
+
+1. **PPSX33's target is native Windows PlayStation 3 recompilation.** A source file, subsystem, lift report, or successful build does not prove that a commercial title boots or is playable.
+2. **The current GUI is Qt 6.** Do not document the removed C# WinForms files as current source files.
+3. **The runtime layout is consolidated.** Refer to the root build configuration for the current `ps3rt.dll` target and staging rules instead of assuming the older split render/resolution/API DLL layout.
+4. **Generated/build artifacts are not source-tree entries.** Paths such as `build/`, `dist/`, generated game projects, executables, PDB/ILK files, and staged DLLs may appear locally but are not listed as tracked source files here.
+5. **Game-specific notes are evidence, not guarantees.** Consult the corresponding analysis/lift reports and the current architecture/roadmap before making claims about execution or graphics coverage.
