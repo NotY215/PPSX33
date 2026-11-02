@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-01_22-16-45.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-01_22-16-45.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-02_13-33-15.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-02_13-33-15.txt
 [stage] BOOT start
 [ps3rt] warning: no guest_image.bin mapped
 [save] root=C:\Users\shrey\OneDrive\Documents\GOW3\PS3_SAVEDATA (PS3-native only; no savestates)
@@ -51,94 +51,12 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-01_22-16-45.txt
 [hle] RSX/FIFO = partial (assist draws proven; title stream pending)
 [ps3] XXV-F recover wild-pc 0x0 -> 0x103ac
 [ps3] XXV-L wild-pc 0x0 -> 0x103ac
-[ps3] XXV-F recover wild-pc 0x0 -> 0x33aec8
-[ps3] XXV-L wild-pc 0x0 -> 0x33aec8
-[lv2] sc 352 r3=f0ffe04 r4=0 r5=4 r6=0
-[lv2] mem REJECT sc=352 r3=0xf0ffe04 r4=0x0 (not a size)
-[ps3] XXV-F recover wild-pc 0x0 -> 0x33b1a0
-[ps3] XXV-L wild-pc 0x0 -> 0x33b1a0
-[ps3] XXV-F recover wild-pc 0x0 -> 0x33b1a0
-[ps3] XXV-L wild-pc 0x0 -> 0x33b1a0
-[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
-[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
-[ps3] XXV-F callstack[0] 0x331ba8
-[ps3] XXV-F callstack[1] 0x33b1a0
-[ps3] XXV-F callstack[2] 0x10444
-[ps3] XXV-F callstack[3] 0x10250
-[ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x33b1a0 lr=0x336660 hits=3 strict=0
-[ps3] Phase XI region-ban 0x199c00 (nrban=1)
-[ps3] Phase XI region-ban 0x337000 (nrban=2)
-[ps3] P0 sticky soft-continue -> 0x18000
-[ps3] XXV-F recover wild-pc 0x0 -> 0x18000
-[ps3] XXV-L wild-pc 0x0 -> 0x18000
-[ps3] XXV-F recover wild-pc 0x0 -> 0x33b1a0
-[ps3] XXV-L wild-pc 0x0 -> 0x33b1a0
-[ps3] XXV-F recover wild-pc 0x0 -> 0x33b1a0
-[ps3] XXV-L wild-pc 0x0 -> 0x33b1a0
-[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
-[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
-[ps3] XXV-F callstack[0] 0x331ba8
-[ps3] XXV-F callstack[1] 0x33b1a0
-[ps3] XXV-F callstack[2] 0x10444
-[ps3] XXV-F callstack[3] 0x10250
-[ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x33b1a0 lr=0x336660 hits=3 strict=0
-[ps3] P0 sticky soft-continue -> 0x18000
-[ps3] XXV-F recover wild-pc 0x0 -> 0x18000
-[ps3] XXV-L wild-pc 0x0 -> 0x18000
-[ps3] XXV-F recover wild-pc 0x0 -> 0x33b1a0
-[ps3] XXV-L wild-pc 0x0 -> 0x33b1a0
-[ps3] XXV-F recover wild-pc 0x0 -> 0x33b1a0
-[ps3] XXV-L wild-pc 0x0 -> 0x33b1a0
-[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
-[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
-[ps3] XXV-F callstack[0] 0x331ba8
-[ps3] XXV-F callstack[1] 0x33b1a0
-[ps3] XXV-F callstack[2] 0x10444
-[ps3] XXV-F callstack[3] 0x10250
-[ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x33b1a0 lr=0x336660 hits=3 strict=0
-[ps3] P0 sticky soft-continue -> 0x18000
-[ps3] XXV-F recover wild-pc 0x0 -> 0x18000
-[ps3] XXV-L wild-pc 0x0 -> 0x18000
-[ps3] XXV-F recover wild-pc 0x0 -> 0x33b1a0
-[ps3] XXV-L wild-pc 0x0 -> 0x33b1a0
-[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
-[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
-[ps3] XXV-F callstack[0] 0x331ba8
-[ps3] XXV-F callstack[1] 0x33b1a0
-[ps3] XXV-F callstack[2] 0x10444
-[ps3] XXV-F callstack[3] 0x10250
-[ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x33b1a0 lr=0x336660 hits=3 strict=0
-[ps3] P0 sticky soft-continue -> 0x18000
-[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
-[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
-[ps3] XXV-F callstack[0] 0x331ba8
-[ps3] XXV-F callstack[1] 0x33b1a0
-[ps3] XXV-F callstack[2] 0x10444
-[ps3] XXV-F callstack[3] 0x10250
-[ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x33b1a0 lr=0x336660 hits=3 strict=0
-[ps3] P0 sticky soft-continue -> 0x18000
-[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
-[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
-[ps3] XXV-F callstack[0] 0x331ba8
-[ps3] XXV-F callstack[1] 0x33b1a0
-[ps3] XXV-F callstack[2] 0x10444
-[ps3] XXV-F callstack[3] 0x10250
-[ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x33b1a0 lr=0x336660 hits=3 strict=0
-[ps3] P0 sticky soft-continue -> 0x18000
-[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
-[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
-[ps3] XXV-F callstack[0] 0x331ba8
-[ps3] XXV-F callstack[1] 0x33b1a0
-[ps3] XXV-F callstack[2] 0x10444
-[ps3] XXV-F callstack[3] 0x10250
-[ps3] P0 sticky BREAK first-fault pc=0x0 alt=0x33b1a0 lr=0x336660 hits=3 strict=0
-[ps3] P0 sticky soft-continue -> 0x18000
-[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x336660 ctr=0x0 toc=r2=0x0 sp=r1=0xf0ffdf0
-[ps3] XXV-F FAULT gpr3-10 10 0 4 0 0 1 0 0
-[ps3] XXV-F callstack[0] 0x331ba8
-[ps3] XXV-F callstack[1] 0x33b1a0
-[ps3] XXV-F callstack[2] 0x10444
-[ps3] XXV-F callstack[3] 0x10250
+[ps3] XXV-F recover wild-pc 0x0 -> 0x10424
+[ps3] XXV-L wild-pc 0x0 -> 0x10424
+[ps3] XXV-F recover wild-pc 0x0 -> 0x1043c
+[ps3] XXV-L wild-pc 0x0 -> 0x1043c
+[ps3] XXV-F recover wild-pc 0x0 -> 0x10444
+[ps3] XXV-L wild-pc 0x0 -> 0x10444
 [stage] PPU progress start
 [stage] SPU progress end
 [pad] XInput loaded from xinput1_4.dll
@@ -151,4 +69,4 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-01_22-16-45.txt
 [lv2] alloc VA=0x8020000 size=0x100000
 [rsx] XXII-L API preference: Vulkan 1.2 (OpenGL secondary; DX11 removed)
 [rsx] XX-O window title="PPSX33 presents GOW3"
-[rsx] Vulkan init begin hwnd=00000000001A08BE 720x576
+[rsx] Vulkan init begin hwnd=00000000001108BA 720x576
