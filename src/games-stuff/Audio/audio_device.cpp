@@ -42,7 +42,13 @@ static int g_xa_idx = 0;
 static uint32_t g_audio_block = 256;
 static uint64_t g_audio_read_idx = 0;
 static uint64_t g_port_addr = 0; // guest EA of ring (if known)
+static uint64_t g_port_read_idx_addr = 0;
+static uint32_t g_port_nch = 2;
 static uint32_t g_port_nblocks = 8;
+static uint32_t g_port_status = 0; /* 0 close 1 ready 2 run */
+static const uint64_t k_audio_ring_ea = 0x0E100000ull;
+static const uint64_t k_audio_ridx_ea = 0x0E0FFF00ull;
+
 static int g_port_open = 0;
 // G+K: ring + multi-port (up to 8)
 static uint32_t g_ring_write = 0;
@@ -231,6 +237,43 @@ PS3RT_API void ps3rt_audio_tick(void) {
     audio_host_open(); // XXIV-A once
 #if defined(_WIN32)
     if (!g_audio_inited) return;
+    if (g_port_open && g_port_addr && g_port_status >= 1) {
+        uint8_t* mem = ps3rt_memory();
+        const size_t msz = 512ull * 1024 * 1024;
+        uint32_t nch = g_port_nch ? g_port_nch : 2;
+        uint32_t block = g_audio_block ? g_audio_block : 256;
+        uint32_t nblk = g_port_nblocks ? g_port_nblocks : 8;
+        uint32_t frames = block > 256 ? 256 : block;
+        uint64_t ridx = g_audio_read_idx % nblk;
+        uint64_t ea = g_port_addr + ridx * (uint64_t)block * nch * 4u;
+        if (mem && ea + (uint64_t)frames * nch * 4u <= msz) {
+            static int16_t conv[256 * 8];
+            const float* f = (const float*)(mem + ea);
+            for (uint32_t i = 0; i < frames; ++i) {
+                float L = f[i * nch + 0];
+                float R = nch > 1 ? f[i * nch + 1] : L;
+                if (L > 1.f) L = 1.f; if (L < -1.f) L = -1.f;
+                if (R > 1.f) R = 1.f; if (R < -1.f) R = -1.f;
+                conv[i * 2 + 0] = (int16_t)(L * 32767.f);
+                conv[i * 2 + 1] = (int16_t)(R * 32767.f);
+            }
+            audio_queue_s16(conv, frames);
+            g_audio_read_idx++;
+            if (g_port_read_idx_addr && g_port_read_idx_addr + 8 <= msz) {
+                uint8_t* rp = mem + g_port_read_idx_addr;
+                uint64_t v = g_audio_read_idx;
+                rp[0]=(uint8_t)(v>>56); rp[1]=(uint8_t)(v>>48); rp[2]=(uint8_t)(v>>40); rp[3]=(uint8_t)(v>>32);
+                rp[4]=(uint8_t)(v>>24); rp[5]=(uint8_t)(v>>16); rp[6]=(uint8_t)(v>>8);  rp[7]=(uint8_t)v;
+            }
+            static int s_pull = 0;
+            if (s_pull < 12) {
+                ps3rt_log("[audio] ring pull ridx=%llu ea=0x%llx frames=%u
+",
+                    (unsigned long long)g_audio_read_idx, (unsigned long long)ea, frames);
+                ++s_pull;
+            }
+        }
+    }
     if (g_xa_ready && g_xa_src) {
         XAUDIO2_VOICE_STATE st{};
         g_xa_src->GetState(&st);
@@ -273,6 +316,7 @@ PS3RT_API int ps3rt_audio_dispatch(PPUContext* c, uint32_t nid) {
     if (nid == 0x5B1E2C73 || nid == 0x566966C0 || nid == 0x65C27676 || nid == 0x4129FE2C) {
         if (!g_audio_inited) { g_audio_inited = 1; audio_host_open(); }
         g_port_open = 1;
+        g_port_status = 2; /* RUN */
         if (g_ports_active < 8) {
             g_current_port = g_ports_active;
             g_port_flags[g_ports_active] |= 1u;
@@ -289,19 +333,44 @@ PS3RT_API int ps3rt_audio_dispatch(PPUContext* c, uint32_t nid) {
     if (nid == 0xDDC2AB95 || nid == 0x4129FE2A) {
         c->gpr[3] = 0; return 0;
     }
-    // GetPortConfig — fill structure with block size / address if possible
+    // GetPortConfig — CellAudioPortConfig-ish layout (readIndex / status / nCh / nBlock / size / portAddr)
     if (nid == 0x07ADD381) {
         uint64_t out = c->gpr[4] ? c->gpr[4] : c->gpr[3];
         uint8_t* mem = ps3rt_memory();
-        if (mem && out && out + 0x20 <= 512ull*1024*1024) {
-            // minimal CellAudioPortConfig-like: nChannel=2, nBlock=8, nAddr
-            auto be32 = [](uint8_t* p, uint32_t v) {
-                p[0]=(uint8_t)(v>>24); p[1]=(uint8_t)(v>>16); p[2]=(uint8_t)(v>>8); p[3]=(uint8_t)v;
-            };
-            be32(mem + out + 0, 2);           // nChannel
-            be32(mem + out + 4, g_port_nblocks);
-            be32(mem + out + 8, g_audio_block);
-            // nAddr leave 0 unless we allocated — games often allocate themselves
+        size_t msz = 512ull * 1024 * 1024;
+        auto be32 = [](uint8_t* p, uint32_t v) {
+            p[0]=(uint8_t)(v>>24); p[1]=(uint8_t)(v>>16); p[2]=(uint8_t)(v>>8); p[3]=(uint8_t)v;
+        };
+        auto be64 = [&](uint8_t* p, uint64_t v) {
+            be32(p, (uint32_t)(v >> 32)); be32(p + 4, (uint32_t)v);
+        };
+        if (!g_port_addr) {
+            g_port_addr = k_audio_ring_ea;
+            g_port_read_idx_addr = k_audio_ridx_ea;
+            g_port_nch = 2;
+            g_port_nblocks = g_port_nblocks ? g_port_nblocks : 8;
+            g_port_status = 1; /* READY */
+            g_audio_read_idx = 0;
+            if (mem && g_port_read_idx_addr + 8 <= msz)
+                be64(mem + g_port_read_idx_addr, 0);
+        }
+        if (mem && out && out + 48 <= msz) {
+            uint32_t port_size = g_port_nblocks * g_audio_block * g_port_nch * 4u; /* float samples */
+            be64(mem + out + 0, g_port_read_idx_addr);
+            be32(mem + out + 8, g_port_status);
+            be32(mem + out + 12, 0);
+            be64(mem + out + 16, g_port_nch);
+            be64(mem + out + 24, g_port_nblocks);
+            be32(mem + out + 32, port_size);
+            be32(mem + out + 36, 0);
+            be64(mem + out + 40, g_port_addr);
+            static int s_cfg = 0;
+            if (s_cfg < 8) {
+                ps3rt_log("[audio] GetPortConfig nch=%u nblk=%u port=0x%llx ridx=0x%llx size=%u\n",
+                    g_port_nch, g_port_nblocks,
+                    (unsigned long long)g_port_addr, (unsigned long long)g_port_read_idx_addr, port_size);
+                ++s_cfg;
+            }
         }
         c->gpr[3] = 0; return 0;
     }
