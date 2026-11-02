@@ -842,7 +842,17 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     }
     g_rsx.methods_this_frame = 0;
     g_rsx.packets_decoded = 0;
+    if (rsx_shader_bind_ready()) {
+        static int s_sh = 0;
+        if (s_sh < 4) {
+            ps3rt_log("[rsx] shader bind vp=0x%x fp=0x%x (host program pending SPIR-V)
+",
+                rsx_shader_bind_vp_offset(), rsx_shader_bind_fp_offset());
+            ++s_sh;
+        }
+    }
 }
+
 
 PS3RT_API void ps3rt_rsx_tick(void) {
     // Present only on HWND pump thread — tick only pumps messages / light poll
