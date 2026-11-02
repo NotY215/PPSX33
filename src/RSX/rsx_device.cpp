@@ -380,9 +380,15 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
             rsx_host_present_soft();
         }
     } else {
-        ps3rt_log("[rsx] host present ready %ux%u (OpenGL path; soft clear interim)\n",
-            (unsigned)g_rsx.width, (unsigned)g_rsx.height);
-        rsx_host_present_soft();
+        if (g_hwnd && rsx_gl_init(g_hwnd, g_rsx.width ? g_rsx.width : 720, g_rsx.height ? g_rsx.height : 576)) {
+            ps3rt_log("[rsx] host present ready %ux%u (OpenGL)\n",
+                (unsigned)g_rsx.width, (unsigned)g_rsx.height);
+            rsx_gl_present_clear(0.05f, 0.12f, 0.22f, 1.0f);
+            rsx_gl_poll_window();
+        } else {
+            ps3rt_log("[rsx] OpenGL init failed - soft GDI present fallback\n");
+            rsx_host_present_soft();
+        }
     }
     rsx_start_pump_thread();
 #if defined(_WIN32)
@@ -545,7 +551,10 @@ static void rsx_draw_host(uint8_t* mem) {
         if (gmem && (size_t)off + (size_t)pitch * gh <= msz)
             presented = rsx_vk_present_guest_rgba(gmem + off, gw, gh, pitch);
     }
-    if (!presented) rsx_host_present_clear();
+    if (!presented) if (g_gfx_api == 1 && rsx_gl_ready())
+            rsx_gl_present_clear(0.05f, 0.05f, 0.08f, 1.f);
+        else
+            rsx_host_present_clear();
 }
 
 
@@ -829,6 +838,17 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
                 presented = rsx_vk_present_guest_rgba(mem + off, 720, 576, pitch);
             if (presented) rsx_vk_poll_window();
         }
+    } else if (g_gfx_api == 1 && rsx_gl_ready() && g_rsx.color_offset) {
+        uint8_t* mem = ps3rt_guest_mem_ptr();
+        size_t msz = ps3rt_guest_mem_size();
+        uint32_t off = g_rsx.color_offset;
+        uint32_t pitch = g_rsx.color_pitch ? g_rsx.color_pitch : (720 * 4u);
+        size_t need = (size_t)off + (size_t)pitch * 576u;
+        if (mem && need <= msz) {
+            presented = rsx_gl_present_guest_rgba(mem + off, 720, 576, pitch);
+            if (presented) rsx_gl_poll_window();
+
+        }
     }
     if (!presented)
         rsx_host_present_clear();
@@ -845,8 +865,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     if (rsx_shader_bind_ready()) {
         static int s_sh = 0;
         if (s_sh < 4) {
-            ps3rt_log("[rsx] shader bind vp=0x%x fp=0x%x (host program pending SPIR-V)
-",
+            ps3rt_log("[rsx] shader bind vp=0x%x fp=0x%x (host program pending SPIR-V)\n",
                 rsx_shader_bind_vp_offset(), rsx_shader_bind_fp_offset());
             ++s_sh;
         }
@@ -859,6 +878,8 @@ PS3RT_API void ps3rt_rsx_tick(void) {
     if (g_hwnd) {
         if (g_gfx_api == 0 && rsx_vk_ready())
             rsx_vk_poll_window();
+        else if (g_gfx_api == 1 && rsx_gl_ready())
+            rsx_gl_poll_window();
         else
             rsx_host_present_soft();
     }

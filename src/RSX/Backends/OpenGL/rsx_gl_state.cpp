@@ -1,3 +1,2 @@
-// WORK: OpenGL secondary backend. Implement after Vulkan 1.2 present path stabilizes.
-// WORK: glEnable/blend/cull mapping — FUTURE Phase 2.
-// STATUS: Future implementation. Default backend is DX11.
+/* GL state cache reserved for blend/viewport — clear/present path does not need it yet. */
+void rsx_gl_state_reset(void) {}

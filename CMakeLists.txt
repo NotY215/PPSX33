@@ -85,6 +85,7 @@ if(WIN32)
     # former modular sources (single DLL)
     src/RSX/resolution/rsx_resolution.c
     src/RSX/Backends/Vulkan/rsx_vk_backend.cpp
+    src/RSX/Backends/OpenGL/rsx_gl_backend.cpp
     src/RSX/Backends/Vulkan/rsx_vk_memory.cpp
     src/RSX/Backends/Vulkan/rsx_vk_command.cpp
     src/RSX/Backends/Vulkan/rsx_vk_pipelines.cpp
@@ -147,7 +148,9 @@ if(WIN32)
     target_compile_options(ps3rt PRIVATE /bigobj)
   endif()
   target_link_libraries(ps3rt PRIVATE
-    user32 gdi32 ole32 uuid windowscodecs winmm xaudio2 psapi)
+    user32 gdi32 ole32 uuid windowscodecs winmm xaudio2 psapi
+  opengl32
+)
   set_target_properties(ps3rt PROPERTIES PREFIX "" OUTPUT_NAME "ps3rt"
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/dist
