@@ -34,6 +34,7 @@ target_include_directories(ps3core PRIVATE
     ${CMAKE_SOURCE_DIR}/src/processor/PPU/translate
     ${CMAKE_SOURCE_DIR}/src/RSX/present
     ${CMAKE_SOURCE_DIR}/src/RSX/fifo
+  ${CMAKE_SOURCE_DIR}/src/RSX/dispatch
     ${CMAKE_SOURCE_DIR}/src/core/import
     ${CMAKE_SOURCE_DIR}/src/native/x64
   ${CMAKE_SOURCE_DIR}/src/core/loaders
@@ -56,6 +57,7 @@ set(PPSX33_COMMON_INCLUDES
   ${CMAKE_SOURCE_DIR}/src/processor/SPU
   ${CMAKE_SOURCE_DIR}/src/RSX
   ${CMAKE_SOURCE_DIR}/src/RSX/fifo
+  ${CMAKE_SOURCE_DIR}/src/RSX/dispatch
   ${CMAKE_SOURCE_DIR}/src/RSX/present
   ${CMAKE_SOURCE_DIR}/src/RSX/draw
   ${CMAKE_SOURCE_DIR}/src/RSX/render
@@ -142,12 +144,13 @@ if(WIN32)
     src/RSX/fifo/rsx_method_table.c
     src/RSX/fifo/rsx_fifo_drain.c
     src/RSX/methods/rsx_nv4097_surface.c
+    src/RSX/dispatch/rsx_dispatch_sink.c
     src/native/x64/ps3rt_be.c
     src/RSX/rsx_exports.c
   )
   target_include_directories(ppsx33_rsx PRIVATE ${PPSX33_COMMON_INCLUDES})
   target_compile_definitions(ppsx33_rsx PRIVATE PPSX33_RSX_BUILD=1)
-  set_source_files_properties(src/RSX/fifo/rsx_method_table.c src/RSX/fifo/rsx_fifo_drain.c src/RSX/methods/rsx_nv4097_surface.c src/native/x64/ps3rt_be.c src/RSX/rsx_exports.c PROPERTIES LANGUAGE C)
+  set_source_files_properties(src/RSX/fifo/rsx_method_table.c src/RSX/fifo/rsx_fifo_drain.c src/RSX/methods/rsx_nv4097_surface.c src/RSX/dispatch/rsx_dispatch_sink.c src/native/x64/ps3rt_be.c src/RSX/rsx_exports.c PROPERTIES LANGUAGE C)
   target_link_libraries(ppsx33_rsx PRIVATE ppsx33_render ppsx33_resolution)
   set_target_properties(ppsx33_rsx PROPERTIES
     PREFIX ""
@@ -185,6 +188,7 @@ if(WIN32)
     ${CMAKE_SOURCE_DIR}/src/processor/SPU
     ${CMAKE_SOURCE_DIR}/src/RSX
     ${CMAKE_SOURCE_DIR}/src/RSX/fifo
+  ${CMAKE_SOURCE_DIR}/src/RSX/dispatch
     ${CMAKE_SOURCE_DIR}/src/RSX/present
     ${CMAKE_SOURCE_DIR}/src/RSX/draw
     ${CMAKE_SOURCE_DIR}/src/RSX/render

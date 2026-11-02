@@ -2,6 +2,7 @@
 #include "rsx_device.h"
 #include "rsx_fifo.h"
 #include "rsx_method_table.h"
+#include "rsx_dispatch_sink.h"
 #include "rsx_present_queue.h"
 #include "rsx_draw_batch.h"
 #include "rsx_surface_fmt.h"
@@ -417,8 +418,31 @@ static void rsx_host_present_clear() {
     }
 }
 
+
+static void rsx_sink_on_flip(void* user, uint32_t buffer_id, uint32_t color_offset, uint32_t pitch) {
+    (void)user; (void)buffer_id;
+    rsx_present_req req{};
+    req.color_offset = color_offset ? color_offset : g_rsx.color_offset;
+    req.width = 720;
+    req.height = 576;
+    req.pitch = pitch ? pitch : (g_rsx.color_pitch ? g_rsx.color_pitch : 720u * 4u);
+    req.flags = req.color_offset ? 2u : 1u;
+    rsx_present_queue_push(&req);
+}
+static void rsx_sink_on_surface(void* user, const rsx_dsp_surface* s) {
+    (void)user;
+    if (!s) return;
+    if (s->color_offset) g_rsx.color_offset = s->color_offset;
+    if (s->pitch) g_rsx.color_pitch = s->pitch;
+}
+static void rsx_sink_on_draw(void* user, uint32_t method, uint32_t arg) {
+    (void)user; (void)method; (void)arg;
+    ++g_rsx.draws_diagnostic;
+}
+
 static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
     rsx_method_kind kind = rsx_classify_method(method);
+    rsx_dispatch_method(rsx_dispatch_global(), method, arg);
     if (kind == RSX_M_SURFACE_COLOR_OFFSET) {
         g_rsx.color_offset = arg;
         rsx_surface_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height);
@@ -686,6 +710,13 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
         g_rsx.fifo_size = fifo_size ? fifo_size : 0x100000;
         g_rsx.put = g_rsx.get = 0;
         ppsx33::rsx::rsx_fifo_init();
+        {
+            rsx_dispatch_sink sink{};
+            sink.on_flip = rsx_sink_on_flip;
+            sink.on_surface = rsx_sink_on_surface;
+            sink.on_draw = rsx_sink_on_draw;
+            rsx_dispatch_global_init(&sink);
+        }
         rsx_present_queue_init();
         rsx_draw_batch_reset();
         ppsx33::rsx::rsx_framebuffer_init();
@@ -732,6 +763,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     if (ps3rt_should_exit()) { ps3rt_force_exit(); return; }
     ++g_rsx.flip_count;
     g_rsx.flip_pending = false;
+    rsx_dispatch_flip(rsx_dispatch_global(), buf_id);
     int frame_methods = g_rsx.methods_this_frame;
     int frame_packets = g_rsx.packets_decoded;
     // Prefer guest color surface upload when bound and memory is live
