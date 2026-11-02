@@ -445,8 +445,7 @@ while (!c.halted) {
                             if (ranked) next = ranked;
                         }
                         if (s_sticky_log < 24)
-                            ps3rt_log("[ps3] P0 sticky soft-continue -> 0x%llx
-", (unsigned long long)next);
+                            ps3rt_log("[ps3] P0 sticky soft-continue -> 0x%llx\n", (unsigned long long)next);
                         alt = next;
                         c.gpr[3] = 0;
                         s_retry_alt = 0;
@@ -927,8 +926,7 @@ static int wild_log2 = 0;
                             if (ranked) next = ranked;
                         }
                         if (s_sticky_log < 24)
-                            ps3rt_log("[ps3] P0 sticky soft-continue -> 0x%llx
-", (unsigned long long)next);
+                            ps3rt_log("[ps3] P0 sticky soft-continue -> 0x%llx\n", (unsigned long long)next);
                         alt = next;
                         c.gpr[3] = 0;
                         s_retry_alt = 0;
