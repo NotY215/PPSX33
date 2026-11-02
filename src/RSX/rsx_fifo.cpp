@@ -23,12 +23,13 @@ bool rsx_fifo_guest_put_probe(uint8_t* mem, uint64_t control_ea, uint32_t fifo_s
     uint32_t put = rd_be32(control_ea + 0);
     if (put == 0) put = rd_le32(control_ea + 0);
     put %= fifo_size;
-    uint32_t get = rd_be32(control_ea + 8);
-    if (get == 0) get = rd_le32(control_ea + 8);
+    /* GCM control: PUT at +0, GET at +4 (BE). LE fallback for host-written pads. */
+    uint32_t get = rd_be32(control_ea + 4);
+    if (get == 0) get = rd_le32(control_ea + 4);
     get %= fifo_size;
-    uint32_t get4 = rd_be32(control_ea + 4) % fifo_size;
-    if (put != get4 && get == put && get4 != put)
-        get = get4;
+    uint32_t get8 = rd_be32(control_ea + 8) % fifo_size;
+    if (put != get && get8 != put && get == 0)
+        get = get8;
     if (out_put) *out_put = put;
     if (out_get) *out_get = get;
     return put != get;
