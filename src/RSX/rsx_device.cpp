@@ -3,6 +3,7 @@
 #include "rsx_fifo.h"
 #include "rsx_method_table.h"
 #include "rsx_dispatch_sink.h"
+#include "gcm_flip_label.h"
 #include "rsx_present_queue.h"
 #include "rsx_draw_batch.h"
 #include "rsx_surface_fmt.h"
@@ -710,6 +711,7 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
         g_rsx.fifo_size = fifo_size ? fifo_size : 0x100000;
         g_rsx.put = g_rsx.get = 0;
         ppsx33::rsx::rsx_fifo_init();
+        gcm_flip_label_init();
         {
             rsx_dispatch_sink sink{};
             sink.on_flip = rsx_sink_on_flip;
@@ -764,6 +766,12 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     ++g_rsx.flip_count;
     g_rsx.flip_pending = false;
     rsx_dispatch_flip(rsx_dispatch_global(), buf_id);
+    {
+        uint8_t* mem = ps3rt_guest_mem_ptr();
+        size_t msz = ps3rt_guest_mem_size();
+        gcm_queue_flip(buf_id);
+        gcm_complete_flip(mem, (uint64_t)msz);
+    }
     int frame_methods = g_rsx.methods_this_frame;
     int frame_packets = g_rsx.packets_decoded;
     // Prefer guest color surface upload when bound and memory is live

@@ -1,6 +1,8 @@
 // WORK: HW progress tick + guest-PUT probe.
 #define PS3RT_BUILD_DLL 1
 #include "ppu_runtime.h"
+#include "rsx_fifo_drain.h"
+#include "gcm_flip_label.h"
 #include <cstdint>
 
 extern uint8_t* g_mem;
@@ -72,11 +74,16 @@ PS3RT_API void ps3rt_progress_hw(void) {
             ps3rt_rsx_flush(g_mem);
             uint32_t host_get = ps3rt_rsx_get_get();
             wr32(g_gcm_control + 8, host_get);
+            /* Extra publish walk when fifo base unknown: coarse GET advance */
+            uint32_t methods = 0, draws = 0;
+            rsx_fifo_drain_publish(g_mem, (uint64_t)g_mem_size, g_gcm_control,
+                                   0 /* base unknown */, 0x100000u, &methods, &draws);
         }
         wr32(g_gcm_control + 4, put);
     }
 
     g_gcm_flip_status = 0;
+    gcm_set_flip_status(0);
     static uint32_t s_flip_div = 0;
     if ((++s_flip_div & 0xF) == 0) {
         ps3rt_rsx_flip(0);
