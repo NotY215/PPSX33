@@ -27,16 +27,9 @@ static inline void ps3rt_log_hle_status_once(void) {
 // Phase XV: import stub before force-out; wild-PC excludes 0x39800000
 // Phase XIV (safe): sustained dwell assist — no PC thrash storm
 // XX-H: stronger null-loop skip, earlier spin assist, sticky region drop
+#include "ppu_island_table.h"
 static inline bool is_null_island_pc(uint64_t p) {
-    if (!p) return true;
-    if (p == 0x199c78ull || p == 0x105e8ull || p == 0x10218ull) return true;
-    if (p == 0x33723cull) return true;
-    if (p == 0x336660ull || p == 0x336750ull || p == 0x331c30ull || p == 0x331ba8ull) return true;
-    if (p == 0x33b1a0ull || p == 0x33aec8ull) return true; /* sticky alts from GOW log */
-    if (p == 0x18000ull || p == 0x10000ull) return true; /* soft-continue parking islands */
-    if (p >= 0x336000ull && p < 0x338000ull) return true;
-    if (p == 0x430000ull) return true;
-    return false;
+    return ppu_is_null_island(p) != 0;
 }
 
 static inline uint64_t recover_return_pc(PPUContext& c, const PPUChunk* chunks, size_t n,
@@ -390,6 +383,8 @@ while (!c.halted) {
                     } else if (is_null_island_pc(lr) || is_null_island_pc(alt)) {
                         add_ban(0x199c78ull);
                         add_ban(0x105e8ull);
+                        add_ban(0x336660ull);
+                        add_ban(0x18000ull);
                         add_rban(0x199c78ull);
                         add_rban(0x33723cull);
                         for (size_t ci = 0; ci < n && !next; ++ci) {
@@ -430,6 +425,26 @@ while (!c.halted) {
                     static uint64_t s_retry_alt = 0;
                     static int s_retry_n = 0;
                     if (next) {
+                        if (is_null_island_pc(next) || ppu_is_pingpong_pair(c.pc, next)) {
+                            uint64_t st0 = 0, st1 = 0;
+                            if (c.gpr[1] && g_mem && c.gpr[1] + 16 <= g_mem_size) {
+                                auto rdbe = [&](uint64_t a) {
+                                    const uint8_t* p = g_mem + a;
+                                    return ((uint64_t)p[0]<<56)|((uint64_t)p[1]<<48)|((uint64_t)p[2]<<40)|((uint64_t)p[3]<<32)|
+                                           ((uint64_t)p[4]<<24)|((uint64_t)p[5]<<16)|((uint64_t)p[6]<<8)|p[7];
+                                };
+                                st0 = rdbe(c.gpr[1]); st1 = rdbe(c.gpr[1] + 8);
+                            }
+                            uint64_t ranked = 0;
+                            for (uint64_t cand : {c.lr, last_good_ret, st0, st1, alt}) {
+                                if (cand && !is_null_island_pc(cand) && !is_banned(cand) && pc_in_chunks(cand, chunks, n)) {
+                                    ranked = cand; break;
+                                }
+                            }
+                            if (!ranked)
+                                ranked = ppu_rank_escape(c.lr, alt, last_good_ret, st0, st1, nullptr, nullptr);
+                            if (ranked) next = ranked;
+                        }
                         if (s_sticky_log < 24)
                             ps3rt_log("[ps3] P0 sticky soft-continue -> 0x%llx\n", (unsigned long long)next);
                         alt = next;

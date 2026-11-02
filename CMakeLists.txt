@@ -179,6 +179,7 @@ set(_HDR_MAP
   "src/processor/PPU/ppu_runtime_core_a.h:ppu_runtime_core_a.h"
   "src/processor/PPU/ppu_runtime_core_b.h:ppu_runtime_core_b.h"
   "src/processor/PPU/ppu_runtime_run.h:ppu_runtime_run.h"
+  "src/processor/PPU/ppu_island_table.h:ppu_island_table.h"
   "src/core/hle_kernel_internal.h:hle_kernel_internal.h"
   "src/core/hle_stage.h:hle_stage.h"
   "src/core/hle_kernel_syscalls.inl:hle_kernel_syscalls.inl"
