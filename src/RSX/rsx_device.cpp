@@ -4,6 +4,7 @@
 #include "rsx_method_table.h"
 #include "rsx_dispatch_sink.h"
 #include "gcm_flip_label.h"
+#include "rsx_shader_bind.h"
 #include "rsx_present_queue.h"
 #include "rsx_present_policy.h"
 #include "rsx_draw_batch.h"
@@ -446,6 +447,12 @@ static void rsx_sink_on_draw(void* user, uint32_t method, uint32_t arg) {
 static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
     rsx_method_kind kind = rsx_classify_method(method);
     rsx_dispatch_method(rsx_dispatch_global(), method, arg);
+    /* NV4097 shader load / start offsets (common GCM range). */
+    if (method == 0x1d60u || method == 0x1d64u) { rsx_shader_bind_vp(arg, 0); return true; }
+    if (method == 0x1ff0u || method == 0x1ff4u) { rsx_shader_bind_fp(arg, 0); return true; }
+    if (method >= 0x1efcu && method <= 0x1f7cu && ((method - 0x1efcu) % 4u) == 0u)
+        rsx_shader_bind_const((method - 0x1efcu) / 4u, arg);
+
     if (kind == RSX_M_SURFACE_COLOR_OFFSET) {
         g_rsx.color_offset = arg;
         rsx_surface_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height);
@@ -474,6 +481,7 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
     }
     if (kind == RSX_M_TEXTURE_OFFSET || kind == RSX_M_TEXTURE_FORMAT) {
         g_rsx.tex_offset = arg;
+        /* shader ucode often nearby in method stream */
         ppsx33::rsx::rsx_texture_bind(0, arg, 0, g_rsx.width, g_rsx.height, 0);
         return true;
     }
@@ -720,6 +728,7 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
         g_rsx.put = g_rsx.get = 0;
         ppsx33::rsx::rsx_fifo_init();
         gcm_flip_label_init();
+        rsx_shader_bind_init();
         {
             rsx_dispatch_sink sink{};
             sink.on_flip = rsx_sink_on_flip;

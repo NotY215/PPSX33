@@ -38,7 +38,7 @@
 
 ## Host tools
 
-Desktop UI: **C++ / Qt 6 Widgets** (`PPSX33.exe`). Runtime: modular native DLLs under `build/dist/`.
+Desktop UI: **C++ / Qt 6 Widgets** (`PPSX33.exe`, **1.1.0-Alpha**). Runtime: unified **`ps3rt.dll`** under `build/dist/` (plus `ps3core.dll`, `vulkan-1.dll`).
 
 ## ✨ What PPSX33 is building
 

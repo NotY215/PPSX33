@@ -101,6 +101,7 @@ if(WIN32)
     src/RSX/rsx_texture.cpp
     src/RSX/rsx_shader_compiler.cpp
     src/RSX/rsx_shader_decoder.cpp
+    src/RSX/rsx_shader_bind.c
     src/RSX/fifo/rsx_method_table.c
     src/RSX/fifo/rsx_fifo_drain.c
     src/RSX/methods/rsx_nv4097_surface.c
@@ -134,6 +135,7 @@ if(WIN32)
     src/RSX/dispatch/rsx_dispatch_sink.c
     src/native/x64/ps3rt_be.c
     src/RSX/rsx_exports.c
+    src/RSX/rsx_shader_bind.c
     PROPERTIES LANGUAGE C)
   target_compile_definitions(ps3rt PRIVATE
     PS3RT_BUILD_DLL=1
