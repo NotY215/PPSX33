@@ -432,7 +432,12 @@ while (!c.halted) {
                                 st1 = rd64(c, c.gpr[1] + 8);
                             }
                             uint64_t ranked = 0;
-                            uint64_t cands[5] = { c.lr, last_good_ret, st0, st1, alt };
+                            uint64_t cands[5];
+                            cands[0] = c.lr;
+                            cands[1] = last_good_ret;
+                            cands[2] = st0;
+                            cands[3] = st1;
+                            cands[4] = alt;
                             for (int ci = 0; ci < 5; ++ci) {
                                 uint64_t cand = cands[ci];
                                 if (cand && !is_null_island_pc(cand) && !is_banned(cand) && pc_in_chunks(cand, chunks, n)) {
@@ -440,12 +445,14 @@ while (!c.halted) {
                                     break;
                                 }
                             }
-                            if (!ranked)
+                            if (!ranked) {
                                 ranked = ppu_rank_escape(c.lr, alt, last_good_ret, st0, st1, nullptr, nullptr);
+                            }
                             if (ranked) next = ranked;
                         }
-                        if (s_sticky_log < 24)
+                        if (s_sticky_log < 24) {
                             ps3rt_log("[ps3] P0 sticky soft-continue -> 0x%llx\n", (unsigned long long)next);
+                        }
                         alt = next;
                         c.gpr[3] = 0;
                         s_retry_alt = 0;
