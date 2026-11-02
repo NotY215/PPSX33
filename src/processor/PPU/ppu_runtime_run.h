@@ -427,16 +427,497 @@ while (!c.halted) {
                     if (next) {
                         if (is_null_island_pc(next) || ppu_is_pingpong_pair(c.pc, next)) {
                             uint64_t st0 = 0, st1 = 0;
-                            if (c.gpr[1] && g_mem && c.gpr[1] + 16 <= g_mem_size) {
-                                auto rdbe = [&](uint64_t a) {
-                                    const uint8_t* p = g_mem + a;
-                                    return ((uint64_t)p[0]<<56)|((uint64_t)p[1]<<48)|((uint64_t)p[2]<<40)|((uint64_t)p[3]<<32)|
-                                           ((uint64_t)p[4]<<24)|((uint64_t)p[5]<<16)|((uint64_t)p[6]<<8)|p[7];
-                                };
-                                st0 = rdbe(c.gpr[1]); st1 = rdbe(c.gpr[1] + 8);
+                            if (guest_ok(c, c.gpr[1], 16)) {
+                                st0 = rd64(c, c.gpr[1]);
+                                st1 = rd64(c, c.gpr[1] + 8);
                             }
                             uint64_t ranked = 0;
-                            for (uint64_t cand : {c.lr, last_good_ret, st0, st1, alt}) {
+                            uint64_t cands[5] = { c.lr, last_good_ret, st0, st1, alt };
+                            for (int ci = 0; ci < 5; ++ci) {
+                                uint64_t cand = cands[ci];
+                                if (cand && !is_null_island_pc(cand) && !is_banned(cand) && pc_in_chunks(cand, chunks, n)) {
+                                    ranked = cand;
+                                    break;
+                                }
+                            }
+                            if (!ranked)
+                                ranked = ppu_rank_escape(c.lr, alt, last_good_ret, st0, st1, nullptr, nullptr);
+                            if (ranked) next = ranked;
+                        }
+                        if (s_sticky_log < 24)
+                            ps3rt_log("[ps3] P0 sticky soft-continue -> 0x%llx
+", (unsigned long long)next);
+                        alt = next;
+                        c.gpr[3] = 0;
+                        s_retry_alt = 0;
+                        s_retry_n = 0;
+                    } else if (alt && is_banned(alt)) {
+                        uint64_t esc = recover_return_pc(c, chunks, n, alt, ban_lr, nban, rban, nrban);
+                        if (!esc && last_good_ret && !is_banned(last_good_ret)) esc = last_good_ret;
+                        if (!esc) {
+                            for (size_t ci = 0; ci < n && !esc; ++ci) {
+                                uint64_t st = chunks[ci].start;
+                                if (st && !is_banned(st) && st != alt) esc = st;
+                            }
+                        }
+                        if (esc) {
+                            static uint64_t s_pp_esc = 0;
+                            static int s_pp_n = 0;
+                            if (esc == s_pp_esc) ++s_pp_n; else { s_pp_esc = esc; s_pp_n = 1; }
+                            if (s_pp_n >= 3) {
+                                add_rban(esc);
+                                if (s_sticky_log < 32)
+                                    ps3rt_log("[ps3] P0 sticky ban-pingpong esc=0x%llx\n",
+                                        (unsigned long long)esc);
+                                // Prefer last_good or another chunk start
+                                uint64_t alt2 = 0;
+                                if (last_good_ret && !is_banned(last_good_ret) && last_good_ret != esc)
+                                    alt2 = last_good_ret;
+                                if (!alt2) {
+                                    for (size_t ci = 0; ci < n && !alt2; ++ci) {
+                                        uint64_t st = chunks[ci].start;
+                                        if (st && !is_banned(st) && st != esc && st != alt) alt2 = st;
+                                    }
+                                }
+                                if (alt2) esc = alt2;
+                                s_pp_n = 0;
+                            }
+                            if (s_sticky_log < 32)
+                                ps3rt_log("[ps3] P0 sticky skip-banned alt=0x%llx -> 0x%llx\n",
+                                    (unsigned long long)alt, (unsigned long long)esc);
+                            alt = esc; c.pc = esc; c.gpr[3] = 0;
+                        } else {
+                            c.pc = last_good_ret ? last_good_ret : (n ? chunks[0].start : c.pc);
+                            c.gpr[3] = 0;
+                        }
+                    } else if (alt && pc_in_chunks(alt, chunks, n) && !is_banned(alt)) {
+
+                        if (alt == s_retry_alt) ++s_retry_n; else { s_retry_alt = alt; s_retry_n = 1; }
+                        if (s_retry_n >= 6) {
+                            // Ban spinning alt so recover/stack can leave the null-import island
+                            add_rban(alt);
+                            uint64_t esc = recover_return_pc(c, chunks, n, alt, ban_lr, nban, rban, nrban);
+                            if (!esc) {
+                                uint64_t sp = c.gpr[1];
+                                for (int off = 0; off < 0x8000 && !esc; off += 8) {
+                                    uint64_t a = sp + (uint64_t)off;
+                                    if (!guest_ok(c, a, 8)) break;
+                                    uint64_t cand = rd64(c, a);
+                                    if (!cand || (cand & 3ull) != 0) continue;
+                                    if (!pc_in_chunks(cand, chunks, n)) continue;
+                                    if (cand == alt || cand == c.pc || cand == s_retry_alt) continue;
+                                    esc = cand;
+                                }
+                            }
+                            if (!esc && last_good_ret && pc_in_chunks(last_good_ret, chunks, n)
+                                && last_good_ret != alt && !is_banned(last_good_ret))
+                                esc = last_good_ret;
+                            if (!esc) {
+                                // Last resort: any translated chunk entry not equal to spinning alt
+                                for (size_t ci = 0; ci < n && !esc; ++ci) {
+                                    uint64_t st = chunks[ci].start;
+                                    if (!st || (st & 3ull) != 0) continue;
+                                    if (st == alt || st == c.pc || st == s_retry_alt) continue;
+                                    if (is_banned(st)) continue;
+                                    esc = st;
+                                }
+                            }
+                            if (esc) {
+                                if (s_sticky_log < 48)
+                                    ps3rt_log("[ps3] P0 sticky escalate -> 0x%llx (was alt=0x%llx n=%d)\n",
+                                        (unsigned long long)esc, (unsigned long long)alt, s_retry_n);
+                                add_rban(alt);
+                                alt = esc;
+                                c.pc = esc;
+                                c.gpr[3] = 0;
+                                s_retry_n = 0;
+                                s_retry_alt = 0;
+                            } else {
+                                // Dead island with no translated escape — skip this alt permanently
+                                add_rban(alt);
+                                if (s_sticky_log < 48)
+                                    ps3rt_log("[ps3] P0 sticky dead-island alt=0x%llx (n=%d) — banned\n",
+                                        (unsigned long long)alt, s_retry_n);
+                                s_retry_n = 0;
+                                s_retry_alt = 0;
+                                // Keep running host HW present path; advance PC off 0
+                                if (last_good_ret && !is_banned(last_good_ret))
+                                    c.pc = last_good_ret;
+                                else if (n && chunks[0].start)
+                                    c.pc = chunks[0].start;
+                                c.gpr[3] = 0;
+                                continue; // do not fall into soft-retry spin
+                            }
+                        } else if (s_sticky_log < 24) {
+                            ps3rt_log("[ps3] P0 sticky soft-retry alt=0x%llx\n", (unsigned long long)alt);
+                        }
+                    } else {
+                        c.halted = true;
+                        break;
+                    }
+                    s_same_alt = 0;
+                    s_last_alt = 0;
+                }
+static int wild_log2 = 0;
+                if (wild_log2 < 12) {
+                    if (entry_toc) c.gpr[2] = entry_toc;
+                    log_recovery_action("wild-pc", c.pc, alt); ++f_recoveries;
+                    ps3rt_log("[ps3] XXV-L wild-pc 0x%llx -> 0x%llx\n",
+                        (unsigned long long)c.pc, (unsigned long long)alt);
+                    ++wild_log2;
+                }
+                c.pc = alt;
+                c.gpr[3] = 0;
+                continue;
+            }
+        }
+
+        if (entry_toc != 0) {
+            uint64_t r2 = c.gpr[2];
+            if (r2 == 0 || r2 > 0x10000000ull || (r2 & 3ull) != 0)
+                c.gpr[2] = entry_toc;
+        }
+
+        bool is_wait = (c.pc != 0 && c.pc == c.lr);
+        if (c.pc == spin_pc || is_wait) {
+            if (c.pc != spin_pc) { spin_pc = c.pc; spin_count = 0; }
+            ++spin_count;
+            if ((spin_count & 0x7F) == 0) { ps3rt_progress_hw(); ++progress_pokes; }
+            if (spin_count >= 0x400 && (spin_count & 0x7F) == 0) {
+                // XX-H: earlier spin assist + force flip/fs progress while waiting
+                ps3rt_progress_hw();
+                ++progress_pokes;
+                uint64_t alt = recover_return_pc(c, chunks, n, c.pc, ban_lr, nban, rban, nrban);
+                if (alt && alt != c.pc && !is_banned(alt)) {
+                    c.pc = alt; c.gpr[3] = 0; spin_count = 0; continue;
+                }
+                // If pc==lr wait-loop, nudge LR path by completing a synthetic flip
+                if (is_wait && (spin_count & 0x1FF) == 0)
+                    c.gpr[3] = 0; // HLE "wait done"
+            }
+        } else {
+            spin_pc = c.pc; spin_count = 0;
+        }
+
+        {
+            bool nullish_early = (c.pc == 0x39800000ull) || ((c.pc & 0xFFFF0000ull) == 0x39800000ull);
+            if (nullish_early) {
+                uint64_t ret = c.lr;
+                if (!ret || is_banned(ret) || !pc_in_chunks(ret, chunks, n))
+                    ret = recover_return_pc(c, chunks, n, c.pc, ban_lr, nban, rban, nrban);
+                if (!ret && last_good_ret && !is_banned(last_good_ret) && pc_in_chunks(last_good_ret, chunks, n))
+                    ret = last_good_ret;
+                if (ret && external_escapes < 262144) {
+                    ps3rt_prx_import_stub(&c, c.pc);
+                    // Never resume into banned/null-island LR (GOW 0x336660 sticky)
+                    if (is_null_island_pc(ret) || is_banned(ret)) {
+                        uint64_t alt0 = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
+                        if (!alt0 || is_null_island_pc(alt0) || is_banned(alt0)) {
+                            for (size_t ci = 0; ci < n; ++ci) {
+                                uint64_t st = chunks[ci].start;
+                                if (st && !is_banned(st) && !is_null_island_pc(st) && st != ret) {
+                                    alt0 = st; break;
+                                }
+                            }
+                        }
+                        if (alt0 && alt0 != ret) {
+                            static int s_isl = 0;
+                            if (s_isl < 24)
+                                ps3rt_log("[ps3] import-island escape 0x%llx -> 0x%llx\n",
+                                    (unsigned long long)ret, (unsigned long long)alt0);
+                            ++s_isl;
+                            ret = alt0;
+                            add_ban(0x336660ull);
+                            add_ban(0x336750ull);
+                            ++soft_breaks;
+                        }
+                    }
+                    bool same_site = last_null_lr &&
+                        (ret == last_null_lr ||
+                         (ret >= (last_null_lr & ~0xFFull) && ret < (last_null_lr & ~0xFFull) + 0x100));
+                    if (same_site) {
+                        if (++stub_same_lr > 2) {
+                            // Escalate earlier: GOW spins import->0x336660 for dozens of calls
+                            ++soft_breaks;
+                            stub_same_lr = 0;
+                            ps3rt_progress_hw();
+                            ++progress_pokes;
+                            // Prefer LR if different from ret; then TOC-region chunk starts; then recover
+                            uint64_t alt = 0;
+                            if (c.lr && c.lr != ret && pc_in_chunks(c.lr, chunks, n) && !is_banned(c.lr))
+                                alt = c.lr;
+                            if (!alt && c.gpr[2]) {
+                                uint64_t toc = c.gpr[2] & 0xFFFFFFFFull;
+                                for (size_t ci = 0; ci < n; ++ci) {
+                                    uint64_t st = chunks[ci].start;
+                                    if (!st || is_banned(st)) continue;
+                                    if (st >= (toc > 0x100000 ? toc - 0x100000 : 0) && st < toc + 0x200000) {
+                                        alt = st; break;
+                                    }
+                                }
+                            }
+                            if (!alt)
+                                alt = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
+                            if (alt && alt != ret && !is_banned(alt)) {
+                                if (is_null_island_pc(alt) || (alt >= 0x336000ull && alt < 0x337000ull))
+                                    alt = 0;
+                                if (!alt) {
+                                    for (size_t ci = 0; ci < n && !alt; ++ci) {
+                                        uint64_t st = chunks[ci].start;
+                                        if (st && !is_banned(st) && !is_null_island_pc(st)
+                                            && !(st >= 0x336000ull && st < 0x337000ull))
+                                            alt = st;
+                                    }
+                                }
+                                if (alt) {
+                                    if (soft_breaks <= 32 || (soft_breaks & 0x1F) == 0)
+                                        ps3rt_log("[ps3] null-loop recover 0x%llx -> 0x%llx (soft_breaks=%d)\n",
+                                            (unsigned long long)ret, (unsigned long long)alt, soft_breaks);
+                                    ret = alt;
+                                }
+                            } else {
+                                // Growing stride: 0x400 → 0x1000 → 0x4000 → 0x10000
+                                uint64_t stride = 0x400ull;
+                                if (soft_breaks >= 4) stride = 0x1000ull;
+                                if (soft_breaks >= 16) stride = 0x4000ull;
+                                if (soft_breaks >= 64) stride = 0x10000ull;
+                                uint64_t next = (ret & ~0xFull) + stride;
+                                if (pc_in_chunks(next, chunks, n) && !is_banned(next)) {
+                                    if (soft_breaks <= 48 || (soft_breaks & 0x3F) == 0)
+                                        ps3rt_log("[ps3] null-loop skip: 0x%llx +0x%llx -> 0x%llx (soft_breaks=%d)\n",
+                                            (unsigned long long)ret, (unsigned long long)stride,
+                                            (unsigned long long)next, soft_breaks);
+                                    ret = next;
+                                } else if (pc_in_chunks(ret + 4, chunks, n)) {
+                                    ret = ret + 4;
+                                }
+                            }
+                            // Ban sticky LR earlier so we stop returning into the same trap
+                            if (soft_breaks >= 4 && (soft_breaks & 3) == 0) {
+                                add_ban(last_null_lr);
+                                last_null_lr = 0;
+                            }
+                            // Region exhausted: drop sticky, region-ban the 0x1000 window
+                            if (soft_breaks >= 6 && (soft_breaks % 6) == 0) {
+                                add_rban(ret);
+                                ps3rt_log("[ps3] null-loop region exhausted (soft_breaks=%d) -- dropping sticky\n", soft_breaks);
+                                last_null_lr = 0;
+                                uint64_t far = recover_return_pc(c, chunks, n, ret, ban_lr, nban, rban, nrban);
+                                if (far && far != ret && !is_banned(far)) ret = far;
+                            }
+                            // Hard escape: 0x105e8-class null-loop was observed past 1000+ soft_breaks
+                            if (soft_breaks >= 5) {
+                                add_rban(ret);
+                                add_rban(0x105e8ull);
+                                add_ban(0x105e8ull);
+                                static size_t s_chunk_rot = 0;
+                                uint64_t pick = 0;
+                                for (size_t k = 0; k < n && !pick; ++k) {
+                                    size_t i = (s_chunk_rot + k) % (n ? n : 1);
+                                    uint64_t st = chunks[i].start;
+                                    if (!st || is_banned(st)) continue;
+                                    if (st == ret || st == 0x105e8ull || st == 0x10218ull) continue;
+                                    pick = st;
+                                    s_chunk_rot = i + 1;
+                                }
+                                if (pick) {
+                                    if (soft_breaks <= 64 || (soft_breaks % 64) == 0)
+                                        ps3rt_log("[ps3] null-loop HARD escape 0x%llx -> chunk 0x%llx (soft_breaks=%d)\n",
+                                            (unsigned long long)ret, (unsigned long long)pick, soft_breaks);
+                                    ret = pick;
+                                    c.gpr[3] = 0;
+                                    if (soft_breaks >= 64)
+                                        soft_breaks = 20; // keep bans; cut log flood
+                                }
+                            }
+                        }
+                    } else {
+                        stub_same_lr = 0;
+                        last_null_lr = ret;
+                    }
+                    if (logged < 96) {
+                        ps3rt_log("[ps3] import stub pc=0x%llx -> ret=0x%llx (#%d)\n",
+                            (unsigned long long)c.pc, (unsigned long long)ret, external_escapes + 1);
+                        ++logged;
+                    }
+                    // Do not land on a region-banned PC (sticky island like 0x331aac)
+                    if (is_banned(ret)) {
+                        uint64_t alt = 0;
+                        if (last_good_ret && !is_banned(last_good_ret)) alt = last_good_ret;
+                        if (!alt && c.lr && (c.lr & 3ull) == 0 && pc_in_chunks(c.lr, chunks, n) && !is_banned(c.lr))
+                            alt = c.lr;
+                        if (!alt) {
+                            for (size_t ci = 0; ci < n && !alt; ++ci) {
+                                uint64_t st = chunks[ci].start;
+                                if (st && !is_banned(st)) alt = st;
+                            }
+                        }
+                        if (alt) {
+                            static int s_ib = 0;
+                            if (s_ib < 16) {
+                                ps3rt_log("[ps3] import ret banned 0x%llx -> 0x%llx\n",
+                                    (unsigned long long)ret, (unsigned long long)alt);
+                                ++s_ib;
+                            }
+                            ret = alt;
+                        }
+                    }
+                    if (!is_banned(ret))
+                        last_good_ret = ret;
+                    c.pc = ret;
+                    ++external_escapes;
+                    continue;
+                }
+            }
+        }
+
+        const PPUChunk* hit = nullptr;
+        for (size_t i = 0; i < n; ++i) {
+            if (c.pc >= chunks[i].start && c.pc < chunks[i].end) { hit = &chunks[i]; break; }
+        }
+
+        if (!hit && !(c.pc == 0x39800000ull || (c.pc & 0xFFFF0000ull) == 0x39800000ull)) {
+            uint64_t alt = recover_return_pc(c, chunks, n, c.pc, ban_lr, nban, rban, nrban);
+            if (!alt && last_good_ret && !is_banned(last_good_ret)) alt = last_good_ret;
+            if (alt && external_escapes < 262144) {
+                if (logged < 32) {
+                    ps3rt_log("[ps3] Phase XI force-out pc=0x%llx -> 0x%llx\n",
+                        (unsigned long long)c.pc, (unsigned long long)alt);
+                    ++logged;
+                }
+                if (last_leave && alt > last_leave && alt < last_leave + 0x10000ull) {
+                    ++leave_same;
+                    if (leave_same >= 4) {
+                        add_rban(alt);
+                        uint64_t force = recover_return_pc(c, chunks, n, alt, ban_lr, nban, rban, nrban);
+                        if (!force && last_good_ret && !is_banned(last_good_ret)) force = last_good_ret;
+                        if (force) alt = force;
+                        leave_same = 0;
+                    }
+                } else leave_same = 0;
+                last_leave = alt;
+                c.pc = alt; c.gpr[3] = 0; ++external_escapes; continue;
+            }
+            // Soft: do not kill the title when escape budget is exhausted — return to last good
+            {
+                static uint64_t s_left_pc = 0;
+                static int s_left_n = 0;
+                if (c.pc == s_left_pc) ++s_left_n; else { s_left_pc = c.pc; s_left_n = 1; }
+                uint64_t dest = 0;
+                if (s_left_n >= 3) {
+                    uint64_t sp = c.gpr[1];
+                    for (int off = 0; off < 0x8000 && !dest; off += 8) {
+                        uint64_t a = sp + (uint64_t)off;
+                        if (!guest_ok(c, a, 8)) break;
+                        uint64_t cand = rd64(c, a);
+                        if (!cand || (cand & 3ull) != 0) continue;
+                        if (!pc_in_chunks(cand, chunks, n)) continue;
+                        if (is_null_island_pc(cand) || is_banned(cand)) continue;
+                        if (cand == last_good_ret || cand == c.pc) continue;
+                        dest = cand;
+                    }
+                }
+                if (!dest && last_good_ret && pc_in_chunks(last_good_ret, chunks, n)
+                    && !is_null_island_pc(last_good_ret) && !is_banned(last_good_ret))
+                    dest = last_good_ret;
+                if (!dest) {
+                    static size_t s_chunk_rot = 0;
+                    for (size_t k = 0; k < n && !dest; ++k) {
+                        size_t ci = (s_chunk_rot + k) % (n ? n : 1);
+                        uint64_t st = chunks[ci].start;
+                        if (st && !is_banned(st) && !is_null_island_pc(st)) {
+                            dest = st;
+                            s_chunk_rot = ci + 1;
+                        }
+                    }
+                }
+                if (dest) {
+                    static uint64_t s_soft_dest = 0;
+                    static int s_soft_dest_n = 0;
+                    if (dest == s_soft_dest) ++s_soft_dest_n; else { s_soft_dest = dest; s_soft_dest_n = 1; }
+                    if (s_soft_dest_n >= 4) {
+                        add_ban(dest);
+                        add_rban(dest);
+                        s_soft_dest_n = 0;
+                        uint64_t alt2 = 0;
+                        for (size_t ci = 0; ci < n && !alt2; ++ci) {
+                            uint64_t st = chunks[ci].start;
+                            if (st && st != dest && !is_banned(st) && !is_null_island_pc(st))
+                                alt2 = st;
+                        }
+                        if (alt2) dest = alt2;
+                    }
+                    static int s_soft_left = 0;
+                    if (s_soft_left < 32) {
+                        ps3rt_log("[ps3] soft left-range pc=0x%llx -> 0x%llx (escapes=%d n=%d)\n",
+                            (unsigned long long)c.pc, (unsigned long long)dest, external_escapes, s_left_n);
+                        ++s_soft_left;
+                    }
+                    if (entry_toc && !c.gpr[2]) c.gpr[2] = entry_toc;
+                    c.pc = dest;
+                    c.gpr[3] = 0;
+                    external_escapes = 0;
+                    if (s_left_n >= 3) { s_left_pc = 0; s_left_n = 0; }
+                    continue;
+                }
+            }
+            ps3rt_log("[ps3] halt: PC left range pc=0x%llx lr=0x%llx escapes=%d nrban=%d last_good=0x%llx\n",
+                (unsigned long long)c.pc, (unsigned long long)c.lr,
+                external_escapes, nrban, (unsigned long long)last_good_ret);
+            c.halted = true; break;
+        }
+
+        if (!hit) {
+            if (last_good_ret) { c.pc = last_good_ret; continue; }
+            ps3rt_log("[ps3] halt: import with no return pc=0x%llx lr=0x%llx\n",
+                (unsigned long long)c.pc, (unsigned long long)c.lr);
+            c.halted = true; break;
+        }
+
+        hit->fn(c);
+
+        if ((++steps & 0x3FFFFull) == 0) {
+
+            // XXIII-R/A: null-PC — last_good, first chunk, or mid-chunk; restore TOC
+            if (c.pc == 0) {
+                uint64_t boot = last_good_ret;
+                if (!boot && n > 0 && chunks) boot = chunks[0].start;
+                if (!boot && n > 1 && chunks) boot = chunks[n / 2].start;
+                if (boot) {
+                    static int zpc = 0;
+                    if (zpc < 20) {
+                        log_recovery_action("null-pc", 0, boot); ++f_recoveries;
+                        ps3rt_log("[ps3] XXV-F null-pc recover -> 0x%llx toc=0x%llx\n",
+                            (unsigned long long)boot, (unsigned long long)entry_toc);
+                        ++zpc;
+                    }
+                    c.pc = boot;
+                    if (entry_toc) c.gpr[2] = entry_toc;
+                }
+            }
+            ps3rt_log("[ps3] heartbeat steps=%llu pc=0x%llx lr=0x%llx r2=0x%llx pokes=%llu nrban=%d\n",
+                (unsigned long long)steps, (unsigned long long)c.pc,
+                (unsigned long long)c.lr, (unsigned long long)c.gpr[2],
+                (unsigned long long)progress_pokes, nrban);
+            if (c.pc == last_hb_pc) {
+                if (++same_hb >= 3) {
+                    uint64_t alt = recover_return_pc(c, chunks, n, c.pc, ban_lr, nban, rban, nrban);
+                    if (alt && alt != c.pc) { c.pc = alt; same_hb = 0; }
+                }
+            } else { last_hb_pc = c.pc; same_hb = 0; }
+        }
+    }
+    ps3rt_log("[stage] PPU run end\n");
+}                        if (is_null_island_pc(next) || ppu_is_pingpong_pair(c.pc, next)) {
+                            uint64_t st0 = 0, st1 = 0;
+                            if (guest_ok(c, c.gpr[1], 16)) {
+                                st0 = rd64(c, c.gpr[1]);
+                                st1 = rd64(c, c.gpr[1] + 8);
+                            }
+                            uint64_t ranked = 0;
+                            uint64_t cands[5] = { c.lr, last_good_ret, st0, st1, alt };
+                            for (int ci = 0; ci < 5; ++ci) {
+                                uint64_t cand = cands[ci];
                                 if (cand && !is_null_island_pc(cand) && !is_banned(cand) && pc_in_chunks(cand, chunks, n)) {
                                     ranked = cand; break;
                                 }
@@ -446,7 +927,8 @@ while (!c.halted) {
                             if (ranked) next = ranked;
                         }
                         if (s_sticky_log < 24)
-                            ps3rt_log("[ps3] P0 sticky soft-continue -> 0x%llx\n", (unsigned long long)next);
+                            ps3rt_log("[ps3] P0 sticky soft-continue -> 0x%llx
+", (unsigned long long)next);
                         alt = next;
                         c.gpr[3] = 0;
                         s_retry_alt = 0;

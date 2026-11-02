@@ -541,4 +541,5 @@ void     ps3rt_rsx_flip(uint32_t id);
 void     ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size);
 }
 
+extern "C" void ps3rt_rsx_set_color_surface(uint32_t offset, uint32_t w, uint32_t h);
 #include "hle_kernel_syscalls.inl"
