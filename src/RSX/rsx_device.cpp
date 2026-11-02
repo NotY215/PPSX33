@@ -5,6 +5,7 @@
 #include "rsx_dispatch_sink.h"
 #include "gcm_flip_label.h"
 #include "rsx_present_queue.h"
+#include "rsx_present_policy.h"
 #include "rsx_draw_batch.h"
 #include "rsx_surface_fmt.h"
 #include "rsx_render_frame.h"
@@ -518,7 +519,12 @@ static void rsx_draw_host(uint8_t* mem) {
     ppsx33::rsx::rsx_state_set_draw(4 /* triangles */, g_draw_count ? (uint32_t)g_draw_count : 3u);
     // Present guest color if bound; else clear
     int presented = 0;
-    if (g_gfx_api == 0 && rsx_vk_ready() && g_rsx.color_offset) {
+    rsx_present_action act = rsx_present_decide(
+        g_rsx.color_offset ? 1 : 0,
+        frame_methods,
+        g_rsx.draws + g_rsx.draws_diagnostic,
+        (uint32_t)g_rsx.flip_count);
+    if (act == RSX_PRESENT_GUEST && g_gfx_api == 0 && rsx_vk_ready() && g_rsx.color_offset) {
         uint8_t* gmem = ps3rt_guest_mem_ptr();
         size_t msz = ps3rt_guest_mem_size();
         auto fb = ppsx33::rsx::rsx_framebuffer_color();

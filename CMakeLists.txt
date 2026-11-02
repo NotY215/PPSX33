@@ -106,6 +106,7 @@ if(WIN32)
 
   add_library(ppsx33_render SHARED
     src/RSX/present/rsx_present_queue.c
+    src/RSX/present/rsx_present_policy.c
     src/RSX/draw/rsx_draw_batch.c
     src/RSX/draw/rsx_surface_fmt.c
     src/RSX/render/rsx_render_frame.c
@@ -115,6 +116,7 @@ if(WIN32)
   target_compile_definitions(ppsx33_render PRIVATE PPSX33_RENDER_BUILD=1)
   set_source_files_properties(
     src/RSX/present/rsx_present_queue.c
+    src/RSX/present/rsx_present_policy.c
     src/RSX/draw/rsx_draw_batch.c
     src/RSX/draw/rsx_surface_fmt.c
     src/RSX/render/rsx_render_frame.c
@@ -183,13 +185,15 @@ if(WIN32)
     ${PPSX33_COMMON_INCLUDES}
     ${CMAKE_SOURCE_DIR}/src/core
     ${CMAKE_SOURCE_DIR}/src/core/import
+    ${CMAKE_SOURCE_DIR}/src/core/hle
+    ${CMAKE_SOURCE_DIR}/src/core/hle/gcm
     ${CMAKE_SOURCE_DIR}/src/native/x64
     ${CMAKE_SOURCE_DIR}/src/processor/PPU
     ${CMAKE_SOURCE_DIR}/src/processor/PPU/translate
     ${CMAKE_SOURCE_DIR}/src/processor/SPU
     ${CMAKE_SOURCE_DIR}/src/RSX
     ${CMAKE_SOURCE_DIR}/src/RSX/fifo
-  ${CMAKE_SOURCE_DIR}/src/RSX/dispatch
+    ${CMAKE_SOURCE_DIR}/src/RSX/dispatch
     ${CMAKE_SOURCE_DIR}/src/RSX/present
     ${CMAKE_SOURCE_DIR}/src/RSX/draw
     ${CMAKE_SOURCE_DIR}/src/RSX/render

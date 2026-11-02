@@ -31,7 +31,9 @@ static inline bool is_null_island_pc(uint64_t p) {
     if (!p) return true;
     if (p == 0x199c78ull || p == 0x105e8ull || p == 0x10218ull) return true;
     if (p == 0x33723cull) return true;
-    if (p == 0x336660ull || p == 0x336750ull || p == 0x331c30ull || p == 0x331ba8ull) return true; // XXVI-sysmod-escape
+    if (p == 0x336660ull || p == 0x336750ull || p == 0x331c30ull || p == 0x331ba8ull) return true;
+    if (p == 0x33b1a0ull || p == 0x33aec8ull) return true; /* sticky alts from GOW log */
+    if (p == 0x18000ull || p == 0x10000ull) return true; /* soft-continue parking islands */
     if (p >= 0x336000ull && p < 0x338000ull) return true;
     if (p == 0x430000ull) return true;
     return false;
