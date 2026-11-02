@@ -29,6 +29,7 @@ static void rsx_force_576p(uint32_t* w, uint32_t* h) {
 #include "rsx_shader_compiler.h"
 #include "rsx_shader_decoder.h"
 #include "Backends/Vulkan/rsx_vk_backend.h"
+#include "Backends/OpenGL/rsx_gl_backend.h"
 #include <cstdint>
 #include <cstddef>
 #include <cstdlib>

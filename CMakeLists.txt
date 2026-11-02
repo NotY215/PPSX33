@@ -66,6 +66,7 @@ set(PPSX33_COMMON_INCLUDES
   ${CMAKE_SOURCE_DIR}/src/RSX/resolution
   ${CMAKE_SOURCE_DIR}/src/core/stats
   ${CMAKE_SOURCE_DIR}/src/RSX/Backends/Vulkan
+  ${CMAKE_SOURCE_DIR}/src/RSX/Backends/OpenGL
   ${CMAKE_SOURCE_DIR}/src/games-stuff/Audio
 )
 

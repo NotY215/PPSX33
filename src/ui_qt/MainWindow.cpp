@@ -128,7 +128,18 @@ void MainWindow::buildUi() {
     sideLay->addWidget(apiL);
     m_api = new QComboBox(side);
     m_api->addItem(QStringLiteral("Vulkan 1.2"), QStringLiteral("Vulkan"));
-    m_api->addItem(QStringLiteral("OpenGL 4.3 (later)"), QStringLiteral("OpenGL"));
+    m_api->addItem(QStringLiteral("OpenGL 4.3"), QStringLiteral("OpenGL"));
+    QObject::connect(m_api, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int) {
+        const QString v = m_api->currentData().toString();
+        if (v == QStringLiteral("OpenGL")) {
+            QMessageBox::information(this, QStringLiteral("OpenGL"),
+                QStringLiteral("OpenGL host path is in an active working phase.\n"
+                               "Vulkan 1.2 remains the recommended default.\n"
+                               "You can still select OpenGL for testing."));
+        }
+        Settings::instance().setGraphicsBackend(v);
+        Settings::instance().save();
+    });
     sideLay->addWidget(m_api);
 
     auto* thrL = new QLabel(QStringLiteral("CPU THREADS"), side);
@@ -274,7 +285,7 @@ void MainWindow::loadRequirementsHtml() {
         "<ul>"
         "<li><b>OS:</b> Windows x64</li>"
         "<li><b>Graphics:</b> Vulkan 1.2 capable GPU and driver</li>"
-        "<li><b>OpenGL 4.3:</b> reserved for a later host path (not selectable yet)</li>"
+        "<li><b>OpenGL 4.3:</b> selectable; working-phase host path (popup on select)</li>"
         "<li><b>Present:</b> light host path (720×576 class)</li>"
         "<li><b>Audio:</b> XAudio2-capable host</li>"
         "</ul>"
