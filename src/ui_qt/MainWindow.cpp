@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "AppVersion.h"
 #include "NativeBridge.h"
 #include "Settings.h"
 #include "EmbeddedLegal.h"
@@ -177,7 +178,7 @@ void MainWindow::buildUi() {
     auto* prompt = new QLabel(QStringLiteral("$"), consolePage);
     prompt->setStyleSheet(QStringLiteral("color:#00e5ff;font-weight:700;font-family:Consolas;"));
     m_consoleIn = new QLineEdit(consolePage);
-    m_consoleIn->setPlaceholderText(QStringLiteral("help | status | clear | stop"));
+    m_consoleIn->setPlaceholderText(QStringLiteral("help | status | clear | stop | -version"));
     m_consoleIn->setStyleSheet(QStringLiteral("background:#0d131f;border:1px solid #1a2a40;border-radius:6px;padding:6px;color:#e2e8f0;font-family:Consolas;"));
     cmdRow->addWidget(prompt);
     cmdRow->addWidget(m_consoleIn, 1);
@@ -531,7 +532,7 @@ void MainWindow::onConsoleSubmit() {
     appendLog(QStringLiteral("$ %1").arg(cmd));
     const QString c = cmd.toLower();
     if (c == QStringLiteral("help")) {
-        appendLog(QStringLiteral("Commands: help, status, clear, stop"));
+        appendLog(QStringLiteral("Commands: help, status, clear, stop, -version"));
     } else if (c == QStringLiteral("clear")) {
         m_console->clear();
     } else if (c == QStringLiteral("status")) {
@@ -543,6 +544,8 @@ void MainWindow::onConsoleSubmit() {
         NativeBridge::instance().cancelBuild();
         setBusy(false);
         appendLog(QStringLiteral("Stop: cancel build / clear busy"));
+    } else if (c == QStringLiteral("-version") || c == QStringLiteral("version")) {
+        appendLog(QStringLiteral("PPSX33 %1").arg(QStringLiteral(PPSX33_VERSION_STRING)));
     } else {
         appendLog(QStringLiteral("Unknown command. Type help."));
     }

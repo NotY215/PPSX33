@@ -440,8 +440,12 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         prebuilt_rt = true;
         fs::copy_file(pre_dll, out / "ps3rt.dll", fs::copy_options::overwrite_existing, ec);
         fs::copy_file(pre_lib, out / "ps3rt.lib", fs::copy_options::overwrite_existing, ec);
-        // Optional modular DLLs next to game EXE
-        for (const char* mod : {"api.dll", "rsx.dll", "render.dll", "resolution.dll", "vulkan-1.dll"}) {
+        {
+            fs::path ico_src = pre_dll.parent_path() / "ppsx33-logo.ico";
+            if (fs::exists(ico_src, ec))
+                fs::copy_file(ico_src, out / "ppsx33-logo.ico", fs::copy_options::overwrite_existing, ec);
+        }
+        for (const char* mod : {"vulkan-1.dll"}) {
             fs::path m = dist_guess / mod;
             if (fs::exists(m))
                 fs::copy_file(m, out / mod, fs::copy_options::overwrite_existing, ec);

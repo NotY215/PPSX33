@@ -1,7 +1,7 @@
 # ASM_MASM optional — enable in MSVC builds when assembler present
 # enable_language(ASM_MASM)
 cmake_minimum_required(VERSION 3.20)
-project(PS3Recomp LANGUAGES C CXX)
+project(PPSX33 VERSION 1.1.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
@@ -224,7 +224,38 @@ set(PPSX33_ICON_ICO "${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.ico")
 set(PPSX33_ICON_PNG "${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.png")
 set(PPSX33_RC "${CMAKE_BINARY_DIR}/ppsx33_app_icon.rc")
 if(WIN32 AND EXISTS "${PPSX33_ICON_ICO}")
-  file(WRITE "${PPSX33_RC}" "IDI_ICON1 ICON \"${PPSX33_ICON_ICO}\"\n")
+    file(WRITE "${PPSX33_RC}"
+"#include <winver.h>
+IDI_ICON1 ICON \"${PPSX33_ICON_ICO}\"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION 1,1,0,0
+PRODUCTVERSION 1,1,0,0
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0x0L
+FILEOS 0x40004L
+FILETYPE 0x1L
+FILESUBTYPE 0x0L
+BEGIN
+  BLOCK \"StringFileInfo\"
+  BEGIN
+    BLOCK \"040904B0\"
+    BEGIN
+      VALUE \"CompanyName\", \"PPSX33\"
+      VALUE \"FileDescription\", \"PPSX33 Host\"
+      VALUE \"FileVersion\", \"1.1.0-Alpha\"
+      VALUE \"InternalName\", \"PPSX33\"
+      VALUE \"OriginalFilename\", \"PPSX33.exe\"
+      VALUE \"ProductName\", \"PPSX33\"
+      VALUE \"ProductVersion\", \"1.1.0-Alpha\"
+    END
+  END
+  BLOCK \"VarFileInfo\"
+  BEGIN
+    VALUE \"Translation\", 0x409, 1200
+  END
+END
+")
   set(PPSX33_RC_SRC "${PPSX33_RC}")
 else()
   set(PPSX33_RC_SRC "")
@@ -252,6 +283,7 @@ add_executable(PPSX33
   ${PPSX33_RC_SRC}
 )
 target_link_libraries(PPSX33 PRIVATE Qt6::Widgets)
+target_compile_definitions(PPSX33 PRIVATE PPSX33_VERSION_STRING=\"1.1.0-Alpha\")
 target_include_directories(PPSX33 PRIVATE ${CMAKE_SOURCE_DIR}/src/ui_qt ${CMAKE_SOURCE_DIR}/src/core)
 set_target_properties(PPSX33 PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
@@ -269,5 +301,7 @@ if(WIN32)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ps3rt> $<TARGET_FILE_DIR:PPSX33>/ps3rt.dll
                     COMMAND ${CMAKE_COMMAND} -E copy_if_different
       ${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.png $<TARGET_FILE_DIR:PPSX33>/ppsx33-logo.png
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      ${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.ico $<TARGET_FILE_DIR:PPSX33>/ppsx33-logo.ico
     COMMENT "dist/: EXE + ps3core + ps3rt + modular DLLs + logo")
 endif()
