@@ -1,30 +1,39 @@
 # PPSX33 Releases
 
-Official PPSX33 project page: [https://notyvos.gt.tc/PPSX3/](https://notyvos.gt.tc/PPSX3/)
+Official PPSX33 project page: [https://ppsx33.xo.je/](https://ppsx33.xo.je/)
 
-This directory contains release documentation for PPSX33. Check the project page for the current project information and available release downloads. A documented release is not necessarily a published downloadable build.
+This directory contains release documentation for PPSX33. Check the project page or an official release entry for published downloads. A release note is not, by itself, evidence that a downloadable build has been packaged, tested, or published.
+
+## PPSX33 Alpha 1.0.4
+
+[Read the Alpha 1.0.4 release notes](PPSX33-Alpha-1.0.4.md).
+
+Alpha 1.0.4 documents the current development direction compared with the historical Alpha 01 package, including the Qt 6 desktop application, modular `build/dist/` output layout, Vulkan-first host presentation, and clearer build and validation expectations. The notes describe the current repository direction and must not be treated as proof that every capability is present in a particular archive.
 
 ## PPSX33 Alpha 01
 
 [Read the Alpha 01 release notes](PPSX33-Alpha-01.md).
 
-Alpha 01 is a historical early preview. Its capabilities are limited to the exact binaries in that archive and may lag behind `main`. The current source tree includes a host build driver and GUI Build/Run workflow, but successful compilation does not establish correct runtime behavior or commercial-game compatibility. Check the specific archive's release notes and validate that exact package before assuming a feature is included.
+Alpha 01 is a historical early preview. Its capabilities are limited to the exact binaries in that archive and may lag behind `main`. The current source tree and newer documentation do not update the old package retroactively.
 
-### Current scope
+### Current project scope
 
-- Load and analyze supported decrypted ELF64 big-endian PowerPC64 inputs.
-- Run static PPU lifting and inspect its reports.
-- Use the GUI/CLI features actually present in the downloaded package.
-- For current source builds, exercise the host build workflow and synthetic smoke test.
+- Load and analyze supported decrypted ELF inputs.
+- Lift supported PPU code into generated C++ and inspect analysis/lift reports.
+- Use the GUI/CLI workflows present in the checked-out source or downloaded package.
+- Build native Windows output through the documented host toolchain.
+- Validate runtime behavior with logs and reproducible tests.
 
 ### Not yet complete
 
-- Alpha 01's exact build capabilities must be determined from that archive; documentation of newer source features does not update an already-published binary.
-- Successful analysis, decompilation, or compilation does not guarantee that generated code can run correctly.
-- Full PS3 system-library, SPU, RSX, and commercial-game compatibility is not established.
+- PPU semantics and runtime behavior remain partial.
+- LV2, PRX, NID, and cell-library coverage remains incomplete.
+- SPU, MFC/DMA, SPURS, and RSX/GCM functionality remain in progress.
+- A successful analysis, lift, or compile does not guarantee booting, correct rendering, or playability.
+- Compatibility with commercial PS3 games is not generally established.
 
-Use the release notes for package contents, limitations, and validation guidance. Please report problems with reproducible steps and logs, without uploading copyrighted game files or other restricted game data.
+Use each version's release notes for its scope, package details, limitations, and validation guidance. Report issues with reproducible steps and logs, without uploading copyrighted game files, firmware, keys, or restricted game data.
 
 ## Release status
 
-Only treat a release as available when its download is published on the project page or an official release entry. Documentation alone does not mean that a binary package has been built, tested, or published.
+Only treat a release as available when its download is published on the official project page or an official release entry. Documentation alone does not mean a binary package has been built, tested, or published.
