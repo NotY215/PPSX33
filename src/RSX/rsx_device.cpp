@@ -521,7 +521,7 @@ static void rsx_draw_host(uint8_t* mem) {
     int presented = 0;
     rsx_present_action act = rsx_present_decide(
         g_rsx.color_offset ? 1 : 0,
-        frame_methods,
+        g_rsx.methods_this_frame,
         g_rsx.draws + g_rsx.draws_diagnostic,
         (uint32_t)g_rsx.flip_count);
     if (act == RSX_PRESENT_GUEST && g_gfx_api == 0 && rsx_vk_ready() && g_rsx.color_offset) {
