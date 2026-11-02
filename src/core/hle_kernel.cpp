@@ -30,6 +30,7 @@ extern "C" const char* ps3rt_get_game_name(void);
 #include "hle_status.h"
 #include "rsx_vk_backend.h"
 #include "sysmodule_progress.h"
+#include "gcm_flip_label.h"
 #endif
 
 static FILE* g_logf = nullptr;

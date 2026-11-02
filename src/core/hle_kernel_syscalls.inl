@@ -694,6 +694,16 @@ static int gcm_hle(PPUContext* c, uint32_t nid) {
             uint32_t id = (uint32_t)c->gpr[3];
             if (id < 8) g_gcm_current_fb = id;
             {
+                uint32_t off = gcm_get_display_offset(id);
+                if (!off && id < 8 && g_gcm_fb[id].set) off = g_gcm_fb[id].offset;
+                if (off) {
+                    uint32_t w = (id < 8 && g_gcm_fb[id].width) ? g_gcm_fb[id].width : 720;
+                    uint32_t h = (id < 8 && g_gcm_fb[id].height) ? g_gcm_fb[id].height : 576;
+                    ps3rt_rsx_set_color_surface(off, w, h);
+                }
+            }
+
+            {
                 uint32_t arg = id & 7u;
                 gcm_fifo_emit_method(0x0050, 1, &arg);
             }
@@ -762,6 +772,14 @@ static int gcm_hle(PPUContext* c, uint32_t nid) {
             g_gcm_fb[id].width  = (uint32_t)c->gpr[6];
             g_gcm_fb[id].height = (uint32_t)c->gpr[7];
             g_gcm_fb[id].set = 1;
+            gcm_set_display_buffer(id, g_gcm_fb[id].offset, g_gcm_fb[id].pitch,
+                                   g_gcm_fb[id].width, g_gcm_fb[id].height);
+            /* Bind buffer 0 (or current) as host present color when first set */
+            if (id == 0 || id == g_gcm_current_fb) {
+                uint32_t w = g_gcm_fb[id].width ? g_gcm_fb[id].width : 720;
+                uint32_t h = g_gcm_fb[id].height ? g_gcm_fb[id].height : 576;
+                ps3rt_rsx_set_color_surface(g_gcm_fb[id].offset, w, h);
+            }
             static int s_fb = 0;
             if (s_fb < 8) {
                 ps3rt_log("[gcm] XX-I SetDisplayBuffer id=%u %ux%u pitch=%u off=0x%x\n",

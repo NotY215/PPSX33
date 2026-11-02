@@ -743,7 +743,15 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
 
 
 PS3RT_API void ps3rt_rsx_set_color_surface(uint32_t offset, uint32_t w, uint32_t h) {
-    rsx_surface_bind_color(offset, w ? ((w*4+63)&~63u) : 0, w, h);
+    if (!w) w = 720;
+    if (!h) h = 576;
+    uint32_t pitch = ((w * 4u) + 63u) & ~63u;
+    g_rsx.color_offset = offset;
+    g_rsx.color_pitch = pitch;
+    g_rsx.width = w;
+    g_rsx.height = h;
+    rsx_surface_bind_color(offset, pitch, w, h);
+    ppsx33::rsx::rsx_framebuffer_bind_color(offset, pitch, w, h, 0);
 }
 
 PS3RT_API void ps3rt_rsx_set_put(uint32_t put) {
@@ -782,7 +790,15 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     }
     int frame_methods = g_rsx.methods_this_frame;
     int frame_packets = g_rsx.packets_decoded;
-    // Prefer guest color surface upload when bound and memory is live
+    /* Prefer display-buffer offset for this flip id, else bound color surface */
+    {
+        uint32_t dbo = gcm_get_display_offset(buf_id);
+        uint32_t dbp = gcm_get_display_pitch(buf_id);
+        if (dbo) {
+            g_rsx.color_offset = dbo;
+            if (dbp) g_rsx.color_pitch = dbp;
+        }
+    }
     int presented = 0;
     if (g_gfx_api == 0 && rsx_vk_ready() && g_rsx.color_offset) {
         uint8_t* mem = ps3rt_guest_mem_ptr();
@@ -792,7 +808,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
         uint32_t gh = 576;
         auto fb = ppsx33::rsx::rsx_framebuffer_color();
         if (fb.offset) off = fb.offset;
-        uint32_t pitch = fb.pitch ? fb.pitch : (gw * 4u);
+        uint32_t pitch = g_rsx.color_pitch ? g_rsx.color_pitch : (fb.pitch ? fb.pitch : (gw * 4u));
         if (pitch < gw * 4u) pitch = gw * 4u;
         size_t need = (size_t)off + (size_t)pitch * gh;
         if (mem && need <= msz) {
