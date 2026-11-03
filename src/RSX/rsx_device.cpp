@@ -957,6 +957,10 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
         } else {
             rsx_fill_synth_frame((uint32_t)g_rsx.flip_count);
             g_rsx.draws_diagnostic++;
+            { rsx_present_req rq{}; rq.color_offset = g_rsx.color_offset;
+              rq.pitch = g_rsx.color_pitch; rq.width = g_rsx.width; rq.height = g_rsx.height;
+              rq.flags = 2; rsx_present_queue_push(&rq); }
+
         }
     }
     if (g_gfx_api == 0 && rsx_vk_ready() && g_rsx.color_offset) {
@@ -1000,11 +1004,11 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     if (!presented)
         rsx_host_present_clear();
     if (g_rsx.flip_count <= 32 || (g_rsx.flip_count & 0xFF) == 1) {
-        ps3rt_log("[rsx] flip #%llu guest=%d diag=%d draws=%d methods=%d packets=%d known=%d unk=%d put=0x%x get=0x%x %ux%u\n",
+        ps3rt_log("[rsx] flip #%llu guest=%d diag=%d draws=%d methods=%d packets=%d known=%d unk=%d put=0x%x get=0x%x color=0x%x %ux%u\n",
             (unsigned long long)g_rsx.flip_count, g_rsx.draws_guest, g_rsx.draws_diagnostic,
             g_rsx.draws, frame_methods, frame_packets,
             g_rsx.known_methods, g_rsx.unknown_methods,
-            g_rsx.put, g_rsx.get,
+            g_rsx.put, g_rsx.get, (unsigned)g_rsx.color_offset,
             g_rsx.width, g_rsx.height);
     }
     ps3rt_audio_tick();

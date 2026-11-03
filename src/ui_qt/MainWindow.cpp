@@ -505,9 +505,21 @@ void MainWindow::onCopy() {
         QFile::copy(out.filePath(e), to);
         m_exePath = to;
     }
+    /* Always ship memory image + input map + Modify next to EXE */
+    for (const char* extra : {"guest_image.bin", "keymap.json", "pad_map.json", "Modify.exe", "ppsx33_tag.txt"}) {
+        const QString src = out.filePath(QString::fromUtf8(extra));
+        if (QFile::exists(src)) {
+            const QString to = QDir(dest).filePath(QString::fromUtf8(extra));
+            QFile::remove(to);
+            if (QFile::copy(src, to))
+                appendLog(QStringLiteral("[ui] deploy %1").arg(QString::fromUtf8(extra)));
+        } else {
+            appendLog(QStringLiteral("[ui] missing in output/: %1").arg(QString::fromUtf8(extra)));
+        }
+    }
     m_gameRoot = dest;
     m_canRun = !m_exePath.isEmpty();
-    appendLog(QStringLiteral("[ui] copied EXE+DLLs next to EBOOT in %1").arg(dest));
+    appendLog(QStringLiteral("[ui] copied EXE+DLLs+guest_image next to EBOOT in %1").arg(dest));
     refreshButtons();
 }
 

@@ -1,13 +1,12 @@
 #include "rsx_light_present.h"
-
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
 
-/* ~8 Hz clear present — PS3 titles target 30/60; host assist stays light on weak GPUs */
-static const uint32_t k_interval_ms = 125;
+static const uint32_t k_interval_ms = 33; /* ~30 Hz host assist */
 static uint64_t g_last_ms;
+static int s_count;
 
 uint32_t rsx_light_present_interval_ms(void) { return k_interval_ms; }
 
@@ -25,4 +24,7 @@ void rsx_light_present_note(void) {
 #if defined(_WIN32)
     g_last_ms = GetTickCount64();
 #endif
+    ++s_count;
 }
+
+int rsx_light_present_count(void) { return s_count; }

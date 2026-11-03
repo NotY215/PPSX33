@@ -261,8 +261,14 @@ void cleanup_after_build(const std::string& project_dir, const fs::path& out, st
         live_log("cleanup: build_live.log kept in output/\n");
     }
 
-    if (fs::exists(codebase / "guest_image.bin") && !fs::exists(out / "guest_image.bin"))
+    if (fs::exists(codebase / "guest_image.bin")) {
+        std::error_code egi;
         fs::copy_file(codebase / "guest_image.bin", out / "guest_image.bin",
+                      fs::copy_options::overwrite_existing, egi);
+        live_log(egi ? "WARN: guest_image.bin copy failed\n" : "Copied guest_image.bin -> output/\n");
+    } else {
+        live_log("WARN: codebase/guest_image.bin missing\n");
+    }
                       fs::copy_options::overwrite_existing, ec);
 
     if (!fs::exists(out / "pad_map.json")) {

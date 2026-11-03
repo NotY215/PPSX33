@@ -110,7 +110,7 @@ PS3RT_API void ps3rt_progress_hw(void) {
     g_gcm_flip_status = 0;
     gcm_set_flip_status(0);
     static uint32_t s_flip_div = 0;
-    if ((++s_flip_div & 0xF) == 0) {
+    if ((++s_flip_div & 0x3) == 0) {
         ps3rt_rsx_flip(0);
         g_gcm_frame_id++;
     }
