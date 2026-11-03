@@ -370,6 +370,30 @@ static DWORD WINAPI rsx_pump_thread_main(void*) {
                     }
                 }
                 (void)tick;
+            } else if (g_gfx_api == 1 && rsx_gl_ready()) {
+                rsx_present_req req{};
+                if (rsx_present_queue_pop(&req) && req.flags == 2 && req.color_offset) {
+                    uint32_t w = 720, h = 576; rsx_res_get(&w, &h);
+                    uint32_t pitch = req.pitch ? req.pitch : (w * 4);
+                    if (pitch < w * 4) pitch = w * 4;
+                    uint8_t* mem = ps3rt_guest_mem_ptr();
+                    size_t msz = ps3rt_guest_mem_size();
+                    size_t need = (size_t)req.color_offset + (size_t)pitch * (size_t)h;
+                    if (mem && req.color_offset < msz && need <= msz && need > 0)
+                        rsx_gl_present_guest_rgba(mem + req.color_offset, w, h, pitch);
+                    else
+                        rsx_gl_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
+                    host_stats_note_present();
+                } else if (rsx_light_present_allow()) {
+                    static int pulse_gl = 0;
+                    float phase = (float)((++pulse_gl) & 63) / 63.0f;
+                    rsx_gl_present_clear(0.02f + 0.08f * phase, 0.05f, 0.12f + 0.1f * phase, 1.0f);
+                    rsx_light_present_note();
+                    host_stats_note_present();
+                    if ((pulse_gl & 15) == 1)
+                        ps3rt_log("[rsx] OpenGL host present pulse #%d\n", pulse_gl);
+                }
+                rsx_gl_poll_window();
             } else if (g_hwnd && ((tick & 3) == 0))
                 rsx_host_present_soft();
         }
@@ -493,11 +517,13 @@ static void rsx_host_present_clear() {
 
 static void rsx_sink_on_flip(void* user, uint32_t buffer_id, uint32_t color_offset, uint32_t pitch) {
     (void)user; (void)buffer_id;
+    uint32_t w = 720, h = 576;
+    rsx_res_get(&w, &h);
     rsx_present_req req{};
     req.color_offset = color_offset ? color_offset : g_rsx.color_offset;
-    req.width = 720;
-    req.height = 576;
-    req.pitch = pitch ? pitch : (g_rsx.color_pitch ? g_rsx.color_pitch : 720u * 4u);
+    req.width = w;
+    req.height = h;
+    req.pitch = pitch ? pitch : (g_rsx.color_pitch ? g_rsx.color_pitch : (w * 4u));
     req.flags = req.color_offset ? 2u : 1u;
     rsx_present_queue_push(&req);
 }

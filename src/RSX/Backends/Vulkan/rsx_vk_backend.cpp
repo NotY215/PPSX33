@@ -1008,7 +1008,7 @@ extern "C" int rsx_vk_present_guest_rgba(const void* pixels, uint32_t w, uint32_
 
 extern "C" void rsx_vk_poll_window(void) {
 #if defined(_WIN32)
-    extern void ps3rt_request_exit(void);
+    extern "C" void ps3rt_request_exit(void);
     MSG msg;
     while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) {

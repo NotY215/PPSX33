@@ -129,7 +129,7 @@ void rsx_gl_poll_window(void) {
     if (!IsWindow((HWND)s_hwnd)) {
         s_hwnd = nullptr;
         s_ready = 0;
-        extern void ps3rt_request_exit(void);
+        extern "C" void ps3rt_request_exit(void);
         ps3rt_request_exit();
         return;
     }
@@ -139,7 +139,7 @@ void rsx_gl_poll_window(void) {
         if (msg.message == WM_QUIT) {
             s_ready = 0;
             s_hwnd = nullptr;
-            extern void ps3rt_request_exit(void);
+            extern "C" void ps3rt_request_exit(void);
             ps3rt_request_exit();
             break;
         }
