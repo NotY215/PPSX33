@@ -2,11 +2,11 @@
 
 **🌐 Website:** https://ppsx33.xo.je/
 
-**🗓️ Last updated:** 2026-11-02
+**🗓️ Last updated:** 2026-11-03
 
-This map focuses on the CMake configuration and the application source tree.
+This map documents the current CMake configuration and the native source layout, including the Qt desktop application and per-game Modify launcher.
 
-> 🧭 **Scope:** Only CMake/build configuration and files under `src/` are shown. Documentation, tests, assets, redistributables, and generated build output are intentionally omitted.
+> 🧭 **Scope:** Only the root build configuration, helper CMake script, and files under `src/` are shown. Documentation, tests, assets, redistributables, and generated build output are intentionally omitted. The root `CMakeLists.txt` is the authoritative build definition; `src/ui_qt/CMakeLists.txt` is retained as a separate/legacy configuration file.
 
 ```text
 📦 PPSX33/
