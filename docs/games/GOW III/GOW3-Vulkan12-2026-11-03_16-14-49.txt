@@ -1,8 +1,8 @@
 PPSX33 run log
 mode=launch_in_game_folder
 api=Vulkan12
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-03_15-48-30.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-03_15-48-30.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-03_16-14-49.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-03_16-14-49.txt
 [stage] BOOT start
 [ps3rt] warning: no guest_image.bin mapped
 [save] root=C:\Users\shrey\OneDrive\Documents\GOW3\PS3_SAVEDATA (PS3-native only; no savestates)
@@ -65,4 +65,4 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-03_15-48-
 [lv2] alloc VA=0x8020000 size=0x100000
 [rsx] XXII-L API preference: Vulkan 1.2 (OpenGL 4.5 secondary; DX11 removed)
 [rsx] XX-O window title="PPSX33 presents GOW3"
-[rsx] Vulkan init begin hwnd=00000000000C09DA 720x576
+[rsx] Vulkan init begin hwnd=0000000000140934 720x576
