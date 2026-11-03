@@ -53,7 +53,7 @@ static QPushButton* makeSideBtn(const QString& text, QWidget* parent) {
 }
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
-    setWindowTitle(QStringLiteral("PPSX33 · PlayStation 3 Recompiler · %1").arg(QStringLiteral("1.0.4-alpha")));
+    setWindowTitle(QStringLiteral("PPSX33 · PlayStation 3 Recompiler · %1").arg(QStringLiteral("1.1.0-alpha")));
     resize(1280, 820);
     setMinimumSize(1024, 700);
     QString png = QCoreApplication::applicationDirPath() + QStringLiteral("/ppsx33-logo.png");
