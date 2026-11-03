@@ -114,7 +114,6 @@ if(WIN32)
     src/RSX/frag/rsx_frag_flip.c
     src/RSX/frag/rsx_frag_align.c
     src/games-stuff/Audio/audio_frag_service.c
-    src/core/hle_hw_progress.cpp
     src/RSX/methods/rsx_nv4097_surface.c
     src/RSX/dispatch/rsx_dispatch_sink.c
     src/native/x64/ps3rt_be.c
@@ -148,13 +147,13 @@ if(WIN32)
     src/RSX/frag/rsx_frag_flip.c
     src/RSX/frag/rsx_frag_align.c
     src/games-stuff/Audio/audio_frag_service.c
-    src/core/hle_hw_progress.cpp
     src/RSX/methods/rsx_nv4097_surface.c
     src/RSX/dispatch/rsx_dispatch_sink.c
     src/native/x64/ps3rt_be.c
     src/RSX/rsx_exports.c
     src/RSX/rsx_shader_bind.c
     PROPERTIES LANGUAGE C)
+  set_source_files_properties(src/core/hle_hw_progress.cpp PROPERTIES LANGUAGE CXX)
   target_compile_definitions(ps3rt PRIVATE
     PS3RT_BUILD_DLL=1
     PPSX33_API_BUILD=1

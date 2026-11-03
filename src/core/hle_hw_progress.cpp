@@ -4,6 +4,7 @@
 #include "rsx_fifo_drain.h"
 #include "gcm_flip_label.h"
 #include "rsx_frag_align.h"
+#include "rsx_present_queue.h"
 #include <cstdint>
 
 extern uint8_t* g_mem;
@@ -96,6 +97,15 @@ PS3RT_API void ps3rt_progress_hw(void) {
         s_ax.fifo_base = 0;
         s_ax.fifo_size = 0x100000u;
         rsx_frag_align_tick(&s_ax);
+        if (rsx_frag_align_want_guest_present(&s_ax)) {
+            rsx_present_req pr{};
+            pr.color_offset = s_ax.present.color_offset;
+            pr.pitch = s_ax.present.pitch;
+            pr.width = s_ax.present.width;
+            pr.height = s_ax.present.height;
+            pr.flags = s_ax.present.flags;
+            rsx_present_queue_push(&pr);
+        }
     }
     g_gcm_flip_status = 0;
     gcm_set_flip_status(0);
