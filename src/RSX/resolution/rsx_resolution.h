@@ -18,6 +18,7 @@ PPSX33_RES_API uint32_t rsx_res_width(void);
 PPSX33_RES_API uint32_t rsx_res_height(void);
 PPSX33_RES_API uint32_t rsx_res_pitch_rgba(void);
 PPSX33_RES_API void     rsx_res_get(uint32_t* w, uint32_t* h);
+PPSX33_RES_API void     rsx_res_set(uint32_t w, uint32_t h);
 
 #ifdef __cplusplus
 }

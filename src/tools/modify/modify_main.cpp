@@ -113,7 +113,8 @@ static LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
         SendMessageA(g_hwndRes, CB_ADDSTRING, 0, (LPARAM)"480p");
         SendMessageA(g_hwndRes, CB_SETCURSEL, g_res, 0);
         CreateWindowA("BUTTON", "Play", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 16, 160, 100, 28, h, (HMENU)201, 0, 0);
-        CreateWindowA("STATIC", "Keymapping: edit keymap.json in game folder", WS_CHILD | WS_VISIBLE, 16, 200, 360, 18, h, 0, 0, 0);
+        CreateWindowA("BUTTON", "Open keymap.json", WS_CHILD | WS_VISIBLE, 130, 160, 140, 28, h, (HMENU)202, 0, 0);
+        CreateWindowA("STATIC", "Keymapping file: keymap.json (edit or Open)", WS_CHILD | WS_VISIBLE, 16, 200, 360, 18, h, 0, 0, 0);
         g_hwndLog = CreateWindowA("EDIT", "", WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_MULTILINE | ES_READONLY,
             16, 230, 400, 120, h, 0, 0, 0);
         log_line("Modify ready — select API/quality, then Play.");
@@ -126,6 +127,15 @@ static LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
             g_res = (int)SendMessageA(g_hwndRes, CB_GETCURSEL, 0, 0);
         if (LOWORD(w) == 201)
             do_play();
+        if (LOWORD(w) == 202) {
+            std::string km = join(g_dir, "keymap.json");
+            if (GetFileAttributesA(km.c_str()) == INVALID_FILE_ATTRIBUTES) {
+                std::ofstream f(km);
+                if (f) f << "{\n  \"Cross\": \"Z\", \"Circle\": \"X\", \"Square\": \"A\", \"Triangle\": \"S\",\n"                          "  \"Start\": \"V\", \"Select\": \"Space\", \"DpadUp\": \"Up\", \"DpadDown\": \"Down\"\n}\n";
+            }
+            ShellExecuteA(nullptr, "open", km.c_str(), nullptr, g_dir.c_str(), SW_SHOWNORMAL);
+            log_line("opened keymap.json");
+        }
         return 0;
     case WM_DESTROY:
         PostQuitMessage(0);

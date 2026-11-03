@@ -695,8 +695,8 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
                 std::find(gameSrc.begin(), gameSrc.end(), "game_main.cpp") == gameSrc.end()) {
                 cancel_chk();
                 f << "echo COMPILE game_main.cpp\n";
-                f << "if exist unlock.inc set UNLOCKFI=/FI unlock.inc\n"
-                f << "if not exist unlock.inc set UNLOCKFI=\n"
+                f << "if exist unlock.inc set UNLOCKFI=/FI unlock.inc\n";
+                f << "if not exist unlock.inc set UNLOCKFI=\n";
                 f << cl << " " << gflags << " %UNLOCKFI% /c src\\game_main.cpp /Foobj\\g_game_main.obj || exit /b 1\n";
             }
             cancel_chk();

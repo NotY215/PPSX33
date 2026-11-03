@@ -278,6 +278,25 @@ static void rsx_probe_api_preference() {
             g_backend = 0;
 #endif
     }
+    {
+#if defined(_WIN32)
+        const char* cl2 = GetCommandLineA();
+        if (cl2) {
+            const char* p = std::strstr(cl2, "-h=");
+            if (p) {
+                int hv = std::atoi(p + 3);
+                if (hv == 480) rsx_res_set(720, 480);
+                else if (hv == 560) rsx_res_set(720, 560);
+                else if (hv == 720) rsx_res_set(720, 720);
+                else if (hv == 576) rsx_res_set(720, 576);
+            }
+        }
+#endif
+        uint32_t rw = 720, rh = 576;
+        rsx_res_get(&rw, &rh);
+        g_rsx.width = rw;
+        g_rsx.height = rh;
+    }
     if (g_backend == 1) g_gfx_api = 1;
     else { g_gfx_api = 0; g_backend = 0; }
     if (g_gfx_api == 0)
