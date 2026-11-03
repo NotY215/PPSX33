@@ -610,7 +610,7 @@ R"({
                 std::find(gameSrc.begin(), gameSrc.end(), "game_main.cpp") == gameSrc.end()) {
                 g_rsp << "obj\\g_game_main.obj\n";
             }
-            g_rsp << "ps3rt.lib\n";
+            g_rsp << "ps3rt.lib\nuser32.lib\nshell32.lib\n";
             // Embed in-build .ico into generated game EXE (window + taskbar)
             {
                 fs::path ico_path;
