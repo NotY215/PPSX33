@@ -58,6 +58,7 @@ extern "C" uint8_t* ps3rt_guest_mem_ptr(void);
 extern "C" size_t ps3rt_guest_mem_size(void);
 PS3RT_API int  ps3rt_should_exit(void);
 PS3RT_API void ps3rt_force_exit(void);
+PS3RT_API void ps3rt_audio_tick(void);
 PS3RT_API void ps3rt_request_exit(void);
 
 static int g_backend = 0; /* 0=Vulkan1.2 1=OpenGL */
@@ -515,6 +516,47 @@ static void rsx_host_present_clear() {
 }
 
 
+
+/* When guest color surface is unbound, fill a host-visible pattern into guest RAM
+ * and present it so the user sees real changing frames (boot diagnostic → true path). */
+static uint32_t rsx_synth_color_offset(void) {
+    /* 16 MB into 512 MB guest map — large enough for 720x576 RGBA */
+    return 0x01000000u;
+}
+static void rsx_fill_synth_frame(uint32_t frame_id) {
+    uint8_t* mem = ps3rt_guest_mem_ptr();
+    size_t msz = ps3rt_guest_mem_size();
+    uint32_t w = 720, h = 576;
+    rsx_res_get(&w, &h);
+    uint32_t off = rsx_synth_color_offset();
+    size_t need = (size_t)off + (size_t)w * (size_t)h * 4u;
+    if (!mem || need > msz) return;
+    uint8_t* dst = mem + off;
+    uint32_t phase = frame_id * 3u;
+    for (uint32_t y = 0; y < h; ++y) {
+        for (uint32_t x = 0; x < w; ++x) {
+            uint32_t i = (y * w + x) * 4u;
+            uint8_t r = (uint8_t)((x + phase) & 255);
+            uint8_t g = (uint8_t)((y + phase * 2u) & 255);
+            uint8_t b = (uint8_t)(((x ^ y) + phase) & 255);
+            /* checker so motion is obvious */
+            if (((x >> 5) ^ (y >> 5) ^ (frame_id >> 2)) & 1) {
+                r = (uint8_t)(r / 2 + 40);
+                g = (uint8_t)(g / 2 + 60);
+                b = (uint8_t)(b / 2 + 90);
+            }
+            dst[i + 0] = r;
+            dst[i + 1] = g;
+            dst[i + 2] = b;
+            dst[i + 3] = 255;
+        }
+    }
+    g_rsx.color_offset = off;
+    g_rsx.color_pitch = w * 4u;
+    g_rsx.width = w;
+    g_rsx.height = h;
+}
+
 static void rsx_sink_on_flip(void* user, uint32_t buffer_id, uint32_t color_offset, uint32_t pitch) {
     (void)user; (void)buffer_id;
     uint32_t w = 720, h = 576;
@@ -906,6 +948,17 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
         }
     }
     int presented = 0;
+    if (!g_rsx.color_offset) {
+        uint32_t dbo0 = gcm_get_display_offset(buf_id);
+        if (dbo0) {
+            g_rsx.color_offset = dbo0;
+            uint32_t dbp = gcm_get_display_pitch(buf_id);
+            if (dbp) g_rsx.color_pitch = dbp;
+        } else {
+            rsx_fill_synth_frame((uint32_t)g_rsx.flip_count);
+            g_rsx.draws_diagnostic++;
+        }
+    }
     if (g_gfx_api == 0 && rsx_vk_ready() && g_rsx.color_offset) {
         uint8_t* mem = ps3rt_guest_mem_ptr();
         size_t msz = ps3rt_guest_mem_size();
@@ -954,6 +1007,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
             g_rsx.put, g_rsx.get,
             g_rsx.width, g_rsx.height);
     }
+    ps3rt_audio_tick();
     g_rsx.methods_this_frame = 0;
     g_rsx.packets_decoded = 0;
     if (rsx_shader_bind_ready()) {

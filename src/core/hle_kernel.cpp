@@ -260,7 +260,13 @@ PS3RT_API int ps3rt_init(const char* image_path) {
     if (!g_mem) return -1;
     std::memset(g_mem, 0, g_mem_size);
     g_alloc_ptr = 0x08000000ull;
-    const char* candidates[] = { image_path, "guest_image.bin", "output/guest_image.bin" };
+    char gi_exe[520]; gi_exe[0]=0;
+#if defined(_WIN32)
+{ char mod[500]; DWORD n=GetModuleFileNameA(nullptr,mod,sizeof mod);
+  if(n&&n<sizeof mod){ char* s=strrchr(mod,'\\'); if(!s)s=strrchr(mod,'/');
+    if(s){ *s=0; std::snprintf(gi_exe,sizeof gi_exe,"%s\\guest_image.bin",mod);} } }
+#endif
+    const char* candidates[] = { image_path, gi_exe[0]?gi_exe:nullptr, "guest_image.bin", "output/guest_image.bin" };
     int ok = -1;
     for (auto c : candidates) {
         if (c && c[0] && load_guest_image(c) == 0) { ok = 0; break; }
