@@ -528,51 +528,61 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
     }
     live_log(std::string("OUT_EXE=") + out_exe + "\n");
 
-    // Dual-API always; write unlock token + launch sidecar for Modify.exe
+    // Unique game tag + default keymap (no encryption)
     {
-        std::string key;
-        {
-            // simple stable token from project path + out_exe
-            // High-entropy unlock (printable) — unique per build invocation
-            unsigned h = 2166136261u;
-            for (char c : (project_dir + out_exe)) { h ^= (unsigned char)c; h *= 16777619u; }
+        unsigned h = 2166136261u;
+        for (char c : (project_dir + out_exe)) { h ^= (unsigned char)c; h *= 16777619u; }
 #if defined(_WIN32)
-            FILETIME ft; GetSystemTimeAsFileTime(&ft);
-            h ^= ft.dwLowDateTime; h *= 16777619u; h ^= ft.dwHighDateTime;
+        FILETIME ft; GetSystemTimeAsFileTime(&ft);
+        h ^= ft.dwLowDateTime; h *= 16777619u;
 #endif
-            static const char alphabet[] =
-                "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789!@#$%^&*-_=+";
-            char buf[40];
-            int pos = 0;
-            buf[pos++] = 'P'; buf[pos++] = '3'; buf[pos++] = '3'; buf[pos++] = '-';
-            for (int i = 0; i < 24; ++i) {
-                h = h * 1664525u + 1013904223u;
-                buf[pos++] = alphabet[h % (sizeof(alphabet) - 1)];
-            }
-            buf[pos] = 0;
-            key = buf;
+        char tag[48];
+        std::snprintf(tag, sizeof(tag), "PPSX33_TAG_%08X_%08X", h, h * 2654435761u);
+        std::ofstream tagf(out / "ppsx33_tag.txt");
+        if (tagf) tagf << tag << "\n";
+        // force define into game_main compile via force-include header
+        std::ofstream th(out / "ppsx33_tag.inc");
+        if (th) th << "#define PPSX33_GAME_TAG \"" << tag << "\"\n";
+        live_log(std::string("GAME_TAG=") + tag + "\n");
+
+        // Default keymap.json
+        if (!fs::exists(out / "keymap.json")) {
+            std::ofstream km(out / "keymap.json");
+            if (km) km <<
+R"({
+  "LeftStickLeft": "Left",
+  "LeftStickDown": "Down",
+  "LeftStickRight": "Right",
+  "LeftStickUp": "Up",
+  "RightStickLeft": "H",
+  "RightStickDown": "J",
+  "RightStickRight": "K",
+  "RightStickUp": "U",
+  "Start": "V",
+  "Select": "Space",
+  "PsButton": "Backspace",
+  "Square": "A",
+  "Cross": "Z",
+  "Circle": "X",
+  "Triangle": "S",
+  "DpadLeft": "NumPad4",
+  "DpadDown": "NumPad5",
+  "DpadRight": "NumPad6",
+  "DpadUp": "NumPad8",
+  "R1": "R",
+  "R2": "RControlKey",
+  "R3": "LControlKey",
+  "L1": "L",
+  "L2": "RShiftKey",
+  "L3": "LShiftKey"
+}
+)";
         }
-        std::ofstream uk(out / "unlock.inc");
-        if (uk) uk << "#define PPSX33_UNLOCK_KEY \"" << key << "\"\n";
-        std::ofstream lj(out / "ppsx33_launch.json");
-        if (lj) {
-            lj << "{\n  \"game\": \"" << out_exe << "\",\n  \"key\": \"" << key
-               << "\",\n  \"api\": \"Vulkan\",\n  \"apis\": [\"Vulkan\",\"OpenGL\"]\n}\n";
-        }
-        live_log(std::string("UNLOCK_KEY=") + key + "\n");
-        // Prefer host-built Modify.exe
         fs::path mod_src = dist_guess / "Modify.exe";
         if (!fs::exists(mod_src)) mod_src = fs::path(runtime_dir) / "Modify.exe";
         if (fs::exists(mod_src)) {
             fs::copy_file(mod_src, out / "Modify.exe", fs::copy_options::overwrite_existing, ec);
-            live_log("Copied Modify.exe\n");
-        } else {
-            live_log("WARN: Modify.exe not in dist/ — rebuild host with PPSX33Modify target\n");
-        }
-        // default keymap
-        if (!fs::exists(out / "keymap.json") && !fs::exists(out / "pad_map.json")) {
-            std::ofstream km(out / "keymap.json");
-            if (km) km << "{\n  \"Cross\": \"Z\", \"Circle\": \"X\", \"Square\": \"A\", \"Triangle\": \"S\"\n}\n";
+            live_log("Copied prebuilt Modify.exe\n");
         }
     }
 
@@ -708,9 +718,9 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
                 std::find(gameSrc.begin(), gameSrc.end(), "game_main.cpp") == gameSrc.end()) {
                 cancel_chk();
                 f << "echo COMPILE game_main.cpp\n";
-                f << "if exist unlock.inc set UNLOCKFI=/FI unlock.inc\n";
-                f << "if not exist unlock.inc set UNLOCKFI=\n";
-                f << cl << " " << gflags << " %UNLOCKFI% /c src\\game_main.cpp /Foobj\\g_game_main.obj || exit /b 1\n";
+                f << "if exist ppsx33_tag.inc set TAGFI=/FI ppsx33_tag.inc\n";
+                f << "if not exist ppsx33_tag.inc set TAGFI=\n";
+                f << cl << " " << gflags << " %TAGFI% /c src\\game_main.cpp /Foobj\\g_game_main.obj || exit /b 1\n";
             }
             cancel_chk();
             f << "echo LINK " << out_exe << "\n";

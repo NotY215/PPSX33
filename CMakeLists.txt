@@ -314,17 +314,16 @@ if(WIN32)
     COMMENT "dist/: EXE + ps3core + ps3rt + modular DLLs + logo")
 endif()
 
-# Per-game launcher (copied next to game EXE as Modify.exe)
+# Prebuilt Modify.exe (Qt6 Widgets) — one host build; Port/build copies into game folders
 add_executable(PPSX33Modify WIN32 src/tools/modify/modify_main.cpp)
-target_compile_definitions(PPSX33Modify PRIVATE UNICODE _UNICODE)
-
-set_target_properties(PPSX33Modify PROPERTIES OUTPUT_NAME "Modify" RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/dist")
-target_link_libraries(PPSX33Modify PRIVATE user32 gdi32 comctl32 shell32)
-
-# Modify.exe must sit next to PPSX33.exe so Port can ship it with each game
+set_target_properties(PPSX33Modify PROPERTIES
+  OUTPUT_NAME "Modify"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/dist"
+  AUTOMOC ON)
+target_link_libraries(PPSX33Modify PRIVATE Qt6::Widgets)
 add_dependencies(PPSX33 PPSX33Modify)
 add_custom_command(TARGET PPSX33 POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_FILE:PPSX33Modify>
     $<TARGET_FILE_DIR:PPSX33>/Modify.exe
-  COMMENT "Port source: Modify.exe next to PPSX33.exe")
+  COMMENT "Prebuilt Modify.exe next to PPSX33.exe")

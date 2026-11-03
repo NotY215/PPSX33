@@ -320,3 +320,7 @@ API (Vulkan 1.2 / OpenGL 4.5), quality (720/560/480), and play unlock are contro
 2. **Port** — emits `Modify.exe` + `ppsx33_launch.json` bound to that game
 3. **Copy to Game Folder** — ships EXE, Modify, `ps3rt.dll`, `vulkan-1.dll`, `guest_image.bin`, keymap
 4. Launch game EXE → opens **Modify** (API / quality / controller) → **PLAY**
+
+
+## Modify.exe
+Prebuilt Qt6 tool (same Qt as host). Discovers tagged game EXE, edits `keymap.json`, launches with `-nogui -api= -h=`.

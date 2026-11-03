@@ -50,3 +50,7 @@ Apply the full post-analysis patch series, then validate end-to-end (host build 
 
 ## Per-game Modify.exe
 API (Vulkan 1.2 / OpenGL 4.5), quality (720/560/480), and play unlock are controlled by **Modify.exe** next to the game EXE — not the main UI.
+
+
+## Modify.exe
+Prebuilt Qt6 tool (same Qt as host). Discovers tagged game EXE, edits `keymap.json`, launches with `-nogui -api= -h=`.

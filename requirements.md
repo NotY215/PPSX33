@@ -60,3 +60,7 @@ API (Vulkan 1.2 / OpenGL 4.5), quality (720/560/480), and play unlock are contro
 
 ### Game package
 - `Modify.exe` (shipped by Port), `ps3rt.dll`, `vulkan-1.dll`, optional `guest_image.bin`
+
+
+## Modify.exe
+Prebuilt Qt6 tool (same Qt as host). Discovers tagged game EXE, edits `keymap.json`, launches with `-nogui -api= -h=`.
