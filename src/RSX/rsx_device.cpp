@@ -371,14 +371,32 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
     if (g_gfx_api == 0) {
         ps3rt_log("[rsx] Vulkan init begin hwnd=%p %ux%u\n",
             (void*)g_hwnd, (unsigned)g_rsx.width, (unsigned)g_rsx.height);
-        if (rsx_vk_init((void*)g_hwnd, g_rsx.width, g_rsx.height)) {
+        int vk_ok = 0;
+#if defined(_WIN32)
+        __try {
+            vk_ok = rsx_vk_init((void*)g_hwnd, g_rsx.width, g_rsx.height);
+        } __except(EXCEPTION_EXECUTE_HANDLER) {
+            ps3rt_log("[rsx] Vulkan init SEH exception code=0x%08X — falling back\n",
+                (unsigned)GetExceptionCode());
+            vk_ok = 0;
+        }
+#else
+        vk_ok = rsx_vk_init((void*)g_hwnd, g_rsx.width, g_rsx.height);
+#endif
+        if (vk_ok) {
             ps3rt_log("[rsx] host present ready %ux%u (Vulkan 1.2)\n",
                 (unsigned)g_rsx.width, (unsigned)g_rsx.height);
             rsx_vk_present_clear(0.05f, 0.12f, 0.22f, 1.0f);
             rsx_vk_poll_window();
         } else {
-            ps3rt_log("[rsx] Vulkan init failed - soft GDI present fallback\n");
-            rsx_host_present_soft();
+            ps3rt_log("[rsx] Vulkan init failed — trying OpenGL fallback\n");
+            if (rsx_gl_init((void*)g_hwnd, g_rsx.width, g_rsx.height)) {
+                g_gfx_api = 1;
+                rsx_gl_present_clear(0.05f, 0.12f, 0.22f, 1.0f);
+            } else {
+                ps3rt_log("[rsx] OpenGL fallback failed — soft GDI present\n");
+                rsx_host_present_soft();
+            }
         }
     } else {
         if (g_hwnd && rsx_gl_init(g_hwnd, g_rsx.width ? g_rsx.width : 720, g_rsx.height ? g_rsx.height : 576)) {

@@ -86,6 +86,7 @@ if(WIN32)
     # former modular sources (single DLL)
     src/RSX/resolution/rsx_resolution.c
     src/RSX/Backends/Vulkan/rsx_vk_backend.cpp
+    src/RSX/Backends/Vulkan/rsx_vk_spirv_blit.cpp
     src/RSX/Backends/OpenGL/rsx_gl_backend.cpp
     src/RSX/Backends/Vulkan/rsx_vk_memory.cpp
     src/RSX/Backends/Vulkan/rsx_vk_command.cpp

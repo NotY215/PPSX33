@@ -75,6 +75,11 @@ int rsx_gl_init(void* hwnd, uint32_t width, uint32_t height) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (GLsizei)s_w, (GLsizei)s_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
     glViewport(0, 0, (GLsizei)s_w, (GLsizei)s_h);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    /* VSync when extension present */
+    typedef BOOL (WINAPI *PFNWGLSWAPINTERVALEXTPROC)(int);
+    auto wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+    if (wglSwapIntervalEXT) wglSwapIntervalEXT(1);
     s_ready = 1;
     ps3rt_log("[rsx] OpenGL: context ready %ux%u\n", s_w, s_h);
     return 1;

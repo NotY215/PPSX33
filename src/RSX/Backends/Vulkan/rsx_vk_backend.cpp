@@ -629,7 +629,13 @@ extern "C" int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
     g_vk.width = width ? width : 720;
     g_vk.height = height ? height : 576;
 
-    if (!load_vulkan_lib()) return 0;
+    if (!load_vulkan_lib()) {
+        ps3rt_log("[rsx] Vulkan: load vulkan-1.dll / GetProcAddr failed
+");
+        return 0;
+    }
+    ps3rt_log("[rsx] Vulkan: loader OK, CreateInstance...
+");
 
     const char* exts[] = { "VK_KHR_surface", "VK_KHR_win32_surface" };
     VkApplicationInfo app{};
@@ -732,14 +738,19 @@ extern "C" int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
     load_device_fns();
     g_vk.GetDeviceQueue(g_vk.device, g_vk.qfamily, 0, &g_vk.queue);
 
-    if (!create_swapchain()) return 0;
+    if (!create_swapchain()) {
+        ps3rt_log("[rsx] Vulkan: create_swapchain failed\n");
+        return 0;
+    }
 
     VkCommandPoolCreateInfo cpci{};
     cpci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     cpci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     cpci.queueFamilyIndex = g_vk.qfamily;
-    if (g_vk.CreateCommandPool(g_vk.device, &cpci, nullptr, &g_vk.cmd_pool) != VK_SUCCESS)
+    if (g_vk.CreateCommandPool(g_vk.device, &cpci, nullptr, &g_vk.cmd_pool) != VK_SUCCESS) {
+        ps3rt_log("[rsx] Vulkan: CreateCommandPool failed\n");
         return 0;
+    }
 
     VkCommandBufferAllocateInfo cbai{};
     cbai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -801,7 +812,10 @@ extern "C" int rsx_vk_present_clear(float r, float g, float b, float a) {
         g_vk.image_available, nullptr, &imageIndex);
     if (ar == VK_ERROR_OUT_OF_DATE_KHR || ar == VK_SUBOPTIMAL_KHR) {
         destroy_swapchain_objects();
-        if (!create_swapchain()) return 0;
+        if (!create_swapchain()) {
+        ps3rt_log("[rsx] Vulkan: create_swapchain failed\n");
+        return 0;
+    }
         return 0;
     }
     if (ar != VK_SUCCESS) return 0;
@@ -883,7 +897,10 @@ extern "C" int rsx_vk_present_guest_rgba(const void* pixels, uint32_t w, uint32_
         g_vk.image_available, nullptr, &imageIndex);
     if (ar == VK_ERROR_OUT_OF_DATE_KHR || ar == VK_SUBOPTIMAL_KHR) {
         destroy_swapchain_objects();
-        if (!create_swapchain()) return 0;
+        if (!create_swapchain()) {
+        ps3rt_log("[rsx] Vulkan: create_swapchain failed\n");
+        return 0;
+    }
         return 0;
     }
     if (ar != VK_SUCCESS || imageIndex >= g_vk.images.size()) return 0;
