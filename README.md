@@ -26,7 +26,7 @@
 <p align="center">
   <a href="https://ppsx33.xo.je/"><img alt="Website" src="https://img.shields.io/badge/website-ppsx33.xo.je-00B4D8?style=for-the-badge"></a>
   <img alt="Platform: Windows x64" src="https://img.shields.io/badge/platform-Windows%20x64-0078D4?style=for-the-badge">
-  <img alt="Graphics: Vulkan 1.2" src="https://img.shields.io/badge/graphics-Vulkan%201.2-AC162C?style=for-the-badge">
+  <img alt="Graphics: Vulkan 1.2 (default) · OpenGL secondary" src="https://img.shields.io/badge/graphics-Vulkan%201.2-AC162C?style=for-the-badge">
   <img alt="Goal: Full Recompilation" src="https://img.shields.io/badge/goal-full%20recompilation-6A5ACD?style=for-the-badge">
 </p>
 
@@ -38,7 +38,7 @@
 
 ## Host tools
 
-Desktop UI: **C++ / Qt 6 Widgets** (`PPSX33.exe`, **1.1.0-Alpha**). Runtime: unified **`ps3rt.dll`** under `build/dist/` (plus `ps3core.dll`, `vulkan-1.dll`).
+Desktop UI: **C++ / Qt 6 Widgets**. Graphics: **Vulkan 1.2** default; **OpenGL** selectable (working-phase notice in UI). (`PPSX33.exe`, **1.1.0-Alpha**). Runtime: unified **`ps3rt.dll`** under `build/dist/` (plus `ps3core.dll`, `vulkan-1.dll`).
 
 ## ✨ What PPSX33 is building
 

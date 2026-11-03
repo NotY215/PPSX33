@@ -26,6 +26,7 @@ Primary goal: **full PS3 → native Windows recompilation** (lift + HLE + RSX ho
 | Title FIFO geometry | Real draws beyond assist/clear |
 | Sticky recovery under GOW load | Re-test after full patch set |
 | SPIR-V from guest ucode | Bind ready; compiler path next |
+| OpenGL WGL present path | Working phase; selectable in UI with notice |
 
 ## Planned
 

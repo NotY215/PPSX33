@@ -39,3 +39,13 @@ Single **`ps3rt.dll`** contains HLE, RSX FIFO/device, Vulkan backend, present/dr
 ## Logging
 
 Runtime logs: `GameName-YYYY-MM-DD_HH-MM-SS.txt` under USRDIR / Report tab. Assist draws and soft recovery are **diagnostic**.
+
+
+## Graphics backends
+
+| Backend | Status |
+|---------|--------|
+| Vulkan 1.2 | Default host present (swapchain + guest RGBA staging) |
+| OpenGL (WGL) | Secondary; working-phase; fixed-function textured quad present |
+
+Set via UI combo or `ps3rt_set_graphics_backend` (0=Vulkan, 1=OpenGL).

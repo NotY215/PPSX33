@@ -267,8 +267,7 @@ PS3RT_API void ps3rt_audio_tick(void) {
             }
             static int s_pull = 0;
             if (s_pull < 12) {
-                ps3rt_log("[audio] ring pull ridx=%llu ea=0x%llx frames=%u
-",
+                ps3rt_log("[audio] ring pull ridx=%llu ea=0x%llx frames=%u\n",
                     (unsigned long long)g_audio_read_idx, (unsigned long long)ea, frames);
                 ++s_pull;
             }
