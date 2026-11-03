@@ -313,3 +313,10 @@ See [LICENSE](LICENSE) for the project's license. Third-party components, header
 
 ## Per-game Modify.exe
 API (Vulkan 1.2 / OpenGL 4.5), quality (720/560/480), and play unlock are controlled by **Modify.exe** next to the game EXE — not the main UI.
+
+
+### Game package workflow
+1. **Build Project** — produces game EXE + unlock token
+2. **Port** — emits `Modify.exe` + `ppsx33_launch.json` bound to that game
+3. **Copy to Game Folder** — ships EXE, Modify, `ps3rt.dll`, `vulkan-1.dll`, `guest_image.bin`, keymap
+4. Launch game EXE → opens **Modify** (API / quality / controller) → **PLAY**

@@ -49,7 +49,7 @@ private:
     void applySettingsToUi();
 
     QString m_projectDir, m_gameRoot, m_exePath;
-    bool m_canLift = false, m_canBuild = false, m_canCopy = false, m_canRun = false, m_busy = false;
+    bool m_canLift = false, m_canBuild = false, m_canPort = false, m_canCopy = false, m_canRun = false, m_busy = false;
 
     QLabel *m_status = nullptr, *m_target = nullptr, *m_engine = nullptr;
     QLineEdit *m_consoleIn = nullptr;
@@ -59,7 +59,7 @@ private:
     QTabWidget* m_tabs = nullptr;
     QComboBox *m_api = nullptr, *m_threads = nullptr;
     QProgressBar* m_progress = nullptr;
-    QPushButton *m_btnLoad = nullptr, *m_btnLift = nullptr, *m_btnBuild = nullptr;
+    QPushButton *m_btnLoad = nullptr, *m_btnLift = nullptr, *m_btnBuild = nullptr, *m_btnPort = nullptr;
     QPushButton *m_btnRun = nullptr, *m_btnCopy = nullptr, *m_btnSaveKeys = nullptr;
     QMap<QString, QLineEdit*> m_keyEdits;
     UiLogoAnim* m_logoAnim = nullptr;

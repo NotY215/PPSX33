@@ -1,7 +1,11 @@
 /* PPSX33 Modify — per-game launcher (no Qt). Dark themed Win32 UI. */
 #define WIN32_LEAN_AND_MEAN
+#ifndef UNICODE
 #define UNICODE
+#endif
+#ifndef _UNICODE
 #define _UNICODE
+#endif
 #include <windows.h>
 #include <windowsx.h>
 #include <shellapi.h>

@@ -52,3 +52,11 @@ They do **not** describe the Visual Studio / .NET toolchain used only to **build
 
 ## Per-game Modify.exe
 API (Vulkan 1.2 / OpenGL 4.5), quality (720/560/480), and play unlock are controlled by **Modify.exe** next to the game EXE — not the main UI.
+
+
+### Host UI
+- Windows x64, Qt 6.8 Widgets (recompiler only)
+- Vulkan 1.2 and/or OpenGL 4.5 for **game** present
+
+### Game package
+- `Modify.exe` (shipped by Port), `ps3rt.dll`, `vulkan-1.dll`, optional `guest_image.bin`

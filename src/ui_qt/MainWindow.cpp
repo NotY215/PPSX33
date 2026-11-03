@@ -106,7 +106,7 @@ void MainWindow::buildUi() {
     logoLay->addWidget(sub);
     sideLay->addWidget(logoBox);
 
-    auto* wf = new QLabel(QStringLiteral("WORKFLOW  ·  5 ACTIONS"), side);
+    auto* wf = new QLabel(QStringLiteral("WORKFLOW  ·  6 ACTIONS"), side);
     wf->setObjectName(QStringLiteral("section"));
     sideLay->addWidget(wf);
 
