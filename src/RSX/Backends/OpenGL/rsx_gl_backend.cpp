@@ -126,9 +126,23 @@ int rsx_gl_ready(void) { return s_ready; }
 
 void rsx_gl_poll_window(void) {
     if (!s_hwnd) return;
+    if (!IsWindow((HWND)s_hwnd)) {
+        s_hwnd = nullptr;
+        s_ready = 0;
+        extern void ps3rt_request_exit(void);
+        ps3rt_request_exit();
+        return;
+    }
     MSG msg;
-    while (PeekMessageW(&msg, s_hwnd, 0, 0, PM_REMOVE)) {
-        if (msg.message == WM_QUIT) break;
+    /* Thread-wide queue so WM_QUIT is not missed */
+    while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
+        if (msg.message == WM_QUIT) {
+            s_ready = 0;
+            s_hwnd = nullptr;
+            extern void ps3rt_request_exit(void);
+            ps3rt_request_exit();
+            break;
+        }
         TranslateMessage(&msg);
         DispatchMessageW(&msg);
     }

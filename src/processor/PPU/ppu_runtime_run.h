@@ -451,6 +451,7 @@ while (!c.halted) {
                             if (ranked) next = ranked;
                         }
                         if (s_sticky_log < 24) {
+                            if (ps3rt_should_exit()) { c.halted = true; break; }
                             ps3rt_log("[ps3] P0 sticky soft-continue -> 0x%llx\n", (unsigned long long)next);
                         }
                         alt = next;

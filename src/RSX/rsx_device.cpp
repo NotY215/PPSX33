@@ -58,6 +58,7 @@ extern "C" uint8_t* ps3rt_guest_mem_ptr(void);
 extern "C" size_t ps3rt_guest_mem_size(void);
 PS3RT_API int  ps3rt_should_exit(void);
 PS3RT_API void ps3rt_force_exit(void);
+PS3RT_API void ps3rt_request_exit(void);
 
 static int g_backend = 0; /* 0=Vulkan1.2 1=OpenGL */
 
@@ -94,8 +95,17 @@ static void rsx_surface_bind_color(uint32_t offset, uint32_t pitch, uint32_t w, 
 
 
 static LRESULT CALLBACK RsxWndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
-    if (m == WM_CLOSE) { DestroyWindow(h); return 0; }
-    if (m == WM_DESTROY) { g_hwnd = nullptr; PostQuitMessage(0); return 0; }
+    if (m == WM_CLOSE) {
+        ps3rt_request_exit();
+        DestroyWindow(h);
+        return 0;
+    }
+    if (m == WM_DESTROY) {
+        ps3rt_request_exit();
+        g_hwnd = nullptr;
+        PostQuitMessage(0);
+        return 0;
+    }
     if (m == WM_PAINT) {
         PAINTSTRUCT ps; BeginPaint(h, &ps); EndPaint(h, &ps);
         if (g_gfx_api == 0 && rsx_vk_ready())
@@ -313,11 +323,16 @@ static volatile long g_pump_run = 0;
 static DWORD WINAPI rsx_pump_thread_main(void*) {
     static int tick = 0;
     while (InterlockedCompareExchange(&g_pump_run, 1, 1) == 1) {
+        if (ps3rt_should_exit()) { InterlockedExchange(&g_pump_run, 0); break; }
+        if (g_hwnd && !IsWindow(g_hwnd)) { g_hwnd = nullptr; ps3rt_request_exit(); InterlockedExchange(&g_pump_run, 0); break; }
         if (g_hwnd) {
             MSG msg;
             while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
                 if (msg.message == WM_QUIT) {
+                    ps3rt_request_exit();
                     InterlockedExchange(&g_pump_run, 0);
+                    /* Hard stop if PPU is stuck in soft-continue */
+                    ps3rt_force_exit();
                     break;
                 }
                 TranslateMessage(&msg);
@@ -326,7 +341,7 @@ static DWORD WINAPI rsx_pump_thread_main(void*) {
             if (g_gfx_api == 0 && rsx_vk_ready()) {
                 rsx_present_req req{};
                 if (rsx_present_queue_pop(&req) && req.flags == 2 && req.color_offset) {
-                    uint32_t w = 720, h = 576;
+                    uint32_t w = 720, h = 576; rsx_res_get(&w, &h);
                     uint32_t pitch = req.pitch ? req.pitch : (w * 4);
                     if (pitch < w * 4) pitch = w * 4;
                     uint8_t* mem = ps3rt_guest_mem_ptr();
