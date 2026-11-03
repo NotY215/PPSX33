@@ -1,7 +1,7 @@
 PPSX33 run log
 mode=launch_in_game_folder
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-02_13-33-15.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-02_13-33-15.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-03_11-52-31.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-03_11-52-31.txt
 [stage] BOOT start
 [ps3rt] warning: no guest_image.bin mapped
 [save] root=C:\Users\shrey\OneDrive\Documents\GOW3\PS3_SAVEDATA (PS3-native only; no savestates)
@@ -49,14 +49,9 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-02_13-33-15.txt
 [hle] cellSysutil/sysmodule = partial (common NIDs)
 [hle] cellSpurs = partial (job assist)
 [hle] RSX/FIFO = partial (assist draws proven; title stream pending)
-[ps3] XXV-F recover wild-pc 0x0 -> 0x103ac
-[ps3] XXV-L wild-pc 0x0 -> 0x103ac
-[ps3] XXV-F recover wild-pc 0x0 -> 0x10424
-[ps3] XXV-L wild-pc 0x0 -> 0x10424
-[ps3] XXV-F recover wild-pc 0x0 -> 0x1043c
-[ps3] XXV-L wild-pc 0x0 -> 0x1043c
-[ps3] XXV-F recover wild-pc 0x0 -> 0x10444
-[ps3] XXV-L wild-pc 0x0 -> 0x10444
+[ps3] soft left-range pc=0x0 -> 0x20000 (escapes=0 n=1)
+[ps3] XXV-F recover wild-pc 0x0 -> 0x200b4
+[ps3] XXV-L wild-pc 0x0 -> 0x200b4
 [stage] PPU progress start
 [stage] SPU progress end
 [pad] XInput loaded from xinput1_4.dll
@@ -69,4 +64,4 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-2026-11-02_13-33-15.txt
 [lv2] alloc VA=0x8020000 size=0x100000
 [rsx] XXII-L API preference: Vulkan 1.2 (OpenGL secondary; DX11 removed)
 [rsx] XX-O window title="PPSX33 presents GOW3"
-[rsx] Vulkan init begin hwnd=00000000001108BA 720x576
+[rsx] Vulkan init begin hwnd=00000000000607AC 720x576
