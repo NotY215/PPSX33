@@ -672,6 +672,7 @@ extern "C" int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
         ps3rt_log("[rsx] Vulkan: Win32 surface failed\n");
         return 0;
     }
+    ps3rt_log("[rsx] Vulkan: Win32 surface OK\n");
 
     uint32_t pd_count = 0;
     g_vk.EnumeratePhysicalDevices(g_vk.instance, &pd_count, nullptr);
@@ -811,7 +812,7 @@ extern "C" int rsx_vk_present_clear(float r, float g, float b, float a) {
     if (ar == VK_ERROR_OUT_OF_DATE_KHR || ar == VK_SUBOPTIMAL_KHR) {
         destroy_swapchain_objects();
         if (!create_swapchain()) {
-        ps3rt_log("[rsx] Vulkan: create_swapchain failed\n");
+            ps3rt_log("[rsx] Vulkan: create_swapchain failed\n");
         return 0;
     }
         return 0;
@@ -896,7 +897,7 @@ extern "C" int rsx_vk_present_guest_rgba(const void* pixels, uint32_t w, uint32_
     if (ar == VK_ERROR_OUT_OF_DATE_KHR || ar == VK_SUBOPTIMAL_KHR) {
         destroy_swapchain_objects();
         if (!create_swapchain()) {
-        ps3rt_log("[rsx] Vulkan: create_swapchain failed\n");
+            ps3rt_log("[rsx] Vulkan: create_swapchain failed\n");
         return 0;
     }
         return 0;

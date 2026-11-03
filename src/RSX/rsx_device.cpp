@@ -509,7 +509,7 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
     if (kind == RSX_M_SURFACE_COLOR_OFFSET) {
         g_rsx.color_offset = arg;
         rsx_surface_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height);
-        rsx_draw_batch_set_color(arg, g_rsx.color_pitch, 720, 576);
+         { uint32_t pw=720,ph=576; rsx_res_get(&pw,&ph); rsx_draw_batch_set_color(arg, g_rsx.color_pitch, pw, ph); }
         ppsx33::rsx::rsx_framebuffer_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height, 0);
         return true;
     }
@@ -801,7 +801,7 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
         ppsx33::rsx::rsx_shader_compiler_init();
         ppsx33::rsx::rsx_shader_decoder_init();
     }
-    if (!g_hwnd) rsx_host_init(720, 576);
+    if (!g_hwnd) { uint32_t pw=720, ph=576; rsx_res_get(&pw, &ph); rsx_host_init(pw, ph); }
     ps3rt_log("[rsx] init fifo=0x%llx size=0x%x backend=%d (guest-PUT probe ready)\n",
         (unsigned long long)fifo_addr, (unsigned)fifo_size, g_backend);
 }
@@ -882,7 +882,10 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
                 host_stats_note_present();
             }
             else
-                presented = rsx_vk_present_guest_rgba(mem + off, 720, 576, pitch);
+                {
+                uint32_t pw = 720, ph = 576; rsx_res_get(&pw, &ph);
+                presented = rsx_vk_present_guest_rgba(mem + off, pw, ph, pitch);
+            }
             if (presented) rsx_vk_poll_window();
         }
     } else if (g_gfx_api == 1 && rsx_gl_ready() && g_rsx.color_offset) {
@@ -890,9 +893,12 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
         size_t msz = ps3rt_guest_mem_size();
         uint32_t off = g_rsx.color_offset;
         uint32_t pitch = g_rsx.color_pitch ? g_rsx.color_pitch : (720 * 4u);
-        size_t need = (size_t)off + (size_t)pitch * 576u;
+        uint32_t _ph = 576; rsx_res_get(nullptr, &_ph); size_t need = (size_t)off + (size_t)pitch * _ph;
         if (mem && need <= msz) {
-            presented = rsx_gl_present_guest_rgba(mem + off, 720, 576, pitch);
+            {
+                uint32_t pw = 720, ph = 576; rsx_res_get(&pw, &ph);
+                presented = rsx_gl_present_guest_rgba(mem + off, pw, ph, pitch);
+            }
             if (presented) rsx_gl_poll_window();
 
         }

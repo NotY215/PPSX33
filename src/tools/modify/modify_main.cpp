@@ -1,6 +1,7 @@
 /* PPSX33 Modify — per-game launcher (keymapping, resolution, API). No OpenGL warning popups. */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <shellapi.h>
 #include <commctrl.h>
 #include <cstdio>
 #include <cstring>
