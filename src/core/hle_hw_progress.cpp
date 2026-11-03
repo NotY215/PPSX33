@@ -3,6 +3,7 @@
 #include "ppu_runtime.h"
 #include "rsx_fifo_drain.h"
 #include "gcm_flip_label.h"
+#include "rsx_frag_align.h"
 #include <cstdint>
 
 extern uint8_t* g_mem;
@@ -82,6 +83,20 @@ PS3RT_API void ps3rt_progress_hw(void) {
         wr32(g_gcm_control + 4, put);
     }
 
+
+    /* Frag align orchestration: surface + fifo slice + pattern present + audio */
+    {
+        static rsx_frag_align_ctx s_ax;
+        static int s_ax_init = 0;
+        if (!s_ax_init) { rsx_frag_align_init(&s_ax); s_ax_init = 1; }
+        s_ax.mem = g_mem;
+        s_ax.mem_size = (uint64_t)g_mem_size;
+        s_ax.ctrl_ea = g_gcm_control;
+        s_ax.labels_ea = g_gcm_labels;
+        s_ax.fifo_base = 0;
+        s_ax.fifo_size = 0x100000u;
+        rsx_frag_align_tick(&s_ax);
+    }
     g_gcm_flip_status = 0;
     gcm_set_flip_status(0);
     static uint32_t s_flip_div = 0;

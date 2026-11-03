@@ -34,6 +34,7 @@ target_include_directories(ps3core PRIVATE
     ${CMAKE_SOURCE_DIR}/src/processor/PPU/translate
     ${CMAKE_SOURCE_DIR}/src/RSX/present
     ${CMAKE_SOURCE_DIR}/src/RSX/fifo
+  ${CMAKE_SOURCE_DIR}/src/RSX/frag
   ${CMAKE_SOURCE_DIR}/src/RSX/dispatch
     ${CMAKE_SOURCE_DIR}/src/core/import
     ${CMAKE_SOURCE_DIR}/src/native/x64
@@ -107,6 +108,13 @@ if(WIN32)
     src/RSX/rsx_shader_bind.c
     src/RSX/fifo/rsx_method_table.c
     src/RSX/fifo/rsx_fifo_drain.c
+    src/RSX/frag/rsx_frag_surface.c
+    src/RSX/frag/rsx_frag_fifo.c
+    src/RSX/frag/rsx_frag_present.c
+    src/RSX/frag/rsx_frag_flip.c
+    src/RSX/frag/rsx_frag_align.c
+    src/games-stuff/Audio/audio_frag_service.c
+    src/core/hle_hw_progress.cpp
     src/RSX/methods/rsx_nv4097_surface.c
     src/RSX/dispatch/rsx_dispatch_sink.c
     src/native/x64/ps3rt_be.c
@@ -134,6 +142,13 @@ if(WIN32)
     src/RSX/render/rsx_light_present.c
     src/RSX/fifo/rsx_method_table.c
     src/RSX/fifo/rsx_fifo_drain.c
+    src/RSX/frag/rsx_frag_surface.c
+    src/RSX/frag/rsx_frag_fifo.c
+    src/RSX/frag/rsx_frag_present.c
+    src/RSX/frag/rsx_frag_flip.c
+    src/RSX/frag/rsx_frag_align.c
+    src/games-stuff/Audio/audio_frag_service.c
+    src/core/hle_hw_progress.cpp
     src/RSX/methods/rsx_nv4097_surface.c
     src/RSX/dispatch/rsx_dispatch_sink.c
     src/native/x64/ps3rt_be.c
