@@ -69,7 +69,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     if (!NativeBridge::instance().load())
         appendLog(QStringLiteral("ps3core load failed: %1").arg(NativeBridge::instance().lastError()));
     else
-        appendLog(QStringLiteral("PPSX33 ready · core v%1").arg(NativeBridge::instance().version()));
+        appendLog(QStringLiteral("PPSX33 %1 · core v%2").arg(QStringLiteral(PPSX33_VERSION_STRING)).arg(NativeBridge::instance().version()));
     appendLog(QStringLiteral("Settings: %1").arg(Settings::instance().path()));
     appendLog(QStringLiteral("Host cores detected: %1").arg(QThread::idealThreadCount()));
     refreshButtons();

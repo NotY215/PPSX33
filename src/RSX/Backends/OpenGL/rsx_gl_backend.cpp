@@ -82,6 +82,7 @@ int rsx_gl_init(void* hwnd, uint32_t width, uint32_t height) {
     if (wglSwapIntervalEXT) wglSwapIntervalEXT(1);
     s_ready = 1;
     ps3rt_log("[rsx] OpenGL: context ready %ux%u\n", s_w, s_h);
+    ps3rt_log("[rsx] OpenGL host present ready %ux%u images=1\n", s_w, s_h);
     return 1;
 }
 

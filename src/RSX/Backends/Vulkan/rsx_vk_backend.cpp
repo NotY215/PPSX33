@@ -630,12 +630,10 @@ extern "C" int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
     g_vk.height = height ? height : 576;
 
     if (!load_vulkan_lib()) {
-        ps3rt_log("[rsx] Vulkan: load vulkan-1.dll / GetProcAddr failed
-");
+        ps3rt_log("[rsx] Vulkan: load vulkan-1.dll / GetProcAddr failed\n");
         return 0;
     }
-    ps3rt_log("[rsx] Vulkan: loader OK, CreateInstance...
-");
+    ps3rt_log("[rsx] Vulkan: loader OK, CreateInstance...\n");
 
     const char* exts[] = { "VK_KHR_surface", "VK_KHR_win32_surface" };
     VkApplicationInfo app{};
