@@ -35,6 +35,7 @@ static void gl_log(const char* m) {
 }
 
 extern "C" void ps3rt_log(const char* fmt, ...);
+extern "C" void ps3rt_request_exit(void);
 
 int rsx_gl_init(void* hwnd, uint32_t width, uint32_t height) {
     if (s_ready) return 1;
@@ -129,7 +130,6 @@ void rsx_gl_poll_window(void) {
     if (!IsWindow((HWND)s_hwnd)) {
         s_hwnd = nullptr;
         s_ready = 0;
-        extern "C" void ps3rt_request_exit(void);
         ps3rt_request_exit();
         return;
     }
@@ -139,7 +139,6 @@ void rsx_gl_poll_window(void) {
         if (msg.message == WM_QUIT) {
             s_ready = 0;
             s_hwnd = nullptr;
-            extern "C" void ps3rt_request_exit(void);
             ps3rt_request_exit();
             break;
         }
