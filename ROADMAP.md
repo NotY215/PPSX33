@@ -35,7 +35,7 @@ Primary goal: **full PS3 → native Windows recompilation** (lift + HLE + RSX ho
 | Fullscreen SPIR-V blit pipeline | Roadmap carry-over |
 | Deeper cellGcmSys / sysutil | Title-driven |
 | SPU / SPURS depth | Job assist exists; expand as needed |
-| OpenGL 4.3 secondary path | UI may expose later; Vulkan default |
+| OpenGL 4.5 secondary path | UI may expose later; Vulkan default |
 
 ## Non-goals
 
@@ -46,3 +46,7 @@ Primary goal: **full PS3 → native Windows recompilation** (lift + HLE + RSX ho
 ## Testing policy
 
 Apply the full post-analysis patch series, then validate end-to-end (host build → game build → run log).
+
+
+## Per-game Modify.exe
+API (Vulkan 1.2 / OpenGL 4.5), quality (720/560/480), and play unlock are controlled by **Modify.exe** next to the game EXE — not the main UI.

@@ -2,6 +2,33 @@
 #include "TermsDialog.h"
 #include "Settings.h"
 #include "AppVersion.h"
+#include <QMessageBox>
+#if defined(_WIN32)
+#include <windows.h>
+#endif
+
+static void checkHostGraphics(QWidget* parent) {
+    QStringList miss;
+#if defined(_WIN32)
+    HMODULE vk = LoadLibraryA("vulkan-1.dll");
+    if (!vk) miss << "Vulkan 1.2 loader (vulkan-1.dll)";
+    else FreeLibrary(vk);
+    HMODULE gl = LoadLibraryA("opengl32.dll");
+    if (!gl) miss << "OpenGL (opengl32.dll)";
+    else {
+        /* 4.5 presence cannot be known without a context; warn only if DLL missing */
+        FreeLibrary(gl);
+    }
+#endif
+    if (!miss.isEmpty()) {
+        QMessageBox::warning(parent, QStringLiteral("Graphics capability"),
+            QStringLiteral("This PC may be missing:\n- %1\n\n"
+                           "PPSX33 needs Vulkan 1.2 and/or OpenGL 4.5 for game present.\n"
+                           "You can still use the recompiler UI.")
+                .arg(miss.join("\n- ")));
+    }
+}
+
 #include <QApplication>
 #include <cstdio>
 #ifdef _WIN32
@@ -38,6 +65,7 @@ int main(int argc, char* argv[]) {
     }
 
     MainWindow w;
+    checkHostGraphics(&w);
     w.show();
     return app.exec();
 }

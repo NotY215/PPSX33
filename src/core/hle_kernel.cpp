@@ -123,10 +123,20 @@ static void ps3rt_log_open(void) {
         }
         if (!gsafe[0]) std::snprintf(gsafe, sizeof(gsafe), "PS3Title");
     }
-    char name[128];
+    const char* api_tag = "Vulkan";
+#if defined(_WIN32)
+    {
+        const char* cl = GetCommandLineA();
+        if (cl && (std::strstr(cl, "-api=opengl") || std::strstr(cl, "-api=OpenGL")))
+            api_tag = "OpenGL45";
+        else if (cl && (std::strstr(cl, "-api=vulkan") || std::strstr(cl, "-api=Vulkan")))
+            api_tag = "Vulkan12";
+    }
+#endif
+    char name[160];
     std::snprintf(name, sizeof(name),
-        "%s-%04d-%02d-%02d_%02d-%02d-%02d.txt",
-        gsafe,
+        "%s-%s-%04d-%02d-%02d_%02d-%02d-%02d.txt",
+        gsafe, api_tag,
         tm_buf.tm_year + 1900, tm_buf.tm_mon + 1, tm_buf.tm_mday,
         tm_buf.tm_hour, tm_buf.tm_min, tm_buf.tm_sec);
     char full[600];
@@ -136,8 +146,10 @@ static void ps3rt_log_open(void) {
         std::fprintf(g_logf,
             "PPSX33 run log\n"
             "mode=%s\n"
+            "api=%s\n"
             "file=%s\n",
             in_game ? "launch_in_game_folder" : "launch_outside_game",
+            api_tag,
             full);
         std::fflush(g_logf);
         ps3rt_log("[ps3rt] log file (%s): %s\n",

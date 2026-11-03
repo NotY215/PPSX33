@@ -126,21 +126,7 @@ void MainWindow::buildUi() {
     auto* apiL = new QLabel(QStringLiteral("GRAPHICS API"), side);
     apiL->setObjectName(QStringLiteral("fieldLabel"));
     sideLay->addWidget(apiL);
-    m_api = new QComboBox(side);
-    m_api->addItem(QStringLiteral("Vulkan 1.2"), QStringLiteral("Vulkan"));
-    m_api->addItem(QStringLiteral("OpenGL 4.3"), QStringLiteral("OpenGL"));
-    QObject::connect(m_api, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int) {
-        const QString v = m_api->currentData().toString();
-        if (v == QStringLiteral("OpenGL")) {
-            QMessageBox::information(this, QStringLiteral("OpenGL"),
-                QStringLiteral("OpenGL host path is in an active working phase.\n"
-                               "Vulkan 1.2 remains the recommended default.\n"
-                               "You can still select OpenGL for testing."));
-        }
-        Settings::instance().setGraphicsBackend(v);
-        Settings::instance().save();
-    });
-    sideLay->addWidget(m_api);
+    /* API + controller moved to per-game Modify.exe */
 
     auto* thrL = new QLabel(QStringLiteral("CPU THREADS"), side);
     thrL->setObjectName(QStringLiteral("fieldLabel"));
@@ -220,8 +206,7 @@ void MainWindow::buildUi() {
     loadRequirementsHtml();
     m_tabs->addTab(m_requirements, QStringLiteral("Requirements"));
 
-    buildControllerPage();
-    m_tabs->addTab(m_controllerPage, QStringLiteral("Controller"));
+    /* Controller mapping: keymap.json + Modify.exe */
 
     m_legal = new QTextEdit(right);
     m_legal->setReadOnly(true);
@@ -241,7 +226,6 @@ void MainWindow::buildUi() {
     connect(m_btnBuild, &QPushButton::clicked, this, &MainWindow::onBuild);
     connect(m_btnCopy, &QPushButton::clicked, this, &MainWindow::onCopy);
     connect(m_btnRun, &QPushButton::clicked, this, &MainWindow::onRun);
-    connect(m_api, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onGfxChanged);
     connect(m_threads, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onThreadsChanged);
 
 }
@@ -285,7 +269,7 @@ void MainWindow::loadRequirementsHtml() {
         "<ul>"
         "<li><b>OS:</b> Windows x64</li>"
         "<li><b>Graphics:</b> Vulkan 1.2 capable GPU and driver</li>"
-        "<li><b>OpenGL 4.3:</b> selectable; working-phase host path (popup on select)</li>"
+        "<li><b>OpenGL 4.5:</b> both Vulkan 1.2 and OpenGL 4.5 built; choose in Modify.exe</li>"
         "<li><b>Present:</b> light host path (720×576 class)</li>"
         "<li><b>Audio:</b> XAudio2-capable host</li>"
         "</ul>"
@@ -302,9 +286,7 @@ void MainWindow::loadRequirementsHtml() {
 void MainWindow::applySettingsToUi() {
     auto& s = Settings::instance();
     const QString gfx = s.graphicsBackend();
-    int gi = m_api->findData(gfx);
-    if (gi < 0) gi = 0;
-    m_api->setCurrentIndex(gi);
+    /* graphics backend chosen in Modify.exe */
     int ti = m_threads->findData(s.ppuThreads());
     if (ti < 0) {
         const int cores = qMax(1, QThread::idealThreadCount());
@@ -395,7 +377,7 @@ void MainWindow::refreshButtons() {
 }
 
 void MainWindow::onGfxChanged(int) {
-    Settings::instance().setGraphicsBackend(m_api->currentData().toString());
+    Settings::instance().setGraphicsBackend(QStringLiteral("Vulkan")); /* dual-API in game Modify.exe */
     Settings::instance().save();
 }
 
@@ -548,7 +530,7 @@ void MainWindow::onConsoleSubmit() {
         m_console->clear();
     } else if (c == QStringLiteral("status")) {
         appendLog(QStringLiteral("API=%1 threads=%2 project=%3")
-            .arg(m_api ? m_api->currentText() : QString())
+            .arg(QStringLiteral("Vulkan+OpenGL (Modify.exe)"))
             .arg(m_threads ? m_threads->currentText() : QString())
             .arg(m_projectDir.isEmpty() ? QStringLiteral("(none)") : m_projectDir));
     } else if (c == QStringLiteral("stop")) {

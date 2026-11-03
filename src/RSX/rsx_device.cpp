@@ -1,4 +1,4 @@
-// WORK: RSX/libgcm host path — Vulkan 1.2 default, OpenGL secondary. DX11 removed.
+// WORK: RSX/libgcm host path — Vulkan 1.2 default, OpenGL 4.5 secondary. DX11 removed.
 #include "rsx_device.h"
 #include "rsx_fifo.h"
 #include "rsx_method_table.h"
@@ -269,10 +269,19 @@ static void rsx_probe_api_preference() {
     static int once = 0;
     if (once) return;
     once = 1;
+    {
+#if defined(_WIN32)
+        const char* cl = GetCommandLineA();
+        if (cl && (std::strstr(cl, "-api=opengl") || std::strstr(cl, "-api=OpenGL")))
+            g_backend = 1;
+        else if (cl && (std::strstr(cl, "-api=vulkan") || std::strstr(cl, "-api=Vulkan")))
+            g_backend = 0;
+#endif
+    }
     if (g_backend == 1) g_gfx_api = 1;
     else { g_gfx_api = 0; g_backend = 0; }
     if (g_gfx_api == 0)
-        ps3rt_log("[rsx] XXII-L API preference: Vulkan 1.2 (OpenGL secondary; DX11 removed)\n");
+        ps3rt_log("[rsx] XXII-L API preference: Vulkan 1.2 (OpenGL 4.5 secondary; DX11 removed)\n");
     else
         ps3rt_log("[rsx] XXII-L API preference: OpenGL (Vulkan secondary)\n");
 }

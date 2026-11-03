@@ -292,6 +292,9 @@ void cleanup_after_build(const std::string& project_dir, const fs::path& out, st
         if (lower == "ps3rt.dll") return true;
         if (lower == "guest_image.bin") return true;
         if (lower == "pad_map.json") return true;
+        if (lower == "keymap.json") return true;
+        if (lower == "modify.exe") return true;
+        if (lower == "ppsx33_launch.json") return true;
         if (lower == "build_live.log") return true;
         if (lower.size() > 4 && lower.substr(lower.size() - 4) == ".exe") {
             if (lower == "cl.exe" || lower == "link.exe" || lower == "ps3recomp.exe") return false;
@@ -524,6 +527,42 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
             ch == '|' || ch == '?' || ch == '*') ch = '_';
     }
     live_log(std::string("OUT_EXE=") + out_exe + "\n");
+
+    // Dual-API always; write unlock token + launch sidecar for Modify.exe
+    {
+        std::string key;
+        {
+            // simple stable token from project path + out_exe
+            unsigned h = 2166136261u;
+            for (char c : (project_dir + out_exe)) { h ^= (unsigned char)c; h *= 16777619u; }
+            char buf[32];
+            std::snprintf(buf, sizeof(buf), "P33-%08X", h);
+            key = buf;
+        }
+        std::ofstream uk(out / "unlock.inc");
+        if (uk) uk << "#define PPSX33_UNLOCK_KEY \"" << key << "\"\n";
+        std::ofstream lj(out / "ppsx33_launch.json");
+        if (lj) {
+            lj << "{\n  \"game\": \"" << out_exe << "\",\n  \"key\": \"" << key
+               << "\",\n  \"api\": \"Vulkan\",\n  \"apis\": [\"Vulkan\",\"OpenGL\"]\n}\n";
+        }
+        live_log(std::string("UNLOCK_KEY=") + key + "\n");
+        // Prefer host-built Modify.exe
+        fs::path mod_src = dist_guess / "Modify.exe";
+        if (!fs::exists(mod_src)) mod_src = fs::path(runtime_dir) / "Modify.exe";
+        if (fs::exists(mod_src)) {
+            fs::copy_file(mod_src, out / "Modify.exe", fs::copy_options::overwrite_existing, ec);
+            live_log("Copied Modify.exe\n");
+        } else {
+            live_log("WARN: Modify.exe not in dist/ — rebuild host with PPSX33Modify target\n");
+        }
+        // default keymap
+        if (!fs::exists(out / "keymap.json") && !fs::exists(out / "pad_map.json")) {
+            std::ofstream km(out / "keymap.json");
+            if (km) km << "{\n  \"Cross\": \"Z\", \"Circle\": \"X\", \"Square\": \"A\", \"Triangle\": \"S\"\n}\n";
+        }
+    }
+
     log += std::string("OUT_EXE=") + out_exe + "\n";
 
 #ifdef _WIN32
@@ -656,7 +695,9 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
                 std::find(gameSrc.begin(), gameSrc.end(), "game_main.cpp") == gameSrc.end()) {
                 cancel_chk();
                 f << "echo COMPILE game_main.cpp\n";
-                f << cl << " " << gflags << " /c src\\game_main.cpp /Foobj\\g_game_main.obj || exit /b 1\n";
+                f << "if exist unlock.inc set UNLOCKFI=/FI unlock.inc\n"
+                f << "if not exist unlock.inc set UNLOCKFI=\n"
+                f << cl << " " << gflags << " %UNLOCKFI% /c src\\game_main.cpp /Foobj\\g_game_main.obj || exit /b 1\n";
             }
             cancel_chk();
             f << "echo LINK " << out_exe << "\n";

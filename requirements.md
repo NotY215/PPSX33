@@ -25,7 +25,7 @@ They do **not** describe the Visual Studio / .NET toolchain used only to **build
 | Component | Requirement |
 |-----------|-------------|
 | OS | 64-bit Windows 10 or later |
-| GPU | Driver that exposes **Vulkan 1.2** *or* **OpenGL 4.3** |
+| GPU | Driver that exposes **Vulkan 1.2** *or* **OpenGL 4.5** |
 | Vulkan loader | `vulkan-1.dll` (copied beside the game EXE by the build) |
 | Input | Keyboard / XInput pad where the title uses them |
 | Game data | Lawfully obtained title files the user is authorized to run |
@@ -48,3 +48,7 @@ They do **not** describe the Visual Studio / .NET toolchain used only to **build
 - [README.md](README.md) — project overview  
 - [ROADMAP.md](ROADMAP.md) — implementation status  
 - [USER_MANUAL.md](USER_MANUAL.md) — GUI workflow  
+
+
+## Per-game Modify.exe
+API (Vulkan 1.2 / OpenGL 4.5), quality (720/560/480), and play unlock are controlled by **Modify.exe** next to the game EXE — not the main UI.

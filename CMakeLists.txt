@@ -313,3 +313,8 @@ if(WIN32)
       ${CMAKE_SOURCE_DIR}/assets/ppsx33-logo.ico $<TARGET_FILE_DIR:PPSX33>/ppsx33-logo.ico
     COMMENT "dist/: EXE + ps3core + ps3rt + modular DLLs + logo")
 endif()
+
+# Per-game launcher (copied next to game EXE as Modify.exe)
+add_executable(PPSX33Modify WIN32 src/tools/modify/modify_main.cpp)
+set_target_properties(PPSX33Modify PROPERTIES OUTPUT_NAME "Modify" RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/dist")
+target_link_libraries(PPSX33Modify PRIVATE user32 gdi32 comctl32 shell32)

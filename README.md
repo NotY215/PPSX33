@@ -197,7 +197,7 @@ These are the current minimums for opening the game window and clearing/presenti
 | Component | Requirement |
 | --- | --- |
 | Operating system | 64-bit Windows 10 or later |
-| GPU | A driver exposing **Vulkan 1.2** or **OpenGL 4.3** |
+| GPU | A driver exposing **Vulkan 1.2** or **OpenGL 4.5** |
 | Vulkan loader | `vulkan-1.dll` beside the generated game executable when using Vulkan |
 | Display output | Fixed **720×576 (576p)** host present for the current path |
 | Monitor | A physical display of **720×576** or higher is recommended |
@@ -309,3 +309,7 @@ PPSX33 does not bundle commercial game files, firmware, or proprietary keys. Its
 ## 📄 License
 
 See [LICENSE](LICENSE) for the project's license. Third-party components, headers and SDKs remain subject to their own licenses.
+
+
+## Per-game Modify.exe
+API (Vulkan 1.2 / OpenGL 4.5), quality (720/560/480), and play unlock are controlled by **Modify.exe** next to the game EXE — not the main UI.

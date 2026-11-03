@@ -74,6 +74,29 @@ int rsx_gl_init(void* hwnd, uint32_t width, uint32_t height) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (GLsizei)s_w, (GLsizei)s_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
+    
+    /* Prefer OpenGL 4.5 core when available */
+    typedef HGLRC (WINAPI *PFNWGLCREATECONTEXTATTRIBSARBPROC)(HDC, HGLRC, const int*);
+    auto wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
+    if (wglCreateContextAttribsARB) {
+        const int attribs[] = {
+            0x2091 /*WGL_CONTEXT_MAJOR_VERSION_ARB*/, 4,
+            0x2092 /*WGL_CONTEXT_MINOR_VERSION_ARB*/, 5,
+            0x9126 /*WGL_CONTEXT_PROFILE_MASK_ARB*/, 1 /*CORE*/,
+            0
+        };
+        HGLRC modern = wglCreateContextAttribsARB(s_dc, nullptr, attribs);
+        if (modern) {
+            wglMakeCurrent(nullptr, nullptr);
+            wglDeleteContext(s_rc);
+            s_rc = modern;
+            wglMakeCurrent(s_dc, s_rc);
+            ps3rt_log("[rsx] OpenGL 4.5 core context\n");
+        } else {
+            ps3rt_log("[rsx] OpenGL 4.5 core unavailable — using compatibility context\n");
+        }
+    }
+
     glViewport(0, 0, (GLsizei)s_w, (GLsizei)s_h);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     /* VSync when extension present */
@@ -81,8 +104,8 @@ int rsx_gl_init(void* hwnd, uint32_t width, uint32_t height) {
     auto wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
     if (wglSwapIntervalEXT) wglSwapIntervalEXT(1);
     s_ready = 1;
-    ps3rt_log("[rsx] OpenGL: context ready %ux%u\n", s_w, s_h);
-    ps3rt_log("[rsx] OpenGL host present ready %ux%u images=1\n", s_w, s_h);
+    ps3rt_log("[rsx] OpenGL 4.5: context ready %ux%u\n", s_w, s_h);
+    ps3rt_log("[rsx] OpenGL 4.5 host present ready %ux%u images=1\n", s_w, s_h);
     return 1;
 }
 
