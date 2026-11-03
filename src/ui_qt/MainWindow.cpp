@@ -113,19 +113,17 @@ void MainWindow::buildUi() {
     m_btnLoad = makeSideBtn(QStringLiteral("Load ELF"), side);
     m_btnLift = makeSideBtn(QStringLiteral("Decompile"), side);
     m_btnBuild = makeSideBtn(QStringLiteral("Build Project"), side);
+    m_btnPort = makeSideBtn(QStringLiteral("Port"), side);
     m_btnCopy = makeSideBtn(QStringLiteral("Copy to Game Folder"), side);
     m_btnRun = makeSideBtn(QStringLiteral("Run Executable"), side);
-    for (auto* b : {m_btnLoad, m_btnLift, m_btnBuild, m_btnCopy, m_btnRun})
+    for (auto* b : {m_btnLoad, m_btnLift, m_btnBuild, m_btnPort, m_btnCopy, m_btnRun})
         sideLay->addWidget(b);
 
     auto* setH = new QLabel(QStringLiteral("RECOMPILER SETTINGS"), side);
     setH->setObjectName(QStringLiteral("section"));
     sideLay->addSpacing(8);
     sideLay->addWidget(setH);
-
-    auto* apiL = new QLabel(QStringLiteral("GRAPHICS API"), side);
-    apiL->setObjectName(QStringLiteral("fieldLabel"));
-    sideLay->addWidget(apiL);
+    /* Graphics API: Modify.exe */
     /* API + controller moved to per-game Modify.exe */
 
     auto* thrL = new QLabel(QStringLiteral("CPU THREADS"), side);
@@ -223,6 +221,7 @@ void MainWindow::buildUi() {
 
     connect(m_btnLoad, &QPushButton::clicked, this, &MainWindow::onLoadElf);
     connect(m_btnLift, &QPushButton::clicked, this, &MainWindow::onDecompile);
+    connect(m_btnPort, &QPushButton::clicked, this, &MainWindow::onPort);
     connect(m_btnBuild, &QPushButton::clicked, this, &MainWindow::onBuild);
     connect(m_btnCopy, &QPushButton::clicked, this, &MainWindow::onCopy);
     connect(m_btnRun, &QPushButton::clicked, this, &MainWindow::onRun);
@@ -347,7 +346,7 @@ void MainWindow::playIntro() {
     a->setEndValue(1.0);
     a->setEasingCurve(QEasingCurve::OutCubic);
     a->start(QAbstractAnimation::DeleteWhenStopped);
-    QList<QPushButton*> btns = { m_btnLoad, m_btnLift, m_btnBuild, m_btnCopy, m_btnRun };
+    QList<QPushButton*> btns = { m_btnLoad, m_btnLift, m_btnBuild, m_btnPort, m_btnCopy, m_btnRun };
     int i = 0;
     for (auto* b : btns) {
         auto* bf = new QGraphicsOpacityEffect(b);
@@ -372,6 +371,7 @@ void MainWindow::refreshButtons() {
     m_btnLoad->setEnabled(!m_busy);
     m_btnLift->setEnabled(!m_busy && m_canLift);
     m_btnBuild->setEnabled(!m_busy && m_canBuild);
+    if (m_btnPort) m_btnPort->setEnabled(!m_busy && m_canPort);
     m_btnCopy->setEnabled(!m_busy && m_canCopy);
     m_btnRun->setEnabled(!m_busy && m_canRun);
 }
@@ -625,10 +625,11 @@ void MainWindow::onJobFinished(bool ok, QString log, QString kind) {
         appendLog(ok ? QStringLiteral("[ui] decompile ok") : QStringLiteral("[ui] decompile failed"));
         if (!ok) QMessageBox::warning(this, QStringLiteral("PPSX33"), QStringLiteral("Decompile failed. See Report."));
     } else {
-        m_canCopy = ok;
+        m_canPort = ok;
+        m_canCopy = false; // after Port only
         if (ok) {
             m_progress->setValue(100);
-            appendLog(QStringLiteral("[ui] build ok"));
+            appendLog(QStringLiteral("[ui] build ok — click Port to emit Modify.exe"));
         } else {
             appendLog(QStringLiteral("[ui] build failed"));
             QMessageBox::warning(this, QStringLiteral("PPSX33"), QStringLiteral("Build failed. See Report / Console."));
@@ -640,4 +641,17 @@ void MainWindow::onJobFinished(bool ok, QString log, QString kind) {
         m_jobThread->quit();
         m_jobThread->wait(500);
     }
+}
+
+
+void MainWindow::onPort() {
+    appendLog(QStringLiteral("[port] extracting Modify.exe + binding unlock key…"));
+    if (!NativeBridge::instance().portModify(m_projectDir)) {
+        appendLog(QStringLiteral("[port] failed: %1").arg(NativeBridge::instance().lastError()));
+        return;
+    }
+    appendLog(QStringLiteral("[port] Modify.exe ready next to game output. Copy to Game Folder unlocked."));
+    m_canCopy = true;
+    m_canPort = false;
+    refreshButtons();
 }

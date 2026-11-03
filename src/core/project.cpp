@@ -533,10 +533,23 @@ bool build_project(const std::string& project_dir, const std::string& runtime_di
         std::string key;
         {
             // simple stable token from project path + out_exe
+            // High-entropy unlock (printable) — unique per build invocation
             unsigned h = 2166136261u;
             for (char c : (project_dir + out_exe)) { h ^= (unsigned char)c; h *= 16777619u; }
-            char buf[32];
-            std::snprintf(buf, sizeof(buf), "P33-%08X", h);
+#if defined(_WIN32)
+            FILETIME ft; GetSystemTimeAsFileTime(&ft);
+            h ^= ft.dwLowDateTime; h *= 16777619u; h ^= ft.dwHighDateTime;
+#endif
+            static const char alphabet[] =
+                "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789!@#$%^&*-_=+";
+            char buf[40];
+            int pos = 0;
+            buf[pos++] = 'P'; buf[pos++] = '3'; buf[pos++] = '3'; buf[pos++] = '-';
+            for (int i = 0; i < 24; ++i) {
+                h = h * 1664525u + 1013904223u;
+                buf[pos++] = alphabet[h % (sizeof(alphabet) - 1)];
+            }
+            buf[pos] = 0;
             key = buf;
         }
         std::ofstream uk(out / "unlock.inc");

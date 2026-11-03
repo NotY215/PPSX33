@@ -17,6 +17,8 @@ public:
     void cancelBuild();
     bool buildProject(const QString& projectDir, const QString& runtimeDir,
                       const QString& compilersDir, QString* log);
+    /** Extract/copy Modify.exe into project output and bind unlock key. */
+    bool portModify(const QString& projectDir);
 
 private:
     NativeBridge() = default;

@@ -24,6 +24,7 @@ protected:
 private slots:
     void onLoadElf();
     void onDecompile();
+    void onPort();
     void onBuild();
     void onCopy();
     void onRun();
