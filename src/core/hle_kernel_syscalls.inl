@@ -578,16 +578,16 @@ static void gcm_inject_clear_draw() {
     }
     gcm_fifo_emit(0x0200, color_off);           // COLOR_OFFSET
     gcm_fifo_emit(0x0204, 720u * 4u);           // COLOR_PITCH 576p
-    gcm_fifo_emit(0x020C, (720u << 16) | 576u);
+    gcm_fifo_emit(0x020C, (720u << 16) | 560u);
     gcm_fifo_emit(0x1D8C, col);                 // CLEAR_COLOR
     /* Host apply: write solid clear into guest color surface (real pixels for present) */
-    if (g_mem && color_off + 720u * 576u * 4u <= g_mem_size) {
+    if (g_mem && color_off + 720u * 560u * 4u <= g_mem_size) {
         uint8_t r = (uint8_t)((col >> 16) & 255), g = (uint8_t)((col >> 8) & 255), b = (uint8_t)(col & 255);
         uint8_t* dst = g_mem + color_off;
-        for (uint32_t i = 0; i < 720u * 576u; ++i) {
+        for (uint32_t i = 0; i < 720u * 560u; ++i) {
             dst[i * 4 + 0] = r; dst[i * 4 + 1] = g; dst[i * 4 + 2] = b; dst[i * 4 + 3] = 255;
         }
-        ps3rt_rsx_set_color_surface(color_off, 720, 576);
+        ps3rt_rsx_set_color_surface(color_off, 720, 560);
     }
     gcm_fifo_emit(0x1D90, 0xF1);
     gcm_fifo_emit(0x1D94, 0);

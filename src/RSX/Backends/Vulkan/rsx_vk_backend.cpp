@@ -1,4 +1,4 @@
-// WORK: Vulkan 1.2 host backend — dynamic vulkan-1.dll, swapchain clear/present.
+// WORK: Vulkan 1.1 host backend — dynamic vulkan-1.dll, swapchain clear/present.
 #include "rsx_vk_backend.h"
 #include <cstring>
 #include <cstdint>
@@ -629,14 +629,14 @@ extern "C" int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
     if (g_vk.ready) return 1;
     if (!hwnd) return 0;
     g_vk.width = width ? width : 720;
-    g_vk.height = height ? height : 576;
+    g_vk.height = height ? height : 560;
 
-    ps3rt_log("[rsx] Vulkan: loading vulkan-1.dll (API target 1.2)...\n");
+    ps3rt_log("[rsx] Vulkan: loading vulkan-1.dll (API target 1.1)...\n");
     if (!load_vulkan_lib()) {
         ps3rt_log("[rsx] Vulkan: load vulkan-1.dll / GetProcAddr failed\n");
         return 0;
     }
-    ps3rt_log("[rsx] Vulkan: loader OK, CreateInstance (apiVersion=1.2.0)...\n");
+    ps3rt_log("[rsx] Vulkan: loader OK, CreateInstance (apiVersion=1.1.0)...\n");
 
     const char* exts[] = { "VK_KHR_surface", "VK_KHR_win32_surface" };
     VkApplicationInfo app{};
@@ -645,7 +645,7 @@ extern "C" int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
     app.applicationVersion = 1;
     app.pEngineName = "PPSX33-RSX";
     app.engineVersion = 1;
-    app.apiVersion = (1u << 22) | (2u << 12); // Vulkan 1.2
+    app.apiVersion = (1u << 22) | (1u << 12); // Vulkan 1.1
 
     VkInstanceCreateInfo ici{};
     ici.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -654,7 +654,7 @@ extern "C" int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
     ici.ppEnabledExtensionNames = exts;
 
     if (g_vk.CreateInstance(&ici, nullptr, &g_vk.instance) != VK_SUCCESS) {
-        // Retry with 1.1 / 1.0 if 1.2 instance fails on old loaders
+        // Retry with 1.0 if 1.1 instance fails
         app.apiVersion = (1u << 22) | (0u << 12);
         if (g_vk.CreateInstance(&ici, nullptr, &g_vk.instance) != VK_SUCCESS) {
             ps3rt_log("[rsx] Vulkan: CreateInstance failed\n");
@@ -662,7 +662,7 @@ extern "C" int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
         }
         ps3rt_log("[rsx] Vulkan: instance API 1.0 (loader fell back)\n");
     } else {
-        ps3rt_log("[rsx] Vulkan: instance API 1.2\n");
+        ps3rt_log("[rsx] Vulkan: instance API 1.1\n");
     }
     load_instance_fns();
 
@@ -722,9 +722,9 @@ extern "C" int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
             uint32_t major = (props.apiVersion >> 22) & 0x7fu;
             uint32_t minor = (props.apiVersion >> 12) & 0x3ffu;
             uint32_t patch = props.apiVersion & 0xfffu;
-            ps3rt_log("[rsx] Vulkan: device API %u.%u.%u (host targets 1.2)\n", major, minor, patch);
-            if (major < 1 || (major == 1 && minor < 2))
-                ps3rt_log("[rsx] Vulkan: WARN device API < 1.2 — continuing best-effort\n");
+            ps3rt_log("[rsx] Vulkan: device API %u.%u.%u (host targets 1.1)\n", major, minor, patch);
+            if (major < 1 || (major == 1 && minor < 1))
+                ps3rt_log("[rsx] Vulkan: WARN device API < 1.1 — continuing best-effort\n");
         }
     }
 
@@ -777,7 +777,7 @@ extern "C" int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
     if (g_vk.CreateFence(g_vk.device, &fci, nullptr, &g_vk.in_flight) != VK_SUCCESS) return 0;
 
     g_vk.ready = 1;
-    ps3rt_log("[rsx] Vulkan 1.2 host present ready %ux%u images=%u\n",
+    ps3rt_log("[rsx] Vulkan 1.1 host present ready %ux%u images=%u\n",
         g_vk.width, g_vk.height, (unsigned)g_vk.images.size());
     return 1;
 }
@@ -894,8 +894,8 @@ extern "C" int rsx_vk_present_guest_rgba(const void* pixels, uint32_t w, uint32_
     if (!g_vk_mu.try_lock()) return 0;
     std::lock_guard<std::mutex> lk(g_vk_mu, std::adopt_lock);
     if (!g_vk.ready || !pixels || !w || !h) return 0;
-    // Host present always 576p (720x576) — lighter than 720p
-    w = 720; h = 576;
+    // Host present default 560p (720x560) — lighter than 720p
+    w = 720; h = 560;
     if (!pitch_bytes || pitch_bytes < w * 4u) pitch_bytes = w * 4u;
     if (pitch_bytes > w * 4u) pitch_bytes = w * 4u;
 

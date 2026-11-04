@@ -506,7 +506,7 @@ void MainWindow::onCopy() {
         m_exePath = to;
     }
     /* Always ship memory image + input map + Modify next to EXE */
-    for (const char* extra : {"guest_image.bin", "keymap.json", "pad_map.json", "Modify.exe", "ppsx33_tag.txt"}) {
+    for (const char* extra : {"guest_image.bin", "keymap.json", "Modify.exe", "ppsx33_tag.txt"}) {
         const QString src = out.filePath(QString::fromUtf8(extra));
         if (QFile::exists(src)) {
             const QString to = QDir(dest).filePath(QString::fromUtf8(extra));

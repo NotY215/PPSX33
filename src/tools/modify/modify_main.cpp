@@ -105,7 +105,7 @@ private:
         auto* gpage = new QWidget;
         auto* gl = new QFormLayout(gpage);
         m_api = new QComboBox(gpage);
-        m_api->addItem("Vulkan 1.2", "vulkan");
+        m_api->addItem("Vulkan 1.1", "vulkan");
         m_api->addItem("OpenGL 4.5", "opengl");
         gl->addRow("Present API", m_api);
         tabs->addTab(gpage, "Graphics");
@@ -114,8 +114,10 @@ private:
         auto* qpage = new QWidget;
         auto* ql = new QFormLayout(qpage);
         m_res = new QComboBox(qpage);
-        m_res->addItem("720p", 720);
         m_res->addItem("560p", 560);
+        m_res->addItem("720p", 720);
+        m_res->addItem("480p", 480);
+        m_res->setCurrentIndex(0);
         m_res->addItem("480p", 480);
         ql->addRow("Height (width 720)", m_res);
         tabs->addTab(qpage, "Quality");

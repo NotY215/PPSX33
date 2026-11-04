@@ -270,20 +270,6 @@ void cleanup_after_build(const std::string& project_dir, const fs::path& out, st
         live_log("WARN: codebase/guest_image.bin missing\n");
     }
 
-    if (!fs::exists(out / "pad_map.json")) {
-        for (auto cand : { root / "pad_map.json", codebase / "pad_map.json" }) {
-            if (fs::exists(cand)) {
-                fs::copy_file(cand, out / "pad_map.json", fs::copy_options::overwrite_existing, ec);
-                break;
-            }
-        }
-        if (!fs::exists(out / "pad_map.json")) {
-            std::ofstream pm(out / "pad_map.json");
-            if (pm) pm << R"({"version":1,"note":"host key map is keymap.json"})" << "\n";
-            live_log("Wrote default pad_map.json\n");
-        }
-    }
-
     if (fs::exists(out / "obj")) {
         fs::remove_all(out / "obj", ec);
         log += "cleanup: removed output/obj\n";
@@ -301,7 +287,6 @@ void cleanup_after_build(const std::string& project_dir, const fs::path& out, st
         for (char& c : lower) c = (char)tolower((unsigned char)c);
         if (lower == "ps3rt.dll") return true;
         if (lower == "guest_image.bin") return true;
-        if (lower == "pad_map.json") return true;
         if (lower == "keymap.json") return true;
         if (lower == "modify.exe") return true;
         if (lower == "ppsx33_launch.json") return true;

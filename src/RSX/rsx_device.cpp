@@ -903,7 +903,9 @@ PS3RT_API void ps3rt_rsx_init(uint64_t fifo_addr, uint32_t fifo_size) {
 
 PS3RT_API void ps3rt_rsx_set_color_surface(uint32_t offset, uint32_t w, uint32_t h) {
     if (!w) w = 720;
-    if (!h) h = 576;
+    if (!h) h = 560;
+    if (offset >= 0x08000000u && offset < 0x10000000u)
+        g_inject_color_offset = offset;
     uint32_t pitch = ((w * 4u) + 63u) & ~63u;
     g_rsx.color_offset = offset;
     g_rsx.color_pitch = pitch;
@@ -961,6 +963,8 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
             g_rsx.color_pitch = dbp;
         }
     }
+    if (g_inject_color_offset)
+        g_rsx.color_offset = g_inject_color_offset;
     int presented = 0;
     if (!g_rsx.color_offset) {
         uint32_t dbo0 = gcm_get_display_offset(buf_id);

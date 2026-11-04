@@ -1,7 +1,7 @@
 #include "rsx_resolution.h"
 
 static uint32_t s_w = 720;
-static uint32_t s_h = 576;
+static uint32_t s_h = 560; /* default 560p */
 
 PPSX33_RES_API uint32_t rsx_res_width(void)  { return s_w; }
 PPSX33_RES_API uint32_t rsx_res_height(void) { return s_h; }

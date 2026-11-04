@@ -452,6 +452,97 @@ static int window_is_focused(void) {
 #endif
 }
 
+
+/* Single input file: keymap.json next to EXE (Modify.exe writes this). */
+struct HostKeyMap {
+    int ready;
+    int vk_up, vk_down, vk_left, vk_right;
+    int vk_cross, vk_circle, vk_triangle, vk_square;
+    int vk_l1, vk_r1, vk_l2, vk_r2, vk_start, vk_select;
+    int vk_ls_u, vk_ls_d, vk_ls_l, vk_ls_r;
+};
+static HostKeyMap g_km{};
+
+static int vk_from_name(const char* n) {
+    if (!n || !n[0]) return 0;
+    if (!_stricmp(n, "Up") || !_stricmp(n, "LeftStickUp") || !_stricmp(n, "DpadUp")) return VK_UP;
+    if (!_stricmp(n, "Down") || !_stricmp(n, "LeftStickDown") || !_stricmp(n, "DpadDown")) return VK_DOWN;
+    if (!_stricmp(n, "Left") || !_stricmp(n, "LeftStickLeft") || !_stricmp(n, "DpadLeft")) return VK_LEFT;
+    if (!_stricmp(n, "Right") || !_stricmp(n, "LeftStickRight") || !_stricmp(n, "DpadRight")) return VK_RIGHT;
+    if (!_stricmp(n, "Space")) return VK_SPACE;
+    if (!_stricmp(n, "Return") || !_stricmp(n, "Enter")) return VK_RETURN;
+    if (!_stricmp(n, "Escape")) return VK_ESCAPE;
+    if (!_stricmp(n, "Backspace")) return VK_BACK;
+    if (!_stricmp(n, "Tab")) return VK_TAB;
+    if (!_stricmp(n, "RControlKey") || !_stricmp(n, "RControl")) return VK_RCONTROL;
+    if (!_stricmp(n, "LControlKey") || !_stricmp(n, "LControl")) return VK_LCONTROL;
+    if (!_stricmp(n, "RShiftKey") || !_stricmp(n, "RShift")) return VK_RSHIFT;
+    if (!_stricmp(n, "LShiftKey") || !_stricmp(n, "LShift")) return VK_LSHIFT;
+    if (!_stricmp(n, "NumPad4")) return VK_NUMPAD4;
+    if (!_stricmp(n, "NumPad5")) return VK_NUMPAD5;
+    if (!_stricmp(n, "NumPad6")) return VK_NUMPAD6;
+    if (!_stricmp(n, "NumPad8")) return VK_NUMPAD8;
+    if (n[1] == 0) {
+        char c = n[0];
+        if (c >= 'a' && c <= 'z') c = (char)(c - 'a' + 'A');
+        if (c >= 'A' && c <= 'Z') return (int)c;
+        if (c >= '0' && c <= '9') return (int)c;
+    }
+    return 0;
+}
+
+static void pad_load_keymap_once(void) {
+    if (g_km.ready) return;
+    g_km.ready = 1;
+    /* defaults match historical hardcoded map until JSON overrides */
+    g_km.vk_up = VK_UP; g_km.vk_down = VK_DOWN; g_km.vk_left = VK_LEFT; g_km.vk_right = VK_RIGHT;
+    g_km.vk_cross = 'Z'; g_km.vk_circle = 'X'; g_km.vk_triangle = 'S'; g_km.vk_square = 'A';
+    g_km.vk_l1 = 'L'; g_km.vk_r1 = 'R'; g_km.vk_l2 = VK_RSHIFT; g_km.vk_r2 = VK_RCONTROL;
+    g_km.vk_start = 'V'; g_km.vk_select = VK_SPACE;
+    g_km.vk_ls_u = VK_UP; g_km.vk_ls_d = VK_DOWN; g_km.vk_ls_l = VK_LEFT; g_km.vk_ls_r = VK_RIGHT;
+    char path[520] = "keymap.json";
+#if defined(_WIN32)
+    char mod[MAX_PATH];
+    if (GetModuleFileNameA(nullptr, mod, MAX_PATH)) {
+        char* s = strrchr(mod, '\\');
+        if (!s) s = strrchr(mod, '/');
+        if (s) { s[1] = 0; std::snprintf(path, sizeof path, "%skeymap.json", mod); }
+    }
+#endif
+    FILE* f = std::fopen(path, "rb");
+    if (!f) { ps3rt_log("[pad] keymap.json not found — using defaults\n"); return; }
+    char buf[4096];
+    size_t n = std::fread(buf, 1, sizeof(buf) - 1, f);
+    std::fclose(f);
+    buf[n] = 0;
+    auto pick = [&](const char* key, int* out) {
+        char pat[64];
+        std::snprintf(pat, sizeof pat, "\"%s\"", key);
+        const char* p = std::strstr(buf, pat);
+        if (!p) return;
+        p = std::strchr(p + std::strlen(pat), '"');
+        if (!p) return;
+        ++p;
+        const char* e = std::strchr(p, '"');
+        if (!e || e - p <= 0 || e - p > 31) return;
+        char name[32];
+        std::memcpy(name, p, (size_t)(e - p));
+        name[e - p] = 0;
+        int vk = vk_from_name(name);
+        if (vk) *out = vk;
+    };
+    pick("DpadUp", &g_km.vk_up); pick("DpadDown", &g_km.vk_down);
+    pick("DpadLeft", &g_km.vk_left); pick("DpadRight", &g_km.vk_right);
+    pick("Cross", &g_km.vk_cross); pick("Circle", &g_km.vk_circle);
+    pick("Triangle", &g_km.vk_triangle); pick("Square", &g_km.vk_square);
+    pick("L1", &g_km.vk_l1); pick("R1", &g_km.vk_r1);
+    pick("L2", &g_km.vk_l2); pick("R2", &g_km.vk_r2);
+    pick("Start", &g_km.vk_start); pick("Select", &g_km.vk_select);
+    pick("LeftStickUp", &g_km.vk_ls_u); pick("LeftStickDown", &g_km.vk_ls_d);
+    pick("LeftStickLeft", &g_km.vk_ls_l); pick("LeftStickRight", &g_km.vk_ls_r);
+    ps3rt_log("[pad] keymap.json loaded from %s\n", path);
+}
+
 static void pad_poll_host() {
     ++g_pad_poll_count;
     uint16_t btn = 0;
@@ -489,21 +580,22 @@ static void pad_poll_host() {
             g_pad_connected = 1;
         }
     }
-    #define PAD_KEY(vk) ((GetAsyncKeyState(vk) & 0x8000) != 0)
-    if (PAD_KEY(VK_UP)    || PAD_KEY('W')) btn |= CELL_PAD_UP;
-    if (PAD_KEY(VK_DOWN)  || PAD_KEY('S')) btn |= CELL_PAD_DOWN;
-    if (PAD_KEY(VK_LEFT)  || PAD_KEY('A')) btn |= CELL_PAD_LEFT;
-    if (PAD_KEY(VK_RIGHT) || PAD_KEY('D')) btn |= CELL_PAD_RIGHT;
-    if (PAD_KEY(VK_RETURN) || PAD_KEY('K')) btn |= CELL_PAD_CROSS;
-    if (PAD_KEY(VK_ESCAPE) || PAD_KEY('L')) btn |= CELL_PAD_CIRCLE;
-    if (PAD_KEY(VK_SPACE)  || PAD_KEY('I')) btn |= CELL_PAD_TRIANGLE;
-    if (PAD_KEY(VK_BACK)   || PAD_KEY('J')) btn |= CELL_PAD_SQUARE;
-    if (PAD_KEY('Q')) btn |= CELL_PAD_L1;
-    if (PAD_KEY('E')) btn |= CELL_PAD_R1;
-    if (PAD_KEY('Z')) { btn |= CELL_PAD_L2; l2 = 255; }
-    if (PAD_KEY('C')) { btn |= CELL_PAD_R2; r2 = 255; }
-    if (PAD_KEY(VK_TAB))   btn |= CELL_PAD_START;
-    if (PAD_KEY(VK_SHIFT)) btn |= CELL_PAD_SELECT;
+    pad_load_keymap_once();
+    #define PAD_KEY(vk) ((vk) && ((GetAsyncKeyState(vk) & 0x8000) != 0))
+    if (PAD_KEY(g_km.vk_up) || PAD_KEY(g_km.vk_ls_u)) btn |= CELL_PAD_UP;
+    if (PAD_KEY(g_km.vk_down) || PAD_KEY(g_km.vk_ls_d)) btn |= CELL_PAD_DOWN;
+    if (PAD_KEY(g_km.vk_left) || PAD_KEY(g_km.vk_ls_l)) btn |= CELL_PAD_LEFT;
+    if (PAD_KEY(g_km.vk_right) || PAD_KEY(g_km.vk_ls_r)) btn |= CELL_PAD_RIGHT;
+    if (PAD_KEY(g_km.vk_cross)) btn |= CELL_PAD_CROSS;
+    if (PAD_KEY(g_km.vk_circle)) btn |= CELL_PAD_CIRCLE;
+    if (PAD_KEY(g_km.vk_triangle)) btn |= CELL_PAD_TRIANGLE;
+    if (PAD_KEY(g_km.vk_square)) btn |= CELL_PAD_SQUARE;
+    if (PAD_KEY(g_km.vk_l1)) btn |= CELL_PAD_L1;
+    if (PAD_KEY(g_km.vk_r1)) btn |= CELL_PAD_R1;
+    if (PAD_KEY(g_km.vk_l2)) { btn |= CELL_PAD_L2; l2 = 255; }
+    if (PAD_KEY(g_km.vk_r2)) { btn |= CELL_PAD_R2; r2 = 255; }
+    if (PAD_KEY(g_km.vk_start)) btn |= CELL_PAD_START;
+    if (PAD_KEY(g_km.vk_select)) btn |= CELL_PAD_SELECT;
     if (!(lx|ly)) {
         if (PAD_KEY('W')) ly = -127;
         if (PAD_KEY('S')) ly =  127;
