@@ -1,6 +1,6 @@
 # PPSX33 — Game Rendering Requirements
 
-**Last updated:** 2026-10-31
+**Last updated:** 2026-11-04
 
 Requirements below apply to **running a recompiled game** (the generated game EXE + `ps3rt.dll` present path).  
 They do **not** describe the Visual Studio / .NET toolchain used only to **build** the recompiler GUI or lift projects.
@@ -9,7 +9,7 @@ They do **not** describe the Visual Studio / .NET toolchain used only to **build
 
 | API | Version | Role |
 |-----|---------|------|
-| **Vulkan** | **1.2** | **Default** host renderer (`vulkan-1.dll` next to the game EXE) |
+| **Vulkan** | **1.1** | **Default** host renderer (`vulkan-1.dll` next to the game EXE) |
 | **OpenGL** | **4.3** | Secondary path (core profile); parity with Vulkan is in progress |
 
 ## Display / output
@@ -25,7 +25,7 @@ They do **not** describe the Visual Studio / .NET toolchain used only to **build
 | Component | Requirement |
 |-----------|-------------|
 | OS | 64-bit Windows 10 or later |
-| GPU | Driver that exposes **Vulkan 1.2** *or* **OpenGL 4.5** |
+| GPU | Driver that exposes **Vulkan 1.1** *or* **OpenGL 4.5** |
 | Vulkan loader | `vulkan-1.dll` (copied beside the game EXE by the build) |
 | Input | Keyboard / XInput pad where the title uses them |
 | Game data | Lawfully obtained title files the user is authorized to run |
@@ -34,7 +34,7 @@ They do **not** describe the Visual Studio / .NET toolchain used only to **build
 
 | Component | Recommendation |
 |-----------|----------------|
-| GPU | Discrete GPU with current vendor drivers (Vulkan 1.2+) |
+| GPU | Discrete GPU with current vendor drivers (Vulkan 1.1 support) |
 | VRAM | 2 GB+ |
 | RAM | 8 GB+ system memory for guest + host buffers |
 | Storage | SSD for game data and logs |
@@ -42,25 +42,22 @@ They do **not** describe the Visual Studio / .NET toolchain used only to **build
 ## What this document is not
 - Not a guarantee that any title will boot or draw correctly.
 
-
 ## Related
 
 - [README.md](README.md) — project overview  
 - [ROADMAP.md](ROADMAP.md) — implementation status  
 - [USER_MANUAL.md](USER_MANUAL.md) — GUI workflow  
 
-
 ## Per-game Modify.exe
-API (Vulkan 1.2 / OpenGL 4.5), quality (720/560/480), and play unlock are controlled by **Modify.exe** next to the game EXE — not the main UI.
 
+API (Vulkan 1.1 / OpenGL 4.5), quality (720/560/480), and play unlock are controlled by **Modify.exe** next to the game EXE — not the main UI.
 
 ### Host UI
 - Windows x64, Qt 6.8 Widgets (recompiler only)
-- Vulkan 1.2 and/or OpenGL 4.5 for **game** present
+- Vulkan 1.1 and/or OpenGL 4.5 for **game** present
 
 ### Game package
 - `Modify.exe` (shipped by Port), `ps3rt.dll`, `vulkan-1.dll`, optional `guest_image.bin`
-
 
 ## Modify.exe
 Prebuilt Qt6 tool (same Qt as host). Discovers tagged game EXE, edits `keymap.json`, launches with `-nogui -api= -h=`.
