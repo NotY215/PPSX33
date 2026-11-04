@@ -97,7 +97,7 @@ void host_stats_write_log_section(void) {
     ps3rt_log("Disk IO peak cumulative read:  %.1f MB\n", rd);
     ps3rt_log("Disk IO peak cumulative write: %.1f MB\n", wr);
     ps3rt_log("Present frames submitted: %llu\n", (unsigned long long)g_presents);
-    ps3rt_log("GPU: Vulkan 1.2 light path (no heavy GPU counter API; frames=%llu)\n",
+    ps3rt_log("GPU: Vulkan 1.1 light path (no heavy GPU counter API; frames=%llu)\n",
         (unsigned long long)g_presents);
     ps3rt_log("================================================\n");
 }

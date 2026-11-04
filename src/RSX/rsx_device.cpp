@@ -61,7 +61,7 @@ PS3RT_API void ps3rt_force_exit(void);
 PS3RT_API void ps3rt_audio_tick(void);
 PS3RT_API void ps3rt_request_exit(void);
 
-static int g_backend = 0; /* 0=Vulkan1.2 1=OpenGL */
+static int g_backend = 0; /* 0=Vulkan1.1 1=OpenGL */
 
 struct RsxState {
     uint32_t width = 720, height = 576;
@@ -83,7 +83,7 @@ static RsxState g_rsx;
 static uint32_t g_inject_color_offset = 0;
 static std::mutex g_rsx_mu;
 static HWND g_hwnd = nullptr;
-static int g_gfx_api = 0; /* 0=Vulkan1.2 1=OpenGL */
+static int g_gfx_api = 0; /* 0=Vulkan1.1 1=OpenGL */
 static int g_draw_count = 0;
 static uint32_t g_va_offset[8] = {};
 
@@ -93,6 +93,19 @@ static void rsx_surface_bind_color(uint32_t offset, uint32_t pitch, uint32_t w, 
     if (w) g_rsx.width = w;
     if (h) g_rsx.height = h;
     ppsx33::rsx::rsx_framebuffer_bind_color(offset, pitch, w, h, 0);
+    /* Kick OpenGL present of this surface so frames appear without waiting for flip races */
+    if (g_gfx_api == 1 && rsx_gl_ready()) {
+        uint8_t* mem = ps3rt_guest_mem_ptr();
+        size_t msz = ps3rt_guest_mem_size();
+        uint32_t pw = w ? w : 720, ph = h ? h : 560;
+        rsx_res_get(&pw, &ph);
+        uint32_t pitchb = pitch ? pitch : (pw * 4u);
+        if (mem && (size_t)offset + (size_t)pitchb * ph <= msz) {
+            if (rsx_gl_present_guest_rgba(mem + offset, pw, ph, pitchb))
+                g_rsx.draws_guest++;
+        }
+    }
+
 }
 
 
@@ -312,7 +325,7 @@ static void rsx_probe_api_preference() {
     if (g_backend == 1) g_gfx_api = 1;
     else { g_gfx_api = 0; g_backend = 0; }
     if (g_gfx_api == 0)
-        ps3rt_log("[rsx] XXII-L API preference: Vulkan 1.2 (OpenGL 4.5 secondary; DX11 removed)\n");
+        ps3rt_log("[rsx] XXII-L API preference: Vulkan 1.1 (OpenGL 4.5 secondary; DX11 removed)\n");
     else
         ps3rt_log("[rsx] XXII-L API preference: OpenGL (Vulkan secondary)\n");
 }
@@ -453,7 +466,7 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
         vk_ok = rsx_vk_init((void*)g_hwnd, g_rsx.width, g_rsx.height);
 #endif
         if (vk_ok) {
-            ps3rt_log("[rsx] host present ready %ux%u (Vulkan 1.2)\n",
+            ps3rt_log("[rsx] host present ready %ux%u (Vulkan 1.1)\n",
                 (unsigned)g_rsx.width, (unsigned)g_rsx.height);
             rsx_vk_present_clear(0.05f, 0.12f, 0.22f, 1.0f);
             rsx_vk_poll_window();
@@ -914,6 +927,19 @@ PS3RT_API void ps3rt_rsx_set_color_surface(uint32_t offset, uint32_t w, uint32_t
     g_rsx.height = h;
     rsx_surface_bind_color(offset, pitch, w, h);
     ppsx33::rsx::rsx_framebuffer_bind_color(offset, pitch, w, h, 0);
+    /* Kick OpenGL present of this surface so frames appear without waiting for flip races */
+    if (g_gfx_api == 1 && rsx_gl_ready()) {
+        uint8_t* mem = ps3rt_guest_mem_ptr();
+        size_t msz = ps3rt_guest_mem_size();
+        uint32_t pw = w ? w : 720, ph = h ? h : 560;
+        rsx_res_get(&pw, &ph);
+        uint32_t pitchb = pitch ? pitch : (pw * 4u);
+        if (mem && (size_t)offset + (size_t)pitchb * ph <= msz) {
+            if (rsx_gl_present_guest_rgba(mem + offset, pw, ph, pitchb))
+                g_rsx.draws_guest++;
+        }
+    }
+
 }
 
 PS3RT_API void ps3rt_rsx_set_put(uint32_t put) {

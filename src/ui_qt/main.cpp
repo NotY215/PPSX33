@@ -11,7 +11,7 @@ static void checkHostGraphics(QWidget* parent) {
     QStringList miss;
 #if defined(_WIN32)
     HMODULE vk = LoadLibraryA("vulkan-1.dll");
-    if (!vk) miss << "Vulkan 1.2 loader (vulkan-1.dll)";
+    if (!vk) miss << "Vulkan 1.1 loader (vulkan-1.dll)";
     else FreeLibrary(vk);
     HMODULE gl = LoadLibraryA("opengl32.dll");
     if (!gl) miss << "OpenGL (opengl32.dll)";
@@ -23,7 +23,7 @@ static void checkHostGraphics(QWidget* parent) {
     if (!miss.isEmpty()) {
         QMessageBox::warning(parent, QStringLiteral("Graphics capability"),
             QStringLiteral("This PC may be missing:\n- %1\n\n"
-                           "PPSX33 needs Vulkan 1.2 and/or OpenGL 4.5 for game present.\n"
+                           "PPSX33 needs Vulkan 1.1 and/or OpenGL 4.5 for game present.\n"
                            "You can still use the recompiler UI.")
                 .arg(miss.join("\n- ")));
     }

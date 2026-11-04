@@ -22,7 +22,7 @@ QString ppsx33_legal_html() {
         "<h3 style='color:#7dd3fc'>What PPSX33 is</h3>"
         "<ol>"
         "<li>An engineering toolkit for studying PS3 executables via static lift + HLE runtime.</li>"
-        "<li>A host-side presentation path (Vulkan 1.2 default, OpenGL secondary).</li>"
+        "<li>A host-side presentation path (Vulkan 1.1 default, OpenGL secondary).</li>"
         "<li>Open-source research software under the project LICENSE.</li>"
         "</ol>"
         "<h3 style='color:#7dd3fc'>What PPSX33 is not</h3>"

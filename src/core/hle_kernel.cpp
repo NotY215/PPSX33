@@ -131,7 +131,7 @@ static void ps3rt_log_open(void) {
         if (cl && (std::strstr(cl, "-api=opengl") || std::strstr(cl, "-api=OpenGL")))
             api_tag = "OpenGL45";
         else if (cl && (std::strstr(cl, "-api=vulkan") || std::strstr(cl, "-api=Vulkan")))
-            api_tag = "Vulkan12";
+            api_tag = "Vulkan11";
     }
 #endif
     char name[160];
