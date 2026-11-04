@@ -580,6 +580,15 @@ static void gcm_inject_clear_draw() {
     gcm_fifo_emit(0x0204, 720u * 4u);           // COLOR_PITCH 576p
     gcm_fifo_emit(0x020C, (720u << 16) | 576u);
     gcm_fifo_emit(0x1D8C, col);                 // CLEAR_COLOR
+    /* Host apply: write solid clear into guest color surface (real pixels for present) */
+    if (g_mem && color_off + 720u * 576u * 4u <= g_mem_size) {
+        uint8_t r = (uint8_t)((col >> 16) & 255), g = (uint8_t)((col >> 8) & 255), b = (uint8_t)(col & 255);
+        uint8_t* dst = g_mem + color_off;
+        for (uint32_t i = 0; i < 720u * 576u; ++i) {
+            dst[i * 4 + 0] = r; dst[i * 4 + 1] = g; dst[i * 4 + 2] = b; dst[i * 4 + 3] = 255;
+        }
+        ps3rt_rsx_set_color_surface(color_off, 720, 576);
+    }
     gcm_fifo_emit(0x1D90, 0xF1);
     gcm_fifo_emit(0x1D94, 0);
     // Vertex array 0 = position
@@ -627,13 +636,13 @@ static void rsx_hle_fifo_service(void) {
             ps3rt_log("[rsx] FIFO drain put=0x%x get=0x%x -> 0x%x\n", put, get, ng);
             ++s_log;
         }
-        if (rsx_vk_ready() && ((s_log & 3) == 0))
+        if ((rsx_vk_ready() || rsx_gl_ready()) && ((s_log & 3) == 0))
             ps3rt_rsx_flip(0);
         return;
     }
 
     /* Idle FIFO: limited boot seed so host present path stays alive. */
-    if (++s_idle < 3 || !rsx_vk_ready() || s_seed >= 128)
+    if (++s_idle < 3 || !(rsx_vk_ready() || rsx_gl_ready()) || s_seed >= 128)
         return;
     gcm_inject_clear_draw();
     put = gcm_rd_ctrl_u32(g_gcm_control + 0) % fsz;

@@ -984,7 +984,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
                 uint32_t pw = 720, ph = 576; rsx_res_get(&pw, &ph);
                 presented = rsx_vk_present_guest_rgba(mem + off, pw, ph, pitch);
             }
-            if (presented) rsx_vk_poll_window();
+            if (presented) { g_rsx.draws_guest++; rsx_vk_poll_window(); }
         }
     } else if (g_gfx_api == 1 && rsx_gl_ready() && g_rsx.color_offset) {
         uint8_t* mem = ps3rt_guest_mem_ptr();
@@ -997,7 +997,7 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
                 uint32_t pw = 720, ph = 576; rsx_res_get(&pw, &ph);
                 presented = rsx_gl_present_guest_rgba(mem + off, pw, ph, pitch);
             }
-            if (presented) rsx_gl_poll_window();
+            if (presented) { g_rsx.draws_guest++; rsx_gl_poll_window(); }
 
         }
     }

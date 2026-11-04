@@ -277,6 +277,11 @@ void cleanup_after_build(const std::string& project_dir, const fs::path& out, st
                 break;
             }
         }
+        if (!fs::exists(out / "pad_map.json")) {
+            std::ofstream pm(out / "pad_map.json");
+            if (pm) pm << R"({"version":1,"note":"host key map is keymap.json"})" << "\n";
+            live_log("Wrote default pad_map.json\n");
+        }
     }
 
     if (fs::exists(out / "obj")) {
