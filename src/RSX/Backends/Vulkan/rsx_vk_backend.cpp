@@ -631,11 +631,12 @@ extern "C" int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
     g_vk.width = width ? width : 720;
     g_vk.height = height ? height : 576;
 
+    ps3rt_log("[rsx] Vulkan: loading vulkan-1.dll (API target 1.2)...\n");
     if (!load_vulkan_lib()) {
         ps3rt_log("[rsx] Vulkan: load vulkan-1.dll / GetProcAddr failed\n");
         return 0;
     }
-    ps3rt_log("[rsx] Vulkan: loader OK, CreateInstance...\n");
+    ps3rt_log("[rsx] Vulkan: loader OK, CreateInstance (apiVersion=1.2.0)...\n");
 
     const char* exts[] = { "VK_KHR_surface", "VK_KHR_win32_surface" };
     VkApplicationInfo app{};
@@ -717,6 +718,14 @@ extern "C" int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
         VkPhysicalDeviceProperties props{};
         g_vk.GetPhysicalDeviceProperties(g_vk.phys, &props);
         ps3rt_log("[rsx] Vulkan: device \"%s\" qfamily=%u\n", props.deviceName, g_vk.qfamily);
+        {
+            uint32_t major = (props.apiVersion >> 22) & 0x7fu;
+            uint32_t minor = (props.apiVersion >> 12) & 0x3ffu;
+            uint32_t patch = props.apiVersion & 0xfffu;
+            ps3rt_log("[rsx] Vulkan: device API %u.%u.%u (host targets 1.2)\n", major, minor, patch);
+            if (major < 1 || (major == 1 && minor < 2))
+                ps3rt_log("[rsx] Vulkan: WARN device API < 1.2 — continuing best-effort\n");
+        }
     }
 
     float prio = 1.0f;

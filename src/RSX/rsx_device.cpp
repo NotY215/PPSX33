@@ -670,21 +670,32 @@ static void rsx_draw_host(uint8_t* mem) {
         g_rsx.methods_this_frame,
         g_rsx.draws + g_rsx.draws_diagnostic,
         (uint32_t)g_rsx.flip_count);
-    if (act == RSX_PRESENT_GUEST && g_gfx_api == 0 && rsx_vk_ready() && g_rsx.color_offset) {
+    if (act == RSX_PRESENT_GUEST && g_rsx.color_offset) {
         uint8_t* gmem = ps3rt_guest_mem_ptr();
         size_t msz = ps3rt_guest_mem_size();
         auto fb = ppsx33::rsx::rsx_framebuffer_color();
         uint32_t off = fb.offset ? fb.offset : g_rsx.color_offset;
-        uint32_t gw = 720;
-        uint32_t gh = 576;
-        uint32_t pitch = fb.pitch ? fb.pitch : gw * 4u;
-        if (gmem && (size_t)off + (size_t)pitch * gh <= msz)
-            presented = rsx_vk_present_guest_rgba(gmem + off, gw, gh, pitch);
+        uint32_t gw = g_rsx.width ? g_rsx.width : 720;
+        uint32_t gh = g_rsx.height ? g_rsx.height : 576;
+        rsx_res_get(&gw, &gh);
+        uint32_t pitch = g_rsx.color_pitch ? g_rsx.color_pitch : (fb.pitch ? fb.pitch : gw * 4u);
+        if (pitch < gw * 4u) pitch = gw * 4u;
+        if (gmem && (size_t)off + (size_t)pitch * gh <= msz) {
+            if (g_gfx_api == 0 && rsx_vk_ready())
+                presented = rsx_vk_present_guest_rgba(gmem + off, gw, gh, pitch);
+            else if (g_gfx_api == 1 && rsx_gl_ready())
+                presented = rsx_gl_present_guest_rgba(gmem + off, gw, gh, pitch);
+            if (presented) g_rsx.draws_guest++;
+        }
     }
-    if (!presented) if (g_gfx_api == 1 && rsx_gl_ready())
+    if (!presented) {
+        if (g_gfx_api == 1 && rsx_gl_ready())
             rsx_gl_present_clear(0.05f, 0.05f, 0.08f, 1.f);
+        else if (g_gfx_api == 0 && rsx_vk_ready())
+            rsx_vk_present_clear(0.05f, 0.05f, 0.08f, 1.f);
         else
             rsx_host_present_clear();
+    }
 }
 
 
@@ -938,13 +949,16 @@ PS3RT_API void ps3rt_rsx_flip(uint32_t buf_id) {
     }
     int frame_methods = g_rsx.methods_this_frame;
     int frame_packets = g_rsx.packets_decoded;
-    /* Prefer display-buffer offset for this flip id, else bound color surface */
+    /* Prefer bound inject/local color surface; only take display buffer if none bound */
     {
         uint32_t dbo = gcm_get_display_offset(buf_id);
         uint32_t dbp = gcm_get_display_pitch(buf_id);
-        if (dbo) {
+        int localish = (g_rsx.color_offset >= 0x08000000u && g_rsx.color_offset < 0x10000000u);
+        if (dbo && !localish) {
             g_rsx.color_offset = dbo;
             if (dbp) g_rsx.color_pitch = dbp;
+        } else if (dbp && localish && !g_rsx.color_pitch) {
+            g_rsx.color_pitch = dbp;
         }
     }
     int presented = 0;
