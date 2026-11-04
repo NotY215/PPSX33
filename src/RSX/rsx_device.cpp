@@ -1,4 +1,4 @@
-// WORK: RSX/libgcm host path — Vulkan 1.2 default, OpenGL 4.5 secondary. DX11 removed.
+// WORK: RSX/libgcm host path — Vulkan 1.1 default, OpenGL 4.5 secondary. DX11 removed.
 #include "rsx_device.h"
 #include "rsx_fifo.h"
 #include "rsx_method_table.h"
@@ -15,8 +15,8 @@
 #include "rsx_resolution.h"
 #include "ps3rt_be.h"
 
-static void rsx_force_576p(uint32_t* w, uint32_t* h) {
-    uint32_t rw = 720, rh = 576;
+static void rsx_force_host_res(uint32_t* w, uint32_t* h) {
+    uint32_t rw = 720, rh = 560;
     rsx_res_get(&rw, &rh);
     if (w) *w = rw;
     if (h) *h = rh;
@@ -80,6 +80,7 @@ struct RsxState {
     bool flip_pending = false;
 };
 static RsxState g_rsx;
+static uint32_t g_inject_color_offset = 0;
 static std::mutex g_rsx_mu;
 static HWND g_hwnd = nullptr;
 static int g_gfx_api = 0; /* 0=Vulkan1.2 1=OpenGL */
@@ -417,7 +418,7 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
     if (g_hwnd) return;
     rsx_probe_api_preference();
     g_rsx.width = 720;
-    g_rsx.height = 576;
+    g_rsx.height = 560;
     (void)w; (void)h;
     WNDCLASSA wc{};
     wc.lpfnWndProc = RsxWndProc;
@@ -467,7 +468,7 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
             }
         }
     } else {
-        if (g_hwnd && rsx_gl_init(g_hwnd, g_rsx.width ? g_rsx.width : 720, g_rsx.height ? g_rsx.height : 576)) {
+        if (g_hwnd && rsx_gl_init(g_hwnd, g_rsx.width ? g_rsx.width : 720, g_rsx.height ? g_rsx.height : 560)) {
             ps3rt_log("[rsx] host present ready %ux%u (OpenGL)\n",
                 (unsigned)g_rsx.width, (unsigned)g_rsx.height);
             rsx_gl_present_clear(0.05f, 0.12f, 0.22f, 1.0f);
@@ -676,7 +677,7 @@ static void rsx_draw_host(uint8_t* mem) {
         auto fb = ppsx33::rsx::rsx_framebuffer_color();
         uint32_t off = fb.offset ? fb.offset : g_rsx.color_offset;
         uint32_t gw = g_rsx.width ? g_rsx.width : 720;
-        uint32_t gh = g_rsx.height ? g_rsx.height : 576;
+        uint32_t gh = g_rsx.height ? g_rsx.height : 560;
         rsx_res_get(&gw, &gh);
         uint32_t pitch = g_rsx.color_pitch ? g_rsx.color_pitch : (fb.pitch ? fb.pitch : gw * 4u);
         if (pitch < gw * 4u) pitch = gw * 4u;

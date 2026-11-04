@@ -26,7 +26,7 @@ static HWND   s_hwnd = nullptr;
 static HDC    s_dc = nullptr;
 static HGLRC  s_rc = nullptr;
 static int    s_ready = 0;
-static uint32_t s_w = 720, s_h = 576;
+static uint32_t s_w = 720, s_h = 560;
 static GLuint s_tex = 0;
 
 static void gl_log(const char* m) {

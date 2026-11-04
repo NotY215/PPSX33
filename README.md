@@ -26,7 +26,7 @@
 <p align="center">
   <a href="https://ppsx33.xo.je/"><img alt="Website" src="https://img.shields.io/badge/website-ppsx33.xo.je-00B4D8?style=for-the-badge"></a>
   <img alt="Platform: Windows x64" src="https://img.shields.io/badge/platform-Windows%20x64-0078D4?style=for-the-badge">
-  <img alt="Graphics: Vulkan 1.2 (default) · OpenGL secondary" src="https://img.shields.io/badge/graphics-Vulkan%201.2-AC162C?style=for-the-badge">
+  <img alt="Graphics: Vulkan 1.1 (default) · OpenGL secondary" src="https://img.shields.io/badge/graphics-Vulkan%201.1-AC162C?style=for-the-badge">
   <img alt="Goal: Full Recompilation" src="https://img.shields.io/badge/goal-full%20recompilation-6A5ACD?style=for-the-badge">
 </p>
 
@@ -38,7 +38,7 @@
 
 ## Host tools
 
-Desktop UI: **C++ / Qt 6 Widgets**. Graphics: **Vulkan 1.2** default; **OpenGL** selectable (working-phase notice in UI). (`PPSX33.exe`, **1.1.0-Alpha**). Runtime: unified **`ps3rt.dll`** under `build/dist/` (plus `ps3core.dll`, `vulkan-1.dll`).
+Desktop UI: **C++ / Qt 6 Widgets**. Graphics: **Vulkan 1.1** default; **OpenGL** selectable (working-phase notice in UI). (`PPSX33.exe`, **1.1.0-Alpha**). Runtime: unified **`ps3rt.dll`** under `build/dist/` (plus `ps3core.dll`, `vulkan-1.dll`).
 
 ## ✨ What PPSX33 is building
 
@@ -73,7 +73,7 @@ PPSX33 is being developed toward full recompilation. These statuses describe imp
 | 🧰 GUI, project flow and build orchestration | 🟡 **Partial / evolving** | Windows GUI and native build pipeline; title-specific failures remain possible |
 | 📦 ELF loading and PPU lifting | 🟡 **Partial** | Supported code can be lifted; translation coverage is not semantic correctness |
 | 🧠 PPU runtime and control flow | 🟡 **In progress** | Guest context and execution paths exist; unsupported or inaccurate paths can break execution |
-| 🪟 Vulkan 1.2 host window and presentation | 🟢 **Implemented baseline** | Async HWND pump + swapchain clear + guest RGBA upload |
+| 🪟 Vulkan 1.1 host window and presentation | 🟢 **Implemented baseline** | Async HWND pump + swapchain clear + guest RGBA upload |
 | 🧱 RSX/GCM command processing | 🟡 **In progress** | FIFO decode and Vulkan present; assist draws proven; title-authored GCM and shaders still incomplete |
 | 🧩 LV2, PRX and NID services | 🟡 **Partial** | Static-style stub binds (LR/PC→NID); runtime recovery fallback; coverage still incomplete |
 | ⚡ SPU, MFC/DMA and SPURS | 🟡 **Partial** | Assist/runtime paths exist; full instruction and scheduling behaviour is not complete |
@@ -82,7 +82,7 @@ PPSX33 is being developed toward full recompilation. These statuses describe imp
 
 ### Host graphics (current)
 
-- **Default:** Vulkan 1.2 (dynamic `vulkan-1.dll` load; CMake copies DLL into `dist/`).
+- **Default:** Vulkan 1.1 (dynamic `vulkan-1.dll` load; CMake copies DLL into `dist/`).
 - **Secondary:** OpenGL (planned parity).
 - **Removed:** Direct3D 11 backend and DX11 dependencies.
 - **Present path:** Dedicated HWND pump thread so the game window stays responsive during boot HLE; PPU thread does not block on `vkQueuePresent`.
@@ -103,7 +103,7 @@ HLE and host services written for this project. Public emulator behaviour may be
 | Input | cellPad mapping (XInput/host keys) | 🟡 Partial |
 | Audio | cellAudio host path (waveOut-style) | 🟡 Partial |
 | Video out / GCM | cellVideoOut, cellGcmSys control/FIFO kick | 🟡 Partial |
-| Graphics (RSX) | FIFO decode, Vulkan 1.2 present; assist draws proven; title stream pending | 🟡 In progress |
+| Graphics (RSX) | FIFO decode, Vulkan 1.1 present; assist draws proven; title stream pending | 🟡 In progress |
 | SPU / MFC / SPURS | Interpreter, DMA/tags, job assist | 🟡 Partial |
 | PRX / NID / LV2 | Import stubs, common syscalls | 🟡 Partial |
 | Codecs / media | PNG/JPG helpers; ATRAC/VDEC deep decode | 🔨 Limited / partial |
@@ -134,7 +134,7 @@ flowchart LR
   ELF[Decrypted ELF] --> Lift[PPU lift]
   Lift --> Build[MSVC game EXE]
   Build --> RT[ps3rt runtime]
-  RT --> VK[Vulkan 1.2 present]
+  RT --> VK[Vulkan 1.1 present]
 ```
 
 ## 🧩 Why this is difficult
@@ -161,7 +161,7 @@ PPSX33/
 ├── src/
 │   ├── core/              # ELF loaders, VFS, memory, HLE kernel
 │   ├── processor/PPU|SPU  # Lift, run headers, SPU interpreter
-│   ├── RSX/               # Graphics pipeline + Vulkan 1.2 (OpenGL secondary)
+│   ├── RSX/               # Graphics pipeline + Vulkan 1.1 (OpenGL secondary)
 │   ├── games-stuff/       # Audio + Video subsystems
 │   ├── UI/                # Qt Widgets GUI
 │   └── cli/               # CLI tooling
@@ -186,8 +186,8 @@ The following requirements apply to **running a recompiled game** (the generated
 
 | API | Version | Role |
 | --- | --- | --- |
-| **Vulkan** | **1.2** | Default host renderer. `vulkan-1.dll` must be beside the generated game executable. |
-| **OpenGL** | **4.3** | Secondary core-profile path. Feature parity with Vulkan is in progress. |
+| **Vulkan** | **1.1** | Default host renderer. `vulkan-1.dll` must be beside the generated game executable. |
+| **OpenGL** | **4.5** | Secondary core-profile path. Feature parity with Vulkan is in progress. |
 | Direct3D 11 | — | **Not supported.** The D3D11 runtime and dependencies have been removed. |
 
 ### Minimum requirements
@@ -197,11 +197,11 @@ These are the current minimums for opening the game window and clearing/presenti
 | Component | Requirement |
 | --- | --- |
 | Operating system | 64-bit Windows 10 or later |
-| GPU | A driver exposing **Vulkan 1.2** or **OpenGL 4.5** |
+| GPU | A driver exposing **Vulkan 1.1** or **OpenGL 4.5** |
 | Vulkan loader | `vulkan-1.dll` beside the generated game executable when using Vulkan |
-| Display output | Fixed **720×576 (576p)** host present for the current path |
+| Display output | Fixed **720×560 (560p)** host present for the current path |
 | Monitor | A physical display of **720×576** or higher is recommended |
-| VRAM | Enough for a 576p swapchain and staging buffers; typically **1 GB or more usable** |
+| VRAM | Enough for a 560p swapchain and staging buffers; typically **1 GB or more usable** |
 | Input | Keyboard or XInput controller, where supported by the title |
 | Game data | Lawfully obtained title files that you are authorized to run |
 
@@ -209,7 +209,7 @@ These are the current minimums for opening the game window and clearing/presenti
 
 | Component | Recommendation |
 | --- | --- |
-| GPU | Discrete GPU with current vendor drivers and Vulkan 1.2 support |
+| GPU | Discrete GPU with current vendor drivers and Vulkan 1.1 support |
 | VRAM | **2 GB or more** |
 | System memory | **8 GB or more** for guest and host buffers |
 | Storage | SSD for game data and logs |
@@ -312,7 +312,7 @@ See [LICENSE](LICENSE) for the project's license. Third-party components, header
 
 
 ## Per-game Modify.exe
-API (Vulkan 1.2 / OpenGL 4.5), quality (720/560/480), and play unlock are controlled by **Modify.exe** next to the game EXE — not the main UI.
+API (Vulkan 1.1 / OpenGL 4.5), quality (720/560/480), and play unlock are controlled by **Modify.exe** next to the game EXE — not the main UI.
 
 
 ### Game package workflow
