@@ -269,7 +269,6 @@ void cleanup_after_build(const std::string& project_dir, const fs::path& out, st
     } else {
         live_log("WARN: codebase/guest_image.bin missing\n");
     }
-                      fs::copy_options::overwrite_existing, ec);
 
     if (!fs::exists(out / "pad_map.json")) {
         for (auto cand : { root / "pad_map.json", codebase / "pad_map.json" }) {

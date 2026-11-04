@@ -113,6 +113,7 @@ if(WIN32)
     src/RSX/frag/rsx_frag_present.c
     src/RSX/frag/rsx_frag_flip.c
     src/RSX/frag/rsx_frag_align.c
+    src/RSX/frag/rsx_frag_method_apply.c
     src/games-stuff/Audio/audio_frag_service.c
     src/RSX/methods/rsx_nv4097_surface.c
     src/RSX/dispatch/rsx_dispatch_sink.c
@@ -146,6 +147,7 @@ if(WIN32)
     src/RSX/frag/rsx_frag_present.c
     src/RSX/frag/rsx_frag_flip.c
     src/RSX/frag/rsx_frag_align.c
+    src/RSX/frag/rsx_frag_method_apply.c
     src/games-stuff/Audio/audio_frag_service.c
     src/RSX/methods/rsx_nv4097_surface.c
     src/RSX/dispatch/rsx_dispatch_sink.c
