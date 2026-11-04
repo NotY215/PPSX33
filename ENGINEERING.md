@@ -10,7 +10,7 @@
 - CMake, Windows x64, **MSVC**, **Qt 6** Widgets (`find_package(Qt6 REQUIRED COMPONENTS Widgets)`).
 - Qt install example: `aqt install-qt windows desktop 6.8.0 win64_msvc2022_64 -O C:\Qt` then add `C:\Qt\6.8.0\msvc2022_64\bin` to PATH.
 - Output: `build/dist/PPSX33.exe`, `ps3core.dll`, **`ps3rt.dll`** (unified), `vulkan-1.dll`, logos, `runtime/` headers.
-- Host version: **1.1.0-Alpha** (RC VERSIONINFO + `AppVersion.h`). `PPSX33.exe -version`.
+- Host version: **1.1.0-Alpha** (RC VERSIONINFO + `AppVersion.h`). `PPSX33.exe -version`
 
 ## Runtime model
 
@@ -40,12 +40,11 @@ Single **`ps3rt.dll`** contains HLE, RSX FIFO/device, Vulkan backend, present/dr
 
 Runtime logs: `GameName-YYYY-MM-DD_HH-MM-SS.txt` under USRDIR / Report tab. Assist draws and soft recovery are **diagnostic**.
 
-
 ## Graphics backends
 
 | Backend | Status |
 |---------|--------|
-| Vulkan 1.2 | Default host present (swapchain + guest RGBA staging) |
+| Vulkan 1.1 | Default host present (swapchain + guest RGBA staging) |
 | OpenGL (WGL) | Secondary; working-phase; fixed-function textured quad present |
 
 Set via UI combo or `ps3rt_set_graphics_backend` (0=Vulkan, 1=OpenGL).
