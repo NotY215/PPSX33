@@ -1,10 +1,13 @@
 PPSX33 run log
 mode=launch_in_game_folder
 api=Vulkan12
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-03_19-40-43.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-03_19-40-43.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-04_15-45-32.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-04_15-45-32.txt
 [stage] BOOT start
-[ps3rt] warning: no guest_image.bin mapped
+[ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
+[ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
+[ps3rt] PS3IMG1 loaded from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\guest_image.bin (2 segments)
+[stage] MEM map end
 [save] root=C:\Users\shrey\OneDrive\Documents\GOW3\PS3_SAVEDATA (PS3-native only; no savestates)
 [psarc] XX-J zlib loaded
 [fs] game_root=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR
@@ -50,7 +53,13 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-03_19-40-
 [hle] cellSysutil/sysmodule = partial (common NIDs)
 [hle] cellSpurs = partial (job assist)
 [hle] RSX/FIFO = partial (assist draws proven; title stream pending)
-[ps3] soft left-range pc=0x0 -> 0x20000 (escapes=0 n=1)
+[prx] load "cellSysmodule" id=1 base=0x30100000
+[ps3] XXIV-D prx_import pc=0x39800000 nid=0x0053F96C kind=3 mod=cellSysmodule lr=0x103ac
+[prx] stub kind=3 cellSysmodule pc=0x39800000 nid=0x0053F96C lr=0x103ac r11=0x53f96c
+[ps3] import-island escape 0x103ac -> 0x20000
+[ps3] import stub pc=0x39800000 -> ret=0x20000 (#1)
+[ps3] XXV-F recover wild-pc 0x0 -> 0x200b4
+[ps3] XXV-L wild-pc 0x0 -> 0x200b4
 [ps3] XXV-F recover wild-pc 0x0 -> 0x200b4
 [ps3] XXV-L wild-pc 0x0 -> 0x200b4
 [stage] PPU progress start
@@ -65,4 +74,4 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-03_19-40-
 [lv2] alloc VA=0x8020000 size=0x100000
 [rsx] XXII-L API preference: Vulkan 1.2 (OpenGL 4.5 secondary; DX11 removed)
 [rsx] XX-O window title="PPSX33 presents GOW3"
-[rsx] Vulkan init begin hwnd=00000000001808A2 720x576
+[rsx] Vulkan init begin hwnd=00000000000D02EA 720x576
