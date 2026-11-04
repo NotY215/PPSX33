@@ -1,8 +1,8 @@
 PPSX33 run log
 mode=launch_in_game_folder
 api=Vulkan12
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-04_21-22-51.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-04_21-22-51.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-04_21-52-22.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-04_21-52-22.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -65,6 +65,7 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-04_21-22-
 [stage] PPU progress start
 [stage] SPU progress end
 [pad] XInput loaded from xinput1_4.dll
+[pad] keymap.json loaded from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\keymap.json
 [audio] XXVI XAudio2 48kHz stereo source ready
 [audio] XXVI XAudio2 prove-tone 440Hz 100ms queued
 [lv2] alloc VA=0x8000000 size=0x1000
@@ -74,4 +75,4 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan12-2026-11-04_21-22-
 [lv2] alloc VA=0x8020000 size=0x100000
 [rsx] XXII-L API preference: Vulkan 1.2 (OpenGL 4.5 secondary; DX11 removed)
 [rsx] XX-O window title="PPSX33 presents GOW3"
-[rsx] Vulkan init begin hwnd=00000000001D088C 720x576
+[rsx] Vulkan init begin hwnd=0000000000280A7A 720x560
