@@ -451,14 +451,15 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
     ps3rt_log("[rsx] XX-O window title=\"%s\"\n", title);
     /* Init Vulkan BEFORE HWND pump — pump must not present until ready (race fixed). */
     if (g_gfx_api == 0) {
-        ps3rt_log("[rsx] Vulkan init begin hwnd=%p %ux%u\n",
+        ps3rt_log("[rsx] Vulkan init begin hwnd=%p %ux%u (true 1.1)\n",
             (void*)g_hwnd, (unsigned)g_rsx.width, (unsigned)g_rsx.height);
         int vk_ok = 0;
 #if defined(_WIN32)
         __try {
             vk_ok = rsx_vk_init((void*)g_hwnd, g_rsx.width, g_rsx.height);
+            ps3rt_log("[rsx] Vulkan init returned %d\n", vk_ok);
         } __except(EXCEPTION_EXECUTE_HANDLER) {
-            ps3rt_log("[rsx] Vulkan init SEH exception code=0x%08X — falling back\n",
+            ps3rt_log("[rsx] Vulkan init SEH exception code=0x%08X — OpenGL fallback\n",
                 (unsigned)GetExceptionCode());
             vk_ok = 0;
         }
@@ -471,10 +472,13 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
             rsx_vk_present_clear(0.05f, 0.12f, 0.22f, 1.0f);
             rsx_vk_poll_window();
         } else {
-            ps3rt_log("[rsx] Vulkan init failed — trying OpenGL fallback\n");
+            ps3rt_log("[rsx] Vulkan 1.1 unavailable on this GPU/driver — OpenGL 4.5 path\n");
+            g_gfx_api = 1;
+            g_backend = 1;
             if (rsx_gl_init((void*)g_hwnd, g_rsx.width, g_rsx.height)) {
-                g_gfx_api = 1;
                 rsx_gl_present_clear(0.05f, 0.12f, 0.22f, 1.0f);
+                ps3rt_log("[rsx] host present ready %ux%u (OpenGL fallback)\n",
+                    (unsigned)g_rsx.width, (unsigned)g_rsx.height);
             } else {
                 ps3rt_log("[rsx] OpenGL fallback failed — soft GDI present\n");
                 rsx_host_present_soft();

@@ -594,6 +594,36 @@ static void gcm_inject_clear_draw() {
                 dst[i+2] = chk ? b : (uint8_t)(b/3);
                 dst[i+3] = 255;
             }
+        /* CPU triangle into color buffer (visible under OpenGL guest present) */
+        {
+            int x0 = (int)(W/2), y0 = (int)(H/10);
+            int x1 = (int)(W/10), y1 = (int)(9*H/10);
+            int x2 = (int)(9*W/10), y2 = (int)(9*H/10);
+            auto edge = [](int ax,int ay,int bx,int by,int px,int py) {
+                return (px-ax)*(by-ay) - (py-ay)*(bx-ax);
+            };
+            int a = edge(x0,y0,x1,y1,x2,y2);
+            if (a) {
+                int minx = x0 < x1 ? (x0 < x2 ? x0 : x2) : (x1 < x2 ? x1 : x2);
+                int maxx = x0 > x1 ? (x0 > x2 ? x0 : x2) : (x1 > x2 ? x1 : x2);
+                int miny = y0 < y1 ? (y0 < y2 ? y0 : y2) : (y1 < y2 ? y1 : y2);
+                int maxy = y0 > y1 ? (y0 > y2 ? y0 : y2) : (y1 > y2 ? y1 : y2);
+                if (minx < 0) minx = 0; if (miny < 0) miny = 0;
+                if (maxx >= (int)W) maxx = (int)W - 1;
+                if (maxy >= (int)H) maxy = (int)H - 1;
+                for (int y = miny; y <= maxy; ++y) {
+                    for (int x = minx; x <= maxx; ++x) {
+                        int w0 = edge(x1,y1,x2,y2,x,y);
+                        int w1 = edge(x2,y2,x0,y0,x,y);
+                        int w2 = edge(x0,y0,x1,y1,x,y);
+                        if ((w0 >= 0 && w1 >= 0 && w2 >= 0) || (w0 <= 0 && w1 <= 0 && w2 <= 0)) {
+                            uint32_t i = ((uint32_t)y * W + (uint32_t)x) * 4u;
+                            dst[i+0] = 255; dst[i+1] = (uint8_t)(40 + (s_ci * 30)); dst[i+2] = 40; dst[i+3] = 255;
+                        }
+                    }
+                }
+            }
+        }
         ps3rt_rsx_set_color_surface(color_off, 720, 560);
     }
     gcm_fifo_emit(0x1D90, 0xF1);
