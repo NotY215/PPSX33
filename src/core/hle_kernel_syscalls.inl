@@ -582,11 +582,18 @@ static void gcm_inject_clear_draw() {
     gcm_fifo_emit(0x1D8C, col);                 // CLEAR_COLOR
     /* Host apply: write solid clear into guest color surface (real pixels for present) */
     if (g_mem && color_off + 720u * 560u * 4u <= g_mem_size) {
-        uint8_t r = (uint8_t)((col >> 16) & 255), g = (uint8_t)((col >> 8) & 255), b = (uint8_t)(col & 255);
+        uint8_t r = (uint8_t)((col >> 16) & 255), gc = (uint8_t)((col >> 8) & 255), b = (uint8_t)(col & 255);
         uint8_t* dst = g_mem + color_off;
-        for (uint32_t i = 0; i < 720u * 560u; ++i) {
-            dst[i * 4 + 0] = r; dst[i * 4 + 1] = g; dst[i * 4 + 2] = b; dst[i * 4 + 3] = 255;
-        }
+        const uint32_t W = 720u, H = 560u;
+        for (uint32_t y = 0; y < H; ++y)
+            for (uint32_t x = 0; x < W; ++x) {
+                uint32_t i = (y * W + x) * 4u;
+                int chk = ((x >> 4) ^ (y >> 4)) & 1;
+                dst[i+0] = chk ? r : (uint8_t)(r/3);
+                dst[i+1] = chk ? gc : (uint8_t)(gc/3);
+                dst[i+2] = chk ? b : (uint8_t)(b/3);
+                dst[i+3] = 255;
+            }
         ps3rt_rsx_set_color_surface(color_off, 720, 560);
     }
     gcm_fifo_emit(0x1D90, 0xF1);

@@ -625,18 +625,28 @@ static int create_swapchain() {
 }
 
 extern "C" int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
-    std::lock_guard<std::mutex> lk(g_vk_mu);
+    /* Log before taking lock so a hang/crash is visible in the run log */
+    ps3rt_log("[rsx] Vulkan 1.1 init enter hwnd=%p %ux%u\n", hwnd,
+        (unsigned)(width ? width : 720), (unsigned)(height ? height : 560));
+    std::unique_lock<std::mutex> lk(g_vk_mu, std::try_to_lock);
+    if (!lk.owns_lock()) {
+        ps3rt_log("[rsx] Vulkan: init lock busy — skip\n");
+        return g_vk.ready ? 1 : 0;
+    }
     if (g_vk.ready) return 1;
-    if (!hwnd) return 0;
+    if (!hwnd) {
+        ps3rt_log("[rsx] Vulkan: null HWND\n");
+        return 0;
+    }
     g_vk.width = width ? width : 720;
     g_vk.height = height ? height : 560;
 
-    ps3rt_log("[rsx] Vulkan: loading vulkan-1.dll (API target 1.1)...\n");
+    ps3rt_log("[rsx] Vulkan: loading vulkan-1.dll (API target 1.1.0 only)...\n");
     if (!load_vulkan_lib()) {
         ps3rt_log("[rsx] Vulkan: load vulkan-1.dll / GetProcAddr failed\n");
         return 0;
     }
-    ps3rt_log("[rsx] Vulkan: loader OK, CreateInstance (apiVersion=1.1.0)...\n");
+    ps3rt_log("[rsx] Vulkan: loader OK — CreateInstance VK_API_VERSION_1_1 only...\n");
 
     const char* exts[] = { "VK_KHR_surface", "VK_KHR_win32_surface" };
     VkApplicationInfo app{};

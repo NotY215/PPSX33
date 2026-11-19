@@ -83,7 +83,7 @@ PPSX33 is being developed toward full recompilation. These statuses describe imp
 ### Host graphics (current)
 
 - **Default:** Vulkan 1.1 (dynamic `vulkan-1.dll` load; CMake copies DLL into `dist/`).
-- **Secondary:** OpenGL (planned parity).
+- **Secondary:** OpenGL 4.5 (guest present + shader blit live).
 - **Removed:** Direct3D 11 backend and DX11 dependencies.
 - **Present path:** Dedicated HWND pump thread so the game window stays responsive during boot HLE; PPU thread does not block on `vkQueuePresent`.
 
@@ -103,7 +103,7 @@ HLE and host services written for this project. Public emulator behaviour may be
 | Input | cellPad mapping (XInput/host keys) | 🟡 Partial |
 | Audio | cellAudio host path (waveOut-style) | 🟡 Partial |
 | Video out / GCM | cellVideoOut, cellGcmSys control/FIFO kick | 🟡 Partial |
-| Graphics (RSX) | FIFO decode, Vulkan 1.1 present; assist draws proven; title stream pending | 🟡 In progress |
+| Graphics (RSX) | OpenGL 4.5 guest present live; Vulkan 1.1 init soft-fail on some GPUs; FIFO assist | 🟡 In progress |
 | SPU / MFC / SPURS | Interpreter, DMA/tags, job assist | 🟡 Partial |
 | PRX / NID / LV2 | Import stubs, common syscalls | 🟡 Partial |
 | Codecs / media | PNG/JPG helpers; ATRAC/VDEC deep decode | 🔨 Limited / partial |
