@@ -387,18 +387,31 @@ static DWORD WINAPI rsx_pump_thread_main(void*) {
                 (void)tick;
             } else if (g_gfx_api == 1 && rsx_gl_ready()) {
                 rsx_present_req req{};
+                int did = 0;
                 if (rsx_present_queue_pop(&req) && req.flags == 2 && req.color_offset) {
-                    uint32_t w = 720, h = 576; rsx_res_get(&w, &h);
+                    uint32_t w = 720, h = 560; rsx_res_get(&w, &h);
                     uint32_t pitch = req.pitch ? req.pitch : (w * 4);
                     if (pitch < w * 4) pitch = w * 4;
                     uint8_t* mem = ps3rt_guest_mem_ptr();
                     size_t msz = ps3rt_guest_mem_size();
                     size_t need = (size_t)req.color_offset + (size_t)pitch * (size_t)h;
                     if (mem && req.color_offset < msz && need <= msz && need > 0)
-                        rsx_gl_present_guest_rgba(mem + req.color_offset, w, h, pitch);
-                    else
+                        did = rsx_gl_present_guest_rgba(mem + req.color_offset, w, h, pitch);
+                    if (!did)
                         rsx_gl_present_clear(0.03f, 0.06f, 0.12f, 1.0f);
                     host_stats_note_present();
+                } else if (g_rsx.color_offset) {
+                    /* Continuous guest present while FIFO/guest PUT runs (after inject OFF) */
+                    uint32_t w = 720, h = 560; rsx_res_get(&w, &h);
+                    uint32_t pitch = g_rsx.color_pitch ? g_rsx.color_pitch : (w * 4u);
+                    if (pitch < w * 4u) pitch = w * 4u;
+                    uint8_t* mem = ps3rt_guest_mem_ptr();
+                    size_t msz = ps3rt_guest_mem_size();
+                    uint32_t off = g_rsx.color_offset;
+                    size_t need = (size_t)off + (size_t)pitch * (size_t)h;
+                    if (mem && off < msz && need <= msz)
+                        did = rsx_gl_present_guest_rgba(mem + off, w, h, pitch);
+                    if (did) host_stats_note_present();
                 } else if (rsx_light_present_allow()) {
                     static int pulse_gl = 0;
                     float phase = (float)((++pulse_gl) & 63) / 63.0f;
@@ -455,13 +468,30 @@ static void rsx_host_init(uint32_t w, uint32_t h) {
             (void*)g_hwnd, (unsigned)g_rsx.width, (unsigned)g_rsx.height);
         int vk_ok = 0;
 #if defined(_WIN32)
-        __try {
-            vk_ok = rsx_vk_init((void*)g_hwnd, g_rsx.width, g_rsx.height);
-            ps3rt_log("[rsx] Vulkan init returned %d\n", vk_ok);
-        } __except(EXCEPTION_EXECUTE_HANDLER) {
-            ps3rt_log("[rsx] Vulkan init SEH exception code=0x%08X — OpenGL fallback\n",
-                (unsigned)GetExceptionCode());
-            vk_ok = 0;
+        /* Probe loader in isolation — full init has been hard-faulting on some GPUs before enter log */
+        {
+            HMODULE probe = nullptr;
+            __try {
+                probe = LoadLibraryA("vulkan-1.dll");
+            } __except(EXCEPTION_EXECUTE_HANDLER) {
+                ps3rt_log("[rsx] Vulkan: LoadLibrary SEH 0x%08X — skip Vulkan\n",
+                    (unsigned)GetExceptionCode());
+                probe = nullptr;
+            }
+            if (!probe) {
+                ps3rt_log("[rsx] Vulkan: vulkan-1.dll not loadable next to EXE — OpenGL path\n");
+            } else {
+                FreeLibrary(probe);
+                ps3rt_log("[rsx] Vulkan: vulkan-1.dll probe OK — CreateInstance 1.1...\n");
+                __try {
+                    vk_ok = rsx_vk_init((void*)g_hwnd, g_rsx.width, g_rsx.height);
+                    ps3rt_log("[rsx] Vulkan init returned %d\n", vk_ok);
+                } __except(EXCEPTION_EXECUTE_HANDLER) {
+                    ps3rt_log("[rsx] Vulkan init SEH exception code=0x%08X — OpenGL fallback\n",
+                        (unsigned)GetExceptionCode());
+                    vk_ok = 0;
+                }
+            }
         }
 #else
         vk_ok = rsx_vk_init((void*)g_hwnd, g_rsx.width, g_rsx.height);
