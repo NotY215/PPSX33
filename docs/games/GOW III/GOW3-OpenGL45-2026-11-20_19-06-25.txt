@@ -1,8 +1,8 @@
 PPSX33 run log
 mode=launch_in_game_folder
 api=OpenGL45
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-OpenGL45-2026-11-19_19-48-40.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-OpenGL45-2026-11-19_19-48-40.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-OpenGL45-2026-11-20_19-06-25.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-OpenGL45-2026-11-20_19-06-25.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -66,8 +66,8 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-OpenGL45-2026-11-19_19-48-
 [stage] SPU progress end
 [pad] XInput loaded from xinput1_4.dll
 [pad] keymap.json loaded from E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\keymap.json
-[audio] XXVI XAudio2 init failed — falling back to waveOut
-[audio] XXIV-A waveOutOpen failed — silent HLE (no further retries)
+[audio] XXVI XAudio2 48kHz stereo source ready
+[audio] XXVI XAudio2 prove-tone 440Hz 100ms queued
 [lv2] alloc VA=0x8000000 size=0x1000
 [gcm] control @ 0x8000000
 [lv2] alloc VA=0x8001000 size=0x10000
@@ -640,6 +640,7 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-OpenGL45-2026-11-19_19-48-
 [ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf112fa0
 [ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
 [ps3] P0 sticky soft-continue -> 0x20000
+[rsx] OpenGL host present pulse #49
 [rsx] guest-PUT put=0x1248 get=0x0 ref=0x1248
 [ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf113210
 [ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
@@ -650,7 +651,6 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-OpenGL45-2026-11-19_19-48-
 [ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf1136f0
 [ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
 [ps3] P0 sticky soft-continue -> 0x20000
-[rsx] OpenGL host present pulse #49
 [rsx] OpenGL guest present frame=225 720x560 pitch=2880
 [ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf113960
 [ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
@@ -749,6 +749,159 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-OpenGL45-2026-11-19_19-48-
 [ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
 [ps3] P0 sticky soft-continue -> 0x20000
 [ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf118280
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf1184f0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf118760
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf1189d0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[rsx] guest-PUT put=0x1790 get=0x0 ref=0x1790
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf118c40
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf118eb0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[rsx] OpenGL host present pulse #65
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf119120
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf119390
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf119600
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[rsx] OpenGL guest present frame=289 720x560 pitch=2880
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf119870
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf119ae0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf119d50
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[rsx] guest-PUT put=0x18c8 get=0x0 ref=0x18c8
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf119fc0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11a230
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11a4a0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11a710
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11a980
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11abf0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11ae60
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[rsx] guest-PUT put=0x1998 get=0x0 ref=0x1998
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11b0d0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[rsx] FIFO seed #64 put=0x1a00
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11b340
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11b5b0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11b820
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11ba90
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11bd00
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[rsx] OpenGL guest present frame=321 720x560 pitch=2880
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11bf70
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[rsx] guest-PUT put=0x1ad0 get=0x0 ref=0x1ad0
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11c1e0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11c450
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11c6c0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11c930
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11cba0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11ce10
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11d080
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11d2f0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[rsx] guest-PUT put=0x1c08 get=0x0 ref=0x1c08
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11d560
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11d7d0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11da40
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11dcb0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11df20
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11e190
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11e400
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[rsx] guest-PUT put=0x1cd8 get=0x0 ref=0x1cd8
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11e670
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11e8e0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11eb50
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11edc0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[rsx] OpenGL guest present frame=353 720x560 pitch=2880
+[rsx] OpenGL host present pulse #81
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11f030
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11f2a0
+[ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
+[ps3] P0 sticky soft-continue -> 0x20000
+[ps3] XXV-F FAULT sticky_break pc=0x0 class=invalid lr=0x0 ctr=0x0 toc=r2=0x52d6c8 sp=r1=0xf11f510
 [ps3] XXV-F FAULT gpr3-10 0 1 3cc482 0 0 0 0 0
 [ps3] P0 sticky soft-continue -> 0x20000
 [stage] EXIT requested
