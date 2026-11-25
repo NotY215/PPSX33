@@ -13,9 +13,11 @@ PPSX33_RSX_API rsx_method_kind rsx_classify_method(uint32_t method) {
         return RSX_M_SURFACE_FORMAT;
     case 0x208: case 0x22c: case 0x230:
         return RSX_M_SURFACE_PITCH;
-    case 0x20c: case 0x210: case 0x214: case 0x218:
+    case 0x210: case 0x214: case 0x218:
     case 0x182c: case 0x1830: case 0x198: case 0x1a00:
         return RSX_M_SURFACE_COLOR_OFFSET;
+    case 0x20c: /* width<<16 | height, not a color address */
+        return RSX_M_SURFACE_CLIP;
     case 0x220: case 0x224:
         return RSX_M_SURFACE_ZETA_OFFSET;
     case 0x8: case 0xc: case 0x10:
