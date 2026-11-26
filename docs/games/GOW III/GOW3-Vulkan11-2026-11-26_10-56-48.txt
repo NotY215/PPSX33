@@ -1,8 +1,8 @@
 PPSX33 run log
 mode=launch_in_game_folder
 api=Vulkan11
-file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan11-2026-11-25_11-04-46.txt
-[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan11-2026-11-25_11-04-46.txt
+file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan11-2026-11-26_10-56-48.txt
+[ps3rt] log file (in_game_folder): E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan11-2026-11-26_10-56-48.txt
 [stage] BOOT start
 [ps3rt] map seg0 VA=0x10000 filesz=0x4e76e0 memsz=0x4e76e0
 [ps3rt] map seg1 VA=0x500000 filesz=0x430c0 memsz=0x18f8a0
@@ -75,5 +75,5 @@ file=E:\GAMES_PS3\God of War III\PS3_GAME\USRDIR\GOW3-Vulkan11-2026-11-25_11-04-
 [lv2] alloc VA=0x8020000 size=0x100000
 [rsx] XXII-L API preference: Vulkan 1.1 (OpenGL 4.5 secondary; DX11 removed)
 [rsx] XX-O window title="PPSX33 presents GOW3"
-[rsx] Vulkan init begin hwnd=00000000001209A0 720x560 (true 1.1)
+[rsx] Vulkan init begin hwnd=0000000000190A98 720x560 (true 1.1)
 [rsx] Vulkan: vulkan-1.dll probe OK — CreateInstance 1.1...
