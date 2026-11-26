@@ -95,6 +95,7 @@ if(WIN32)
     src/RSX/present/rsx_present_queue.c
     src/RSX/present/rsx_present_policy.c
     src/RSX/draw/rsx_draw_batch.c
+    src/RSX/sw/rsx_sw_render.c
     src/RSX/draw/rsx_surface_fmt.c
     src/RSX/render/rsx_render_frame.c
     src/RSX/render/rsx_light_present.c
@@ -137,6 +138,7 @@ if(WIN32)
     src/RSX/present/rsx_present_queue.c
     src/RSX/present/rsx_present_policy.c
     src/RSX/draw/rsx_draw_batch.c
+    src/RSX/sw/rsx_sw_render.c
     src/RSX/draw/rsx_surface_fmt.c
     src/RSX/render/rsx_render_frame.c
     src/RSX/render/rsx_light_present.c

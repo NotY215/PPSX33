@@ -658,7 +658,10 @@ extern "C" int rsx_vk_init(void* hwnd, uint32_t width, uint32_t height) {
     ici.enabledExtensionCount = 2;
     ici.ppEnabledExtensionNames = exts;
 
-    if (g_vk.CreateInstance(&ici, nullptr, &g_vk.instance) != VK_SUCCESS) {
+    ps3rt_log("[rsx] Vulkan: calling CreateInstance (1.1)...\n");
+    VkResult cir = g_vk.CreateInstance(&ici, nullptr, &g_vk.instance);
+    ps3rt_log("[rsx] Vulkan: CreateInstance 1.1 result=%d\n", (int)cir);
+    if (cir != VK_SUCCESS) {
         // Retry with 1.0 if 1.1 instance fails
         app.apiVersion = (1u << 22) | (0u << 12);
         if (g_vk.CreateInstance(&ici, nullptr, &g_vk.instance) != VK_SUCCESS) {

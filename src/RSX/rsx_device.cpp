@@ -8,6 +8,7 @@
 #include "rsx_present_queue.h"
 #include "rsx_present_policy.h"
 #include "rsx_draw_batch.h"
+#include "rsx_sw_render.h"
 #include "rsx_surface_fmt.h"
 #include "rsx_render_frame.h"
 #include "rsx_light_present.h"
@@ -89,6 +90,12 @@ static uint32_t g_va_offset[8] = {};
 static uint32_t g_va_fmt[8] = {};
 static uint32_t g_clear_color = 0xFF202020u;
 static int g_begin_mode = 4;
+static rsx_sw_state g_sw; static int g_sw_inited = 0;
+static void rsx_sw_ensure(void) {
+  if (!g_sw_inited) { rsx_sw_state_init(&g_sw); g_sw_inited = 1; }
+  g_sw.clear_color = g_clear_color;
+  g_sw.begin_mode = g_begin_mode;
+}
 
 static float rsx_be_f32(const uint8_t* p) {
     uint32_t u = ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) | ((uint32_t)p[2] << 8) | (uint32_t)p[3];
@@ -137,85 +144,28 @@ static void rsx_rast_tri(uint8_t* fb, uint32_t pitch, uint32_t w, uint32_t h,
     }
 }
 
-static void rsx_sw_clear(uint8_t* mem) {
-    if (!mem || !g_rsx.color_offset) return;
-    size_t msz = ps3rt_guest_mem_size();
-    uint32_t w = 720, h = 560;
-    rsx_res_get(&w, &h);
-    uint32_t pitch = g_rsx.color_pitch ? g_rsx.color_pitch : w * 4u;
-    if (pitch < w * 4u) pitch = w * 4u;
-    size_t need = (size_t)g_rsx.color_offset + (size_t)pitch * h;
-    if (g_rsx.color_offset >= msz || need > msz) return;
-    uint8_t r = (uint8_t)((g_clear_color >> 16) & 255);
-    uint8_t g = (uint8_t)((g_clear_color >> 8) & 255);
-    uint8_t b = (uint8_t)(g_clear_color & 255);
-    uint8_t* fb = mem + g_rsx.color_offset;
-    for (uint32_t y = 0; y < h; ++y) {
-        uint8_t* row = fb + (size_t)y * pitch;
-        for (uint32_t x = 0; x < w; ++x) {
-            row[x * 4 + 0] = r;
-            row[x * 4 + 1] = g;
-            row[x * 4 + 2] = b;
-            row[x * 4 + 3] = 255;
-        }
-    }
+static void rsx_host_sw_clear(uint8_t* mem) {
+    rsx_sw_ensure();
+    g_sw.color_offset = g_rsx.color_offset;
+    g_sw.color_pitch = g_rsx.color_pitch;
+    uint32_t w=720,h=560; rsx_res_get(&w,&h);
+    g_sw.width = w; g_sw.height = h;
+    g_sw.clear_color = g_clear_color;
+    rsx_sw_clear(&g_sw, mem, ps3rt_guest_mem_size());
 }
 
-/* Paint DRAW_ARRAYS into the bound color surface so OpenGL/Vulkan present real pixels. */
-static void rsx_sw_draw(uint8_t* mem, uint32_t arg) {
-    if (!mem) return;
-    size_t msz = ps3rt_guest_mem_size();
-    uint32_t w = 720, h = 560;
-    rsx_res_get(&w, &h);
-    uint32_t pitch = g_rsx.color_pitch ? g_rsx.color_pitch : w * 4u;
-    if (pitch < w * 4u) pitch = w * 4u;
-    if (!g_rsx.color_offset || (size_t)g_rsx.color_offset + (size_t)pitch * h > msz) return;
-
-    uint32_t first = arg & 0x00FFFFFFu;
-    uint32_t count = ((arg >> 24) & 0xFFu) + 1u;
-    if (count < 3) count = 3;
-    if (count > 96) count = 96;
-    g_draw_count = (int)count;
-    (void)g_begin_mode;
-
-    uint32_t off = g_va_offset[0];
-    uint32_t fmt = g_va_fmt[0];
-    uint32_t stride = (fmt >> 8) & 0xFFFFu;
-    if (stride < 12) stride = 12;
-    if (!off || (size_t)off + (size_t)(first + count) * stride + 12 > msz) {
-        static int miss = 0;
-        if (miss < 8) {
-            ps3rt_log("[rsx] draw skip no-va arg=0x%x va=0x%x count=%u color=0x%x\n",
-                arg, off, count, g_rsx.color_offset);
-            ++miss;
-        }
-        return;
-    }
-
-    uint8_t* fb = mem + g_rsx.color_offset;
-    const uint8_t* vb = mem + off;
-    uint8_t cr = (uint8_t)(40 + (g_rsx.draws * 37) % 200);
-    uint8_t cg = (uint8_t)(80 + (g_rsx.draws * 17) % 160);
-    uint8_t cb = (uint8_t)(160);
-    uint32_t ntri = count / 3u;
-    for (uint32_t t = 0; t < ntri; ++t) {
-        uint32_t i = first + t * 3u;
-        const uint8_t* p0 = vb + (size_t)i * stride;
-        const uint8_t* p1 = vb + (size_t)(i + 1) * stride;
-        const uint8_t* p2 = vb + (size_t)(i + 2) * stride;
-        rsx_rast_tri(fb, pitch, w, h,
-            rsx_be_f32(p0), rsx_be_f32(p0 + 4),
-            rsx_be_f32(p1), rsx_be_f32(p1 + 4),
-            rsx_be_f32(p2), rsx_be_f32(p2 + 4),
-            cr, cg, cb);
-    }
-    static int logged = 0;
-    if (logged < 12) {
-        ps3rt_log("[rsx] sw-rast tris=%u va=0x%x stride=%u color=0x%x\n",
-            ntri, off, stride, g_rsx.color_offset);
-        ++logged;
-    }
+static void rsx_host_sw_draw(uint8_t* mem, uint32_t arg) {
+    rsx_sw_ensure();
+    g_sw.color_offset = g_rsx.color_offset;
+    g_sw.color_pitch = g_rsx.color_pitch;
+    uint32_t w=720,h=560; rsx_res_get(&w,&h);
+    g_sw.width = w; g_sw.height = h;
+    for (int i=0;i<8;i++) { g_sw.va_offset[i]=g_va_offset[i]; g_sw.va_fmt[i]=g_va_fmt[i]; }
+    if (g_rsx.tex_offset)
+        rsx_sw_set_tex0(&g_sw, g_rsx.tex_offset, 0, 256, 256, 0);
+    rsx_sw_draw_arrays(&g_sw, mem, ps3rt_guest_mem_size(), arg, (int)g_rsx.draws);
 }
+
 
 static void rsx_surface_bind_color(uint32_t offset, uint32_t pitch, uint32_t w, uint32_t h) {
     g_rsx.color_offset = offset;
@@ -759,10 +709,14 @@ static void rsx_sink_on_draw(void* user, uint32_t method, uint32_t arg) {
 }
 
 static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
-    if (method >= 0x1680u && method < 0x1680u + 32u && ((method - 0x1680u) & 3u) == 0u)
+    if (method >= 0x1680u && method < 0x1680u + 32u && ((method - 0x1680u) & 3u) == 0u) {
         g_va_offset[(method - 0x1680u) / 4u] = arg;
-    if (method >= 0x1740u && method < 0x1740u + 32u && ((method - 0x1740u) & 3u) == 0u)
+        rsx_sw_ensure(); rsx_sw_set_va(&g_sw, (int)((method - 0x1680u) / 4u), arg, g_va_fmt[(method - 0x1680u) / 4u]);
+    }
+    if (method >= 0x1740u && method < 0x1740u + 32u && ((method - 0x1740u) & 3u) == 0u) {
         g_va_fmt[(method - 0x1740u) / 4u] = arg;
+        rsx_sw_ensure(); rsx_sw_set_va(&g_sw, (int)((method - 0x1740u) / 4u), g_va_offset[(method - 0x1740u) / 4u], arg);
+    }
     if (method == 0x1d8cu)
         g_clear_color = arg;
     if (method == 0x1808u)
@@ -804,7 +758,7 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
     }
     if (kind == RSX_M_TEXTURE_OFFSET || kind == RSX_M_TEXTURE_FORMAT) {
         g_rsx.tex_offset = arg;
-        /* shader ucode often nearby in method stream */
+        rsx_sw_ensure(); rsx_sw_set_tex0(&g_sw, arg, 0, 256, 256, 0);
         ppsx33::rsx::rsx_texture_bind(0, arg, 0, g_rsx.width, g_rsx.height, 0);
         return true;
     }
@@ -816,7 +770,7 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
     if (kind == RSX_M_CLEAR) {
         rsx_draw_batch_note_clear(1);
         if (method == 0x1d94u || method == 0x1d9cu || arg == 0xF1u || (arg & 0xF0u) == 0xF0u)
-            rsx_sw_clear(ps3rt_guest_mem_ptr());
+            rsx_host_sw_clear(ps3rt_guest_mem_ptr());
         return true;
     }
     if (kind == RSX_M_FLIP_HINT || kind == RSX_M_SEMAPHORE || kind == RSX_M_TRANSFORM || kind == RSX_M_NOP) {
@@ -830,6 +784,7 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
         return true;
     case 0x1d88: case 0x1a00: // texture offset unit0
         g_rsx.tex_offset = arg;
+        rsx_sw_ensure(); rsx_sw_set_tex0(&g_sw, arg, 0, 256, 256, 0);
         ppsx33::rsx::rsx_texture_bind(0, arg, 0, g_rsx.width, g_rsx.height, 0);
         return true;
     case 0x8c0: case 0x8c4: // viewport-ish
@@ -847,7 +802,7 @@ static bool rsx_state_apply_method_p2(uint32_t method, uint32_t arg) {
     (void)method; (void)arg; return false;
 }
 static void rsx_draw_host(uint8_t* mem) {
-    rsx_sw_draw(mem, g_draw_count ? (uint32_t)(((g_draw_count - 1) & 0xFF) << 24) : 0x02000000u);
+    rsx_host_sw_draw(mem, g_draw_count ? (uint32_t)(((g_draw_count - 1) & 0xFF) << 24) : 0x02000000u);
     ++g_rsx.draws_guest_frame;
     ++g_rsx.draws;
     ++g_rsx.draws_diagnostic;
@@ -897,7 +852,7 @@ static void rsx_fifo_decode_word(uint8_t* mem, uint32_t method, uint32_t arg) {
         ++g_rsx.methods_this_frame;
         // Issue host draw when guest issues draw-class methods
         if (method == 0x1814 || method == 0x1824) {
-            rsx_sw_draw(mem, arg);
+            rsx_host_sw_draw(mem, arg);
             int before = g_rsx.draws_guest_frame;
             rsx_draw_host(mem);
             // Cmdstream draw must count as guest even if geometry falls back to solid
