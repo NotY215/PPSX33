@@ -717,8 +717,19 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
         g_va_fmt[(method - 0x1740u) / 4u] = arg;
         rsx_sw_ensure(); rsx_sw_set_va(&g_sw, (int)((method - 0x1740u) / 4u), g_va_offset[(method - 0x1740u) / 4u], arg);
     }
-    if (method == 0x1d8cu)
+    if (method == 0x1d8cu) {
         g_clear_color = arg;
+        rsx_sw_ensure();
+        g_sw.clear_color = arg;
+        if (g_rsx.color_offset) {
+            uint8_t* m = ps3rt_guest_mem_ptr();
+            if (m) {
+                uint32_t pw=720,ph=560; rsx_res_get(&pw,&ph);
+                rsx_sw_set_color(&g_sw, g_rsx.color_offset, g_rsx.color_pitch, pw, ph);
+                rsx_sw_clear(&g_sw, m, ps3rt_guest_mem_size());
+            }
+        }
+    }
     if (method == 0x1808u)
         g_begin_mode = (int)arg;
 
@@ -733,7 +744,8 @@ static bool rsx_state_apply_method(uint32_t method, uint32_t arg) {
     if (kind == RSX_M_SURFACE_COLOR_OFFSET) {
         g_rsx.color_offset = arg;
         rsx_surface_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height);
-         { uint32_t pw=720,ph=576; rsx_res_get(&pw,&ph); rsx_draw_batch_set_color(arg, g_rsx.color_pitch, pw, ph); }
+         { uint32_t pw=720,ph=576; rsx_res_get(&pw,&ph); rsx_draw_batch_set_color(arg, g_rsx.color_pitch, pw, ph);
+           rsx_sw_ensure(); rsx_sw_set_color(&g_sw, arg, g_rsx.color_pitch, pw, ph); }
         ppsx33::rsx::rsx_framebuffer_bind_color(arg, g_rsx.color_pitch, g_rsx.width, g_rsx.height, 0);
         return true;
     }

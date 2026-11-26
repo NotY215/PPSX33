@@ -63,6 +63,9 @@ set(PPSX33_COMMON_INCLUDES
   ${CMAKE_SOURCE_DIR}/src/RSX/dispatch
   ${CMAKE_SOURCE_DIR}/src/RSX/present
   ${CMAKE_SOURCE_DIR}/src/RSX/draw
+  ${CMAKE_SOURCE_DIR}/src/RSX/sw
+  ${CMAKE_SOURCE_DIR}/src/RSX/methods
+  ${CMAKE_SOURCE_DIR}/src/RSX/frag
   ${CMAKE_SOURCE_DIR}/src/RSX/render
   ${CMAKE_SOURCE_DIR}/src/RSX/resolution
   ${CMAKE_SOURCE_DIR}/src/core/stats

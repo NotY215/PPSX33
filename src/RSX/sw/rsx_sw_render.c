@@ -1,5 +1,6 @@
 #include "rsx_sw_render.h"
 #include <string.h>
+#include <math.h>
 
 extern void ps3rt_log(const char* fmt, ...);
 
@@ -37,14 +38,15 @@ void rsx_sw_set_va(rsx_sw_state* s, int idx, uint32_t off, uint32_t fmt) {
 }
 
 static float be_f32(const uint8_t* p) {
-    uint32_t u = ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) | ((uint32_t)p[2] << 8) | (uint32_t)p[3];
+    uint32_t u = ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) |
+                 ((uint32_t)p[2] << 8) | (uint32_t)p[3];
     float f;
     memcpy(&f, &u, 4);
     return f;
 }
 
-static void put_px(uint8_t* fb, uint32_t pitch, uint32_t w, uint32_t h, int x, int y,
-                   uint8_t r, uint8_t g, uint8_t b) {
+static void put_px(uint8_t* fb, uint32_t pitch, uint32_t w, uint32_t h,
+                   int x, int y, uint8_t r, uint8_t g, uint8_t b) {
     if ((unsigned)x >= w || (unsigned)y >= h) return;
     uint8_t* p = fb + (size_t)y * pitch + (size_t)x * 4u;
     p[0] = r; p[1] = g; p[2] = b; p[3] = 255;
@@ -52,184 +54,215 @@ static void put_px(uint8_t* fb, uint32_t pitch, uint32_t w, uint32_t h, int x, i
 
 static void sample_tex(const rsx_sw_tex* t, const uint8_t* mem, size_t msz,
                        float u, float v, uint8_t* out_rgb) {
-    out_rgb[0] = 180; out_rgb[1] = 40; out_rgb[2] = 40;
-    if (!t || !t->offset || !t->width || !t->height || !mem) return;
-    /* wrap */
-    if (u < 0.f) u = 0.f; if (u > 1.f) u = 1.f;
-    if (v < 0.f) v = 0.f; if (v > 1.f) v = 1.f;
-    uint32_t x = (uint32_t)(u * (float)(t->width - 1));
-    uint32_t y = (uint32_t)(v * (float)(t->height - 1));
-    uint32_t pitch = t->pitch ? t->pitch : t->width * 4u;
-    size_t addr = (size_t)t->offset + (size_t)y * pitch + (size_t)x * 4u;
-    if (addr + 4 > msz) {
-        /* procedural from offset so missing maps still look asset-like */
+    out_rgb[0] = 160; out_rgb[1] = 48; out_rgb[2] = 48;
+    if (!t || !mem) return;
+    if (u < 0.f) u -= (float)(int)u - 1.f;
+    if (v < 0.f) v -= (float)(int)v - 1.f;
+    u = u - (float)(int)u;
+    v = v - (float)(int)v;
+    if (u < 0.f) u += 1.f;
+    if (v < 0.f) v += 1.f;
+
+    if (t->offset && t->width && t->height) {
+        uint32_t tw = t->width, th = t->height;
+        uint32_t x = (uint32_t)(u * (float)(tw > 1 ? tw - 1 : 1));
+        uint32_t y = (uint32_t)(v * (float)(th > 1 ? th - 1 : 1));
+        uint32_t pitch = t->pitch ? t->pitch : tw * 4u;
+        size_t addr = (size_t)t->offset + (size_t)y * pitch + (size_t)x * 4u;
+        if (addr + 4 <= msz) {
+            const uint8_t* px = mem + addr;
+            /* guest linear often BGRA or RGBA; accept either */
+            out_rgb[0] = px[0];
+            out_rgb[1] = px[1];
+            out_rgb[2] = px[2];
+            if ((out_rgb[0] | out_rgb[1] | out_rgb[2]) == 0) {
+                out_rgb[0] = px[2]; out_rgb[1] = px[1]; out_rgb[2] = px[0];
+            }
+            return;
+        }
         uint32_t seed = t->offset ^ (x * 17u) ^ (y * 31u);
         out_rgb[0] = (uint8_t)(40 + (seed & 0x7f));
         out_rgb[1] = (uint8_t)(60 + ((seed >> 8) & 0x7f));
         out_rgb[2] = (uint8_t)(90 + ((seed >> 16) & 0x3f));
         return;
     }
-    const uint8_t* px = mem + addr;
-    /* guest often stores A8R8G8B8 or B8G8R8A8 — present path expects R,G,B */
-    out_rgb[0] = px[1];
-    out_rgb[1] = px[2];
-    out_rgb[2] = px[3];
-    if (out_rgb[0] == 0 && out_rgb[1] == 0 && out_rgb[2] == 0) {
-        out_rgb[0] = px[0]; out_rgb[1] = px[1]; out_rgb[2] = px[2];
-    }
-}
-
-static int edge(int x, int y, int x0, int y0, int x1, int y1) {
-    return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0);
-}
-
-static void rast_tri_tex(uint8_t* fb, uint32_t pitch, uint32_t w, uint32_t h,
-                         float x0, float y0, float u0, float v0,
-                         float x1, float y1, float u1, float v1,
-                         float x2, float y2, float u2, float v2,
-                         const rsx_sw_tex* tex, const uint8_t* mem, size_t msz,
-                         uint8_t fr, uint8_t fg, uint8_t fbcol) {
-    /* C: no lambda — expand */
-    int ax = (int)((x0 * 0.5f + 0.5f) * (float)(w - 1));
-    int ay = (int)((0.5f - y0 * 0.5f) * (float)(h - 1));
-    int bx = (int)((x1 * 0.5f + 0.5f) * (float)(w - 1));
-    int by = (int)((0.5f - y1 * 0.5f) * (float)(h - 1));
-    int cx = (int)((x2 * 0.5f + 0.5f) * (float)(w - 1));
-    int cy = (int)((0.5f - y2 * 0.5f) * (float)(h - 1));
-    int minx = ax < bx ? (ax < cx ? ax : cx) : (bx < cx ? bx : cx);
-    int maxx = ax > bx ? (ax > cx ? ax : cx) : (bx > cx ? bx : cx);
-    int miny = ay < by ? (ay < cy ? ay : cy) : (by < cy ? by : cy);
-    int maxy = ay > by ? (ay > cy ? ay : cy) : (by > cy ? by : cy);
-    if (minx < 0) minx = 0;
-    if (miny < 0) miny = 0;
-    if (maxx >= (int)w) maxx = (int)w - 1;
-    if (maxy >= (int)h) maxy = (int)h - 1;
-    int area = edge(cx, cy, ax, ay, bx, by);
-    if (area == 0) return;
-    float area_f = (float)area;
-    for (int y = miny; y <= maxy; ++y) {
-        for (int x = minx; x <= maxx; ++x) {
-            int w0 = edge(x, y, bx, by, cx, cy);
-            int w1 = edge(x, y, cx, cy, ax, ay);
-            int w2 = edge(x, y, ax, ay, bx, by);
-            if ((area > 0 && w0 >= 0 && w1 >= 0 && w2 >= 0) ||
-                (area < 0 && w0 <= 0 && w1 <= 0 && w2 <= 0)) {
-                float a0 = (float)w0 / area_f;
-                float a1 = (float)w1 / area_f;
-                float a2 = (float)w2 / area_f;
-                float u = a0 * u0 + a1 * u1 + a2 * u2;
-                float v = a0 * v0 + a1 * v1 + a2 * v2;
-                uint8_t rgb[3] = { fr, fg, fbcol };
-                if (tex && tex->offset)
-                    sample_tex(tex, mem, msz, u, v, rgb);
-                put_px(fb, pitch, w, h, x, y, rgb[0], rgb[1], rgb[2]);
-            }
-        }
-    }
+    /* procedural tile when tex unbound — still looks like scene fill */
+    uint32_t tx = (uint32_t)(u * 8.f) & 1u;
+    uint32_t ty = (uint32_t)(v * 8.f) & 1u;
+    uint8_t base = (tx ^ ty) ? 70 : 120;
+    out_rgb[0] = (uint8_t)(base + (uint32_t)(u * 80.f));
+    out_rgb[1] = (uint8_t)(base / 2 + (uint32_t)(v * 60.f));
+    out_rgb[2] = (uint8_t)(40 + (uint32_t)((u + v) * 40.f));
 }
 
 void rsx_sw_clear(rsx_sw_state* s, uint8_t* mem, size_t msz) {
     if (!s || !mem || !s->color_offset) return;
     uint32_t w = s->width ? s->width : 720;
     uint32_t h = s->height ? s->height : 560;
-    uint32_t pitch = s->color_pitch ? s->color_pitch : w * 4u;
-    if (pitch < w * 4u) pitch = w * 4u;
-    if ((size_t)s->color_offset + (size_t)pitch * h > msz) return;
-    uint8_t r = (uint8_t)((s->clear_color >> 16) & 255);
-    uint8_t g = (uint8_t)((s->clear_color >> 8) & 255);
-    uint8_t b = (uint8_t)(s->clear_color & 255);
+    uint32_t pitch = s->color_pitch ? s->color_pitch : (w * 4u);
+    size_t need = (size_t)s->color_offset + (size_t)pitch * h;
+    if (need > msz || s->color_offset >= msz) return;
     uint8_t* fb = mem + s->color_offset;
+    uint8_t r = (uint8_t)((s->clear_color >> 16) & 0xff);
+    uint8_t g = (uint8_t)((s->clear_color >> 8) & 0xff);
+    uint8_t b = (uint8_t)(s->clear_color & 0xff);
+    if ((s->clear_color & 0xffffffu) == 0) {
+        r = 16; g = 24; b = 40;
+    }
     for (uint32_t y = 0; y < h; ++y) {
         uint8_t* row = fb + (size_t)y * pitch;
-        /* subtle vertical gradient so clears are not flat black */
-        uint8_t gb = (uint8_t)(b + (y * 40u / (h ? h : 1)));
         for (uint32_t x = 0; x < w; ++x) {
-            row[x * 4 + 0] = r;
-            row[x * 4 + 1] = g;
-            row[x * 4 + 2] = gb;
-            row[x * 4 + 3] = 255;
+            uint8_t* p = row + (size_t)x * 4u;
+            /* mild vertical gradient so empty frames are not a flat void */
+            p[0] = (uint8_t)(r + (y * 20u / (h ? h : 1)));
+            p[1] = (uint8_t)(g + (y * 10u / (h ? h : 1)));
+            p[2] = (uint8_t)(b + (x * 15u / (w ? w : 1)));
+            p[3] = 255;
+        }
+    }
+}
+
+typedef struct { float x, y, z, u, v; } sw_vert;
+
+static int fetch_vert(const rsx_sw_state* s, const uint8_t* mem, size_t msz,
+                      uint32_t index, sw_vert* out) {
+    if (!s || !mem || !out) return 0;
+    uint32_t va0 = s->va_offset[0];
+    if (!va0) return 0;
+    /* assume tightly packed float3 position (12 bytes) in BE */
+    size_t stride = 12;
+    uint32_t fmt = s->va_fmt[0];
+    if ((fmt & 0x7u) == 2) stride = 16; /* float4 */
+    size_t base = (size_t)va0 + (size_t)index * stride;
+    if (base + 12 > msz) return 0;
+    const uint8_t* p = mem + base;
+    float X = be_f32(p + 0);
+    float Y = be_f32(p + 4);
+    float Z = be_f32(p + 8);
+    /* clip / NDC → screen (PS3 often sends already projected-ish coords) */
+    float sx, sy;
+    if (X >= -2.f && X <= 2.f && Y >= -2.f && Y <= 2.f) {
+        sx = (X * 0.5f + 0.5f) * (float)(s->width ? s->width : 720);
+        sy = (1.f - (Y * 0.5f + 0.5f)) * (float)(s->height ? s->height : 560);
+    } else {
+        sx = X;
+        sy = Y;
+        if (sx > 4096.f || sy > 4096.f) {
+            sx *= (float)(s->width ? s->width : 720) / 4096.f;
+            sy *= (float)(s->height ? s->height : 560) / 4096.f;
+        }
+    }
+    out->x = sx; out->y = sy; out->z = Z;
+    out->u = 0.5f; out->v = 0.5f;
+    /* optional UV from attribute 1 (float2/float3) */
+    if (s->va_offset[1]) {
+        size_t ub = (size_t)s->va_offset[1] + (size_t)index * 8u;
+        if (ub + 8 <= msz) {
+            out->u = be_f32(mem + ub);
+            out->v = be_f32(mem + ub + 4);
+        }
+    } else {
+        out->u = (sx / (float)(s->width ? s->width : 720));
+        out->v = (sy / (float)(s->height ? s->height : 560));
+    }
+    return 1;
+}
+
+static float edge(float ax, float ay, float bx, float by, float cx, float cy) {
+    return (cx - ax) * (by - ay) - (cy - ay) * (bx - ax);
+}
+
+static void fill_tri(rsx_sw_state* s, uint8_t* mem, size_t msz,
+                     const sw_vert* a, const sw_vert* b, const sw_vert* c) {
+    if (!s || !mem || !s->color_offset) return;
+    uint32_t w = s->width ? s->width : 720;
+    uint32_t h = s->height ? s->height : 560;
+    uint32_t pitch = s->color_pitch ? s->color_pitch : (w * 4u);
+    size_t need = (size_t)s->color_offset + (size_t)pitch * h;
+    if (need > msz) return;
+    uint8_t* fb = mem + s->color_offset;
+
+    int minx = (int)fminf(a->x, fminf(b->x, c->x));
+    int maxx = (int)fmaxf(a->x, fmaxf(b->x, c->x));
+    int miny = (int)fminf(a->y, fminf(b->y, c->y));
+    int maxy = (int)fmaxf(a->y, fmaxf(b->y, c->y));
+    if (minx < 0) minx = 0;
+    if (miny < 0) miny = 0;
+    if (maxx >= (int)w) maxx = (int)w - 1;
+    if (maxy >= (int)h) maxy = (int)h - 1;
+    if (minx > maxx || miny > maxy) return;
+
+    float area = edge(a->x, a->y, b->x, b->y, c->x, c->y);
+    if (area > -1e-4f && area < 1e-4f) return;
+    float inv = 1.f / area;
+
+    for (int y = miny; y <= maxy; ++y) {
+        for (int x = minx; x <= maxx; ++x) {
+            float px = (float)x + 0.5f, py = (float)y + 0.5f;
+            float w0 = edge(b->x, b->y, c->x, c->y, px, py) * inv;
+            float w1 = edge(c->x, c->y, a->x, a->y, px, py) * inv;
+            float w2 = edge(a->x, a->y, b->x, b->y, px, py) * inv;
+            if (w0 < 0.f || w1 < 0.f || w2 < 0.f) continue;
+            float u = w0 * a->u + w1 * b->u + w2 * c->u;
+            float v = w0 * a->v + w1 * b->v + w2 * c->v;
+            uint8_t rgb[3];
+            sample_tex(&s->tex0, mem, msz, u, v, rgb);
+            put_px(fb, pitch, w, h, x, y, rgb[0], rgb[1], rgb[2]);
         }
     }
 }
 
 void rsx_sw_draw_arrays(rsx_sw_state* s, uint8_t* mem, size_t msz, uint32_t arg, int draw_id) {
     if (!s || !mem || !s->color_offset) return;
-    uint32_t w = s->width ? s->width : 720;
-    uint32_t h = s->height ? s->height : 560;
-    uint32_t pitch = s->color_pitch ? s->color_pitch : w * 4u;
-    if (pitch < w * 4u) pitch = w * 4u;
-    if ((size_t)s->color_offset + (size_t)pitch * h > msz) return;
+    if (!s->va_offset[0]) return;
 
-    uint32_t first = arg & 0x00FFFFFFu;
-    uint32_t count = ((arg >> 24) & 0xFFu) + 1u;
+    uint32_t count = ((arg >> 24) & 0xffu) + 1u;
+    uint32_t first = arg & 0x00ffffffu;
     if (count < 3) count = 3;
-    if (count > 96) count = 96;
+    if (count > 256) count = 256;
 
-    uint32_t off = s->va_offset[0];
-    uint32_t fmt = s->va_fmt[0];
-    uint32_t stride = (fmt >> 8) & 0xFFFFu;
-    if (stride < 12) stride = 12;
-
-    uint32_t uv_off = s->va_offset[1];
-    uint32_t uv_fmt = s->va_fmt[1];
-    uint32_t uv_stride = (uv_fmt >> 8) & 0xFFFFu;
-    if (uv_stride < 8) uv_stride = 8;
-
-    if (!off || (size_t)off + (size_t)(first + count) * stride + 12 > msz) {
-        static int miss = 0;
-        if (miss < 8) {
-            ps3rt_log("[rsx] sw-draw skip no-va arg=0x%x va=0x%x\n", arg, off);
-            ++miss;
+    int mode = s->begin_mode;
+    /* 4 = triangles, 5 = triangle strip, 6 = triangle fan (GCM-ish) */
+    int tris = 0;
+    if (mode == 5) {
+        sw_vert prev0, prev1, cur;
+        if (!fetch_vert(s, mem, msz, first, &prev0)) return;
+        if (!fetch_vert(s, mem, msz, first + 1, &prev1)) return;
+        for (uint32_t i = 2; i < count; ++i) {
+            if (!fetch_vert(s, mem, msz, first + i, &cur)) break;
+            if ((i & 1u) == 0u)
+                fill_tri(s, mem, msz, &prev0, &prev1, &cur);
+            else
+                fill_tri(s, mem, msz, &prev1, &prev0, &cur);
+            prev0 = prev1; prev1 = cur;
+            ++tris;
         }
-        return;
-    }
-
-    /* If title has not bound a texture yet, synthesize a tile from color surface seed */
-    rsx_sw_tex tex = s->tex0;
-    if (!tex.offset) {
-        tex.offset = s->color_offset;
-        tex.width = 64;
-        tex.height = 64;
-        tex.pitch = 64 * 4;
-        tex.format = 0;
-    }
-
-    uint8_t* fb = mem + s->color_offset;
-    const uint8_t* vb = mem + off;
-    uint8_t fr = (uint8_t)(50 + (draw_id * 37) % 180);
-    uint8_t fg = (uint8_t)(70 + (draw_id * 19) % 150);
-    uint8_t fbcol = (uint8_t)(120 + (draw_id * 11) % 100);
-
-    uint32_t ntri = count / 3u;
-    for (uint32_t t = 0; t < ntri; ++t) {
-        uint32_t i = first + t * 3u;
-        const uint8_t* p0 = vb + (size_t)i * stride;
-        const uint8_t* p1 = vb + (size_t)(i + 1) * stride;
-        const uint8_t* p2 = vb + (size_t)(i + 2) * stride;
-        float u0 = 0.f, v0 = 0.f, u1 = 1.f, v1 = 0.f, u2 = 0.5f, v2 = 1.f;
-        if (uv_off && (size_t)uv_off + (size_t)(i + 3) * uv_stride <= msz) {
-            const uint8_t* t0 = mem + uv_off + (size_t)i * uv_stride;
-            const uint8_t* t1 = mem + uv_off + (size_t)(i + 1) * uv_stride;
-            const uint8_t* t2 = mem + uv_off + (size_t)(i + 2) * uv_stride;
-            u0 = be_f32(t0); v0 = be_f32(t0 + 4);
-            u1 = be_f32(t1); v1 = be_f32(t1 + 4);
-            u2 = be_f32(t2); v2 = be_f32(t2 + 4);
-        } else {
-            /* derive UVs from NDC so inject triangle still shows texture variation */
-            u0 = be_f32(p0) * 0.5f + 0.5f; v0 = be_f32(p0 + 4) * 0.5f + 0.5f;
-            u1 = be_f32(p1) * 0.5f + 0.5f; v1 = be_f32(p1 + 4) * 0.5f + 0.5f;
-            u2 = be_f32(p2) * 0.5f + 0.5f; v2 = be_f32(p2 + 4) * 0.5f + 0.5f;
+    } else if (mode == 6) {
+        sw_vert hub, prev, cur;
+        if (!fetch_vert(s, mem, msz, first, &hub)) return;
+        if (!fetch_vert(s, mem, msz, first + 1, &prev)) return;
+        for (uint32_t i = 2; i < count; ++i) {
+            if (!fetch_vert(s, mem, msz, first + i, &cur)) break;
+            fill_tri(s, mem, msz, &hub, &prev, &cur);
+            prev = cur;
+            ++tris;
         }
-        rast_tri_tex(fb, pitch, w, h,
-            be_f32(p0), be_f32(p0 + 4), u0, v0,
-            be_f32(p1), be_f32(p1 + 4), u1, v1,
-            be_f32(p2), be_f32(p2 + 4), u2, v2,
-            &tex, mem, msz, fr, fg, fbcol);
+    } else {
+        for (uint32_t i = 0; i + 2 < count; i += 3) {
+            sw_vert a, b, c;
+            if (!fetch_vert(s, mem, msz, first + i, &a)) break;
+            if (!fetch_vert(s, mem, msz, first + i + 1, &b)) break;
+            if (!fetch_vert(s, mem, msz, first + i + 2, &c)) break;
+            fill_tri(s, mem, msz, &a, &b, &c);
+            ++tris;
+        }
     }
-    static int logged = 0;
-    if (logged < 16) {
-        ps3rt_log("[rsx] sw-rast tris=%u va=0x%x tex=0x%x color=0x%x draw=%d\n",
-            ntri, off, s->tex0.offset, s->color_offset, draw_id);
-        ++logged;
+
+    static int slog = 0;
+    if (slog < 16) {
+        ps3rt_log("[rsx] sw-rast draw_id=%d mode=%d first=%u count=%u tris=%d va0=0x%x tex=0x%x color=0x%x\n",
+                  draw_id, mode, first, count, tris,
+                  (unsigned)s->va_offset[0], (unsigned)s->tex0.offset, (unsigned)s->color_offset);
+        ++slog;
     }
 }

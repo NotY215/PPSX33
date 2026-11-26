@@ -11,7 +11,7 @@ typedef struct rsx_sw_tex {
     uint32_t pitch;
     uint32_t width;
     uint32_t height;
-    uint32_t format; /* 0 = A8R8G8B8 linear */
+    uint32_t format;
 } rsx_sw_tex;
 
 typedef struct rsx_sw_state {
@@ -31,7 +31,6 @@ void rsx_sw_set_color(rsx_sw_state* s, uint32_t off, uint32_t pitch, uint32_t w,
 void rsx_sw_set_tex0(rsx_sw_state* s, uint32_t off, uint32_t pitch, uint32_t w, uint32_t h, uint32_t fmt);
 void rsx_sw_set_va(rsx_sw_state* s, int idx, uint32_t off, uint32_t fmt);
 void rsx_sw_clear(rsx_sw_state* s, uint8_t* mem, size_t msz);
-/* arg = DRAW_ARRAYS packing: (count-1)<<24 | first */
 void rsx_sw_draw_arrays(rsx_sw_state* s, uint8_t* mem, size_t msz, uint32_t arg, int draw_id);
 
 #ifdef __cplusplus

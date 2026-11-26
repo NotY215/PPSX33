@@ -44,7 +44,11 @@ Runtime logs: `GameName-YYYY-MM-DD_HH-MM-SS.txt` under USRDIR / Report tab. Assi
 
 | Backend | Status |
 |---------|--------|
-| Vulkan 1.1 | Default host present (swapchain + guest RGBA staging) |
-| OpenGL (WGL) | Secondary; working-phase; fixed-function textured quad present |
+| Vulkan 1.1 | Default; true 1.1 instance (`apiVersion` 1.1); soft OpenGL fallback on loader/device failure |
+| OpenGL 4.5 | Secondary; WGL compatibility profile + GLSL texture blit of guest RGBA |
 
-Set via UI combo or `ps3rt_set_graphics_backend` (0=Vulkan, 1=OpenGL).
+API chosen in **Modify.exe** (not main UI). Runtime: `ps3rt_set_graphics_backend` (0=Vulkan, 1=OpenGL).
+
+## Software raster path
+
+`src/RSX/sw/rsx_sw_render.*` fills the guest color surface from FIFO draws (VA0 positions, optional VA1 UVs, tex0 sample). Host backends present that surface every frame. Default quality 560p (720×560) via resolution module.

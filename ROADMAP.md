@@ -18,15 +18,17 @@ Primary goal: **full PS3 → native Windows recompilation** (lift + HLE + RSX ho
 | Sticky island table | Shared `ppu_island_table.h` + soft-continue re-rank |
 | Version resource + game EXE icon | CMD/console `-version` |
 | Shader **bind** path | VP/FP offset track; SPIR-V program body still planned |
+| Software raster (`src/RSX/sw`) | Guest VA0 triangles + tex0 sample → color surface; OpenGL presents frames |
+| OpenGL 4.5 guest present | WGL compatibility + GLSL blit; continuous pump when color_offset set |
 
 ## In progress
 
 | Item | Notes |
 |------|--------|
-| Title FIFO geometry | Real draws beyond assist/clear |
+| Title FIFO geometry | Expand multi-attr / indexed draws on top of sw-rast |
 | Sticky recovery under GOW load | Re-test after full patch set |
 | SPIR-V from guest ucode | Bind ready; compiler path next |
-| OpenGL WGL present path | Working phase; selectable in UI with notice |
+| Vulkan 1.1 stability | Soft-fallback to OpenGL when CreateInstance dies on older GPUs |
 
 ## Planned
 
@@ -35,7 +37,7 @@ Primary goal: **full PS3 → native Windows recompilation** (lift + HLE + RSX ho
 | Fullscreen SPIR-V blit pipeline | Roadmap carry-over |
 | Deeper cellGcmSys / sysutil | Title-driven |
 | SPU / SPURS depth | Job assist exists; expand as needed |
-| OpenGL 4.5 secondary path | UI may expose later; Vulkan 1.1 remains default |
+| Deeper texture/format decode | Map NV4097 tex methods into sw + GL paths |
 
 ## Non-goals
 
