@@ -129,6 +129,8 @@ static int fetch_vert(const rsx_sw_state* s, const uint8_t* mem, size_t msz,
     if (!s || !mem || !out) return 0;
     uint32_t va0 = s->va_offset[0];
     if (!va0) return 0;
+    /* bit31 of array OFFSET: 1 = MAIN/IO, 0 = LOCAL/VRAM — strip flag for host VA */
+    va0 &= 0x7fffffffu;
     /* assume tightly packed float3 position (12 bytes) in BE */
     size_t stride = 12;
     uint32_t fmt = s->va_fmt[0];

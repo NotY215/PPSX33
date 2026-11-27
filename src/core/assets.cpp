@@ -30,6 +30,101 @@ static int ps3_stricmp(const char* a, const char* b) {
     return (int)(unsigned char)*a - (int)(unsigned char)*b;
 }
 
+static void path_norm_lower(char* dst, size_t dst_len, const char* src) {
+    if (!dst || dst_len == 0) return;
+    size_t i = 0, j = 0;
+    while (src && src[i] && j + 1 < dst_len) {
+        char c = src[i++];
+        if (c == '\\') c = '/';
+        if (c >= 'A' && c <= 'Z') c = (char)(c - 'A' + 'a');
+        // collapse duplicate slashes
+        if (c == '/' && j > 0 && dst[j - 1] == '/') continue;
+        dst[j++] = c;
+    }
+    dst[j] = 0;
+    // strip leading ./
+    if (dst[0] == '.' && dst[1] == '/') {
+        size_t k = 0;
+        while (dst[k + 2]) { dst[k] = dst[k + 2]; ++k; }
+        dst[k] = 0;
+    }
+}
+
+static void path_strip_guest_prefixes(char* path) {
+    if (!path) return;
+    const char* prefixes[] = {
+        "/dev_hdd0/game/", "/dev_hdd0/",
+        "/app_home/",
+        "/dev_bdvd/ps3_game/usrdir/", "/dev_bdvd/ps3_game/", "/dev_bdvd/",
+        "/usrdir/", "/ps3_game/usrdir/", "/ps3_game/",
+        nullptr
+    };
+    for (;;) {
+        int hit = 0;
+        for (int i = 0; prefixes[i]; ++i) {
+            size_t n = std::strlen(prefixes[i]);
+            if (std::strncmp(path, prefixes[i], n) == 0) {
+                char tmp[512];
+                std::snprintf(tmp, sizeof(tmp), "%s", path + n);
+                std::snprintf(path, 512, "%s", tmp);
+                hit = 1;
+                break;
+            }
+        }
+        if (!hit) break;
+    }
+    while (path[0] == '/') {
+        char tmp[512];
+        std::snprintf(tmp, sizeof(tmp), "%s", path + 1);
+        std::snprintf(path, 512, "%s", tmp);
+    }
+}
+
+static const char* path_leaf_norm(const char* p) {
+    const char* leaf = p;
+    for (const char* q = p; *q; ++q)
+        if (*q == '/' || *q == '\\') leaf = q + 1;
+    return leaf;
+}
+
+static bool path_ends_with_ci(const char* hay, const char* needle) {
+    if (!hay || !needle) return false;
+    size_t hl = std::strlen(hay), nl = std::strlen(needle);
+    if (nl == 0 || hl < nl) return false;
+    return ps3_stricmp(hay + (hl - nl), needle) == 0;
+}
+
+static bool psarc_entry_match(const std::string& ename, const char* guest, const char* leaf) {
+    if (ename.empty() || ename == "(names)") return false;
+    char en[512], gn[512], ln[512], eg[512];
+    path_norm_lower(en, sizeof(en), ename.c_str());
+    path_norm_lower(gn, sizeof(gn), guest ? guest : "");
+    path_norm_lower(ln, sizeof(ln), leaf ? leaf : "");
+    path_strip_guest_prefixes(gn);
+    path_strip_guest_prefixes(en);
+    // exact / leaf
+    if (gn[0] && (ps3_stricmp(en, gn) == 0 || path_ends_with_ci(en, gn))) return true;
+    if (ln[0] && (ps3_stricmp(en, ln) == 0 || path_ends_with_ci(en, ln))) return true;
+    // entry basename == leaf
+    const char* eleaf = path_leaf_norm(en);
+    if (ln[0] && ps3_stricmp(eleaf, ln) == 0) return true;
+    if (gn[0] && ps3_stricmp(eleaf, path_leaf_norm(gn)) == 0) return true;
+    // suffix of entry equals stripped guest (handles nested dirs inside PSARC)
+    if (gn[0] && path_ends_with_ci(en, gn)) return true;
+    // try guest without leading path segments one by one
+    const char* g = gn;
+    while (*g) {
+        if (path_ends_with_ci(en, g) || ps3_stricmp(eleaf, path_leaf_norm(g)) == 0)
+            return true;
+        const char* slash = std::strchr(g, '/');
+        if (!slash) break;
+        g = slash + 1;
+    }
+    return false;
+}
+
+
+
 
 static uint8_t* mem() { return ps3rt_memory(); }
 static size_t mem_size() { return 512ull * 1024 * 1024; }
@@ -661,6 +756,9 @@ static int fs_open(PPUContext* c) {
     }
     char host[1024] = {};
     map_guest(guest, host, sizeof(host));
+    const char* leaf = guest;
+    for (const char* q = guest; *q; ++q)
+        if (*q == '/' || *q == '\\') leaf = q + 1;
 
     // N: reject encrypted SELF (not supported in this toolkit)
     if (path_looks_self(guest) || (host[0] && file_is_self_header(host))) {
@@ -681,24 +779,15 @@ static int fs_open(PPUContext* c) {
         fd = fd_alloc(f, host);
     } else {
         // Virtual open inside PSARC by leaf name or relative path
-        const char* leaf = guest;
-        for (const char* q = guest; *q; ++q)
-            if (*q == '/' || *q == '\\') leaf = q + 1;
         for (int ai = 0; ai < (int)g_psarcs.size(); ++ai) {
             auto& arc = g_psarcs[ai];
             for (int ei = 0; ei < (int)arc.entries.size(); ++ei) {
                 auto& e = arc.entries[ei];
                 if (e.name.empty() || e.name == "(names)") continue;
-                // match full relative or leaf
-                bool match = (ps3_stricmp(e.name.c_str(), guest) == 0) ||
-                             (ps3_stricmp(e.name.c_str(), leaf) == 0);
-                if (!match) {
-                    // suffix match
-                    size_t el = e.name.size(), gl = std::strlen(guest);
-                    if (el >= gl && ps3_stricmp(e.name.c_str() + (el - gl), guest) == 0)
-                        match = true;
-                }
-                if (!match) continue;
+                // Match any inner entry (.wad .ts .bin .dds …) by full path, suffix, or leaf
+                if (!psarc_entry_match(e.name, guest, leaf)) continue;
+                bool match = true;
+                (void)match;
                 FILE* af = std::fopen(arc.path.c_str(), "rb");
                 if (!af) continue;
                 fd = fd_alloc(af, arc.path.c_str());
@@ -724,8 +813,9 @@ static int fs_open(PPUContext* c) {
     if (fd < 0) {
         // N: distinguish missing vs SELF vs generic
         static int s_fail = 0;
-        if (s_fail < 16) {
-            ps3rt_log("[fs] N open failed path guest — errno ENOENT/IO\n");
+        if (s_fail < 48) {
+            ps3rt_log("[fs] N open FAIL guest="%s" leaf="%s" (tried host + all PSARC TOC entries)\n",
+                      guest, leaf);
             ++s_fail;
         }
         c->gpr[3] = (uint64_t)(int32_t)CELL_FS_ENOENT; return 0;
