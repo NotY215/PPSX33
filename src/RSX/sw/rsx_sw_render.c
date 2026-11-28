@@ -54,7 +54,8 @@ static void put_px(uint8_t* fb, uint32_t pitch, uint32_t w, uint32_t h,
 
 static void sample_tex(const rsx_sw_tex* t, const uint8_t* mem, size_t msz,
                        float u, float v, uint8_t* out_rgb) {
-    out_rgb[0] = 160; out_rgb[1] = 48; out_rgb[2] = 48;
+    /* default procedural base (visible when tex unbound) */
+    out_rgb[0] = 48; out_rgb[1] = 96; out_rgb[2] = 160;
     if (!t || !mem) return;
     if (u < 0.f) u -= (float)(int)u - 1.f;
     if (v < 0.f) v -= (float)(int)v - 1.f;
@@ -80,19 +81,26 @@ static void sample_tex(const rsx_sw_tex* t, const uint8_t* mem, size_t msz,
             }
             return;
         }
-        uint32_t seed = t->offset ^ (x * 17u) ^ (y * 31u);
-        out_rgb[0] = (uint8_t)(40 + (seed & 0x7f));
-        out_rgb[1] = (uint8_t)(60 + ((seed >> 8) & 0x7f));
-        out_rgb[2] = (uint8_t)(90 + ((seed >> 16) & 0x3f));
-        return;
     }
-    /* procedural tile when tex unbound — still looks like scene fill */
-    uint32_t tx = (uint32_t)(u * 8.f) & 1u;
-    uint32_t ty = (uint32_t)(v * 8.f) & 1u;
-    uint8_t base = (tx ^ ty) ? 70 : 120;
-    out_rgb[0] = (uint8_t)(base + (uint32_t)(u * 80.f));
-    out_rgb[1] = (uint8_t)(base / 2 + (uint32_t)(v * 60.f));
-    out_rgb[2] = (uint8_t)(40 + (uint32_t)((u + v) * 40.f));
+    /* procedural tile when tex unbound — gradient + checker so frames are visible */
+    {
+        uint32_t ix = (uint32_t)(u * 64.f) & 63u;
+        uint32_t iy = (uint32_t)(v * 64.f) & 63u;
+        uint32_t seed = (t ? t->offset : 0u) ^ (ix * 17u) ^ (iy * 31u);
+        uint8_t base_r = (uint8_t)(40 + (seed & 0x3f));
+        uint8_t base_g = (uint8_t)(60 + ((seed >> 6) & 0x3f));
+        uint8_t base_b = (uint8_t)(100 + ((seed >> 12) & 0x3f));
+        int checker = ((ix >> 3) ^ (iy >> 3)) & 1;
+        if (checker) {
+            out_rgb[0] = (uint8_t)(base_r + 40);
+            out_rgb[1] = (uint8_t)(base_g + 20);
+            out_rgb[2] = (uint8_t)(base_b);
+        } else {
+            out_rgb[0] = base_r;
+            out_rgb[1] = base_g;
+            out_rgb[2] = base_b;
+        }
+    }
 }
 
 void rsx_sw_clear(rsx_sw_state* s, uint8_t* mem, size_t msz) {

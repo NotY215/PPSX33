@@ -163,7 +163,26 @@ static void rsx_host_sw_draw(uint8_t* mem, uint32_t arg) {
     for (int i=0;i<8;i++) { g_sw.va_offset[i]=g_va_offset[i]; g_sw.va_fmt[i]=g_va_fmt[i]; }
     if (g_rsx.tex_offset)
         rsx_sw_set_tex0(&g_sw, g_rsx.tex_offset, 0, 256, 256, 0);
+    else {
+        /* keep previous tex0 or procedural; still draw so color surface advances */
+        static int s_notex;
+        if (s_notex < 8) {
+            ps3rt_log("[rsx] sw-draw with tex=0 (using procedural sample) color=0x%x\n",
+                      (unsigned)g_rsx.color_offset);
+            ++s_notex;
+        }
+    }
     rsx_sw_draw_arrays(&g_sw, mem, ps3rt_guest_mem_size(), arg, (int)g_rsx.draws);
+    /* After SW write into guest color surface, push it to OpenGL present immediately */
+    if (g_gfx_api == 1 && rsx_gl_ready() && g_rsx.color_offset && mem) {
+        uint32_t pitchb = g_rsx.color_pitch ? g_rsx.color_pitch : (w * 4u);
+        size_t need = (size_t)g_rsx.color_offset + (size_t)pitchb * h;
+        size_t msz = ps3rt_guest_mem_size();
+        if (need <= msz) {
+            if (rsx_gl_present_guest_rgba(mem + g_rsx.color_offset, w, h, pitchb))
+                g_rsx.draws_guest++;
+        }
+    }
 }
 
 

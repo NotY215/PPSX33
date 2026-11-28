@@ -814,7 +814,7 @@ static int fs_open(PPUContext* c) {
         // N: distinguish missing vs SELF vs generic
         static int s_fail = 0;
         if (s_fail < 48) {
-            ps3rt_log("[fs] N open FAIL guest="%s" leaf="%s" (tried host + all PSARC TOC entries)\n",
+            ps3rt_log("[fs] N open FAIL guest=\"%s\" leaf=\"%s\" (tried host + all PSARC TOC entries)\n",
                       guest, leaf);
             ++s_fail;
         }
